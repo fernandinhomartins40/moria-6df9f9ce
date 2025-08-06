@@ -24,13 +24,27 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				
+				// Moria Brand Colors
+				'moria-black': 'hsl(var(--moria-black))',
+				'moria-orange': 'hsl(var(--moria-orange))',
+				'moria-orange-hover': 'hsl(var(--moria-orange-hover))',
+				
+				// Gold system
+				'gold-start': 'hsl(var(--gold-start))',
+				'gold-mid': 'hsl(var(--gold-mid))',
+				'gold-end': 'hsl(var(--gold-end))',
+				'gold-accent': 'hsl(var(--gold-accent))',
+				
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
+					foreground: 'hsl(var(--secondary-foreground))',
+					hover: 'hsl(var(--secondary-hover))'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -50,7 +64,9 @@ export default {
 				},
 				card: {
 					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
+					foreground: 'hsl(var(--card-foreground))',
+					dark: 'hsl(var(--card-dark))',
+					'dark-foreground': 'hsl(var(--card-dark-foreground))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
