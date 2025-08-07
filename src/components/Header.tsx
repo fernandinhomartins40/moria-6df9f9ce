@@ -24,10 +24,11 @@ export function Header({ cartItems }: HeaderProps) {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold gold-metallic">
-              MORIA
-            </h1>
-            <p className="text-xs text-moria-orange -mt-1">PEÇAS & SERVIÇOS</p>
+            <img 
+              src="/logo_moria.png" 
+              alt="Moria Peças e Serviços" 
+              className="h-16 w-auto"
+            />
           </div>
 
           {/* Desktop Navigation */}
