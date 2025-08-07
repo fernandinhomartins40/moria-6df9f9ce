@@ -328,15 +328,22 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const stats = {
     totalOrders: orders.length,
     totalQuotes: quotes.length,
+    totalServices: services.length,
+    totalCoupons: coupons.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
     pendingQuotes: quotes.filter(q => q.status === 'pending').length,
+    activeServices: services.filter(s => s.isActive).length,
+    activeCoupons: coupons.filter(c => c.isActive && new Date(c.expiresAt) > new Date()).length,
     totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
     totalCustomers: users.length,
+    averageTicket: orders.length > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length : 0,
+    conversionRate: quotes.length > 0 ? (orders.length / (orders.length + quotes.length)) * 100 : 0,
   };
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      {/* Primeira linha - Métricas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -344,6 +351,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Pedidos</p>
                 <p className="text-2xl font-bold">{stats.totalOrders}</p>
+                <p className="text-xs text-gray-500">{stats.pendingOrders} pendentes</p>
               </div>
             </div>
           </CardContent>
@@ -352,10 +360,11 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <DollarSign className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pendentes</p>
-                <p className="text-2xl font-bold">{stats.pendingOrders}</p>
+                <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                <p className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</p>
+                <p className="text-xs text-gray-500">Ticket médio: {formatPrice(stats.averageTicket)}</p>
               </div>
             </div>
           </CardContent>
@@ -368,18 +377,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Orçamentos</p>
                 <p className="text-2xl font-bold">{stats.totalQuotes}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Receita</p>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</p>
+                <p className="text-xs text-gray-500">{stats.pendingQuotes} pendentes</p>
               </div>
             </div>
           </CardContent>
@@ -392,55 +390,165 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Clientes</p>
                 <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+                <p className="text-xs text-gray-500">Cadastrados</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pedidos Recentes</CardTitle>
-          <CardDescription>Últimos 5 pedidos recebidos</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {orders.slice(0, 5).length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ShoppingBag className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2">Nenhum pedido recebido ainda</p>
+      {/* Segunda linha - Métricas secundárias */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-indigo-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Serviços</p>
+                <p className="text-2xl font-bold">{stats.totalServices}</p>
+                <p className="text-xs text-gray-500">{stats.activeServices} ativos</p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {orders.slice(0, 5).map((order) => {
-                const statusInfo = getStatusInfo(order.status);
-                const StatusIcon = statusInfo.icon;
-                
-                return (
-                  <div key={order.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <StatusIcon className="h-5 w-5 text-gray-500" />
-                        <div>
-                          <p className="font-medium">#{order.id}</p>
-                          <p className="text-sm text-gray-500">{order.customerName}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Gift className="h-8 w-8 text-pink-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Cupons</p>
+                <p className="text-2xl font-bold">{stats.totalCoupons}</p>
+                <p className="text-xs text-gray-500">{stats.activeCoupons} válidos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-emerald-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Taxa Conversão</p>
+                <p className="text-2xl font-bold">{stats.conversionRate.toFixed(1)}%</p>
+                <p className="text-xs text-gray-500">Orçamentos → Pedidos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Alertas</p>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-xs text-gray-500">Nenhum alerta</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Terceira linha - Resumos e atividades */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Pedidos Recentes</CardTitle>
+            <CardDescription>Últimos 5 pedidos recebidos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {orders.slice(0, 5).length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <ShoppingBag className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">Nenhum pedido recebido ainda</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.slice(0, 5).map((order) => {
+                  const statusInfo = getStatusInfo(order.status);
+                  const StatusIcon = statusInfo.icon;
+                  
+                  return (
+                    <div key={order.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <StatusIcon className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium">#{order.id}</p>
+                            <p className="text-sm text-gray-500">{order.customerName}</p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={statusInfo.color} variant="secondary">
+                            {statusInfo.label}
+                          </Badge>
+                          <p className="text-sm font-medium mt-1">
+                            {order.hasProducts ? formatPrice(order.total) : 'Orçamento'}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge className={statusInfo.color} variant="secondary">
-                          {statusInfo.label}
-                        </Badge>
-                        <p className="text-sm font-medium mt-1">
-                          {order.hasProducts ? formatPrice(order.total) : 'Orçamento'}
-                        </p>
-                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Atividades Recentes</CardTitle>
+            <CardDescription>Últimas ações realizadas no sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Atividades simuladas baseadas nos dados existentes */}
+              {[
+                ...services.slice(0, 2).map(service => ({
+                  type: 'service',
+                  icon: Wrench,
+                  color: 'text-orange-600',
+                  title: `Serviço "${service.name}" ${service.isActive ? 'ativado' : 'criado'}`,
+                  time: service.updatedAt
+                })),
+                ...coupons.slice(0, 2).map(coupon => ({
+                  type: 'coupon',
+                  icon: Gift,
+                  color: 'text-green-600',
+                  title: `Cupom "${coupon.code}" ${coupon.isActive ? 'ativado' : 'criado'}`,
+                  time: coupon.updatedAt
+                })),
+                ...orders.slice(0, 2).map(order => ({
+                  type: 'order',
+                  icon: ShoppingBag,
+                  color: 'text-blue-600',
+                  title: `Novo pedido #${order.id} recebido`,
+                  time: order.createdAt
+                }))
+              ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5).map((activity, index) => {
+                const ActivityIcon = activity.icon;
+                return (
+                  <div key={index} className="flex items-start space-x-3">
+                    <ActivityIcon className={`h-5 w-5 mt-1 ${activity.color}`} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(activity.time).toLocaleString('pt-BR')}
+                      </p>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
@@ -679,17 +787,28 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
                     <p className="text-sm text-gray-600 mb-3">{service.description}</p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">Tempo: {service.estimatedTime}</span>
                       </div>
-                      {service.basePrice && (
+                      {service.basePrice && service.basePrice > 0 ? (
                         <div className="flex items-center space-x-2">
                           <DollarSign className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">Preço base: {formatPrice(service.basePrice)}</span>
+                          <span className="text-sm">Preço: {formatPrice(service.basePrice)}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-orange-600">Sob orçamento</span>
                         </div>
                       )}
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">
+                          Criado: {new Date(service.createdAt).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
                     </div>
 
                     <Separator className="mb-4" />
@@ -698,6 +817,19 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4 mr-1" />
                         Editar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          const updatedServices = services.filter(s => s.id !== service.id);
+                          setServices(updatedServices);
+                          localStorage.setItem('store_services', JSON.stringify(updatedServices));
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Excluir
                       </Button>
                     </div>
                   </div>
@@ -882,6 +1014,33 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                           <Eye className="h-4 w-4 mr-1" />
                           Editar
                         </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const updatedCoupons = coupons.filter(c => c.id !== coupon.id);
+                            setCoupons(updatedCoupons);
+                            localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                          disabled={expired}
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const link = `${window.location.origin}/customer`;
+                            navigator.clipboard.writeText(`Cupom: ${coupon.code} - ${coupon.description}. Acesse: ${link}`);
+                            // Aqui você poderia adicionar uma notificação de sucesso
+                          }}
+                          title="Copiar link para compartilhar"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Compartilhar
+                        </Button>
                       </div>
                     </div>
                   );
@@ -1015,8 +1174,22 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const renderCustomers = () => (
     <Card>
       <CardHeader>
-        <CardTitle>Clientes Cadastrados</CardTitle>
-        <CardDescription>Usuários provisórios criados automaticamente</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Clientes Cadastrados</CardTitle>
+            <CardDescription>Usuários provisórios criados automaticamente no checkout</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadData}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {users.length === 0 ? (
@@ -1028,20 +1201,54 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           <div className="space-y-4">
             {users.map((user) => (
               <div key={user.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-gray-500">{user.whatsapp}</p>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-moria-orange text-white rounded-full p-2">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-gray-500">{user.whatsapp}</p>
+                      <p className="text-xs text-gray-400">
+                        Cadastrado: {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="secondary">Provisório</Badge>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Login: {user.login}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Senha: {user.password}
-                    </p>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    Provisório
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Login: {user.login}</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Lock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Senha: {user.password}</span>
+                  </div>
+                </div>
+
+                <Separator className="mb-4" />
+
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const message = `Olá ${user.name}! Seus dados de acesso ao painel: Login: ${user.login} | Senha: ${user.password} | Link: ${window.location.origin}/customer`;
+                      const whatsappUrl = `https://wa.me/${user.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    Enviar Dados
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver Pedidos
+                  </Button>
                 </div>
               </div>
             ))}
