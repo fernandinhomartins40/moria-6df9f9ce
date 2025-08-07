@@ -7,6 +7,8 @@ export interface CartItem {
   quantity: number;
   image?: string;
   category?: string;
+  type?: 'product' | 'service';
+  description?: string;
 }
 
 interface CartState {

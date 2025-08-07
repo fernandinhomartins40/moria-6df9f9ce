@@ -1,5 +1,6 @@
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
+import { useCart } from "../contexts/CartContext";
 import { 
   Wrench, 
   Droplets, 
@@ -8,55 +9,82 @@ import {
   Snowflake, 
   Zap,
   Clock,
-  Shield
+  Shield,
+  Plus
 } from "lucide-react";
 
 const services = [
   {
+    id: 101,
     icon: Wrench,
     title: "Manutenção Preventiva",
     description: "Revisões completas para manter seu veículo sempre em perfeito estado",
     features: ["Revisão geral", "Checklist completo", "Relatório detalhado"],
-    price: "A partir de R$ 150"
+    price: "A partir de R$ 150",
+    category: "Manutenção"
   },
   {
+    id: 102,
     icon: Droplets,
     title: "Troca de Óleo",
     description: "Óleos originais e de qualidade para prolongar a vida do motor",
     features: ["Óleos premium", "Filtros inclusos", "Descarte ecológico"],
-    price: "A partir de R$ 80"
+    price: "A partir de R$ 80",
+    category: "Manutenção"
   },
   {
+    id: 103,
     icon: Search,
     title: "Diagnóstico Eletrônico",
     description: "Equipamentos modernos para identificar problemas com precisão",
     features: ["Scanner profissional", "Relatório técnico", "Solução rápida"],
-    price: "A partir de R$ 50"
+    price: "A partir de R$ 50",
+    category: "Diagnóstico"
   },
   {
+    id: 104,
     icon: Disc,
     title: "Freios e Suspensão",
     description: "Segurança em primeiro lugar com serviços especializados",
     features: ["Pastilhas originais", "Fluido de freio", "Teste de segurança"],
-    price: "A partir de R$ 200"
+    price: "A partir de R$ 200",
+    category: "Segurança"
   },
   {
+    id: 105,
     icon: Snowflake,
     title: "Ar Condicionado",
     description: "Climatização perfeita para seu conforto em qualquer época",
     features: ["Higienização", "Recarga de gás", "Troca de filtros"],
-    price: "A partir de R$ 120"
+    price: "A partir de R$ 120",
+    category: "Conforto"
   },
   {
+    id: 106,
     icon: Zap,
     title: "Sistema Elétrico",
     description: "Especialistas em problemas elétricos e eletrônicos",
     features: ["Diagnóstico avançado", "Reparo de chicotes", "Atualização ECU"],
-    price: "A partir de R$ 100"
+    price: "A partir de R$ 100",
+    category: "Elétrica"
   }
 ];
 
 export function Services() {
+  const { addItem, openCart } = useCart();
+
+  const handleAddService = (service: any) => {
+    addItem({
+      id: service.id,
+      name: service.title,
+      price: 0, // Serviços não têm preço fixo
+      quantity: 1,
+      category: service.category,
+      type: 'service',
+      description: service.description
+    });
+    openCart();
+  };
   return (
     <section id="servicos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -93,7 +121,12 @@ export function Services() {
 
               <div className="flex items-center justify-between">
                 <span className="text-moria-orange font-bold">{service.price}</span>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleAddService(service)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
                   Solicitar Orçamento
                 </Button>
               </div>

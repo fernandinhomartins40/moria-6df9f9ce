@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X } from "lucide-react";
+import { CheckoutDialog } from "./CheckoutDialog";
+import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package } from "lucide-react";
 
 export function CartDrawer() {
   const { items, isOpen, totalItems, totalPrice, closeCart, removeItem, updateQuantity, clearCart } = useCart();
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -16,30 +19,10 @@ export function CartDrawer() {
     }).format(price);
   };
 
-  const generateWhatsAppMessage = () => {
-    if (items.length === 0) return "";
-
-    let message = "🛒 *Pedido Moria Peças e Serviços*\n\n";
-    
-    items.forEach((item, index) => {
-      message += `${index + 1}. *${item.name}*\n`;
-      message += `   Quantidade: ${item.quantity}x\n`;
-      message += `   Valor unitário: ${formatPrice(item.price)}\n`;
-      message += `   Subtotal: ${formatPrice(item.price * item.quantity)}\n\n`;
-    });
-
-    message += `💰 *Total do Pedido: ${formatPrice(totalPrice)}*\n\n`;
-    message += "Gostaria de finalizar este pedido. Aguardo retorno com informações sobre entrega e pagamento.";
-    
-    return encodeURIComponent(message);
-  };
-
-  const handleWhatsAppCheckout = () => {
-    const message = generateWhatsAppMessage();
-    const phoneNumber = "5511999999999";
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-  };
+  const products = items.filter(item => item.type !== 'service');
+  const services = items.filter(item => item.type === 'service');
+  const hasProducts = products.length > 0;
+  const hasServices = services.length > 0;
 
   return (
     <Sheet open={isOpen} onOpenChange={() => closeCart()}>
@@ -94,71 +77,96 @@ export function CartDrawer() {
               {/* Items List */}
               <ScrollArea className="flex-1">
                 <div className="p-6 space-y-4">
-                  {items.map((item) => (
-                    <div key={item.id} className="group relative bg-white border rounded-xl p-4 transition-all hover:shadow-md">
-                      <div className="flex gap-4">
-                        {/* Product Image Placeholder */}
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                          <ShoppingBag className="h-6 w-6 text-muted-foreground" />
-                        </div>
-
-                        {/* Product Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <h4 className="font-semibold text-sm leading-tight line-clamp-2">
-                                {item.name}
-                              </h4>
-                              {item.category && (
-                                <Badge variant="secondary" className="mt-1 text-xs">
-                                  {item.category}
-                                </Badge>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                  {items.map((item) => {
+                    const isService = item.type === 'service';
+                    const ItemIcon = isService ? Wrench : Package;
+                    
+                    return (
+                      <div key={item.id} className={`group relative border rounded-xl p-4 transition-all hover:shadow-md ${
+                        isService ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
+                      }`}>
+                        <div className="flex gap-4">
+                          {/* Item Icon */}
+                          <div className={`w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            isService ? 'bg-orange-100' : 'bg-muted'
+                          }`}>
+                            <ItemIcon className={`h-6 w-6 ${
+                              isService ? 'text-orange-600' : 'text-muted-foreground'
+                            }`} />
                           </div>
-                          
-                          <div className="flex items-center justify-between mt-3">
-                            <div className="text-lg font-bold text-moria-orange">
-                              {formatPrice(item.price)}
+
+                          {/* Item Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-semibold text-sm leading-tight line-clamp-2">
+                                  {item.name}
+                                </h4>
+                                {item.category && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`mt-1 text-xs ${
+                                      isService ? 'bg-orange-200 text-orange-800' : ''
+                                    }`}
+                                  >
+                                    {item.category}
+                                  </Badge>
+                                )}
+                                {isService && item.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => removeItem(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                             
-                            {/* Quantity Controls */}
-                            <div className="flex items-center bg-muted rounded-lg p-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-background"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="text-lg font-bold">
+                                {isService ? (
+                                  <span className="text-orange-600">Orçamento</span>
+                                ) : (
+                                  <span className="text-moria-orange">{formatPrice(item.price)}</span>
+                                )}
+                              </div>
                               
-                              <span className="px-3 py-1 text-sm font-semibold min-w-[2rem] text-center">
-                                {item.quantity}
-                              </span>
-                              
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-background"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
+                              {/* Quantity Controls */}
+                              <div className="flex items-center bg-muted rounded-lg p-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-background"
+                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                
+                                <span className="px-3 py-1 text-sm font-semibold min-w-[2rem] text-center">
+                                  {item.quantity}
+                                </span>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-background"
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
 
@@ -167,28 +175,48 @@ export function CartDrawer() {
                 <div className="p-6 space-y-4">
                   {/* Summary */}
                   <div className="bg-muted rounded-xl p-4 space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span>Itens ({totalItems})</span>
-                      <span className="font-medium">{formatPrice(totalPrice)}</span>
+                    <div className="space-y-2">
+                      {hasProducts && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Produtos ({products.length})</span>
+                          <span className="font-medium">{formatPrice(totalPrice)}</span>
+                        </div>
+                      )}
+                      {hasServices && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Serviços ({services.length})</span>
+                          <span className="text-orange-600 font-medium">Orçamento</span>
+                        </div>
+                      )}
                     </div>
-                    <Separator />
+                    
+                    {hasProducts && hasServices && <Separator />}
+                    
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold">Total</span>
+                      <span className="text-lg font-bold">
+                        {hasProducts ? 'Total Produtos' : 'Itens'}
+                      </span>
                       <span className="text-xl font-bold text-moria-orange">
-                        {formatPrice(totalPrice)}
+                        {hasProducts ? formatPrice(totalPrice) : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
                       </span>
                     </div>
+                    
+                    {hasServices && hasProducts && (
+                      <p className="text-xs text-muted-foreground">
+                        * Serviços serão orçados separadamente
+                      </p>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
                     <Button
-                      onClick={handleWhatsAppCheckout}
+                      onClick={() => setShowCheckout(true)}
                       className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl"
                       size="lg"
                     >
                       <MessageCircle className="w-5 h-5 mr-2" />
-                      Finalizar pelo WhatsApp
+                      Finalizar {hasServices && hasProducts ? 'Pedido e Orçamento' : hasServices ? 'Orçamento' : 'Compra'}
                     </Button>
                     
                     <div className="flex gap-3">
@@ -214,6 +242,11 @@ export function CartDrawer() {
           )}
         </div>
       </SheetContent>
+      
+      <CheckoutDialog 
+        open={showCheckout} 
+        onOpenChange={setShowCheckout}
+      />
     </Sheet>
   );
 }
