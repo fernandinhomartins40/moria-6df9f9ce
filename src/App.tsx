@@ -15,6 +15,7 @@ import AdminReports from "./pages/admin/AdminReports";
 import StorePanel from "./pages/StorePanel";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import CustomerPanel from "./pages/CustomerPanel";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/customer" element={<CustomerPanel />} />
           <Route path="/store-panel" element={<StorePanel />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />

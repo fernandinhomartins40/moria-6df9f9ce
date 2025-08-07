@@ -5,6 +5,7 @@ import { CustomerDashboard } from "../components/customer/CustomerDashboard";
 import { CustomerProfile } from "../components/customer/CustomerProfile";
 import { CustomerOrders } from "../components/customer/CustomerOrders";
 import { CustomerFavorites } from "../components/customer/CustomerFavorites";
+import "../styles/cliente.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
