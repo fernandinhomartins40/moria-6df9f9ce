@@ -55,8 +55,10 @@ interface AdminContentProps {
 
 export function AdminContent({ activeTab }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
+  const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +69,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchTerm, statusFilter]);
+    filterQuotes();
+  }, [orders, quotes, searchTerm, statusFilter]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -75,9 +78,11 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
+      const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
       const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
       
       setOrders(storeOrders);
+      setQuotes(storeQuotes);
       setUsers(provisionalUsers);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -105,6 +110,25 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setFilteredOrders(filtered);
   };
 
+  const filterQuotes = () => {
+    let filtered = quotes;
+
+    if (searchTerm) {
+      filtered = filtered.filter(quote =>
+        quote.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quote.customerWhatsApp.includes(searchTerm)
+      );
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(quote => quote.status === statusFilter);
+    }
+
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setFilteredQuotes(filtered);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -129,8 +153,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const stats = {
     totalOrders: orders.length,
+    totalQuotes: quotes.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
-    quoteRequests: orders.filter(o => o.status === 'quote_requested').length,
+    pendingQuotes: quotes.filter(q => q.status === 'pending').length,
     totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
     totalCustomers: users.length,
   };
@@ -168,7 +193,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <Wrench className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Orçamentos</p>
-                <p className="text-2xl font-bold">{stats.quoteRequests}</p>
+                <p className="text-2xl font-bold">{stats.totalQuotes}</p>
               </div>
             </div>
           </CardContent>
@@ -243,6 +268,135 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         </CardContent>
       </Card>
     </div>
+  );
+
+  const renderQuotes = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Todos os Orçamentos</CardTitle>
+            <CardDescription>Solicitações de orçamento para serviços</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por orçamento, cliente ou telefone..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Status</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="analyzing">Em Análise</SelectItem>
+              <SelectItem value="quoted">Orçado</SelectItem>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <ScrollArea className="h-96">
+          {filteredQuotes.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2">Nenhum orçamento encontrado</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredQuotes.map((quote) => (
+                <div key={quote.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <Wrench className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="font-bold">Orçamento #{quote.id}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(quote.createdAt).toLocaleDateString('pt-BR')} às{' '}
+                          {new Date(quote.createdAt).toLocaleTimeString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-orange-100 text-orange-800" variant="secondary">
+                      {quote.status === 'pending' ? 'Pendente' : 
+                       quote.status === 'analyzing' ? 'Em Análise' :
+                       quote.status === 'quoted' ? 'Orçado' :
+                       quote.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{quote.customerName}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{quote.customerWhatsApp}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <Wrench className="h-4 w-4 mr-1 text-orange-600" />
+                        Serviços ({quote.items.length})
+                      </span>
+                      <span className="text-orange-600">Aguardando Orçamento</span>
+                    </div>
+                    <div className="ml-5 text-sm text-gray-600">
+                      {quote.items.map((item: any, index: number) => (
+                        <div key={index} className="mb-1">
+                          • {item.name} (Qtd: {item.quantity})
+                          {item.description && (
+                            <p className="text-xs text-gray-500 ml-2">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {quote.hasLinkedOrder && (
+                    <div className="mb-4 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                      🔗 Este cliente também possui um pedido vinculado: #{quote.sessionId?.replace('O', 'P')}
+                    </div>
+                  )}
+
+                  <Separator className="mb-4" />
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const message = `Olá ${quote.customerName}! Vi sua solicitação de orçamento #${quote.id}. Vou preparar um orçamento personalizado para você. Em breve entro em contato!`;
+                        const whatsappUrl = `https://wa.me/${quote.customerWhatsApp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      Contatar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 
   const renderOrders = () => (
@@ -423,6 +577,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       return renderDashboard();
     case 'orders':
       return renderOrders();
+    case 'quotes':
+      return renderQuotes();
     case 'customers':
       return renderCustomers();
     case 'products':

@@ -11,7 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  Home
+  Home,
+  FileText
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -24,6 +25,7 @@ interface SidebarProps {
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
+  { id: "quotes", label: "Orçamentos", icon: FileText },
   { id: "customers", label: "Clientes", icon: Users },
   { id: "products", label: "Produtos", icon: Package },
   { id: "promotions", label: "Promoções", icon: TrendingUp },

@@ -32,6 +32,7 @@ function getPageTitle(tab: string): string {
   const titles: Record<string, string> = {
     dashboard: "Dashboard",
     orders: "Pedidos",
+    quotes: "Orçamentos",
     customers: "Clientes", 
     products: "Produtos",
     promotions: "Promoções",
@@ -44,7 +45,8 @@ function getPageTitle(tab: string): string {
 function getPageDescription(tab: string): string {
   const descriptions: Record<string, string> = {
     dashboard: "Visão geral dos pedidos e métricas da loja",
-    orders: "Gerencie todos os pedidos e orçamentos",
+    orders: "Gerencie todos os pedidos com produtos",
+    quotes: "Gerencie todas as solicitações de orçamento para serviços",
     customers: "Visualize os clientes cadastrados automaticamente",
     products: "Gerencie o catálogo e estoque de produtos", 
     promotions: "Configure ofertas especiais e campanhas",
