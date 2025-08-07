@@ -1,0 +1,141 @@
+/* 
+ * Estilos específicos para o painel do cliente
+ * Moria Peças e Serviços
+ */
+
+/* Layout do Painel do Cliente */
+.cliente-layout {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.cliente-sidebar {
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.cliente-content {
+  background: #f8fafc;
+  padding: 2rem;
+}
+
+/* Cards do Cliente */
+.cliente-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.cliente-card:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+  border-color: #ff6b35;
+}
+
+/* Navegação do Cliente */
+.cliente-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.cliente-nav-item:hover {
+  background: #f1f5f9;
+  color: #ff6b35;
+}
+
+.cliente-nav-item.active {
+  background: #fff7ed;
+  color: #ff6b35;
+  border-left: 3px solid #ff6b35;
+}
+
+/* Status dos Pedidos */
+.status-pendente {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-confirmado {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-entregue {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Favoritos do Cliente */
+.favorito-btn {
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.favorito-btn:hover {
+  color: #ef4444;
+}
+
+.favorito-btn.ativo {
+  color: #ef4444;
+}
+
+/* Histórico de Pedidos */
+.pedido-item {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 0;
+}
+
+.pedido-item:last-child {
+  border-bottom: none;
+}
+
+/* Perfil do Cliente */
+.perfil-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #ff6b35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 auto 1rem;
+}
+
+/* Responsivo para Cliente */
+@media (max-width: 768px) {
+  .cliente-content {
+    padding: 1rem;
+  }
+  
+  .cliente-sidebar {
+    display: none;
+  }
+  
+  .cliente-card {
+    padding: 1rem;
+  }
+}

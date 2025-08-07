@@ -4,6 +4,7 @@ import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
 import { CartProvider } from "../contexts/CartContext";
 import { AuthProvider } from "../contexts/AuthContext";
+import "../styles/public.css";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";

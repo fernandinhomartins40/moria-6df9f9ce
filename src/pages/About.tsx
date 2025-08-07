@@ -3,6 +3,7 @@ import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
 import { CartProvider } from "../contexts/CartContext";
 import { AuthProvider } from "../contexts/AuthContext";
+import "../styles/public.css";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent } from "../components/ui/card";
 import { 
