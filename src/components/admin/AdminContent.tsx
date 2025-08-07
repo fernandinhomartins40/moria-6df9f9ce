@@ -39,6 +39,18 @@ interface StoreOrder {
   source: string;
 }
 
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  estimatedTime: string;
+  basePrice?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProvisionalUser {
   id: string;
   name: string;
@@ -56,9 +68,11 @@ interface AdminContentProps {
 export function AdminContent({ activeTab }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +84,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   useEffect(() => {
     filterOrders();
     filterQuotes();
-  }, [orders, quotes, searchTerm, statusFilter]);
+    filterServices();
+  }, [orders, quotes, services, searchTerm, statusFilter]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -79,7 +94,50 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       
       const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
       const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
+      const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
       const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
+      
+      // Se não há serviços, criar alguns exemplos
+      if (storeServices.length === 0) {
+        const defaultServices: Service[] = [
+          {
+            id: 'srv-001',
+            name: 'Troca de Óleo',
+            description: 'Troca completa de óleo do motor com filtro',
+            category: 'Manutenção',
+            estimatedTime: '30 minutos',
+            basePrice: 120.00,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'srv-002',
+            name: 'Alinhamento e Balanceamento',
+            description: 'Alinhamento e balanceamento das 4 rodas',
+            category: 'Suspensão',
+            estimatedTime: '45 minutos',
+            basePrice: 80.00,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'srv-003',
+            name: 'Revisão Completa',
+            description: 'Revisão geral do veículo com check-up completo',
+            category: 'Revisão',
+            estimatedTime: '2 horas',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_services', JSON.stringify(defaultServices));
+        setServices(defaultServices);
+      } else {
+        setServices(storeServices);
+      }
       
       setOrders(storeOrders);
       setQuotes(storeQuotes);
@@ -127,6 +185,27 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setFilteredQuotes(filtered);
+  };
+
+  const filterServices = () => {
+    let filtered = services;
+
+    if (searchTerm) {
+      filtered = filtered.filter(service =>
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(service => service.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(service => !service.isActive);
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredServices(filtered);
   };
 
   const formatPrice = (price: number) => {
@@ -399,6 +478,143 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
+  const renderServices = () => {
+    const toggleServiceStatus = (serviceId: string) => {
+      const updatedServices = services.map(service =>
+        service.id === serviceId
+          ? { ...service, isActive: !service.isActive, updatedAt: new Date().toISOString() }
+          : service
+      );
+      setServices(updatedServices);
+      localStorage.setItem('store_services', JSON.stringify(updatedServices));
+    };
+
+    const addNewService = () => {
+      const newService: Service = {
+        id: `srv-${Date.now()}`,
+        name: 'Novo Serviço',
+        description: 'Descrição do novo serviço',
+        category: 'Geral',
+        estimatedTime: '1 hora',
+        basePrice: 0,
+        isActive: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedServices = [newService, ...services];
+      setServices(updatedServices);
+      localStorage.setItem('store_services', JSON.stringify(updatedServices));
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Serviços</CardTitle>
+              <CardDescription>Cadastre e gerencie os serviços oferecidos</CardDescription>
+            </div>
+            <Button onClick={addNewService} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Serviço
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome, descrição ou categoria..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-96">
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">Nenhum serviço encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredServices.map((service) => (
+                  <div key={service.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Wrench className="h-5 w-5 text-orange-500" />
+                        <div>
+                          <p className="font-bold">{service.name}</p>
+                          <p className="text-sm text-gray-500">{service.category}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          className={service.isActive 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-gray-100 text-gray-800"
+                          } 
+                          variant="secondary"
+                        >
+                          {service.isActive ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleServiceStatus(service.id)}
+                        >
+                          {service.isActive ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-3">{service.description}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">Tempo: {service.estimatedTime}</span>
+                      </div>
+                      {service.basePrice && (
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">Preço base: {formatPrice(service.basePrice)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderOrders = () => (
     <Card>
       <CardHeader>
@@ -583,6 +799,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       return renderCustomers();
     case 'products':
       return renderPlaceholder('Produtos', 'Gerencie o estoque e catálogo de produtos');
+    case 'services':
+      return renderServices();
     case 'promotions':
       return renderPlaceholder('Promoções', 'Configure ofertas especiais e descontos');
     case 'reports':

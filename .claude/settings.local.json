@@ -10,7 +10,16 @@
       "Bash(gh run list:*)",
       "Bash(rg:*)",
       "Bash(true)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(rm:*)",
+      "Bash(ssh:*)",
+      "Bash(npm run build:*)",
+      "Bash(tar:*)",
+      "Bash(scp:*)"
     ],
     "deny": []
   }

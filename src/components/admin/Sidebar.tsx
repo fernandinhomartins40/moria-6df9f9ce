@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   Home,
-  FileText
+  FileText,
+  Wrench
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -28,6 +29,7 @@ const menuItems = [
   { id: "quotes", label: "Orçamentos", icon: FileText },
   { id: "customers", label: "Clientes", icon: Users },
   { id: "products", label: "Produtos", icon: Package },
+  { id: "services", label: "Serviços", icon: Wrench },
   { id: "promotions", label: "Promoções", icon: TrendingUp },
   { id: "reports", label: "Relatórios", icon: BarChart3 },
   { id: "settings", label: "Configurações", icon: Settings },
