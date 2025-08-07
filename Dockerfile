@@ -1,43 +1,70 @@
-# Dockerfile para Moria Peças e Serviços
-# Aplicação React + Vite com Nginx
+# Dockerfile completo - Frontend + Backend SQLite
+# Serve o frontend via Nginx e backend Node.js via proxy
 
-# Estágio de build
-FROM node:18-alpine AS builder
+# Estágio 1: Build do Frontend
+FROM node:18-alpine AS frontend-builder
 
-WORKDIR /app
+WORKDIR /app/frontend
 
-# Copiar package files
+# Copiar package files do frontend
 COPY package*.json ./
 
-# Instalar todas as dependências (incluindo dev para build)
+# Instalar dependências
 RUN npm ci
 
 # Copiar código fonte
 COPY . .
 
-# Limpar cache e build da aplicação
-RUN rm -rf dist node_modules/.vite .cache && \
-    echo "🗂️ Arquivos TypeScript/TSX encontrados:" && \
-    find src -name "*.tsx" -o -name "*.ts" | grep -E "(AdminQuotes|AdminSidebar|App)" && \
-    npm run build && \
-    echo "✅ Build concluído. Verificando arquivos gerados:" && \
-    ls -la dist/ && \
-    echo "📋 Verificando componentes no JavaScript compilado:" && \
-    find dist/assets -name "*.js" -exec grep -l "AdminQuotes" {} \; | head -1 | xargs -I {} sh -c 'echo "✅ Arquivo JS com AdminQuotes: {}"; grep -o "AdminQuotes[^,}]*" {} | head -3' || echo "⚠️ AdminQuotes NÃO encontrado no JS" && \
-    echo "🔍 Verificando rota quotes:" && \
-    find dist/assets -name "*.js" -exec grep -l "path.*quotes" {} \; | head -1 && echo "✅ Rota quotes encontrada no bundle" || echo "⚠️ Rota quotes NÃO encontrada"
+# Build do frontend
+RUN npm run build
 
-# Estágio de produção com Nginx
-FROM nginx:alpine
+# Estágio 2: Preparar Backend
+FROM node:18-alpine AS backend-builder
 
-# Copiar arquivos buildados
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app/backend
 
-# Copiar configuração customizada do Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar package files do backend
+COPY backend/package*.json ./
 
-# Expor porta 80
+# Instalar dependências do backend incluindo Prisma
+RUN npm ci
+
+# Copiar código do backend
+COPY backend/ .
+
+# Gerar Prisma Client
+RUN npx prisma generate
+
+# Estágio 3: Runtime - Nginx + Node.js
+FROM node:18-alpine AS runtime
+
+# Instalar Nginx
+RUN apk add --no-cache nginx
+
+# Criar diretórios necessários
+RUN mkdir -p /app/frontend /app/backend /run/nginx
+
+# Copiar frontend buildado
+COPY --from=frontend-builder /app/dist /app/frontend
+
+# Copiar backend
+COPY --from=backend-builder /app/backend /app/backend
+
+# Configurar Nginx
+COPY nginx-full.conf /etc/nginx/nginx.conf
+
+# Script de inicialização
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+WORKDIR /app/backend
+
+# Criar banco SQLite e popular dados
+RUN npx prisma migrate deploy && \
+    npx prisma db seed || echo "Seed executado ou dados já existem"
+
+# Expor portas
 EXPOSE 80
 
-# Iniciar Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Iniciar com script que roda Nginx + Backend
+ENTRYPOINT ["/docker-entrypoint.sh"]
