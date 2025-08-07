@@ -111,7 +111,7 @@ ${new Date().toLocaleString('pt-BR')}
       `.trim();
 
       // Abrir WhatsApp
-      const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(whatsappMessage)}`;
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
 
       toast.success("Mensagem enviada! Redirecionando para WhatsApp...");
@@ -135,7 +135,7 @@ ${new Date().toLocaleString('pt-BR')}
 
   const handleWhatsAppDirect = () => {
     const message = "Olá! Gostaria de falar com a equipe da Moria Peças e Serviços.";
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 

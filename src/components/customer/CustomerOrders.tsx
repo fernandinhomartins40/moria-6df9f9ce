@@ -90,13 +90,13 @@ export function CustomerOrders() {
 
   const handleTrackingClick = (trackingCode: string) => {
     const message = `Olá! Gostaria de rastrear meu pedido. Código de rastreamento: ${trackingCode}`;
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handleOrderSupport = (orderId: string) => {
     const message = `Olá! Preciso de ajuda com meu pedido #${orderId}. Pode me ajudar?`;
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 

@@ -97,7 +97,7 @@ function CustomerSupport() {
 
   const handleWhatsAppSupport = () => {
     const message = "Olá! Preciso de ajuda. Podem me atender?";
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 

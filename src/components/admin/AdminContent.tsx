@@ -489,7 +489,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const handleWhatsAppContact = (order: StoreOrder) => {
     const message = `Olá ${order.customerName}! Vi seu pedido #${order.id} aqui no nosso painel. Como posso te ajudar?`;
-    const whatsappUrl = `https://wa.me/${order.customerWhatsApp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${order.customerWhatsApp.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -837,7 +837,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       size="sm"
                       onClick={() => {
                         const message = `Olá ${quote.customerName}! Vi sua solicitação de orçamento #${quote.id}. Vou preparar um orçamento personalizado para você. Em breve entro em contato!`;
-                        const whatsappUrl = `https://wa.me/${quote.customerWhatsApp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                        const whatsappUrl = `https://api.whatsapp.com/send?phone=${quote.customerWhatsApp.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
                       }}
                     >
@@ -1411,7 +1411,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     size="sm"
                     onClick={() => {
                       const message = `Olá ${user.name}! Seus dados de acesso ao painel: Login: ${user.login} | Senha: ${user.password} | Link: ${window.location.origin}/customer`;
-                      const whatsappUrl = `https://wa.me/${user.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                      const whatsappUrl = `https://api.whatsapp.com/send?phone=${user.whatsapp.replace(/\D/g, '')}&text=${encodeURIComponent(message)}`;
                       window.open(whatsappUrl, '_blank');
                     }}
                   >

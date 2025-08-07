@@ -217,7 +217,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       // 3. Gerar mensagem do WhatsApp
       const message = generateWhatsAppMessage(results);
       const whatsappNumber = "5511999999999"; // Número da loja
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
       
       // Simular delay do processamento
       await new Promise(resolve => setTimeout(resolve, 1500));
