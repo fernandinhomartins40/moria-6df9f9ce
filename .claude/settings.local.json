@@ -6,7 +6,10 @@
       "Bash(mv:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(rg:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

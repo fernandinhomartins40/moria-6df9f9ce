@@ -109,11 +109,6 @@ export function Products() {
     );
   };
 
-  const handleWhatsAppOrder = (product: Product) => {
-    const message = `Olá! Gostaria de comprar:\n🛒 ${product.name}\n💰 Preço: R$ ${product.price.toFixed(2)}\n📍 Endereço de entrega:`;
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
 
   return (
     <section id="pecas" className="py-20 bg-white">
@@ -225,36 +220,25 @@ export function Products() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      addItem({
-                        id: product.id,
-                        name: product.name,
-                        price: product.originalPrice ? product.originalPrice * (1 - (product.discount || 0) / 100) : product.price,
-                        image: product.image,
-                        category: product.category
-                      });
-                      openCart();
-                    }}
-                    disabled={!product.inStock}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Carrinho
-                  </Button>
-                  <Button
-                    variant="whatsapp"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleWhatsAppOrder(product)}
-                    disabled={!product.inStock}
-                  >
-                    WhatsApp
-                  </Button>
-                </div>
+                <Button
+                  variant="hero"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    addItem({
+                      id: product.id,
+                      name: product.name,
+                      price: product.originalPrice ? product.originalPrice * (1 - (product.discount || 0) / 100) : product.price,
+                      image: product.image,
+                      category: product.category
+                    });
+                    openCart();
+                  }}
+                  disabled={!product.inStock}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar ao Carrinho
+                </Button>
               </div>
             </Card>
           ))}
