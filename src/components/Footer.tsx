@@ -1,5 +1,6 @@
-import { MapPin, Phone, Clock, Mail, Facebook, Instagram, Wrench } from "lucide-react";
+import { MapPin, Phone, Clock, Mail, Facebook, Instagram, Wrench, Settings } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -18,13 +19,22 @@ export function Footer() {
               Especialistas em peças automotivas e serviços de qualidade há mais de 15 anos. 
               Sua tranquilidade é nossa prioridade.
             </p>
-            <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="hover:text-moria-orange">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="hover:text-moria-orange">
-                <Instagram className="h-5 w-5" />
-              </Button>
+            <div className="flex flex-col space-y-4">
+              <div className="flex space-x-4">
+                <Button variant="ghost" size="icon" className="hover:text-moria-orange">
+                  <Facebook className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="hover:text-moria-orange">
+                  <Instagram className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <Link to="/store-panel">
+                <Button variant="outline" size="sm" className="border-moria-orange text-moria-orange hover:bg-moria-orange hover:text-white">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Painel do Lojista
+                </Button>
+              </Link>
             </div>
           </div>
 
