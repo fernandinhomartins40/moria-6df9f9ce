@@ -36,6 +36,7 @@ function getPageTitle(tab: string): string {
     customers: "Clientes", 
     products: "Produtos",
     services: "Serviços",
+    coupons: "Cupons",
     promotions: "Promoções",
     reports: "Relatórios",
     settings: "Configurações"
@@ -50,7 +51,8 @@ function getPageDescription(tab: string): string {
     quotes: "Gerencie todas as solicitações de orçamento para serviços",
     customers: "Visualize os clientes cadastrados automaticamente",
     products: "Gerencie o catálogo e estoque de produtos",
-    services: "Cadastre e gerencie os serviços oferecidos", 
+    services: "Cadastre e gerencie os serviços oferecidos",
+    coupons: "Crie e gerencie cupons de desconto para os clientes", 
     promotions: "Configure ofertas especiais e campanhas",
     reports: "Relatórios de vendas e análises detalhadas",
     settings: "Configurações do sistema e preferências"

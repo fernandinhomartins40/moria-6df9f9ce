@@ -51,6 +51,22 @@ interface Service {
   updatedAt: string;
 }
 
+interface Coupon {
+  id: string;
+  code: string;
+  description: string;
+  discountType: 'percentage' | 'fixed' | 'free_shipping';
+  discountValue: number;
+  minValue?: number;
+  maxDiscount?: number;
+  expiresAt: string;
+  usageLimit?: number;
+  usedCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProvisionalUser {
   id: string;
   name: string;
@@ -69,10 +85,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +103,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     filterOrders();
     filterQuotes();
     filterServices();
-  }, [orders, quotes, services, searchTerm, statusFilter]);
+    filterCoupons();
+  }, [orders, quotes, services, coupons, searchTerm, statusFilter]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -95,6 +114,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
       const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
       const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
+      const storeCoupons = JSON.parse(localStorage.getItem('store_coupons') || '[]');
       const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
       
       // Se não há serviços, criar alguns exemplos
@@ -137,6 +157,59 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         setServices(defaultServices);
       } else {
         setServices(storeServices);
+      }
+      
+      // Se não há cupons, criar alguns exemplos
+      if (storeCoupons.length === 0) {
+        const defaultCoupons: Coupon[] = [
+          {
+            id: 'coupon-001',
+            code: 'PRIMEIRA20',
+            description: '20% de desconto na primeira compra',
+            discountType: 'percentage',
+            discountValue: 20,
+            minValue: 100,
+            maxDiscount: 50,
+            expiresAt: '2024-12-31',
+            usageLimit: 100,
+            usedCount: 25,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'coupon-002',
+            code: 'FRETE10',
+            description: 'Frete grátis em compras acima de R$ 150',
+            discountType: 'free_shipping',
+            discountValue: 0,
+            minValue: 150,
+            expiresAt: '2024-12-31',
+            usedCount: 12,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'coupon-003',
+            code: 'COMBO15',
+            description: '15% de desconto em combos',
+            discountType: 'percentage',
+            discountValue: 15,
+            minValue: 200,
+            maxDiscount: 30,
+            expiresAt: '2024-11-30',
+            usageLimit: 50,
+            usedCount: 45,
+            isActive: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_coupons', JSON.stringify(defaultCoupons));
+        setCoupons(defaultCoupons);
+      } else {
+        setCoupons(storeCoupons);
       }
       
       setOrders(storeOrders);
@@ -206,6 +279,28 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
     filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     setFilteredServices(filtered);
+  };
+
+  const filterCoupons = () => {
+    let filtered = coupons;
+
+    if (searchTerm) {
+      filtered = filtered.filter(coupon =>
+        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(coupon => coupon.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(coupon => !coupon.isActive);
+    } else if (statusFilter === "expired") {
+      filtered = filtered.filter(coupon => new Date(coupon.expiresAt) < new Date());
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredCoupons(filtered);
   };
 
   const formatPrice = (price: number) => {
@@ -615,6 +710,190 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     );
   };
 
+  const renderCoupons = () => {
+    const toggleCouponStatus = (couponId: string) => {
+      const updatedCoupons = coupons.map(coupon =>
+        coupon.id === couponId
+          ? { ...coupon, isActive: !coupon.isActive, updatedAt: new Date().toISOString() }
+          : coupon
+      );
+      setCoupons(updatedCoupons);
+      localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+    };
+
+    const addNewCoupon = () => {
+      const newCoupon: Coupon = {
+        id: `coupon-${Date.now()}`,
+        code: 'NOVO10',
+        description: 'Novo cupom de desconto',
+        discountType: 'percentage',
+        discountValue: 10,
+        minValue: 50,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias
+        usedCount: 0,
+        isActive: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedCoupons = [newCoupon, ...coupons];
+      setCoupons(updatedCoupons);
+      localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+    };
+
+    const getDiscountText = (coupon: Coupon) => {
+      if (coupon.discountType === 'percentage') {
+        return `${coupon.discountValue}% de desconto`;
+      } else if (coupon.discountType === 'fixed') {
+        return `${formatPrice(coupon.discountValue)} de desconto`;
+      } else {
+        return 'Frete grátis';
+      }
+    };
+
+    const isExpired = (expiresAt: string) => {
+      return new Date(expiresAt) < new Date();
+    };
+
+    const getUsageText = (coupon: Coupon) => {
+      if (coupon.usageLimit) {
+        return `${coupon.usedCount}/${coupon.usageLimit} usos`;
+      }
+      return `${coupon.usedCount} usos`;
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Cupons</CardTitle>
+              <CardDescription>Crie e gerencie cupons de desconto para os clientes</CardDescription>
+            </div>
+            <Button onClick={addNewCoupon} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Cupom
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por código ou descrição..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+                <SelectItem value="expired">Expirados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-96">
+            {filteredCoupons.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Gift className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">Nenhum cupom encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredCoupons.map((coupon) => {
+                  const expired = isExpired(coupon.expiresAt);
+                  
+                  return (
+                    <div key={coupon.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <Gift className="h-5 w-5 text-green-500" />
+                          <div>
+                            <p className="font-bold text-lg">{coupon.code}</p>
+                            <p className="text-sm text-gray-600">{coupon.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            className={
+                              expired 
+                                ? "bg-red-100 text-red-800"
+                                : coupon.isActive 
+                                  ? "bg-green-100 text-green-800" 
+                                  : "bg-gray-100 text-gray-800"
+                            } 
+                            variant="secondary"
+                          >
+                            {expired ? 'Expirado' : coupon.isActive ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          {!expired && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCouponStatus(coupon.id)}
+                            >
+                              {coupon.isActive ? 'Desativar' : 'Ativar'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{getDiscountText(coupon)}</span>
+                        </div>
+                        {coupon.minValue && (
+                          <div className="flex items-center space-x-2">
+                            <ShoppingCart className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm">Min: {formatPrice(coupon.minValue)}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">Expira: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{getUsageText(coupon)}</span>
+                        </div>
+                        {coupon.maxDiscount && (
+                          <span className="text-sm text-gray-500">
+                            Desconto máximo: {formatPrice(coupon.maxDiscount)}
+                          </span>
+                        )}
+                      </div>
+
+                      <Separator className="mb-4" />
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderOrders = () => (
     <Card>
       <CardHeader>
@@ -801,6 +1080,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       return renderPlaceholder('Produtos', 'Gerencie o estoque e catálogo de produtos');
     case 'services':
       return renderServices();
+    case 'coupons':
+      return renderCoupons();
     case 'promotions':
       return renderPlaceholder('Promoções', 'Configure ofertas especiais e descontos');
     case 'reports':
