@@ -27,18 +27,12 @@ jobs:
     - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: 🔑 Configurar SSH
+    - name: 🔑 Instalar SSH Tools
       run: |
-        echo "🔑 Configurando SSH..."
-        sudo apt-get update && sudo apt-get install -y sshpass
-        mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
-        echo "✅ SSH configurado para ${{ env.VPS_HOST }}"
-
-    - name: 🔍 Testar Conectividade SSH
-      run: |
-        echo "🔍 Testando conectividade SSH..."
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo '✅ SSH funcionando! Host: $(hostname) - Data: $(date)'"
+        echo "🔑 Instalando ferramentas SSH..."
+        sudo apt-get update -q
+        sudo apt-get install -y sshpass
+        echo "✅ Ferramentas SSH instaladas"
 
     - name: 🚀 Deploy COMPLETO - SEM CACHE
       run: |
@@ -62,7 +56,7 @@ jobs:
         
         # Enviar para VPS
         echo "📤 Enviando para VPS..."
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
         
         # Deploy COMPLETO na VPS
         echo "🏗️ Executando deploy COMPLETO na VPS..."
@@ -72,7 +66,7 @@ jobs:
         echo "  👤 Actor: ${{ github.actor }}"
         echo "  🕐 Timestamp: $(date)"
         
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
           set -e
           
           echo '🗑️  REMOVENDO TUDO - REBUILD COMPLETO'
