@@ -1,0 +1,150 @@
+name: 🔧 Deploy Moria Peças e Serviços - REBUILD COMPLETO
+
+concurrency:
+  group: moria-deploy
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  VPS_HOST: '31.97.85.98'
+  VPS_USER: 'root'
+  APP_DIR: '/root/moria-pecas-servicos'
+  PORT: '3018'
+  IMAGE_NAME: 'moria-pecas-servicos'
+  CONTAINER_NAME: 'moria-app'
+
+jobs:
+  deploy:
+    name: 🚀 Deploy COMPLETO para VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🔑 Configurar SSH
+      run: |
+        echo "🔑 Configurando SSH..."
+        sudo apt-get update && sudo apt-get install -y sshpass
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
+
+    - name: 🚀 Deploy COMPLETO - SEM CACHE
+      run: |
+        echo "🔧 Iniciando deploy COMPLETO do Moria Peças e Serviços..."
+        echo "Commit: ${{ github.sha }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "⚠️  REBUILD COMPLETO - TODOS OS ARQUIVOS SERÃO SUBSTITUÍDOS"
+        
+        # Criar arquivo com código
+        echo "📦 Preparando código..."
+        tar --warning=no-file-changed -czf deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='dist' \
+          --exclude='build' \
+          --exclude='*.log' \
+          --exclude='coverage' \
+          --exclude='.env.local' \
+          --exclude='test-backend.md' \
+          . || true
+        
+        # Enviar para VPS
+        echo "📤 Enviando para VPS..."
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
+        
+        # Deploy COMPLETO na VPS
+        echo "🏗️ Executando deploy COMPLETO na VPS..."
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+          set -e
+          
+          echo '🗑️  REMOVENDO TUDO - REBUILD COMPLETO'
+          
+          # Parar e remover container
+          echo '⏹️  Parando container anterior...'
+          docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rmi ${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
+          
+          # REMOVER COMPLETAMENTE o diretório anterior
+          echo '🗑️  Removendo diretório anterior COMPLETAMENTE...'
+          rm -rf ${{ env.APP_DIR }}
+          
+          # Criar diretório limpo
+          echo '📁 Criando diretório limpo...'
+          mkdir -p ${{ env.APP_DIR }}
+          
+          # Extrair código
+          echo '📦 Extraindo código COMPLETO...'
+          cd ${{ env.APP_DIR }}
+          tar -xzf /tmp/deploy.tar.gz
+          rm -f /tmp/deploy.tar.gz
+          
+          # Garantir que não há cache
+          echo '🧹 Limpando qualquer cache...'
+          rm -rf node_modules dist build .next .vite || true
+          
+          echo '🏗️  BUILD COMPLETO da imagem Docker...'
+          docker build --no-cache -t ${{ env.IMAGE_NAME }}:latest .
+          
+          echo '🚀 Iniciando aplicação...'
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.PORT }}:80 \
+            --restart unless-stopped \
+            -e NODE_ENV=production \
+            -e APP_NAME='Moria Peças e Serviços' \
+            -e CLIENT_NAME='Moria - Peças e Serviços Automotivos' \
+            ${{ env.IMAGE_NAME }}:latest
+          
+          echo '⏳ Aguardando inicialização (30s)...'
+          sleep 30
+          
+          echo '🔍 Verificando container...'
+          if docker ps | grep -q ${{ env.CONTAINER_NAME }}; then
+            echo '✅ Container rodando!'
+            docker ps | grep ${{ env.CONTAINER_NAME }}
+          else
+            echo '❌ Container falhou!'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 20
+            exit 1
+          fi
+          
+          echo '🔍 Testando aplicação...'
+          for i in {1..5}; do
+            if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
+              echo '✅ Aplicação funcionando!'
+              break
+            fi
+            echo \"Tentativa \$i/5 - aguardando 10s...\"
+            sleep 10
+          done
+          
+          # Verificação final
+          if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
+            echo '✅ Deploy COMPLETO concluído com sucesso!'
+          else
+            echo '❌ Aplicação não respondeu após 5 tentativas'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 10
+            exit 1
+          fi
+          
+          echo '✅ DEPLOY COMPLETO CONCLUÍDO!'
+          echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.PORT }}'
+        "
+
+    - name: 🎉 Sucesso
+      run: |
+        echo "🔧 MORIA PEÇAS E SERVIÇOS DEPLOYADO COM SUCESSO!"
+        echo "🔥 REBUILD COMPLETO EXECUTADO - TODOS OS ARQUIVOS ATUALIZADOS"
+        echo ""
+        echo "🔗 LINKS:"
+        echo "🌐 App: http://${{ env.VPS_HOST }}:${{ env.PORT }}"
+        echo "🔧 Peças: http://${{ env.VPS_HOST }}:${{ env.PORT }}/pecas"
+        echo "🛠️ Serviços: http://${{ env.VPS_HOST }}:${{ env.PORT }}/servicos"
+        echo "📊 Admin: http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin"
