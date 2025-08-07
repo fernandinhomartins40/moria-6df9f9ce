@@ -45,6 +45,13 @@ export const useServices = (initialFilters = {}) => {
     return execute(
       () => api.getServices(backendFilters),
       (result) => {
+        // Validar se result e result.data existem e é array
+        if (!result || !result.data || !Array.isArray(result.data)) {
+          console.warn('Dados de serviços inválidos:', result);
+          setServices([]);
+          return;
+        }
+        
         // Transformar dados do backend para formato do frontend existente
         const transformedServices = result.data.map((service, index) => ({
           id: service.id,

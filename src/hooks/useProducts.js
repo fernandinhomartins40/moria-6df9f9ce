@@ -39,6 +39,13 @@ export const useProducts = (initialFilters = {}) => {
     return execute(
       () => api.getProducts(backendFilters),
       (result) => {
+        // Validar se result e result.data existem e é array
+        if (!result || !result.data || !Array.isArray(result.data)) {
+          console.warn('Dados de produtos inválidos:', result);
+          setProducts([]);
+          return;
+        }
+        
         // Transformar dados do backend para formato do frontend
         const transformedProducts = result.data.map(product => ({
           id: product.id,
@@ -67,6 +74,12 @@ export const useProducts = (initialFilters = {}) => {
     return execute(
       () => api.getProduct(productId),
       (result) => {
+        // Validar se result e result.data existem
+        if (!result || !result.data) {
+          console.warn('Dados de produto inválidos:', result);
+          return null;
+        }
+        
         // Transformar produto individual
         const product = result.data;
         return {
@@ -136,6 +149,13 @@ export const useProduct = (productId) => {
     return execute(
       () => api.getProduct(productId),
       (result) => {
+        // Validar se result e result.data existem
+        if (!result || !result.data) {
+          console.warn('Dados de produto inválidos:', result);
+          setProduct(null);
+          return null;
+        }
+        
         const product = result.data;
         const transformedProduct = {
           id: product.id,
