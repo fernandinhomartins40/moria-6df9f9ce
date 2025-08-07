@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginDialog } from "./customer/LoginDialog";
+import { Link } from "react-router-dom";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,12 +13,12 @@ export function Header() {
   const { isAuthenticated, customer } = useAuth();
 
   const menuItems = [
-    { name: "Início", href: "#inicio" },
-    { name: "Serviços", href: "#servicos" },
-    { name: "Peças", href: "#pecas" },
-    { name: "Promoções", href: "#promocoes" },
-    { name: "Sobre", href: "#sobre" },
-    { name: "Contato", href: "#contato" },
+    { name: "Início", href: "#inicio", isLink: false },
+    { name: "Serviços", href: "#servicos", isLink: false },
+    { name: "Peças", href: "#pecas", isLink: false },
+    { name: "Promoções", href: "#promocoes", isLink: false },
+    { name: "Sobre", href: "/about", isLink: true },
+    { name: "Contato", href: "/contact", isLink: true },
   ];
 
   return (
@@ -36,13 +37,23 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             {menuItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-white hover:text-moria-orange transition-colors duration-300 font-medium"
-              >
-                {item.name}
-              </a>
+              item.isLink ? (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-white hover:text-moria-orange transition-colors duration-300 font-medium"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-white hover:text-moria-orange transition-colors duration-300 font-medium"
+                >
+                  {item.name}
+                </a>
+              )
             ))}
           </nav>
 
@@ -93,14 +104,25 @@ export function Header() {
           <div className="md:hidden py-4 border-t border-moria-orange/30">
             <nav className="flex flex-col space-y-2">
               {menuItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="text-white hover:text-moria-orange transition-colors duration-300 py-2 px-4 rounded"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
+                item.isLink ? (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-white hover:text-moria-orange transition-colors duration-300 py-2 px-4 rounded"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="text-white hover:text-moria-orange transition-colors duration-300 py-2 px-4 rounded"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                )
               ))}
             </nav>
             <div className="flex items-center justify-center space-x-4 mt-4 pt-4 border-t border-moria-orange/30">
