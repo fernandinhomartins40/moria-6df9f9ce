@@ -19,6 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAdminServices } from '../../hooks/useAdminServices.js';
+import { ServiceModal } from './ServiceModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +48,19 @@ export function AdminServicesSection({
     services,
     loading,
     error,
+    createLoading,
+    updateLoading,
     deleteLoading,
     fetchServices,
+    createService,
+    updateService,
     deleteService,
     toggleServiceStatus
   } = useAdminServices();
+
+  // Estados do modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState(null);
 
   // Estados do dialog de confirmação
   const [deleteDialog, setDeleteDialog] = useState({ open: false, serviceId: null, serviceName: '' });
@@ -88,6 +97,29 @@ export function AdminServicesSection({
   }, [services, searchTerm, statusFilter]);
 
   // Handlers
+  const handleOpenCreateModal = () => {
+    setEditingService(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (service) => {
+    setEditingService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingService(null);
+  };
+
+  const handleSaveService = async (serviceData) => {
+    if (editingService) {
+      await updateService(editingService.id, serviceData);
+    } else {
+      await createService(serviceData);
+    }
+  };
+
   const handleToggleStatus = async (serviceId, currentStatus) => {
     try {
       await toggleServiceStatus(serviceId, currentStatus);
@@ -152,9 +184,15 @@ export function AdminServicesSection({
               </Button>
               <Button 
                 size="sm" 
+                onClick={handleOpenCreateModal}
+                disabled={createLoading}
                 className="bg-moria-orange hover:bg-moria-orange/90 gap-2"
               >
-                <Plus className="h-4 w-4" />
+                {createLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Novo Serviço
               </Button>
             </div>
@@ -297,6 +335,8 @@ export function AdminServicesSection({
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleOpenEditModal(service)}
+                      disabled={updateLoading}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Editar
@@ -350,6 +390,15 @@ export function AdminServicesSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de serviço */}
+      <ServiceModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveService}
+        service={editingService}
+        loading={editingService ? updateLoading : createLoading}
+      />
     </div>
   );
 }

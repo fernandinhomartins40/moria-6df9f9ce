@@ -21,6 +21,7 @@ import {
   Star
 } from 'lucide-react';
 import { useAdminPromotions } from '../../hooks/useAdminPromotions.js';
+import { PromotionModal } from './PromotionModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,12 +50,20 @@ export function AdminPromotionsSection({
     promotions,
     loading,
     error,
+    createLoading,
+    updateLoading,
     deleteLoading,
     fetchPromotions,
+    createPromotion,
+    updatePromotion,
     deletePromotion,
     togglePromotionStatus,
     isPromotionActive
   } = useAdminPromotions();
+
+  // Estados do modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPromotion, setEditingPromotion] = useState(null);
 
   // Estados do dialog de confirmação
   const [deleteDialog, setDeleteDialog] = useState({ open: false, promotionId: null, promotionName: '' });
@@ -95,6 +104,29 @@ export function AdminPromotionsSection({
   }, [promotions, searchTerm, statusFilter, isPromotionActive]);
 
   // Handlers
+  const handleOpenCreateModal = () => {
+    setEditingPromotion(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (promotion) => {
+    setEditingPromotion(promotion);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingPromotion(null);
+  };
+
+  const handleSavePromotion = async (promotionData) => {
+    if (editingPromotion) {
+      await updatePromotion(editingPromotion.id, promotionData);
+    } else {
+      await createPromotion(promotionData);
+    }
+  };
+
   const handleToggleStatus = async (promotionId, currentStatus) => {
     try {
       await togglePromotionStatus(promotionId, currentStatus);
@@ -215,9 +247,15 @@ export function AdminPromotionsSection({
               </Button>
               <Button 
                 size="sm" 
+                onClick={handleOpenCreateModal}
+                disabled={createLoading}
                 className="bg-moria-orange hover:bg-moria-orange/90 gap-2"
               >
-                <Plus className="h-4 w-4" />
+                {createLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Nova Promoção
               </Button>
             </div>
@@ -384,6 +422,8 @@ export function AdminPromotionsSection({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleOpenEditModal(promotion)}
+                        disabled={updateLoading}
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Editar
@@ -438,6 +478,15 @@ export function AdminPromotionsSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de promoção */}
+      <PromotionModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSavePromotion}
+        promotion={editingPromotion}
+        loading={editingPromotion ? updateLoading : createLoading}
+      />
     </div>
   );
 }

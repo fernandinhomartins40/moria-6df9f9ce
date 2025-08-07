@@ -21,6 +21,7 @@ import {
   Copy
 } from 'lucide-react';
 import { useAdminCoupons } from '../../hooks/useAdminCoupons.js';
+import { CouponModal } from './CouponModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,11 +50,19 @@ export function AdminCouponsSection({
     coupons,
     loading,
     error,
+    createLoading,
+    updateLoading,
     deleteLoading,
     fetchCoupons,
+    createCoupon,
+    updateCoupon,
     deleteCoupon,
     toggleCouponStatus
   } = useAdminCoupons();
+
+  // Estados do modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
 
   // Estados do dialog de confirmação
   const [deleteDialog, setDeleteDialog] = useState({ open: false, couponId: null, couponCode: '' });
@@ -91,6 +100,29 @@ export function AdminCouponsSection({
   }, [coupons, searchTerm, statusFilter]);
 
   // Handlers
+  const handleOpenCreateModal = () => {
+    setEditingCoupon(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (coupon) => {
+    setEditingCoupon(coupon);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingCoupon(null);
+  };
+
+  const handleSaveCoupon = async (couponData) => {
+    if (editingCoupon) {
+      await updateCoupon(editingCoupon.id, couponData);
+    } else {
+      await createCoupon(couponData);
+    }
+  };
+
   const handleToggleStatus = async (couponId, currentStatus) => {
     try {
       await toggleCouponStatus(couponId, currentStatus);
@@ -192,9 +224,15 @@ export function AdminCouponsSection({
               </Button>
               <Button 
                 size="sm" 
+                onClick={handleOpenCreateModal}
+                disabled={createLoading}
                 className="bg-moria-orange hover:bg-moria-orange/90 gap-2"
               >
-                <Plus className="h-4 w-4" />
+                {createLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Novo Cupom
               </Button>
             </div>
@@ -364,6 +402,8 @@ export function AdminCouponsSection({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleOpenEditModal(coupon)}
+                        disabled={updateLoading}
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Editar
@@ -418,6 +458,15 @@ export function AdminCouponsSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de cupom */}
+      <CouponModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveCoupon}
+        coupon={editingCoupon}
+        loading={editingCoupon ? updateLoading : createLoading}
+      />
     </div>
   );
 }
