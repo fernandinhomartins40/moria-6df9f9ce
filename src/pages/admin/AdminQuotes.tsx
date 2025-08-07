@@ -31,110 +31,77 @@ import {
   Eye,
   Filter,
   MessageSquare,
-  Truck,
+  FileText,
+  Clock,
   CheckCircle,
   XCircle,
   Link,
 } from "lucide-react";
 
-// Mock data
-const orders = [
+// Mock data para demonstração
+const quotes = [
   {
-    id: "P1704634800000",
+    id: "O1704634800000",
     sessionId: "1704634800000",
     customer: "Carlos Silva",
     customerPhone: "(11) 91234-5678",
     items: [
-      { name: "Filtro de Óleo", quantity: 1, price: 29.90 },
-      { name: "Vela de Ignição", quantity: 4, price: 15.50 },
+      { name: "Troca de Óleo", quantity: 1, description: "Troca de óleo sintético 5W30" },
+      { name: "Balanceamento", quantity: 4, description: "Balanceamento das 4 rodas" },
     ],
-    total: 91.90,
     status: "Pendente",
-    hasLinkedQuote: true,
+    hasLinkedOrder: true,
     date: "2025-01-07",
     time: "14:30",
-    address: "Rua das Flores, 123 - São Paulo, SP",
   },
   {
-    id: "#12345",
-    customer: "João Silva",
-    customerPhone: "(11) 99999-9999",
-    items: [
-      { name: "Filtro de Óleo", quantity: 1, price: 29.90 },
-      { name: "Vela de Ignição", quantity: 4, price: 15.50 },
-    ],
-    total: 91.90,
-    status: "Pendente",
-    hasLinkedQuote: false,
-    date: "2025-01-07",
-    time: "10:30",
-    address: "Rua das Flores, 123 - São Paulo, SP",
-  },
-  {
-    id: "#12344",
+    id: "O1704634700000",
+    sessionId: "1704634700000",
     customer: "Maria Santos",
-    customerPhone: "(11) 88888-8888",
+    customerPhone: "(11) 98765-4321",
     items: [
-      { name: "Kit de Freio Dianteiro", quantity: 1, price: 245.50 },
+      { name: "Revisão Completa", quantity: 1, description: "Revisão geral do motor e suspensão" },
     ],
-    total: 245.50,
-    status: "Confirmado",
-    hasLinkedQuote: false,
+    status: "Em Análise",
+    hasLinkedOrder: false,
     date: "2025-01-07",
-    time: "09:15",
-    address: "Av. Paulista, 456 - São Paulo, SP",
+    time: "13:15",
   },
   {
-    id: "#12343",
-    customer: "Pedro Costa",
-    customerPhone: "(11) 77777-7777",
+    id: "O1704634600000",
+    sessionId: "1704634600000",
+    customer: "João Costa",
+    customerPhone: "(11) 95555-5555",
     items: [
-      { name: "Óleo Motor 5W30", quantity: 1, price: 67.90 },
+      { name: "Pintura Completa", quantity: 1, description: "Pintura completa do veículo cor prata" },
     ],
-    total: 67.90,
-    status: "Entregue",
-    hasLinkedQuote: false,
+    status: "Orçado",
+    hasLinkedOrder: false,
     date: "2025-01-06",
-    time: "16:45",
-    address: "Rua Augusta, 789 - São Paulo, SP",
-  },
-  {
-    id: "#12342",
-    customer: "Ana Paula",
-    customerPhone: "(11) 66666-6666",
-    items: [
-      { name: "Bateria 60Ah", quantity: 1, price: 299.90 },
-      { name: "Alternador", quantity: 1, price: 156.90 },
-    ],
-    total: 456.80,
-    status: "Cancelado",
-    hasLinkedQuote: false,
-    date: "2025-01-06",
-    time: "14:20",
-    address: "Rua da Consolação, 321 - São Paulo, SP",
+    time: "10:45",
   },
 ];
 
-const statusOptions = ["Todos", "Pendente", "Confirmado", "Entregue", "Cancelado"];
+const statusOptions = ["Todos", "Pendente", "Em Análise", "Orçado", "Aprovado", "Rejeitado"];
 
-const AdminOrders = () => {
+const AdminQuotes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<typeof quotes[0] | null>(null);
+
+  // Simular busca de pedidos vinculados
+  const getLinkedOrder = (sessionId: string) => {
+    const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
+    return orders.find((order: any) => order.sessionId === sessionId);
+  };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      Pendente: "default",
-      Confirmado: "secondary",
-      Entregue: "default",
-      Cancelado: "destructive",
-    } as const;
-
     const colors = {
       Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      Confirmado: "bg-blue-100 text-blue-800 border-blue-300",
-      Entregue: "bg-green-100 text-green-800 border-green-300",
-      Cancelado: "bg-red-100 text-red-800 border-red-300",
+      "Em Análise": "bg-blue-100 text-blue-800 border-blue-300",
+      Orçado: "bg-purple-100 text-purple-800 border-purple-300",
+      Aprovado: "bg-green-100 text-green-800 border-green-300",
+      Rejeitado: "bg-red-100 text-red-800 border-red-300",
     };
 
     return (
@@ -146,45 +113,47 @@ const AdminOrders = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Confirmado":
-        return <CheckCircle className="h-4 w-4 text-blue-600" />;
-      case "Entregue":
+      case "Em Análise":
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      case "Orçado":
+        return <FileText className="h-4 w-4 text-purple-600" />;
+      case "Aprovado":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "Cancelado":
+      case "Rejeitado":
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Truck className="h-4 w-4 text-yellow-600" />;
+        return <Clock className="h-4 w-4 text-yellow-600" />;
     }
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !selectedStatus || selectedStatus === "Todos" || order.status === selectedStatus;
+      quote.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      quote.customer.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !selectedStatus || selectedStatus === "Todos" || quote.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const handleWhatsApp = (order: typeof orders[0]) => {
-    const message = `Olá ${order.customer}! Seu pedido ${order.id} foi atualizado. Como podemos ajudar?`;
-    const phone = order.customerPhone.replace(/\D/g, '');
+  const handleWhatsApp = (quote: typeof quotes[0]) => {
+    const message = `Olá ${quote.customer}! Sobre seu orçamento ${quote.id}, como podemos ajudar?`;
+    const phone = quote.customerPhone.replace(/\D/g, '');
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Pedidos</h1>
+        <h1 className="text-3xl font-bold text-foreground">Orçamentos</h1>
         <p className="text-muted-foreground">
-          Gerencie todos os pedidos realizados na sua loja
+          Gerencie todas as solicitações de orçamento da sua loja
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Pedidos</CardTitle>
+          <CardTitle>Lista de Orçamentos</CardTitle>
           <CardDescription>
-            {filteredOrders.length} pedidos encontrados
+            {filteredQuotes.length} orçamentos encontrados
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,10 +183,9 @@ const AdminOrders = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pedido</TableHead>
+                <TableHead>Orçamento</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Itens</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>Serviços</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Vinculação</TableHead>
@@ -225,42 +193,39 @@ const AdminOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+              {filteredQuotes.map((quote) => (
+                <TableRow key={quote.id}>
+                  <TableCell className="font-medium">#{quote.id}</TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{order.customer}</div>
+                      <div className="font-medium">{quote.customer}</div>
                       <div className="text-sm text-muted-foreground">
-                        {order.customerPhone}
+                        {quote.customerPhone}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
+                      {quote.items.length} {quote.items.length === 1 ? 'serviço' : 'serviços'}
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    R$ {order.total.toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {getStatusIcon(order.status)}
-                      {getStatusBadge(order.status)}
+                      {getStatusIcon(quote.status)}
+                      {getStatusBadge(quote.status)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div>{new Date(order.date).toLocaleDateString('pt-BR')}</div>
-                      <div className="text-sm text-muted-foreground">{order.time}</div>
+                      <div>{new Date(quote.date).toLocaleDateString('pt-BR')}</div>
+                      <div className="text-sm text-muted-foreground">{quote.time}</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {order.hasLinkedQuote ? (
-                      <div className="flex items-center gap-1 text-orange-600">
+                    {quote.hasLinkedOrder ? (
+                      <div className="flex items-center gap-1 text-blue-600">
                         <Link className="h-3 w-3" />
-                        <span className="text-xs">Com orçamento</span>
+                        <span className="text-xs">Com pedido</span>
                       </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">Independente</span>
@@ -273,75 +238,68 @@ const AdminOrders = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => setSelectedQuote(quote)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Detalhes do Pedido {selectedOrder?.id}</DialogTitle>
+                            <DialogTitle>Detalhes do Orçamento #{selectedQuote?.id}</DialogTitle>
                             <DialogDescription>
-                              Informações completas do pedido
+                              Informações completas do orçamento
                             </DialogDescription>
                           </DialogHeader>
-                          {selectedOrder && (
+                          {selectedQuote && (
                             <div className="space-y-4">
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <h4 className="font-medium">Cliente</h4>
-                                  <p>{selectedOrder.customer}</p>
+                                  <p>{selectedQuote.customer}</p>
                                   <p className="text-sm text-muted-foreground">
-                                    {selectedOrder.customerPhone}
+                                    {selectedQuote.customerPhone}
                                   </p>
                                 </div>
                                 <div>
                                   <h4 className="font-medium">Status</h4>
                                   <div className="flex items-center gap-2">
-                                    {getStatusIcon(selectedOrder.status)}
-                                    {getStatusBadge(selectedOrder.status)}
+                                    {getStatusIcon(selectedQuote.status)}
+                                    {getStatusBadge(selectedQuote.status)}
                                   </div>
                                 </div>
                               </div>
                               
-                              {selectedOrder.hasLinkedQuote && (
-                                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                  <div className="flex items-center gap-2 text-orange-700">
+                              {selectedQuote.hasLinkedOrder && (
+                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="flex items-center gap-2 text-blue-700">
                                     <Link className="h-4 w-4" />
                                     <span className="font-medium text-sm">
-                                      Este cliente também possui um orçamento vinculado: #O{selectedOrder.sessionId}
+                                      Este cliente também possui um pedido vinculado: #P{selectedQuote.sessionId}
                                     </span>
                                   </div>
                                 </div>
                               )}
                               
                               <div>
-                                <h4 className="font-medium mb-2">Endereço de Entrega</h4>
-                                <p className="text-sm">{selectedOrder.address}</p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium mb-2">Itens do Pedido</h4>
+                                <h4 className="font-medium mb-2">Serviços Solicitados</h4>
                                 <div className="space-y-2">
-                                  {selectedOrder.items.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
-                                      <div>
-                                        <span className="font-medium">{item.name}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">
-                                          Qtd: {item.quantity}
-                                        </span>
+                                  {selectedQuote.items.map((item, index) => (
+                                    <div key={index} className="p-3 bg-muted rounded border">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                          <span className="font-medium">{item.name}</span>
+                                          <span className="text-sm text-muted-foreground ml-2">
+                                            Qtd: {item.quantity}
+                                          </span>
+                                          {item.description && (
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                              {item.description}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
-                                      <span className="font-medium">
-                                        R$ {(item.price * item.quantity).toFixed(2)}
-                                      </span>
                                     </div>
                                   ))}
-                                  <div className="flex justify-between items-center p-2 border-t">
-                                    <span className="font-bold">Total</span>
-                                    <span className="font-bold text-lg">
-                                      R$ {selectedOrder.total.toFixed(2)}
-                                    </span>
-                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -352,7 +310,7 @@ const AdminOrders = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => handleWhatsApp(order)}
+                        onClick={() => handleWhatsApp(quote)}
                         className="text-green-600"
                       >
                         <MessageSquare className="h-4 w-4" />
@@ -369,4 +327,4 @@ const AdminOrders = () => {
   );
 };
 
-export default AdminOrders;
+export default AdminQuotes;

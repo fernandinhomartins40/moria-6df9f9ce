@@ -19,12 +19,14 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  FileText,
 } from "lucide-react";
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Produtos", url: "/admin/products", icon: Package },
   { title: "Pedidos", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Orçamentos", url: "/admin/quotes", icon: FileText },
   { title: "Clientes", url: "/admin/customers", icon: Users },
   { title: "Promoções", url: "/admin/promotions", icon: Tag },
   { title: "Relatórios", url: "/admin/reports", icon: BarChart3 },

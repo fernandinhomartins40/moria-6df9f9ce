@@ -79,54 +79,99 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     return user;
   };
 
-  const createOrder = async (user: any) => {
-    const order = {
-      id: Date.now().toString(),
-      userId: user.id,
-      customerName: user.name,
-      customerWhatsApp: user.whatsapp,
-      items: items.map(item => ({
-        ...item,
-        subtotal: item.price * item.quantity
-      })),
-      total: totalPrice,
-      hasProducts: items.some(item => item.type !== 'service'),
-      hasServices: items.some(item => item.type === 'service'),
-      status: items.some(item => item.type === 'service') ? 'quote_requested' : 'pending',
-      createdAt: new Date().toISOString(),
-      source: 'website'
-    };
+  const createOrderAndQuote = async (user: any) => {
+    const sessionId = Date.now().toString(); // ID único para vincular pedido e orçamento
+    const products = items.filter(item => item.type !== 'service');
+    const services = items.filter(item => item.type === 'service');
+    
+    const results = { order: null, quote: null };
 
-    // Salva no localStorage (simula backend)
-    const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-    orders.push(order);
-    localStorage.setItem('store_orders', JSON.stringify(orders));
+    // Criar pedido apenas se houver produtos
+    if (products.length > 0) {
+      const productTotal = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      const order = {
+        id: `P${sessionId}`,
+        sessionId,
+        userId: user.id,
+        customerName: user.name,
+        customerWhatsApp: user.whatsapp,
+        items: products.map(item => ({
+          ...item,
+          subtotal: item.price * item.quantity
+        })),
+        total: productTotal,
+        type: 'order',
+        status: 'pending',
+        hasLinkedQuote: services.length > 0,
+        createdAt: new Date().toISOString(),
+        source: 'website'
+      };
 
-    return order;
+      const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
+      orders.push(order);
+      localStorage.setItem('store_orders', JSON.stringify(orders));
+      results.order = order;
+    }
+
+    // Criar orçamento apenas se houver serviços
+    if (services.length > 0) {
+      const quote = {
+        id: `O${sessionId}`,
+        sessionId,
+        userId: user.id,
+        customerName: user.name,
+        customerWhatsApp: user.whatsapp,
+        items: services.map(item => ({
+          ...item,
+          quantity: item.quantity,
+          description: item.description || ''
+        })),
+        type: 'quote',
+        status: 'pending',
+        hasLinkedOrder: products.length > 0,
+        createdAt: new Date().toISOString(),
+        source: 'website'
+      };
+
+      const quotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
+      quotes.push(quote);
+      localStorage.setItem('store_quotes', JSON.stringify(quotes));
+      results.quote = quote;
+    }
+
+    return results;
   };
 
-  const generateWhatsAppMessage = (order: any) => {
-    const hasProducts = order.hasProducts;
-    const hasServices = order.hasServices;
+  const generateWhatsAppMessage = (results: { order: any, quote: any }) => {
+    const { order, quote } = results;
     
     let message = `🔧 *Moria Peças e Serviços*\n`;
-    message += `👤 *Cliente:* ${order.customerName}\n`;
-    message += `📞 *WhatsApp:* ${order.customerWhatsApp}\n`;
-    message += `📋 *Pedido:* #${order.id}\n\n`;
+    message += `👤 *Cliente:* ${order?.customerName || quote?.customerName}\n`;
+    message += `📞 *WhatsApp:* ${order?.customerWhatsApp || quote?.customerWhatsApp}\n`;
+    
+    if (order && quote) {
+      message += `📋 *Pedido:* #${order.id} | *Orçamento:* #${quote.id}\n\n`;
+    } else if (order) {
+      message += `📋 *Pedido:* #${order.id}\n\n`;
+    } else if (quote) {
+      message += `📋 *Orçamento:* #${quote.id}\n\n`;
+    }
 
-    if (hasProducts) {
+    if (order) {
       message += `🛒 *PRODUTOS:*\n`;
-      order.items.filter((item: any) => item.type !== 'service').forEach((item: any, index: number) => {
+      order.items.forEach((item: any, index: number) => {
         message += `${index + 1}. ${item.name}\n`;
         message += `   • Quantidade: ${item.quantity}x\n`;
         message += `   • Valor: ${formatPrice(item.price)}\n`;
         message += `   • Subtotal: ${formatPrice(item.subtotal)}\n\n`;
       });
+      message += `💰 *Total dos Produtos: ${formatPrice(order.total)}*\n\n`;
     }
 
-    if (hasServices) {
+    if (quote) {
       message += `🔧 *SERVIÇOS (Orçamento):*\n`;
-      order.items.filter((item: any) => item.type === 'service').forEach((item: any, index: number) => {
+      quote.items.forEach((item: any, index: number) => {
         message += `${index + 1}. ${item.name}\n`;
         if (item.description) {
           message += `   • Descrição: ${item.description}\n`;
@@ -135,18 +180,14 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       });
     }
 
-    if (hasProducts) {
-      message += `💰 *Total dos Produtos: ${formatPrice(totalPrice)}*\n\n`;
-    }
-
-    if (hasServices && hasProducts) {
-      message += `📋 Este pedido contém produtos com valores definidos e serviços que precisam de orçamento.\n\n`;
-    } else if (hasServices) {
+    if (order && quote) {
+      message += `📋 Este cliente possui produtos para compra e serviços que precisam de orçamento.\n\n`;
+    } else if (quote) {
       message += `📋 Solicitação de orçamento para os serviços listados acima.\n\n`;
     }
 
     message += `🕒 *Data:* ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
-    message += `Gostaria de confirmar este pedido${hasServices ? ' e receber o orçamento' : ''}. Aguardo retorno!`;
+    message += `Gostaria de confirmar${order ? ' este pedido' : ''}${order && quote ? ' e receber o orçamento' : quote ? ' o orçamento' : ''}. Aguardo retorno!`;
 
     return encodeURIComponent(message);
   };
@@ -170,11 +211,11 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       // 1. Criar usuário provisório
       const user = await createProvisionalUser(form.name, form.whatsapp);
       
-      // 2. Criar pedido
-      const order = await createOrder(user);
+      // 2. Criar pedido e/ou orçamento
+      const results = await createOrderAndQuote(user);
       
       // 3. Gerar mensagem do WhatsApp
-      const message = generateWhatsAppMessage(order);
+      const message = generateWhatsAppMessage(results);
       const whatsappNumber = "5511999999999"; // Número da loja
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
       

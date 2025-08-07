@@ -9,6 +9,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminQuotes from "./pages/admin/AdminQuotes";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminReports from "./pages/admin/AdminReports";
@@ -35,6 +36,7 @@ const App = () => (
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="quotes" element={<AdminQuotes />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="promotions" element={<AdminPromotions />} />
             <Route path="reports" element={<AdminReports />} />
