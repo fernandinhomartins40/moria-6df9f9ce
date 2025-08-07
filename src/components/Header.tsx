@@ -21,13 +21,13 @@ export function Header({ cartItems }: HeaderProps) {
   return (
     <header className="bg-moria-black text-white sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-28">
           {/* Logo */}
           <div className="flex-shrink-0">
             <img 
               src="/logo_moria.png" 
               alt="Moria Peças e Serviços" 
-              className="h-16 w-auto"
+              className="h-20 w-auto"
             />
           </div>
 
