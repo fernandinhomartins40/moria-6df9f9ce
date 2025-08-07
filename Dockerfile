@@ -16,7 +16,14 @@ RUN npm ci
 COPY . .
 
 # Limpar cache e build da aplicação
-RUN rm -rf dist node_modules/.vite && npm run build
+RUN rm -rf dist node_modules/.vite .cache && \
+    echo "🗂️ Arquivos TypeScript/TSX encontrados:" && \
+    find src -name "*.tsx" -o -name "*.ts" | grep -E "(AdminQuotes|AdminSidebar|App)" && \
+    npm run build && \
+    echo "✅ Build concluído. Verificando arquivos gerados:" && \
+    ls -la dist/ && \
+    echo "📋 index.html contém 'quotes'?" && \
+    grep -q "quotes" dist/index.html && echo "✅ Rota quotes encontrada" || echo "⚠️ Rota quotes NÃO encontrada"
 
 # Estágio de produção com Nginx
 FROM nginx:alpine
