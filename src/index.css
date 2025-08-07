@@ -157,10 +157,10 @@ All colors MUST be HSL.
   /* Metallic effect for gold elements */
   .gold-metallic {
     background: var(--gradient-gold);
-    box-shadow: var(--shadow-gold);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px hsla(var(--gold-accent) / 0.3));
   }
   
   .gold-metallic-bg {
