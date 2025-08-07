@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { CheckoutDialog } from "./CheckoutDialog";
+import { CheckoutDrawer } from "./CheckoutDrawer";
 import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package } from "lucide-react";
 
 export function CartDrawer() {
@@ -172,9 +172,9 @@ export function CartDrawer() {
 
               {/* Footer */}
               <div className="sticky bottom-0 bg-white border-t">
-                <div className="p-6 space-y-4">
+                <div className="p-4 space-y-3">
                   {/* Summary */}
-                  <div className="bg-muted rounded-xl p-4 space-y-3">
+                  <div className="bg-muted rounded-lg p-3 space-y-2">
                     <div className="space-y-2">
                       {hasProducts && (
                         <div className="flex justify-between items-center text-sm">
@@ -209,30 +209,32 @@ export function CartDrawer() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <Button
                       onClick={() => setShowCheckout(true)}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl"
-                      size="lg"
+                      className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg"
+                      size="sm"
                     >
-                      <MessageCircle className="w-5 h-5 mr-2" />
+                      <MessageCircle className="w-4 h-4 mr-2" />
                       Finalizar {hasServices && hasProducts ? 'Pedido e Orçamento' : hasServices ? 'Orçamento' : 'Compra'}
                     </Button>
                     
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         onClick={clearCart}
-                        className="flex-1 h-10 rounded-xl"
+                        className="flex-1 h-9 rounded-lg text-sm"
+                        size="sm"
                       >
-                        Limpar Carrinho
+                        Limpar
                       </Button>
                       <Button
                         variant="outline"
                         onClick={closeCart}
-                        className="flex-1 h-10 rounded-xl"
+                        className="flex-1 h-9 rounded-lg text-sm"
+                        size="sm"
                       >
-                        Continuar Comprando
+                        Continuar
                       </Button>
                     </div>
                   </div>
@@ -243,7 +245,7 @@ export function CartDrawer() {
         </div>
       </SheetContent>
       
-      <CheckoutDialog 
+      <CheckoutDrawer 
         open={showCheckout} 
         onOpenChange={setShowCheckout}
       />

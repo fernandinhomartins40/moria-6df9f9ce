@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface CheckoutDialogProps {
+interface CheckoutDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -29,7 +29,7 @@ interface CheckoutForm {
   whatsapp: string;
 }
 
-export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
+export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart } = useCart();
   const [form, setForm] = useState<CheckoutForm>({ name: "", whatsapp: "" });
   const [isLoading, setIsLoading] = useState(false);
@@ -211,40 +211,42 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
   if (isSuccess) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
-          <div className="text-center py-8 space-y-4">
-            <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold">Pedido Processado!</h3>
-              <p className="text-muted-foreground">
-                Redirecionando para o WhatsApp...
-              </p>
-            </div>
-            <div className="flex items-center justify-center space-x-1">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Abrindo WhatsApp</span>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-md">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-6">
+              <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
+                <CheckCircle className="h-10 w-10 text-green-600" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold">Pedido Processado!</h3>
+                <p className="text-muted-foreground">
+                  Redirecionando para o WhatsApp...
+                </p>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <Loader2 className="h-5 w-5 animate-spin text-moria-orange" />
+                <span className="text-sm font-medium">Abrindo WhatsApp</span>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-2xl flex flex-col p-0">
+        <SheetHeader className="p-6 pb-4">
+          <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-moria-orange" />
             Finalizar Pedido
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             Preencha seus dados para finalizar o pedido via WhatsApp
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <div className="flex-1 overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full p-6 pt-0">
@@ -406,7 +408,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
