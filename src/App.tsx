@@ -13,6 +13,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import CustomerPanel from "./pages/CustomerPanel";
 import { NotificationContainer } from "./components/NotificationContainer";
+import { ToastContainer } from "./components/ui/toast-custom";
 import { ApiStatus } from "./components/ApiStatus";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <NotificationContainer />
+            <ToastContainer />
             <ApiStatus className="fixed top-4 right-4 z-50 max-w-md" />
             <BrowserRouter>
               <Routes>

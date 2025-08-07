@@ -37,6 +37,7 @@ import {
   BarChart3,
   FileText
 } from "lucide-react";
+import { AdminProductsSection } from './AdminProductsSection';
 
 interface StoreOrder {
   id: string;
@@ -2416,7 +2417,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     case 'customers':
       return renderCustomers();
     case 'products':
-      return renderProducts();
+      return (
+        <AdminProductsSection 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      );
     case 'services':
       return renderServices();
     case 'coupons':
