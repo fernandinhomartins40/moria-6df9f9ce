@@ -7,7 +7,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Configurações
-const DB_PATH = path.join(__dirname, '../prisma/prisma/database.db');
+const DB_PATH = path.join(__dirname, '../prisma/database.db');
 const BACKUP_DIR = path.join(__dirname, '../backups');
 const BACKUP_ENABLED = process.env.BACKUP_ENABLED === 'true';
 const BACKUP_INTERVAL_HOURS = parseInt(process.env.BACKUP_INTERVAL_HOURS) || 24;

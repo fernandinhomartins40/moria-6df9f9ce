@@ -31,7 +31,9 @@
       "Bash(npx prisma migrate dev:*)",
       "Bash(npm start)",
       "Bash(npx prisma db seed:*)",
-      "Bash(npx prisma db execute:*)"
+      "Bash(npx prisma db execute:*)",
+      "Bash(PORT=3082 node src/server.js)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

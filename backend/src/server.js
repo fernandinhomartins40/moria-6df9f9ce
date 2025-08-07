@@ -93,7 +93,7 @@ async function startServer() {
     // Conectar ao banco primeiro
     await connectDatabase();
     
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('🚀 ========================================');
       console.log(`📱 ${process.env.APP_NAME || 'Moria Backend'}`);
       console.log(`👤 Cliente: ${process.env.CLIENT_NAME || 'Desenvolvimento'}`);
@@ -105,6 +105,10 @@ async function startServer() {
         console.log(`⚛️  Frontend Dev: http://localhost:8080`);
       }
       console.log('========================================');
+    });
+    
+    server.on('error', (err) => {
+      console.error('❌ Erro no servidor:', err);
     });
   } catch (error) {
     console.error('❌ Erro ao iniciar servidor:', error.message);

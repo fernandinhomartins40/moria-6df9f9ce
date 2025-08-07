@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getServices } from '../services/api.js';
+import api from '../services/api.js';
 import { useApi } from './useApi.js';
 
 /**
@@ -43,7 +43,7 @@ export const useServices = (initialFilters = {}) => {
     }
 
     return execute(
-      () => getServices(backendFilters),
+      () => api.getServices(backendFilters),
       (result) => {
         // Transformar dados do backend para formato do frontend existente
         const transformedServices = result.data.map((service, index) => ({

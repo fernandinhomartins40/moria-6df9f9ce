@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getProducts, getProduct } from '../services/api.js';
+import api from '../services/api.js';
 import { useApi } from './useApi.js';
 
 /**
@@ -37,7 +37,7 @@ export const useProducts = (initialFilters = {}) => {
     }
 
     return execute(
-      () => getProducts(backendFilters),
+      () => api.getProducts(backendFilters),
       (result) => {
         // Transformar dados do backend para formato do frontend
         const transformedProducts = result.data.map(product => ({
@@ -65,7 +65,7 @@ export const useProducts = (initialFilters = {}) => {
   // Buscar produto específico
   const fetchProduct = useCallback(async (productId) => {
     return execute(
-      () => getProduct(productId),
+      () => api.getProduct(productId),
       (result) => {
         // Transformar produto individual
         const product = result.data;
@@ -134,7 +134,7 @@ export const useProduct = (productId) => {
     if (!productId) return;
     
     return execute(
-      () => getProduct(productId),
+      () => api.getProduct(productId),
       (result) => {
         const product = result.data;
         const transformedProduct = {
