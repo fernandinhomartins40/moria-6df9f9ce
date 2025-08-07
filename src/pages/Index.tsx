@@ -7,21 +7,24 @@ import { Promotions } from "../components/Promotions";
 import { Footer } from "../components/Footer";
 import { CartDrawer } from "../components/CartDrawer";
 import { CartProvider } from "../contexts/CartContext";
+import { AuthProvider } from "../contexts/AuthContext";
 
 const Index = () => {
   return (
-    <CartProvider>
-      <div className="min-h-screen">
-        <Header />
-        <Marquee />
-        <Hero />
-        <Services />
-        <Products />
-        <Promotions />
-        <Footer />
-        <CartDrawer />
-      </div>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen">
+          <Header />
+          <Marquee />
+          <Hero />
+          <Services />
+          <Products />
+          <Promotions />
+          <Footer />
+          <CartDrawer />
+        </div>
+      </CartProvider>
+    </AuthProvider>
   );
 };
 
