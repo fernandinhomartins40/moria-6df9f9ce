@@ -1,6 +1,7 @@
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { useCart } from "../contexts/CartContext";
+import { useServices } from "../hooks/useServices.js";
 import { 
   Wrench, 
   Droplets, 
@@ -10,68 +11,32 @@ import {
   Zap,
   Clock,
   Shield,
-  Plus
+  Plus,
+  Target,
+  RotateCcw
 } from "lucide-react";
 
-const services = [
-  {
-    id: 101,
-    icon: Wrench,
-    title: "Manutenção Preventiva",
-    description: "Revisões completas para manter seu veículo sempre em perfeito estado",
-    features: ["Revisão geral", "Checklist completo", "Relatório detalhado"],
-    price: "A partir de R$ 150",
-    category: "Manutenção"
-  },
-  {
-    id: 102,
-    icon: Droplets,
-    title: "Troca de Óleo",
-    description: "Óleos originais e de qualidade para prolongar a vida do motor",
-    features: ["Óleos premium", "Filtros inclusos", "Descarte ecológico"],
-    price: "A partir de R$ 80",
-    category: "Manutenção"
-  },
-  {
-    id: 103,
-    icon: Search,
-    title: "Diagnóstico Eletrônico",
-    description: "Equipamentos modernos para identificar problemas com precisão",
-    features: ["Scanner profissional", "Relatório técnico", "Solução rápida"],
-    price: "A partir de R$ 50",
-    category: "Diagnóstico"
-  },
-  {
-    id: 104,
-    icon: Disc,
-    title: "Freios e Suspensão",
-    description: "Segurança em primeiro lugar com serviços especializados",
-    features: ["Pastilhas originais", "Fluido de freio", "Teste de segurança"],
-    price: "A partir de R$ 200",
-    category: "Segurança"
-  },
-  {
-    id: 105,
-    icon: Snowflake,
-    title: "Ar Condicionado",
-    description: "Climatização perfeita para seu conforto em qualquer época",
-    features: ["Higienização", "Recarga de gás", "Troca de filtros"],
-    price: "A partir de R$ 120",
-    category: "Conforto"
-  },
-  {
-    id: 106,
-    icon: Zap,
-    title: "Sistema Elétrico",
-    description: "Especialistas em problemas elétricos e eletrônicos",
-    features: ["Diagnóstico avançado", "Reparo de chicotes", "Atualização ECU"],
-    price: "A partir de R$ 100",
-    category: "Elétrica"
-  }
-];
+// Dados mock removidos - agora usa dados reais do SQLite via useServices hook
+
+// Mapeamento de ícones para compatibilidade
+const iconMap: Record<string, any> = {
+  'Droplets': Droplets,
+  'Wrench': Wrench,
+  'Search': Search,
+  'Disc': Disc,
+  'Snowflake': Snowflake,
+  'Zap': Zap,
+  'Target': Target,
+  'RotateCcw': RotateCcw
+};
 
 export function Services() {
   const { addItem, openCart } = useCart();
+  
+  // Usar dados reais da API do SQLite
+  const { services: apiServices, loading, error } = useServices({
+    active: true
+  });
 
   const handleAddService = (service: any) => {
     addItem({
@@ -85,6 +50,9 @@ export function Services() {
     });
     openCart();
   };
+
+  // Usar serviços da API (dados reais do SQLite)
+  const servicesToShow = error ? [] : apiServices;
   return (
     <section id="servicos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -99,39 +67,42 @@ export function Services() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <Card key={index} className="bg-card-dark text-card-dark-foreground p-6 hover-lift border-moria-orange/20 hover:border-moria-orange/50 transition-all duration-300">
-              <div className="flex items-center mb-4">
-                <div className="gold-metallic-bg p-3 rounded-full mr-4">
-                  <service.icon className="h-6 w-6 text-moria-black" />
+          {servicesToShow.map((service, index) => {
+            const IconComponent = iconMap[service.icon] || Wrench;
+            return (
+              <Card key={service.id} className="bg-card-dark text-card-dark-foreground p-6 hover-lift border-moria-orange/20 hover:border-moria-orange/50 transition-all duration-300">
+                <div className="flex items-center mb-4">
+                  <div className="gold-metallic-bg p-3 rounded-full mr-4">
+                    <IconComponent className="h-6 w-6 text-moria-black" />
+                  </div>
+                  <h3 className="text-xl font-bold">{service.title}</h3>
                 </div>
-                <h3 className="text-xl font-bold">{service.title}</h3>
-              </div>
-              
-              <p className="text-gray-300 mb-4">{service.description}</p>
-              
-              <ul className="space-y-2 mb-6">
-                {service.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center text-sm text-gray-400">
-                    <div className="w-2 h-2 bg-moria-orange rounded-full mr-2"></div>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+                
+                <p className="text-gray-300 mb-4">{service.description}</p>
+                
+                <ul className="space-y-2 mb-6">
+                  {service.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-sm text-gray-400">
+                      <div className="w-2 h-2 bg-moria-orange rounded-full mr-2"></div>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
 
-              <div className="flex items-center justify-between">
-                <span className="text-moria-orange font-bold">{service.price}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleAddService(service)}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Solicitar Orçamento
-                </Button>
-              </div>
-            </Card>
-          ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-moria-orange font-bold">{service.price}</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleAddService(service)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Solicitar Orçamento
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Trust Indicators */}

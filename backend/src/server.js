@@ -5,6 +5,7 @@ const helmet = require('helmet');
 require('dotenv').config();
 
 const apiRoutes = require('./routes/api');
+const { connectDatabase } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3081;
@@ -86,18 +87,31 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint não encontrado' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('🚀 ========================================');
-  console.log(`📱 ${process.env.APP_NAME || 'Moria Backend'}`);
-  console.log(`👤 Cliente: ${process.env.CLIENT_NAME || 'Desenvolvimento'}`);
-  console.log(`🌍 Ambiente: ${NODE_ENV}`);
-  console.log(`🔗 Servidor: http://localhost:${PORT}`);
-  console.log(`📡 APIs: http://localhost:${PORT}/api`);
-  if (NODE_ENV === 'development') {
-    console.log(`⚛️  Frontend Dev: http://localhost:8080`);
+// Start server with database connection
+async function startServer() {
+  try {
+    // Conectar ao banco primeiro
+    await connectDatabase();
+    
+    app.listen(PORT, () => {
+      console.log('🚀 ========================================');
+      console.log(`📱 ${process.env.APP_NAME || 'Moria Backend'}`);
+      console.log(`👤 Cliente: ${process.env.CLIENT_NAME || 'Desenvolvimento'}`);
+      console.log(`🌍 Ambiente: ${NODE_ENV}`);
+      console.log(`💾 Banco: SQLite (database.db)`);
+      console.log(`🔗 Servidor: http://localhost:${PORT}`);
+      console.log(`📡 APIs: http://localhost:${PORT}/api`);
+      if (NODE_ENV === 'development') {
+        console.log(`⚛️  Frontend Dev: http://localhost:8080`);
+      }
+      console.log('========================================');
+    });
+  } catch (error) {
+    console.error('❌ Erro ao iniciar servidor:', error.message);
+    process.exit(1);
   }
-  console.log('========================================');
-});
+}
+
+startServer();
 
 module.exports = app;

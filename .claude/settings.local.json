@@ -26,7 +26,12 @@
       "Bash(node:*)",
       "Bash(curl:*)",
       "Bash(cross-env:*)",
-      "Bash(set NODE_ENV=production)"
+      "Bash(set NODE_ENV=production)",
+      "Bash(npx prisma init:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm start)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(npx prisma db execute:*)"
     ],
     "deny": []
   }
