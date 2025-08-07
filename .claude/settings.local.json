@@ -19,7 +19,14 @@
       "Bash(ssh:*)",
       "Bash(npm run build:*)",
       "Bash(tar:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(timeout 5 npm run dev)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(cross-env:*)",
+      "Bash(set NODE_ENV=production)"
     ],
     "deny": []
   }
