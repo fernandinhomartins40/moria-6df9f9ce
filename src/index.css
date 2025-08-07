@@ -170,12 +170,12 @@ All colors MUST be HSL.
   
   /* Marquee animation */
   .marquee {
-    animation: marquee 30s linear infinite;
+    animation: marquee 60s linear infinite;
   }
   
   @keyframes marquee {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
   }
   
   /* Hover effects */
