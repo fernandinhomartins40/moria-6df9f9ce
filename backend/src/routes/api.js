@@ -7,6 +7,28 @@ const router = express.Router();
 const { prisma, healthCheck } = require('../config/database');
 
 // ========================================
+// PLACEHOLDER IMAGES
+// ========================================
+
+router.get('/placeholder/:width/:height', (req, res) => {
+  const { width = 300, height = 300 } = req.params;
+  const w = parseInt(width) || 300;
+  const h = parseInt(height) || 300;
+  
+  // SVG placeholder simples
+  const svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="#f3f4f6"/>
+    <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">
+      ${w} × ${h}
+    </text>
+  </svg>`;
+
+  res.set('Content-Type', 'image/svg+xml');
+  res.set('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
+  res.send(svg);
+});
+
+// ========================================
 // HEALTH CHECK
 // ========================================
 
