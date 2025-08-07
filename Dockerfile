@@ -4,7 +4,7 @@
 # Estágio 1: Build do Frontend
 FROM node:18-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copiar package files do frontend
 COPY package*.json ./
