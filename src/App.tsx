@@ -36,7 +36,7 @@ const App = () => (
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
-            <Route path="quotes" element={<AdminQuotes />} />
+            <Route path="quotes" element={<AdminQuotes />} /> {/* AdminQuotes - Página de Orçamentos */}
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="promotions" element={<AdminPromotions />} />
             <Route path="reports" element={<AdminReports />} />
