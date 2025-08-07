@@ -235,8 +235,8 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-moria-orange" />
             Finalizar Pedido
@@ -246,13 +246,14 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Resumo do Pedido */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Resumo do Pedido</h3>
-            
-            <ScrollArea className="max-h-80">
-              <div className="space-y-3">
+        <div className="flex-1 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full p-6 pt-0">
+            {/* Resumo do Pedido */}
+            <div className="flex flex-col h-full">
+              <h3 className="font-semibold mb-4">Resumo do Pedido</h3>
+              
+              <ScrollArea className="flex-1 pr-4">
+                <div className="space-y-3">
                 {hasProducts && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -312,94 +313,97 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
                     ))}
                   </div>
                 )}
-              </div>
-            </ScrollArea>
-
-            {hasProducts && (
-              <>
-                <Separator />
-                <div className="flex justify-between items-center font-bold">
-                  <span>Total dos Produtos:</span>
-                  <span className="text-lg text-moria-orange">{formatPrice(totalPrice)}</span>
                 </div>
-                {hasServices && (
-                  <p className="text-xs text-muted-foreground">
-                    * Serviços serão orçados separadamente
-                  </p>
-                )}
-              </>
-            )}
-          </div>
+              </ScrollArea>
 
-          {/* Formulário */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Seus Dados</h3>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    placeholder="Seu nome completo"
-                    className="pl-10"
-                    value={form.name}
-                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+              {hasProducts && (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-between items-center font-bold mb-2">
+                    <span>Total dos Produtos:</span>
+                    <span className="text-lg text-moria-orange">{formatPrice(totalPrice)}</span>
+                  </div>
+                  {hasServices && (
+                    <p className="text-xs text-muted-foreground">
+                      * Serviços serão orçados separadamente
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Formulário */}
+            <div className="flex flex-col h-full">
+              <h3 className="font-semibold mb-4">Seus Dados</h3>
+              
+              <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                <div className="flex-1 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm">Nome Completo</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        placeholder="Seu nome completo"
+                        className="pl-10 h-10"
+                        value={form.name}
+                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp" className="text-sm">WhatsApp</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="whatsapp"
+                        placeholder="(11) 99999-9999"
+                        className="pl-10 h-10"
+                        value={form.whatsapp}
+                        onChange={(e) => {
+                          const formatted = formatWhatsApp(e.target.value);
+                          setForm(prev => ({ ...prev, whatsapp: formatted }));
+                        }}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-muted rounded-lg p-3">
+                    <h4 className="font-medium text-sm mb-2">Como funciona:</h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>✅ Processamos seu pedido automaticamente</li>
+                      <li>📱 Você será redirecionado para o WhatsApp</li>
+                      <li>💬 A mensagem será gerada automaticamente</li>
+                      <li>🤝 Nossa equipe entrará em contato</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-600 hover:bg-green-700 h-11" 
                     disabled={isLoading}
-                    required
-                  />
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Finalizar via WhatsApp
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp">WhatsApp</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="whatsapp"
-                    placeholder="(11) 99999-9999"
-                    className="pl-10"
-                    value={form.whatsapp}
-                    onChange={(e) => {
-                      const formatted = formatWhatsApp(e.target.value);
-                      setForm(prev => ({ ...prev, whatsapp: formatted }));
-                    }}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="bg-muted rounded-lg p-4 space-y-2">
-                <h4 className="font-medium text-sm">Como funciona:</h4>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>✅ Processamos seu pedido automaticamente</li>
-                  <li>📱 Você será redirecionado para o WhatsApp</li>
-                  <li>💬 A mensagem será gerada automaticamente</li>
-                  <li>🤝 Nossa equipe entrará em contato</li>
-                </ul>
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700" 
-                disabled={isLoading}
-                size="lg"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando Pedido...
-                  </>
-                ) : (
-                  <>
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Finalizar via WhatsApp
-                  </>
-                )}
-              </Button>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </DialogContent>
