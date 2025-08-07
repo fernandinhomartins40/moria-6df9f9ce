@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Star, Plus, Heart } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
-import { useProducts } from "../hooks/useProducts.js";
 
 interface Product {
   id: number;
@@ -28,20 +27,79 @@ const categories = [
   "Óleos",
 ];
 
+const products: Product[] = [
+  {
+    id: 1,
+    name: "Pastilha de Freio Cerâmica",
+    category: "Freios",
+    price: 89.90,
+    originalPrice: 120.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.8,
+    inStock: true,
+    discount: 25
+  },
+  {
+    id: 2,
+    name: "Filtro de Ar Esportivo",
+    category: "Filtros",
+    price: 156.90,
+    originalPrice: 220.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.9,
+    inStock: true,
+    discount: 30
+  },
+  {
+    id: 3,
+    name: "Óleo Motor 5W30 Sintético",
+    category: "Óleos",
+    price: 45.90,
+    image: "/api/placeholder/300/300",
+    rating: 4.7,
+    inStock: true
+  },
+  {
+    id: 4,
+    name: "Amortecedor Dianteiro",
+    category: "Suspensão",
+    price: 234.90,
+    originalPrice: 280.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.6,
+    inStock: true,
+    discount: 16
+  },
+  {
+    id: 5,
+    name: "Bateria 60Ah",
+    category: "Elétrica",
+    price: 189.90,
+    originalPrice: 250.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.8,
+    inStock: true,
+    discount: 24
+  },
+  {
+    id: 6,
+    name: "Kit Velas de Ignição",
+    category: "Motor",
+    price: 67.90,
+    image: "/api/placeholder/300/300",
+    rating: 4.9,
+    inStock: false
+  }
+];
 
 export function Products() {
   const { addItem, openCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [favorites, setFavorites] = useState<number[]>([]);
-  
-  // Usar dados reais da API mantendo compatibilidade visual
-  const { products: apiProducts, loading, error, updateFilters } = useProducts({
-    category: selectedCategory === "Todos" ? undefined : selectedCategory,
-    active: true
-  });
 
-  // Usar produtos da API - filtros já aplicados no hook
-  const filteredProducts = error ? [] : apiProducts;
+  const filteredProducts = selectedCategory === "Todos" 
+    ? products 
+    : products.filter(product => product.category === selectedCategory);
 
   const toggleFavorite = (productId: number) => {
     setFavorites(prev => 
@@ -49,14 +107,6 @@ export function Products() {
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
-  };
-
-  // Atualizar filtros da API quando categoria muda
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    updateFilters({
-      category: category === "Todos" ? undefined : category
-    });
   };
 
 
@@ -79,7 +129,7 @@ export function Products() {
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => handleCategoryChange(category)}
+              onClick={() => setSelectedCategory(category)}
               className="mb-2"
             >
               {category}
