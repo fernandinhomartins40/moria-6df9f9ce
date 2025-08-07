@@ -189,7 +189,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     message += `🕒 *Data:* ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
     message += `Gostaria de confirmar${order ? ' este pedido' : ''}${order && quote ? ' e receber o orçamento' : quote ? ' o orçamento' : ''}. Aguardo retorno!`;
 
-    return encodeURIComponent(message);
+    return message;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,7 +217,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       // 3. Gerar mensagem do WhatsApp
       const message = generateWhatsAppMessage(results);
       const whatsappNumber = "5511999999999"; // Número da loja
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
       
       // Simular delay do processamento
       await new Promise(resolve => setTimeout(resolve, 1500));
