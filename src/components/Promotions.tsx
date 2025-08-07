@@ -157,11 +157,6 @@ export function Promotions() {
   const countdownTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const timeLeft = useCountdown(countdownTime);
 
-  const handleWhatsAppOrder = (product: PromotionalProduct) => {
-    const message = `Olá! Gostaria de comprar esta PROMOÇÃO:\n🛒 ${product.name}\n💰 De R$ ${product.originalPrice.toFixed(2)} por R$ ${product.discountPrice.toFixed(2)}\n🎯 Desconto: ${product.discount}%\n📍 Endereço de entrega:`;
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
 
   const PromotionCard = ({ product }: { product: PromotionalProduct }) => (
     <Card className="product-hover overflow-hidden">
@@ -202,33 +197,23 @@ export function Promotions() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              addItem({
-                id: product.id,
-                name: product.name,
-                price: product.discountPrice,
-                image: product.image,
-                category: product.category
-              });
-              openCart();
-            }}
-          >
-            Carrinho
-          </Button>
-          <Button
-            variant="hero"
-            size="sm"
-            className="flex-1"
-            onClick={() => handleWhatsAppOrder(product)}
-          >
-            Comprar
-          </Button>
-        </div>
+        <Button
+          variant="hero"
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            addItem({
+              id: product.id,
+              name: product.name,
+              price: product.discountPrice,
+              image: product.image,
+              category: product.category
+            });
+            openCart();
+          }}
+        >
+          Adicionar ao Carrinho
+        </Button>
       </div>
     </Card>
   );
