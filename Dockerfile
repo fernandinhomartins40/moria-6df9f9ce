@@ -15,8 +15,8 @@ RUN npm ci
 # Copiar código fonte
 COPY . .
 
-# Build da aplicação
-RUN npm run build
+# Limpar cache e build da aplicação
+RUN rm -rf dist node_modules/.vite && npm run build
 
 # Estágio de produção com Nginx
 FROM nginx:alpine

@@ -89,8 +89,13 @@ jobs:
           echo '🧹 Limpando qualquer cache...'
           rm -rf node_modules dist build .next .vite || true
           
+          # Limpar cache do Docker System
+          echo '🧹 Limpando cache do Docker...'
+          docker system prune -f || true
+          docker builder prune -f || true
+          
           echo '🏗️  BUILD COMPLETO da imagem Docker...'
-          docker build --no-cache -t ${{ env.IMAGE_NAME }}:latest .
+          docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest .
           
           echo '🚀 Iniciando aplicação...'
           docker run -d \
