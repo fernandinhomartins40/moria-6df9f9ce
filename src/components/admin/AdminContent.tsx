@@ -22,7 +22,20 @@ import {
   Eye,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Gift,
+  TrendingUp,
+  Lock,
+  ShoppingCart,
+  Users,
+  Image,
+  Tag,
+  Truck,
+  Box,
+  Download,
+  BarChart3,
+  FileText
 } from "lucide-react";
 
 interface StoreOrder {
@@ -67,6 +80,27 @@ interface Coupon {
   updatedAt: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  sku: string;
+  supplier: string;
+  costPrice: number;
+  salePrice: number;
+  promoPrice?: number;
+  stock: number;
+  minStock: number;
+  images: string[];
+  specifications: Record<string, string>;
+  vehicleCompatibility: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProvisionalUser {
   id: string;
   name: string;
@@ -86,11 +120,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +140,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     filterQuotes();
     filterServices();
     filterCoupons();
-  }, [orders, quotes, services, coupons, searchTerm, statusFilter]);
+    filterProducts();
+  }, [orders, quotes, services, coupons, products, searchTerm, statusFilter]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -115,6 +152,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
       const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
       const storeCoupons = JSON.parse(localStorage.getItem('store_coupons') || '[]');
+      const storeProducts = JSON.parse(localStorage.getItem('store_products') || '[]');
       const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
       
       // Se não há serviços, criar alguns exemplos
@@ -212,6 +250,109 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         setCoupons(storeCoupons);
       }
       
+      // Se não há produtos, criar alguns exemplos
+      if (storeProducts.length === 0) {
+        const defaultProducts: Product[] = [
+          {
+            id: 'prod-001',
+            name: 'Filtro de Óleo Mann W75/3',
+            description: 'Filtro de óleo de alta qualidade para motores 1.0, 1.4 e 1.6',
+            category: 'Filtros',
+            subcategory: 'Filtro de Óleo',
+            sku: 'FLT-W753',
+            supplier: 'Mann Filter',
+            costPrice: 15.90,
+            salePrice: 25.90,
+            promoPrice: 22.90,
+            stock: 45,
+            minStock: 10,
+            images: [],
+            specifications: {
+              'Aplicação': 'VW Fox, Gol, Voyage / Fiat Uno, Palio',
+              'Material': 'Papel filtrante especial',
+              'Garantia': '12 meses'
+            },
+            vehicleCompatibility: ['VW Fox', 'VW Gol', 'VW Voyage', 'Fiat Uno', 'Fiat Palio'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-002',
+            name: 'Pastilha de Freio Dianteira Cobreq',
+            description: 'Pastilha de freio dianteira com cerâmica para maior durabilidade',
+            category: 'Freios',
+            subcategory: 'Pastilhas',
+            sku: 'FRE-N1049',
+            supplier: 'Cobreq',
+            costPrice: 89.90,
+            salePrice: 139.90,
+            stock: 12,
+            minStock: 5,
+            images: [],
+            specifications: {
+              'Posição': 'Dianteira',
+              'Material': 'Cerâmica',
+              'Garantia': '20.000 km'
+            },
+            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Toyota Corolla'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-003',
+            name: 'Amortecedor Traseiro Monroe',
+            description: 'Amortecedor traseiro Monroe Gas-Matic para maior conforto',
+            category: 'Suspensão',
+            subcategory: 'Amortecedores',
+            sku: 'SUS-G8203',
+            supplier: 'Monroe',
+            costPrice: 125.00,
+            salePrice: 189.90,
+            stock: 8,
+            minStock: 3,
+            images: [],
+            specifications: {
+              'Posição': 'Traseiro',
+              'Tecnologia': 'Gas-Matic',
+              'Garantia': '2 anos'
+            },
+            vehicleCompatibility: ['VW Gol G5/G6', 'VW Voyage', 'VW Fox'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-004',
+            name: 'Vela de Ignição NGK',
+            description: 'Vela de ignição NGK com eletrodo de irídio',
+            category: 'Motor',
+            subcategory: 'Velas',
+            sku: 'MOT-BKR6E',
+            supplier: 'NGK',
+            costPrice: 18.50,
+            salePrice: 32.90,
+            stock: 3,
+            minStock: 8,
+            images: [],
+            specifications: {
+              'Tipo': 'Irídio',
+              'Abertura': '0.8mm',
+              'Garantia': '30.000 km'
+            },
+            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Honda City'],
+            isActive: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_products', JSON.stringify(defaultProducts));
+        setProducts(defaultProducts);
+      } else {
+        setProducts(storeProducts);
+      }
+      
       setOrders(storeOrders);
       setQuotes(storeQuotes);
       setUsers(provisionalUsers);
@@ -303,6 +444,33 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setFilteredCoupons(filtered);
   };
 
+  const filterProducts = () => {
+    let filtered = products;
+
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(product => product.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(product => !product.isActive);
+    } else if (statusFilter === "low_stock") {
+      filtered = filtered.filter(product => product.stock <= product.minStock);
+    } else if (statusFilter === "out_of_stock") {
+      filtered = filtered.filter(product => product.stock === 0);
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredProducts(filtered);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -330,10 +498,15 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     totalQuotes: quotes.length,
     totalServices: services.length,
     totalCoupons: coupons.length,
+    totalProducts: products.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
     pendingQuotes: quotes.filter(q => q.status === 'pending').length,
     activeServices: services.filter(s => s.isActive).length,
     activeCoupons: coupons.filter(c => c.isActive && new Date(c.expiresAt) > new Date()).length,
+    activeProducts: products.filter(p => p.isActive).length,
+    lowStockProducts: products.filter(p => p.stock <= p.minStock).length,
+    outOfStockProducts: products.filter(p => p.stock === 0).length,
+    totalInventoryValue: products.reduce((sum, product) => sum + (product.stock * product.costPrice), 0),
     totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
     totalCustomers: users.length,
     averageTicket: orders.length > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length : 0,
@@ -1258,6 +1431,965 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
+  const renderProducts = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Produtos</CardTitle>
+              <CardDescription>Controle seu estoque e catálogo de peças automotivas</CardDescription>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={loadData}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-moria-orange hover:bg-moria-orange/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Produto
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome, SKU, categoria, fornecedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+                <SelectItem value="low_stock">Estoque Baixo</SelectItem>
+                <SelectItem value="out_of_stock">Sem Estoque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Package className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-lg font-medium mb-2">Nenhum produto encontrado</p>
+              <p>Adicione produtos ao seu catálogo ou ajuste os filtros.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProducts.map((product) => {
+                const isLowStock = product.stock <= product.minStock;
+                const isOutOfStock = product.stock === 0;
+                const hasPromo = product.promoPrice && product.promoPrice < product.salePrice;
+                
+                return (
+                  <div key={product.id} className="border rounded-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-moria-orange text-white rounded-lg p-3">
+                          <Box className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{product.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {product.category}
+                            </Badge>
+                            {product.subcategory && (
+                              <Badge variant="outline">{product.subcategory}</Badge>
+                            )}
+                            {!product.isActive && (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                Inativo
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={isOutOfStock ? 'bg-red-100 text-red-800' : isLowStock ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                            {isOutOfStock ? 'Sem Estoque' : isLowStock ? 'Estoque Baixo' : 'Em Estoque'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                        <p className="text-sm text-gray-600">Fornecedor: {product.supplier}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Preços</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Custo: <span className="font-medium">{formatPrice(product.costPrice)}</span></p>
+                          <p>Venda: <span className="font-medium">{formatPrice(product.salePrice)}</span></p>
+                          {hasPromo && (
+                            <p className="text-green-600">Promoção: <span className="font-medium">{formatPrice(product.promoPrice!)}</span></p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Package className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Estoque</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Atual: <span className={`font-medium ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-yellow-600' : 'text-green-600'}`}>{product.stock} un.</span></p>
+                          <p>Mínimo: <span className="font-medium">{product.minStock} un.</span></p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Truck className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Compatibilidade</span>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-gray-600">{product.vehicleCompatibility.slice(0, 2).join(', ')}</p>
+                          {product.vehicleCompatibility.length > 2 && (
+                            <p className="text-xs text-gray-500">+{product.vehicleCompatibility.length - 2} mais</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Data</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Criado: {new Date(product.createdAt).toLocaleDateString('pt-BR')}</p>
+                          <p>Editado: {new Date(product.updatedAt).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        <p>Margem: <span className="font-medium">{((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(1)}%</span></p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={product.isActive ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const updatedProducts = products.map(p =>
+                              p.id === product.id ? { ...p, isActive: !p.isActive, updatedAt: new Date().toISOString() } : p
+                            );
+                            setProducts(updatedProducts);
+                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          }}
+                        >
+                          {product.isActive ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Ativo
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              Inativo
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const updatedProducts = products.filter(p => p.id !== product.id);
+                            setProducts(updatedProducts);
+                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderReports = () => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    // Dados simulados para gráficos baseados nos dados reais
+    const salesByMonth = Array.from({ length: 12 }, (_, i) => ({
+      month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
+      revenue: Math.max(0, stats.totalRevenue / 12 + (Math.random() - 0.5) * 1000),
+      orders: Math.max(0, Math.floor(stats.totalOrders / 12 + (Math.random() - 0.5) * 5))
+    }));
+
+    const topCategories = [
+      { name: 'Filtros', value: 35, revenue: formatPrice(stats.totalRevenue * 0.35) },
+      { name: 'Freios', value: 25, revenue: formatPrice(stats.totalRevenue * 0.25) },
+      { name: 'Suspensão', value: 20, revenue: formatPrice(stats.totalRevenue * 0.20) },
+      { name: 'Motor', value: 15, revenue: formatPrice(stats.totalRevenue * 0.15) },
+      { name: 'Outros', value: 5, revenue: formatPrice(stats.totalRevenue * 0.05) }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Cards de Métricas Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Receita do Mês</p>
+                  <p className="text-2xl font-bold text-green-600">{formatPrice(stats.totalRevenue)}</p>
+                  <p className="text-xs text-gray-500">+12.5% vs mês anterior</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pedidos do Mês</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
+                  <p className="text-xs text-gray-500">+8.2% vs mês anterior</p>
+                </div>
+                <ShoppingCart className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
+                  <p className="text-2xl font-bold text-purple-600">{formatPrice(stats.averageTicket)}</p>
+                  <p className="text-xs text-gray-500">+3.1% vs mês anterior</p>
+                </div>
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Taxa Conversão</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.conversionRate.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-500">+5.7% vs mês anterior</p>
+                </div>
+                <BarChart3 className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gráfico de Vendas por Mês */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Vendas por Mês - {currentYear}</CardTitle>
+              <CardDescription>Receita e número de pedidos mensais</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {salesByMonth.map((data, index) => (
+                  <div key={data.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${index === currentMonth ? 'bg-moria-orange' : 'bg-gray-300'}`} />
+                      <span className="font-medium">{data.month}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">{formatPrice(data.revenue)}</p>
+                      <p className="text-sm text-gray-500">{data.orders} pedidos</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Categorias */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Categorias</CardTitle>
+              <CardDescription>Categorias mais vendidas por receita</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {topCategories.map((category, index) => (
+                  <div key={category.name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-gray-600">#{index + 1}</span>
+                        <span className="font-medium">{category.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold">{category.revenue}</span>
+                        <span className="text-sm text-gray-500 ml-2">({category.value}%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-moria-orange h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${category.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Relatórios Detalhados */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Estoque</CardTitle>
+              <CardDescription>Status do inventário</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Total de Produtos</span>
+                  <Badge variant="secondary">{stats.totalProducts}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Produtos Ativos</span>
+                  <Badge className="bg-green-100 text-green-800">{stats.activeProducts}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Estoque Baixo</span>
+                  <Badge className="bg-yellow-100 text-yellow-800">{stats.lowStockProducts}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Sem Estoque</span>
+                  <Badge className="bg-red-100 text-red-800">{stats.outOfStockProducts}</Badge>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between font-semibold">
+                  <span className="text-sm">Valor do Inventário</span>
+                  <span className="text-moria-orange">{formatPrice(stats.totalInventoryValue)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Serviços</CardTitle>
+              <CardDescription>Performance dos serviços</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Total de Serviços</span>
+                  <Badge variant="secondary">{stats.totalServices}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Serviços Ativos</span>
+                  <Badge className="bg-green-100 text-green-800">{stats.activeServices}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Orçamentos Pendentes</span>
+                  <Badge className="bg-yellow-100 text-yellow-800">{stats.pendingQuotes}</Badge>
+                </div>
+                <Separator />
+                <div className="text-center py-4">
+                  <p className="text-2xl font-bold text-moria-orange">{stats.conversionRate.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-500">Taxa de conversão orçamento → pedido</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketing</CardTitle>
+              <CardDescription>Campanhas e cupons</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Total de Cupons</span>
+                  <Badge variant="secondary">{stats.totalCoupons}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Cupons Válidos</span>
+                  <Badge className="bg-green-100 text-green-800">{stats.activeCoupons}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Total de Clientes</span>
+                  <Badge className="bg-blue-100 text-blue-800">{stats.totalCustomers}</Badge>
+                </div>
+                <Separator />
+                <div className="text-center py-4">
+                  <Button variant="outline" className="w-full">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Exportar Relatório
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPromotions = () => {
+    // Dados simulados de promoções baseados no conceito de campanhas de marketing
+    const promotions = [
+      {
+        id: 'promo-001',
+        name: 'Black Friday Automotiva',
+        description: 'Descontos especiais em peças selecionadas',
+        type: 'discount',
+        value: 25,
+        isActive: true,
+        startDate: '2024-11-20',
+        endDate: '2024-11-30',
+        targetProducts: ['Filtros', 'Pastilhas de Freio'],
+        minValue: 100,
+        usageCount: 45,
+        maxUsage: 100,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'promo-002', 
+        name: 'Combo Revisão Completa',
+        description: 'Kit completo para revisão com desconto progressivo',
+        type: 'bundle',
+        value: 15,
+        isActive: true,
+        startDate: '2024-11-01',
+        endDate: '2024-12-31',
+        targetProducts: ['Filtros', 'Óleo Motor', 'Velas'],
+        minValue: 200,
+        usageCount: 12,
+        maxUsage: 50,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'promo-003',
+        name: 'Frete Grátis Dezembro',
+        description: 'Frete gratuito para pedidos acima de R$ 150',
+        type: 'shipping',
+        value: 0,
+        isActive: false,
+        startDate: '2024-12-01',
+        endDate: '2024-12-31',
+        targetProducts: [],
+        minValue: 150,
+        usageCount: 0,
+        maxUsage: 200,
+        createdAt: new Date().toISOString(),
+      }
+    ];
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Gerenciar Promoções</CardTitle>
+                <CardDescription>Configure campanhas de marketing e ofertas especiais</CardDescription>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadData}
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="bg-moria-orange hover:bg-moria-orange/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Promoção
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar promoções..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="active">Ativas</SelectItem>
+                  <SelectItem value="inactive">Inativas</SelectItem>
+                  <SelectItem value="expired">Expiradas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-4">
+              {promotions.map((promotion) => {
+                const isExpired = new Date(promotion.endDate) < new Date();
+                const isUpcoming = new Date(promotion.startDate) > new Date();
+                const usage = (promotion.usageCount / promotion.maxUsage) * 100;
+                
+                const getPromotionTypeIcon = () => {
+                  switch (promotion.type) {
+                    case 'discount': return <TrendingUp className="h-6 w-6" />;
+                    case 'bundle': return <Package className="h-6 w-6" />;
+                    case 'shipping': return <Truck className="h-6 w-6" />;
+                    default: return <Gift className="h-6 w-6" />;
+                  }
+                };
+
+                const getPromotionTypeLabel = () => {
+                  switch (promotion.type) {
+                    case 'discount': return 'Desconto';
+                    case 'bundle': return 'Combo';
+                    case 'shipping': return 'Frete';
+                    default: return 'Promoção';
+                  }
+                };
+
+                return (
+                  <div key={promotion.id} className="border rounded-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-moria-orange text-white rounded-lg p-3">
+                          {getPromotionTypeIcon()}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{promotion.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{promotion.description}</p>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                              {getPromotionTypeLabel()}
+                            </Badge>
+                            {isExpired ? (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                Expirada
+                              </Badge>
+                            ) : isUpcoming ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                Programada
+                              </Badge>
+                            ) : promotion.isActive ? (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                Ativa
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                                Inativa
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {promotion.type === 'discount' && (
+                          <p className="text-2xl font-bold text-green-600">{promotion.value}%</p>
+                        )}
+                        {promotion.type === 'shipping' && (
+                          <p className="text-lg font-bold text-blue-600">Frete Grátis</p>
+                        )}
+                        <p className="text-sm text-gray-600">Min: {formatPrice(promotion.minValue)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Período</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Início: {new Date(promotion.startDate).toLocaleDateString('pt-BR')}</p>
+                          <p>Fim: {new Date(promotion.endDate).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Uso</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>{promotion.usageCount} / {promotion.maxUsage}</p>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div 
+                              className="bg-moria-orange h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(usage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Tag className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Produtos</span>
+                        </div>
+                        <div className="text-sm">
+                          {promotion.targetProducts.length > 0 ? (
+                            <p className="text-gray-600">{promotion.targetProducts.join(', ')}</p>
+                          ) : (
+                            <p className="text-gray-500">Todos os produtos</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <BarChart3 className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Performance</span>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-green-600 font-medium">{usage.toFixed(1)}% usado</p>
+                          <p className="text-gray-500">{promotion.maxUsage - promotion.usageCount} restantes</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        <p>Criado: {new Date(promotion.createdAt).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={promotion.isActive ? "secondary" : "outline"}
+                          size="sm"
+                          disabled={isExpired}
+                          onClick={() => {
+                            // Simulação de ativação/desativação
+                            console.log(`Toggling promotion ${promotion.id}`);
+                          }}
+                        >
+                          {promotion.isActive ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Ativa
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              Inativa
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const link = `${window.location.origin}/customer`;
+                            const message = `🎯 Promoção especial: ${promotion.name}! ${promotion.description}. Acesse: ${link}`;
+                            navigator.clipboard.writeText(message);
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderSettings = () => {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações do Sistema</CardTitle>
+            <CardDescription>Configure e gerencie as definições da loja</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            
+            {/* Informações da Loja */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">Informações da Loja</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nome da Loja</label>
+                  <Input defaultValue="Moria Peças & Serviços" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">CNPJ</label>
+                  <Input defaultValue="12.345.678/0001-90" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Telefone</label>
+                  <Input defaultValue="(11) 99999-9999" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">E-mail</label>
+                  <Input defaultValue="contato@moriapecas.com" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Endereço</label>
+                  <Input defaultValue="Av. das Oficinas, 123 - Centro - São Paulo, SP" />
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações de Vendas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">Configurações de Vendas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Margem de Lucro Padrão (%)</label>
+                  <Input type="number" defaultValue="35" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Valor Mínimo para Frete Grátis</label>
+                  <Input type="number" defaultValue="150" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Taxa de Entrega (R$)</label>
+                  <Input type="number" defaultValue="15.90" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tempo de Entrega (dias)</label>
+                  <Input type="number" defaultValue="3" />
+                </div>
+              </div>
+            </div>
+
+            {/* Notificações */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">Notificações</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">Novos Pedidos</p>
+                    <p className="text-sm text-gray-600">Receber notificação quando houver novos pedidos</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Ativo
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">Estoque Baixo</p>
+                    <p className="text-sm text-gray-600">Alerta quando produtos estão com estoque baixo</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Ativo
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">Relatórios Semanais</p>
+                    <p className="text-sm text-gray-600">Receber relatório semanal de vendas por e-mail</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Inativo
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Integrações */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">Integrações</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <MessageCircle className="h-8 w-8 text-green-600" />
+                        <div>
+                          <p className="font-medium">WhatsApp Business</p>
+                          <p className="text-sm text-gray-600">Integração ativa</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Conectado</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full">Configurar</Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <Truck className="h-8 w-8 text-blue-600" />
+                        <div>
+                          <p className="font-medium">Correios API</p>
+                          <p className="text-sm text-gray-600">Cálculo de frete</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Disponível</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full">Conectar</Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <DollarSign className="h-8 w-8 text-purple-600" />
+                        <div>
+                          <p className="font-medium">Gateway Pagamento</p>
+                          <p className="text-sm text-gray-600">PIX, Cartão, Boleto</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Disponível</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full">Conectar</Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <BarChart3 className="h-8 w-8 text-orange-600" />
+                        <div>
+                          <p className="font-medium">Google Analytics</p>
+                          <p className="text-sm text-gray-600">Análise de tráfego</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Disponível</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full">Conectar</Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Backup e Dados */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">Backup e Dados</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Backup Automático</h4>
+                      <p className="text-sm text-gray-600">Último backup: Hoje às 03:00</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Fazer Backup
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Download className="h-4 w-4 mr-2" />
+                          Baixar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Exportar Dados</h4>
+                      <p className="text-sm text-gray-600">Exporte dados para análise externa</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Excel
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <FileText className="h-4 w-4 mr-2" />
+                          CSV
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Botões de Ação */}
+            <div className="flex justify-between">
+              <Button variant="outline" className="text-red-600 hover:text-red-700">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Limpar Dados de Teste
+              </Button>
+              <Button className="bg-moria-orange hover:bg-moria-orange/90">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Salvar Configurações
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderPlaceholder = (title: string, description: string) => (
     <Card>
       <CardHeader>
@@ -1284,17 +2416,17 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     case 'customers':
       return renderCustomers();
     case 'products':
-      return renderPlaceholder('Produtos', 'Gerencie o estoque e catálogo de produtos');
+      return renderProducts();
     case 'services':
       return renderServices();
     case 'coupons':
       return renderCoupons();
     case 'promotions':
-      return renderPlaceholder('Promoções', 'Configure ofertas especiais e descontos');
+      return renderPromotions();
     case 'reports':
-      return renderPlaceholder('Relatórios', 'Análises e relatórios de vendas');
+      return renderReports();
     case 'settings':
-      return renderPlaceholder('Configurações', 'Configurações do sistema');
+      return renderSettings();
     default:
       return renderDashboard();
   }
