@@ -33,6 +33,12 @@ jobs:
         sudo apt-get update && sudo apt-get install -y sshpass
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
+        echo "✅ SSH configurado para ${{ env.VPS_HOST }}"
+
+    - name: 🔍 Testar Conectividade SSH
+      run: |
+        echo "🔍 Testando conectividade SSH..."
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo '✅ SSH funcionando! Host: $(hostname) - Data: $(date)'"
 
     - name: 🚀 Deploy COMPLETO - SEM CACHE
       run: |
@@ -60,6 +66,12 @@ jobs:
         
         # Deploy COMPLETO na VPS
         echo "🏗️ Executando deploy COMPLETO na VPS..."
+        echo "📋 Informações do deploy:"
+        echo "  📦 Commit: ${{ github.sha }}"
+        echo "  🌿 Branch: ${{ github.ref_name }}"
+        echo "  👤 Actor: ${{ github.actor }}"
+        echo "  🕐 Timestamp: $(date)"
+        
         sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
           set -e
           
@@ -133,6 +145,11 @@ jobs:
           # Verificação final
           if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
             echo '✅ Deploy COMPLETO concluído com sucesso!'
+            echo '📋 Verificando arquivos atualizados...'
+            echo '📁 Arquivos principais:'
+            ls -la ${{ env.APP_DIR }}/src/pages/admin/ | grep -E '(AdminQuotes|AdminOrders)' || echo 'Arquivos não encontrados'
+            echo '📅 Última modificação do build:'
+            docker exec ${{ env.CONTAINER_NAME }} ls -la /usr/share/nginx/html/assets/ | head -5
           else
             echo '❌ Aplicação não respondeu após 5 tentativas'
             docker logs ${{ env.CONTAINER_NAME }} --tail 10
@@ -141,6 +158,7 @@ jobs:
           
           echo '✅ DEPLOY COMPLETO CONCLUÍDO!'
           echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.PORT }}'
+          echo '📊 Admin (com Orçamentos): http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin/quotes'
         "
 
     - name: 🎉 Sucesso
