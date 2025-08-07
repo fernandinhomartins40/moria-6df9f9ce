@@ -9,7 +9,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-2xl font-bold gold-metallic mb-4">MORIA</h3>
+            <img 
+              src="/logo_moria.png" 
+              alt="Moria Peças e Serviços" 
+              className="h-16 mb-4"
+            />
             <p className="text-gray-300 mb-6">
               Especialistas em peças automotivas e serviços de qualidade há mais de 15 anos. 
               Sua tranquilidade é nossa prioridade.
