@@ -3,6 +3,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Star, Plus, Heart } from "lucide-react";
+import { useCart } from "../contexts/CartContext";
 
 interface Product {
   id: number;
@@ -91,11 +92,8 @@ const products: Product[] = [
   }
 ];
 
-interface ProductsProps {
-  onAddToCart: (product: Product) => void;
-}
-
-export function Products({ onAddToCart }: ProductsProps) {
+export function Products() {
+  const { addItem, openCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [favorites, setFavorites] = useState<number[]>([]);
 
@@ -232,7 +230,16 @@ export function Products({ onAddToCart }: ProductsProps) {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => onAddToCart(product)}
+                    onClick={() => {
+                      addItem({
+                        id: product.id,
+                        name: product.name,
+                        price: product.originalPrice ? product.originalPrice * (1 - (product.discount || 0) / 100) : product.price,
+                        image: product.image,
+                        category: product.category
+                      });
+                      openCart();
+                    }}
                     disabled={!product.inStock}
                   >
                     <Plus className="h-4 w-4 mr-1" />

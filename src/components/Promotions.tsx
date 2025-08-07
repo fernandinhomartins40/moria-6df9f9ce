@@ -3,6 +3,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Clock, Timer, TrendingDown, Package } from "lucide-react";
+import { useCart } from "../contexts/CartContext";
 
 interface PromotionalProduct {
   id: number;
@@ -151,11 +152,8 @@ const monthlyOffers: PromotionalProduct[] = [
   }
 ];
 
-interface PromotionsProps {
-  onAddToCart: (product: PromotionalProduct) => void;
-}
-
-export function Promotions({ onAddToCart }: PromotionsProps) {
+export function Promotions() {
+  const { addItem, openCart } = useCart();
   const countdownTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const timeLeft = useCountdown(countdownTime);
 
@@ -209,7 +207,16 @@ export function Promotions({ onAddToCart }: PromotionsProps) {
             variant="outline"
             size="sm"
             className="flex-1"
-            onClick={() => onAddToCart(product)}
+            onClick={() => {
+              addItem({
+                id: product.id,
+                name: product.name,
+                price: product.discountPrice,
+                image: product.image,
+                category: product.category
+              });
+              openCart();
+            }}
           >
             Carrinho
           </Button>

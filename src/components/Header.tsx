@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { ShoppingCart, User, Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
+import { useCart } from "../contexts/CartContext";
 
-interface HeaderProps {
-  cartItems: number;
-}
-
-export function Header({ cartItems }: HeaderProps) {
+export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { totalItems, openCart } = useCart();
 
   const menuItems = [
     { name: "Início", href: "#inicio" },
@@ -49,11 +47,16 @@ export function Header({ cartItems }: HeaderProps) {
             <Button variant="ghost" size="icon" className="hover:text-moria-orange">
               <User className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="hover:text-moria-orange relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hover:text-moria-orange relative"
+              onClick={openCart}
+            >
               <ShoppingCart className="h-5 w-5" />
-              {cartItems > 0 && (
+              {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-moria-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItems}
+                  {totalItems}
                 </span>
               )}
             </Button>
@@ -89,11 +92,16 @@ export function Header({ cartItems }: HeaderProps) {
               <Button variant="ghost" size="icon" className="hover:text-moria-orange">
                 <User className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-moria-orange relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-moria-orange relative"
+                onClick={openCart}
+              >
                 <ShoppingCart className="h-5 w-5" />
-                {cartItems > 0 && (
+                {totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-moria-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartItems}
+                    {totalItems}
                   </span>
                 )}
               </Button>
