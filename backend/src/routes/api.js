@@ -313,6 +313,47 @@ router.get('/services', async (req, res) => {
   }
 });
 
+// GET /api/services/:id - Buscar serviço específico
+router.get('/services/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        error: 'Serviço não encontrado'
+      });
+    }
+
+    const transformedService = {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      category: service.category,
+      basePrice: service.basePrice,
+      estimatedTime: service.estimatedTime,
+      specifications: service.specifications ? JSON.parse(service.specifications) : {},
+      isActive: service.isActive,
+      createdAt: service.createdAt
+    };
+
+    res.json({
+      success: true,
+      data: transformedService
+    });
+  } catch (error) {
+    console.error('Erro ao buscar serviço:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar serviço'
+    });
+  }
+});
+
 // POST /api/services - Criar serviço
 router.post('/services', async (req, res) => {
   try {
@@ -335,6 +376,467 @@ router.post('/services', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Erro ao criar serviço'
+    });
+  }
+});
+
+// PUT /api/services/:id - Atualizar serviço
+router.put('/services/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const serviceData = req.body;
+    
+    if (serviceData.specifications && typeof serviceData.specifications === 'object') {
+      serviceData.specifications = JSON.stringify(serviceData.specifications);
+    }
+
+    const service = await prisma.service.update({
+      where: { id: parseInt(id) },
+      data: serviceData
+    });
+
+    res.json({
+      success: true,
+      data: service
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Serviço não encontrado'
+      });
+    }
+    console.error('Erro ao atualizar serviço:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao atualizar serviço'
+    });
+  }
+});
+
+// DELETE /api/services/:id - Deletar serviço
+router.delete('/services/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.service.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({
+      success: true,
+      message: 'Serviço deletado com sucesso'
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Serviço não encontrado'
+      });
+    }
+    console.error('Erro ao deletar serviço:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao deletar serviço'
+    });
+  }
+});
+
+// ========================================
+// COUPONS ROUTES - CRUD Completo
+// ========================================
+
+// GET /api/coupons - Listar cupons
+router.get('/coupons', async (req, res) => {
+  try {
+    const { active, type } = req.query;
+    
+    const where = {};
+    if (active !== undefined) {
+      where.isActive = active === 'true';
+    }
+    if (type) {
+      where.discountType = type;
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: coupons,
+      total: coupons.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar cupons:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar cupons'
+    });
+  }
+});
+
+// GET /api/coupons/:id - Buscar cupom específico
+router.get('/coupons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const coupon = await prisma.coupon.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cupom não encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: coupon
+    });
+  } catch (error) {
+    console.error('Erro ao buscar cupom:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar cupom'
+    });
+  }
+});
+
+// POST /api/coupons - Criar cupom
+router.post('/coupons', async (req, res) => {
+  try {
+    const coupon = await prisma.coupon.create({
+      data: req.body
+    });
+
+    res.status(201).json({
+      success: true,
+      data: coupon
+    });
+  } catch (error) {
+    console.error('Erro ao criar cupom:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao criar cupom'
+    });
+  }
+});
+
+// PUT /api/coupons/:id - Atualizar cupom
+router.put('/coupons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const coupon = await prisma.coupon.update({
+      where: { id: parseInt(id) },
+      data: req.body
+    });
+
+    res.json({
+      success: true,
+      data: coupon
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Cupom não encontrado'
+      });
+    }
+    console.error('Erro ao atualizar cupom:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao atualizar cupom'
+    });
+  }
+});
+
+// DELETE /api/coupons/:id - Deletar cupom
+router.delete('/coupons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.coupon.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({
+      success: true,
+      message: 'Cupom deletado com sucesso'
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Cupom não encontrado'
+      });
+    }
+    console.error('Erro ao deletar cupom:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao deletar cupom'
+    });
+  }
+});
+
+// POST /api/coupons/validate - Validar cupom
+router.post('/coupons/validate', async (req, res) => {
+  try {
+    const { code, orderAmount } = req.body;
+
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: code.toUpperCase() }
+    });
+
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cupom não encontrado'
+      });
+    }
+
+    if (!coupon.isActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cupom inativo'
+      });
+    }
+
+    const now = new Date();
+    if (coupon.expiresAt && now > coupon.expiresAt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cupom expirado'
+      });
+    }
+
+    if (coupon.usageCount >= coupon.usageLimit) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cupom esgotado'
+      });
+    }
+
+    if (coupon.minimumAmount && orderAmount < coupon.minimumAmount) {
+      return res.status(400).json({
+        success: false,
+        error: `Valor mínimo do pedido: R$ ${coupon.minimumAmount.toFixed(2)}`
+      });
+    }
+
+    // Calcular desconto
+    let discountAmount = 0;
+    if (coupon.discountType === 'percentage') {
+      discountAmount = (orderAmount * coupon.discountValue) / 100;
+      if (coupon.maxDiscount) {
+        discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+      }
+    } else {
+      discountAmount = coupon.discountValue;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        coupon,
+        discountAmount,
+        finalAmount: orderAmount - discountAmount
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao validar cupom:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao validar cupom'
+    });
+  }
+});
+
+// ========================================
+// PROMOTIONS ROUTES - CRUD Completo
+// ========================================
+
+// GET /api/promotions - Listar promoções
+router.get('/promotions', async (req, res) => {
+  try {
+    const { active, type } = req.query;
+    
+    const where = {};
+    if (active !== undefined) {
+      where.isActive = active === 'true';
+    }
+    if (type) {
+      where.type = type;
+    }
+
+    const promotions = await prisma.promotion.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Transformar dados
+    const transformedPromotions = promotions.map(promotion => ({
+      id: promotion.id,
+      name: promotion.name,
+      description: promotion.description,
+      type: promotion.type,
+      conditions: promotion.conditions ? JSON.parse(promotion.conditions) : {},
+      discountType: promotion.discountType,
+      discountValue: promotion.discountValue,
+      maxDiscount: promotion.maxDiscount,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      isActive: promotion.isActive,
+      createdAt: promotion.createdAt
+    }));
+
+    res.json({
+      success: true,
+      data: transformedPromotions,
+      total: transformedPromotions.length
+    });
+  } catch (error) {
+    console.error('Erro ao buscar promoções:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar promoções'
+    });
+  }
+});
+
+// GET /api/promotions/:id - Buscar promoção específica
+router.get('/promotions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const promotion = await prisma.promotion.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!promotion) {
+      return res.status(404).json({
+        success: false,
+        error: 'Promoção não encontrada'
+      });
+    }
+
+    const transformedPromotion = {
+      id: promotion.id,
+      name: promotion.name,
+      description: promotion.description,
+      type: promotion.type,
+      conditions: promotion.conditions ? JSON.parse(promotion.conditions) : {},
+      discountType: promotion.discountType,
+      discountValue: promotion.discountValue,
+      maxDiscount: promotion.maxDiscount,
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      isActive: promotion.isActive,
+      createdAt: promotion.createdAt
+    };
+
+    res.json({
+      success: true,
+      data: transformedPromotion
+    });
+  } catch (error) {
+    console.error('Erro ao buscar promoção:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar promoção'
+    });
+  }
+});
+
+// POST /api/promotions - Criar promoção
+router.post('/promotions', async (req, res) => {
+  try {
+    const promotionData = req.body;
+    
+    if (promotionData.conditions && typeof promotionData.conditions === 'object') {
+      promotionData.conditions = JSON.stringify(promotionData.conditions);
+    }
+
+    const promotion = await prisma.promotion.create({
+      data: promotionData
+    });
+
+    res.status(201).json({
+      success: true,
+      data: promotion
+    });
+  } catch (error) {
+    console.error('Erro ao criar promoção:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao criar promoção'
+    });
+  }
+});
+
+// PUT /api/promotions/:id - Atualizar promoção
+router.put('/promotions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const promotionData = req.body;
+    
+    if (promotionData.conditions && typeof promotionData.conditions === 'object') {
+      promotionData.conditions = JSON.stringify(promotionData.conditions);
+    }
+
+    const promotion = await prisma.promotion.update({
+      where: { id: parseInt(id) },
+      data: promotionData
+    });
+
+    res.json({
+      success: true,
+      data: promotion
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Promoção não encontrada'
+      });
+    }
+    console.error('Erro ao atualizar promoção:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao atualizar promoção'
+    });
+  }
+});
+
+// DELETE /api/promotions/:id - Deletar promoção
+router.delete('/promotions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.promotion.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({
+      success: true,
+      message: 'Promoção deletada com sucesso'
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Promoção não encontrada'
+      });
+    }
+    console.error('Erro ao deletar promoção:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao deletar promoção'
     });
   }
 });

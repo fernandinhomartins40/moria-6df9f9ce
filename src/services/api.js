@@ -169,7 +169,7 @@ class ApiService {
   }
 
   // ========================================
-  // SERVICES
+  // SERVICES - CRUD Completo
   // ========================================
 
   async getServices(filters = {}) {
@@ -183,15 +183,39 @@ class ApiService {
     return this.request(endpoint);
   }
 
+  async getService(id) {
+    return this.request(`/services/${id}`);
+  }
+
+  async createService(serviceData) {
+    return this.request('/services', {
+      method: 'POST',
+      body: serviceData,
+    });
+  }
+
+  async updateService(id, serviceData) {
+    return this.request(`/services/${id}`, {
+      method: 'PUT',
+      body: serviceData,
+    });
+  }
+
+  async deleteService(id) {
+    return this.request(`/services/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // ========================================
-  // PROMOTIONS
+  // PROMOTIONS - CRUD Completo
   // ========================================
 
   async getPromotions(filters = {}) {
     const params = new URLSearchParams();
     
     if (filters.active !== undefined) params.append('active', filters.active);
-    if (filters.category) params.append('category', filters.category);
+    if (filters.type) params.append('type', filters.type);
 
     const queryString = params.toString();
     const endpoint = queryString ? `/promotions?${queryString}` : '/promotions';
@@ -199,15 +223,39 @@ class ApiService {
     return this.request(endpoint);
   }
 
+  async getPromotion(id) {
+    return this.request(`/promotions/${id}`);
+  }
+
+  async createPromotion(promotionData) {
+    return this.request('/promotions', {
+      method: 'POST',
+      body: promotionData,
+    });
+  }
+
+  async updatePromotion(id, promotionData) {
+    return this.request(`/promotions/${id}`, {
+      method: 'PUT',
+      body: promotionData,
+    });
+  }
+
+  async deletePromotion(id) {
+    return this.request(`/promotions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // ========================================
-  // COUPONS
+  // COUPONS - CRUD Completo
   // ========================================
 
   async getCoupons(filters = {}) {
     const params = new URLSearchParams();
     
     if (filters.active !== undefined) params.append('active', filters.active);
-    if (filters.code) params.append('code', filters.code);
+    if (filters.type) params.append('type', filters.type);
 
     const queryString = params.toString();
     const endpoint = queryString ? `/coupons?${queryString}` : '/coupons';
@@ -215,10 +263,34 @@ class ApiService {
     return this.request(endpoint);
   }
 
-  async validateCoupon(code) {
+  async getCoupon(id) {
+    return this.request(`/coupons/${id}`);
+  }
+
+  async createCoupon(couponData) {
+    return this.request('/coupons', {
+      method: 'POST',
+      body: couponData,
+    });
+  }
+
+  async updateCoupon(id, couponData) {
+    return this.request(`/coupons/${id}`, {
+      method: 'PUT',
+      body: couponData,
+    });
+  }
+
+  async deleteCoupon(id) {
+    return this.request(`/coupons/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async validateCoupon(validationData) {
     return this.request('/coupons/validate', {
       method: 'POST',
-      body: { code },
+      body: validationData,
     });
   }
 
@@ -360,17 +432,35 @@ export default api;
 export const {
   healthCheck,
   getDashboardStats,
+  // Products
   getProducts,
   getProduct,
   createProduct,
   updateProduct,
   deleteProduct,
+  // Orders
   getOrders,
   createOrder,
+  // Services
   getServices,
+  getService,
+  createService,
+  updateService,
+  deleteService,
+  // Promotions
   getPromotions,
+  getPromotion,
+  createPromotion,
+  updatePromotion,
+  deletePromotion,
+  // Coupons
   getCoupons,
+  getCoupon,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
   validateCoupon,
+  // Auth & Customers
   login,
   register,
   logout,
@@ -385,6 +475,7 @@ export const {
   addAddress,
   updateAddress,
   deleteAddress,
+  // Utilities
   formatPrice,
   formatDate,
   formatDateTime

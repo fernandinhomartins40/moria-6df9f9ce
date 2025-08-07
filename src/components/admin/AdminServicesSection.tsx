@@ -1,0 +1,355 @@
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { 
+  Wrench, 
+  Search, 
+  RefreshCw, 
+  Plus, 
+  Edit, 
+  Trash2,
+  AlertTriangle,
+  DollarSign,
+  Clock,
+  ToggleLeft,
+  ToggleRight,
+  Loader2
+} from 'lucide-react';
+import { useAdminServices } from '../../hooks/useAdminServices.js';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
+
+interface AdminServicesSectionProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  statusFilter: string;
+  setStatusFilter: (filter: string) => void;
+}
+
+export function AdminServicesSection({ 
+  searchTerm, 
+  setSearchTerm, 
+  statusFilter, 
+  setStatusFilter 
+}: AdminServicesSectionProps) {
+  const {
+    services,
+    loading,
+    error,
+    deleteLoading,
+    fetchServices,
+    deleteService,
+    toggleServiceStatus
+  } = useAdminServices();
+
+  // Estados do dialog de confirmação
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, serviceId: null, serviceName: '' });
+
+  // Filtrar serviços
+  const filteredServices = useMemo(() => {
+    let filtered = services;
+
+    // Filtro por termo de busca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(service => 
+        service.name?.toLowerCase().includes(term) ||
+        service.category?.toLowerCase().includes(term) ||
+        service.description?.toLowerCase().includes(term)
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(service => {
+        switch (statusFilter) {
+          case 'active':
+            return service.isActive;
+          case 'inactive':
+            return !service.isActive;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  }, [services, searchTerm, statusFilter]);
+
+  // Handlers
+  const handleToggleStatus = async (serviceId, currentStatus) => {
+    try {
+      await toggleServiceStatus(serviceId, currentStatus);
+    } catch (error) {
+      console.error('Erro ao alterar status do serviço:', error);
+    }
+  };
+
+  const handleDeleteClick = (service) => {
+    setDeleteDialog({
+      open: true,
+      serviceId: service.id,
+      serviceName: service.name
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteDialog.serviceId) {
+      try {
+        await deleteService(deleteDialog.serviceId);
+        setDeleteDialog({ open: false, serviceId: null, serviceName: '' });
+      } catch (error) {
+        console.error('Erro ao excluir serviço:', error);
+      }
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialog({ open: false, serviceId: null, serviceName: '' });
+  };
+
+  // Helper functions
+  const formatPrice = (price) => {
+    if (!price) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Serviços</CardTitle>
+              <CardDescription>
+                Controle os serviços oferecidos pela sua oficina
+              </CardDescription>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fetchServices()}
+                disabled={loading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-moria-orange hover:bg-moria-orange/90 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Novo Serviço
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {/* Filtros */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome, categoria..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mensagem de erro */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">Erro ao carregar serviços</span>
+              </div>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {loading && services.length === 0 && (
+            <div className="text-center py-12">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-moria-orange mb-4" />
+              <p className="text-gray-600">Carregando serviços...</p>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && filteredServices.length === 0 && !error && (
+            <div className="text-center py-12 text-gray-500">
+              <Wrench className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-lg font-medium mb-2">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'Nenhum serviço encontrado'
+                  : 'Nenhum serviço cadastrado'
+                }
+              </p>
+              <p>
+                {searchTerm || statusFilter !== 'all'
+                  ? 'Tente ajustar os filtros de busca'
+                  : 'Adicione serviços ao seu catálogo'
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Lista de serviços */}
+          {filteredServices.length > 0 && (
+            <div className="space-y-4">
+              {filteredServices.map((service) => (
+                <div key={service.id} className="border rounded-lg p-6 hover:border-moria-orange/50 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    {/* Informações básicas */}
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-moria-orange text-white rounded-lg p-3">
+                        <Wrench className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{service.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{service.description}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            {service.category}
+                          </Badge>
+                          {!service.isActive && (
+                            <Badge variant="secondary" className="bg-red-100 text-red-800">
+                              Inativo
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Status: </span>
+                        {service.isActive ? (
+                          <ToggleRight className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Informações detalhadas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <span className="text-sm text-gray-600">Preço base: </span>
+                        <span className="font-medium">
+                          {formatPrice(service.basePrice)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <span className="text-sm text-gray-600">Tempo estimado: </span>
+                        <span className="font-medium">{service.estimatedTime} min</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleStatus(service.id, service.isActive)}
+                    >
+                      {service.isActive ? 'Desativar' : 'Ativar'}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteClick(service)}
+                      disabled={deleteLoading}
+                      className="text-red-600 hover:text-red-700 hover:border-red-300"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={handleCancelDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o serviço "{deleteDialog.serviceName}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir Serviço'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
