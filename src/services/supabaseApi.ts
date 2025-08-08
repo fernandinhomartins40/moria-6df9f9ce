@@ -759,26 +759,28 @@ class SupabaseApiService {
 
   async createPromotion(promotionData: any) {
     try {
-      // Converter campos da aplicação para formato do banco
+      // Converter campos para formato da tabela promotions
       const supabaseData = {
-        ...promotionData,
-        title: promotionData.name, // A aplicação usa 'name' mas o banco usa 'title'
-        is_active: promotionData.isActive ?? true,
-        start_date: promotionData.startsAt,
-        end_date: promotionData.endsAt,
+        title: promotionData.name,
+        description: promotionData.description,
+        type: promotionData.type || 'general',
+        conditions: promotionData.conditions || {},
         discount_type: promotionData.discountType,
         discount_value: promotionData.discountValue,
-        min_amount: promotionData.minAmount
+        max_discount: promotionData.maxDiscount,
+        category: promotionData.category,
+        min_amount: promotionData.minAmount,
+        start_date: promotionData.startsAt,
+        end_date: promotionData.endsAt,
+        is_active: promotionData.isActive ?? true
       };
 
-      // Remover campos camelCase para evitar conflito
-      delete supabaseData.name;
-      delete supabaseData.isActive;
-      delete supabaseData.startsAt;
-      delete supabaseData.endsAt;
-      delete supabaseData.discountType;
-      delete supabaseData.discountValue;
-      delete supabaseData.minAmount;
+      // Remover campos undefined/null
+      Object.keys(supabaseData).forEach(key => {
+        if (supabaseData[key] === undefined || supabaseData[key] === null || supabaseData[key] === '') {
+          delete supabaseData[key];
+        }
+      });
 
       const { data, error } = await supabase
         .from('promotions')
@@ -796,26 +798,28 @@ class SupabaseApiService {
 
   async updatePromotion(id: string, promotionData: any) {
     try {
-      // Converter campos da aplicação para formato do banco
+      // Converter campos para formato da tabela promotions
       const supabaseData = {
-        ...promotionData,
-        title: promotionData.name, // A aplicação usa 'name' mas o banco usa 'title'
-        is_active: promotionData.isActive ?? true,
-        start_date: promotionData.startsAt,
-        end_date: promotionData.endsAt,
+        title: promotionData.name,
+        description: promotionData.description,
+        type: promotionData.type || 'general',
+        conditions: promotionData.conditions || {},
         discount_type: promotionData.discountType,
         discount_value: promotionData.discountValue,
-        min_amount: promotionData.minAmount
+        max_discount: promotionData.maxDiscount,
+        category: promotionData.category,
+        min_amount: promotionData.minAmount,
+        start_date: promotionData.startsAt,
+        end_date: promotionData.endsAt,
+        is_active: promotionData.isActive ?? true
       };
 
-      // Remover campos camelCase para evitar conflito
-      delete supabaseData.name;
-      delete supabaseData.isActive;
-      delete supabaseData.startsAt;
-      delete supabaseData.endsAt;
-      delete supabaseData.discountType;
-      delete supabaseData.discountValue;
-      delete supabaseData.minAmount;
+      // Remover campos undefined/null
+      Object.keys(supabaseData).forEach(key => {
+        if (supabaseData[key] === undefined || supabaseData[key] === null || supabaseData[key] === '') {
+          delete supabaseData[key];
+        }
+      });
 
       const { data, error } = await supabase
         .from('promotions')
