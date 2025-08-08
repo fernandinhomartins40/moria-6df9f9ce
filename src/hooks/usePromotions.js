@@ -37,21 +37,23 @@ export const usePromotions = (initialFilters = {}) => {
     return diffMinutes < ttlMinutes;
   };
 
-  // Buscar produto real do banco baseado nas condições da promoção
+  // Buscar produto real do banco baseado nas condições da promoção - ADAPTADO PARA SCHEMA REAL
   const findRealProduct = (promotion) => {
     if (!products.length) return null;
     
+    // ADAPTAÇÃO: promotion.category é direto no schema, não dentro de conditions
     const conditions = promotion.conditions || {};
+    const promotionCategory = promotion.category || conditions.category;
     
     // Primeiro, tentar encontrar produto específico por ID
     if (conditions.productId) {
       return products.find(p => p.id === conditions.productId);
     }
     
-    // Depois, tentar por categoria
-    if (conditions.category) {
+    // Depois, tentar por categoria da promoção
+    if (promotionCategory) {
       const categoryProducts = products.filter(p => 
-        p.category?.toLowerCase().includes(conditions.category.toLowerCase()) && p.isActive
+        p.category?.toLowerCase().includes(promotionCategory.toLowerCase()) && p.isActive
       );
       return categoryProducts[0]; // Pegar primeiro produto da categoria
     }
@@ -87,15 +89,15 @@ export const usePromotions = (initialFilters = {}) => {
       discountPercent = Math.round((1 - discountPrice / basePrice) * 100);
     }
     
-    // Determinar se é uma oferta limitada (termina em menos de 48h)
+    // Determinar se é uma oferta limitada (termina em menos de 48h) - ADAPTADO PARA SCHEMA REAL
     const now = new Date();
-    const isLimited = promotion.endsAt && 
-      new Date(promotion.endsAt) - now < 48 * 60 * 60 * 1000;
+    const endDate = promotion.endDate || promotion.endsAt;
+    const isLimited = endDate && new Date(endDate) - now < 48 * 60 * 60 * 1000;
     
-    // Usar nome e dados reais do produto se disponível
-    const productName = realProduct?.name || promotion.name || 'Produto em Promoção';
+    // Usar nome e dados reais do produto se disponível - ADAPTADO PARA SCHEMA REAL
+    const productName = realProduct?.name || promotion.title || promotion.name || 'Produto em Promoção';
     const productImage = realProduct?.images?.[0] || "/api/placeholder/300/300";
-    const productCategory = realProduct?.category || promotion.conditions?.category || "Geral";
+    const productCategory = realProduct?.category || promotion.category || "Geral";
     const stockAvailable = realProduct?.stock || 0;
     const stockLow = stockAvailable > 0 && stockAvailable < 5;
     
@@ -109,9 +111,9 @@ export const usePromotions = (initialFilters = {}) => {
       image: productImage,
       category: productCategory,
       limited: isLimited,
-      endTime: promotion.endsAt ? new Date(promotion.endsAt) : null,
+      endTime: promotion.endDate ? new Date(promotion.endDate) : null,
       description: realProduct?.description || promotion.description,
-      type: promotion.type,
+      type: promotion.type || 'general', // Campo type pode não existir no schema atual
       // Novos campos da Fase 2
       stock: stockAvailable,
       stockLow: stockLow,
@@ -121,7 +123,7 @@ export const usePromotions = (initialFilters = {}) => {
     };
   };
 
-  // Categorizar promoções por tipo baseado no tempo de duração
+  // Categorizar promoções por tipo baseado no tempo de duração (ADAPTADO PARA SCHEMA REAL)
   const categorizePromotions = (promotions) => {
     const now = new Date();
     const daily = [];
@@ -131,21 +133,24 @@ export const usePromotions = (initialFilters = {}) => {
     promotions.forEach(promotion => {
       if (!promotion.isActive) return;
       
-      // Verificar se a promoção está ativa no momento
-      const startsAt = promotion.startsAt ? new Date(promotion.startsAt) : new Date(0);
-      const endsAt = promotion.endsAt ? new Date(promotion.endsAt) : new Date('2099-12-31');
+      // ADAPTAÇÃO: usar startDate/endDate ao invés de startsAt/endsAt
+      const startsAt = promotion.startDate ? new Date(promotion.startDate) : new Date(0);
+      const endsAt = promotion.endDate ? new Date(promotion.endDate) : new Date('2099-12-31');
       
       if (now < startsAt || now > endsAt) return;
       
       const product = transformPromotionToProduct(promotion);
       
-      // Categorizar baseado na duração ou tipo da promoção
+      // Categorizar baseado na duração (já que não temos campo 'type')
       const duration = endsAt - startsAt;
       const hours = duration / (1000 * 60 * 60);
       
-      if (hours <= 24 || promotion.type === 'daily') {
+      // Categorizar por duração ou título da promoção
+      const title = (promotion.title || promotion.name || '').toLowerCase();
+      
+      if (hours <= 24 || title.includes('flash') || title.includes('diári')) {
         daily.push(product);
-      } else if (hours <= 168 || promotion.type === 'weekly') { // 7 dias
+      } else if (hours <= 168 || title.includes('semana') || title.includes('kit')) { // 7 dias
         weekly.push(product);
       } else {
         monthly.push(product);
