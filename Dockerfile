@@ -1,24 +1,7 @@
-# Dockerfile completo - Frontend + Backend SQLite
-# Serve o frontend via Nginx e backend Node.js via proxy
+# Dockerfile otimizado - Usa builds já prontos
+# Frontend (dist/) e Backend já processados pelo GitHub Actions
 
-# Estágio 1: Build do Frontend
-FROM node:18-alpine AS frontend-builder
-
-WORKDIR /app
-
-# Copiar package files do frontend
-COPY package*.json ./
-
-# Instalar dependências
-RUN npm ci
-
-# Copiar código fonte
-COPY . .
-
-# Build do frontend
-RUN npm run build
-
-# Estágio 2: Preparar Backend
+# Estágio 1: Preparar Backend
 FROM node:18-alpine AS backend-builder
 
 WORKDIR /app/backend
@@ -26,8 +9,8 @@ WORKDIR /app/backend
 # Copiar package files do backend
 COPY backend/package*.json ./
 
-# Instalar dependências do backend incluindo Prisma
-RUN npm ci
+# Instalar apenas dependências de produção
+RUN npm ci --omit=dev
 
 # Copiar código do backend
 COPY backend/ .
@@ -35,7 +18,7 @@ COPY backend/ .
 # Gerar Prisma Client
 RUN npx prisma generate
 
-# Estágio 3: Runtime - Nginx + Node.js
+# Estágio 2: Runtime - Nginx + Node.js
 FROM node:18-alpine AS runtime
 
 # Instalar Nginx
@@ -44,10 +27,10 @@ RUN apk add --no-cache nginx
 # Criar diretórios necessários
 RUN mkdir -p /app/frontend /app/backend /run/nginx
 
-# Copiar frontend buildado
-COPY --from=frontend-builder /app/dist /app/frontend
+# Copiar frontend já buildado (dist/)
+COPY dist/ /app/frontend/
 
-# Copiar backend
+# Copiar backend preparado
 COPY --from=backend-builder /app/backend /app/backend
 
 # Configurar Nginx
