@@ -1,43 +1,105 @@
-# Multi-stage build para otimizar o tamanho da imagem
+# ============================================
+# Dockerfile para Moria Peças & Serviços - Frontend Supabase
+# Multi-stage build otimizado para produção
+# ============================================
+
+# Stage 1: Build da aplicação React+Vite
 FROM node:18-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
+# Copiar package files para cache otimizado
+COPY package*.json ./
 
-# Install dependencies with legacy peer deps to resolve conflicts
-# Fix for Rollup optional dependencies bug
-RUN npm install --legacy-peer-deps
+# Instalar dependências (incluindo devDependencies para build)
+RUN npm ci --silent
 
-# Copy source code
+# Copiar código fonte
 COPY . .
 
-# Build the application
+# Args para variáveis de ambiente do Supabase
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Definir variáveis de ambiente para o build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
+# Build da aplicação
 RUN npm run build
 
-# Production stage with nginx
-FROM nginx:alpine AS production
+# Stage 2: Nginx para servir arquivos estáticos
+FROM nginx:alpine
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Remover arquivos padrão do nginx
+RUN rm -rf /usr/share/nginx/html/*
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/
-
-# Copy built files from builder stage
+# Copiar build da aplicação
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 3018
-EXPOSE 3018
+# Criar configuração otimizada do Nginx
+RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:3018/health || curl -f http://localhost:3018/ || exit 1
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/xml+rss
+        application/json;
 
-# Start nginx
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://supabase.co https://*.supabase.co data: blob:;" always;
+
+    # Cache estático (JS, CSS, imagens)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA fallback - todas as rotas vão para index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Headers para index.html (não cachear)
+        location = /index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+        }
+    }
+
+    # Health check para Docker
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+EOF
+
+# Expor porta 80
+EXPOSE 80
+
+# Labels para identificação
+LABEL maintainer="Moria Peças & Serviços"
+LABEL version="2.0-supabase"
+LABEL description="Frontend React+Vite com Supabase"
+
+# Comando para iniciar nginx
 CMD ["nginx", "-g", "daemon off;"]

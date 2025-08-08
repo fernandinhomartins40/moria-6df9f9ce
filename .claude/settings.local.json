@@ -38,19 +38,7 @@
       "Bash(pkill:*)",
       "Bash(PORT=3083 timeout 10 node src/server.js)",
       "Bash(npx prisma migrate:*)",
-      "Bash(sed:*)",
-      "Bash(powershell:*)",
-      "Bash(grep:*)",
-      "Bash(npx prisma:*)",
-      "Bash(npm run deploy:robust:*)",
-      "Bash(set DATABASE_URL=file:./backend/prisma/database.db)",
-      "Bash(echo)",
-      "Bash(rsync:*)",
-      "Bash(lsof:*)",
-      "Bash(docker build:*)",
-      "Bash(touch:*)",
-      "Bash(git reset:*)",
-      "Bash(docker logs:*)"
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }

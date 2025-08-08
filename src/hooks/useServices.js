@@ -1,101 +1,104 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import supabaseApi from '../services/supabaseApi.ts';
+import { useApi } from './useApi.js';
 
-// Mock data para desenvolvimento
-const mockServices = [
-  {
-    id: 1,
-    name: 'Troca de Óleo',
-    description: 'Troca completa do óleo do motor com filtro',
-    price: 89.90,
-    duration: '30 min',
-    category: 'Manutenção',
-    available: true,
-    image: '/placeholder.svg'
-  },
-  {
-    id: 2,
-    name: 'Balanceamento',
-    description: 'Balanceamento e alinhamento completo',
-    price: 45.00,
-    duration: '45 min',
-    category: 'Pneus',
-    available: true,
-    image: '/placeholder.svg'
-  },
-  {
-    id: 3,
-    name: 'Revisão Geral',
-    description: 'Revisão completa do veículo com 20 pontos',
-    price: 150.00,
-    duration: '2 horas',
-    category: 'Revisão',
-    available: true,
-    image: '/placeholder.svg'
-  }
-];
-
-export function useServices(initialFilters = {}) {
+/**
+ * Hook para gerenciar serviços
+ * Integra com a API backend mantendo compatibilidade com frontend existente
+ */
+export const useServices = (initialFilters = {}) => {
   const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState({
+    active: true,
+    ...initialFilters
+  });
+  
+  const { loading, error, execute, clearError } = useApi();
 
-  const loadServices = (currentFilters) => {
-    setLoading(true);
+  // Mapeamento de ícones para manter compatibilidade com frontend existente
+  const getServiceIcon = (serviceName) => {
+    const iconMap = {
+      'Troca de Óleo': 'Droplets',
+      'Manutenção Preventiva': 'Wrench',
+      'Diagnóstico Eletrônico': 'Search',
+      'Freios e Suspensão': 'Disc',
+      'Ar Condicionado': 'Snowflake',
+      'Sistema Elétrico': 'Zap',
+      'Alinhamento': 'Target',
+      'Balanceamento': 'RotateCcw'
+    };
     
-    // Simular carregamento
-    const timer = setTimeout(() => {
-      try {
-        let filteredServices = mockServices;
-        
-        // Aplicar filtros se houver
-        if (currentFilters.category) {
-          filteredServices = filteredServices.filter(s => s.category === currentFilters.category);
-        }
-        
-        if (currentFilters.available !== undefined) {
-          filteredServices = filteredServices.filter(s => s.available === currentFilters.available);
-        }
+    return iconMap[serviceName] || 'Wrench';
+  };
 
-        if (currentFilters.search) {
-          filteredServices = filteredServices.filter(s => 
-            s.name.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
-            s.description.toLowerCase().includes(currentFilters.search.toLowerCase())
-          );
-        }
+  // Carregar serviços da API
+  const fetchServices = useCallback(async (customFilters = null) => {
+    const apiFilters = customFilters || filters;
+    
+    // Converter filtros para formato da API
+    const backendFilters = {};
+    
+    if (apiFilters.active !== undefined) {
+      backendFilters.active = apiFilters.active;
+    }
 
-        setServices(filteredServices);
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        console.error('Erro ao carregar serviços:', err);
-        setError(err);
-        setLoading(false);
+    return execute(
+      () => api.getServices(backendFilters),
+      (result) => {
+        // Validar se result e result.data existem e é array
+        if (!result || !result.data || !Array.isArray(result.data)) {
+          console.warn('Dados de serviços inválidos:', result);
+          setServices([]);
+          return;
+        }
+        
+        // Transformar dados do backend para formato do frontend existente
+        const transformedServices = result.data.map((service, index) => ({
+          id: service.id,
+          icon: getServiceIcon(service.name),
+          title: service.name,
+          description: service.description,
+          features: [
+            service.specifications?.duracao || "Serviço completo",
+            service.specifications?.garantia || "Garantia inclusa",
+            service.specifications?.qualidade || "Peças originais"
+          ],
+          price: service.basePrice && service.basePrice > 0 
+            ? `A partir de R$ ${service.basePrice.toFixed(2).replace('.', ',')}`
+            : "Sob orçamento",
+          category: service.category || "Serviços",
+          estimatedTime: service.estimatedTime || "A definir",
+          active: service.isActive
+        }));
+        
+        setServices(transformedServices);
       }
-    }, 500);
+    );
+  }, [filters, execute]);
 
-    return () => clearTimeout(timer);
-  };
+  // Atualizar filtros
+  const updateFilters = useCallback((newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
+  // Limpar filtros
+  const clearFilters = useCallback(() => {
+    setFilters({ active: true });
+  }, []);
+
+  // Carregar serviços quando filtros mudarem
   useEffect(() => {
-    const cleanup = loadServices(filters);
-    return cleanup;
-  }, [filters]);
-
-  const updateFilters = (newFilters) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...newFilters
-    }));
-  };
+    fetchServices();
+  }, [fetchServices]);
 
   return {
     services,
     loading,
     error,
+    filters,
+    fetchServices,
     updateFilters,
-    clearError: () => setError(null)
+    clearFilters,
+    clearError
   };
-}
-
-export default useServices;
+};

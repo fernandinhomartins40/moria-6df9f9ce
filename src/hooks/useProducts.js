@@ -1,141 +1,196 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import supabaseApi from '../services/supabaseApi.ts';
+import { useApi } from './useApi.js';
 
-// Mock data para desenvolvimento
-const mockProducts = [
-  {
-    id: 1,
-    name: 'Filtro de Óleo Bosch',
-    description: 'Filtro de óleo original Bosch para motores 1.0 a 2.0',
-    price: 35.90,
-    oldPrice: 42.90,
-    category: 'Filtros',
-    brand: 'Bosch',
-    inStock: true,
-    stock: 25,
-    image: '/placeholder.svg',
-    rating: 4.8,
-    reviews: 127
-  },
-  {
-    id: 2,
-    name: 'Pastilha de Freio Dianteira',
-    description: 'Pastilha de freio dianteira para carros populares',
-    price: 89.90,
-    oldPrice: null,
-    category: 'Freios',
-    brand: 'TRW',
-    inStock: true,
-    stock: 15,
-    image: '/placeholder.svg',
-    rating: 4.6,
-    reviews: 89
-  },
-  {
-    id: 3,
-    name: 'Óleo Motor Castrol 5W30',
-    description: 'Óleo sintético Castrol GTX 5W30 - 1 litro',
-    price: 45.90,
-    oldPrice: 52.90,
-    category: 'Óleos',
-    brand: 'Castrol',
-    inStock: true,
-    stock: 30,
-    image: '/placeholder.svg',
-    rating: 4.9,
-    reviews: 203
-  },
-  {
-    id: 4,
-    name: 'Bateria 60Ah Moura',
-    description: 'Bateria automotiva 60Ah com 18 meses de garantia',
-    price: 299.90,
-    oldPrice: 349.90,
-    category: 'Baterias',
-    brand: 'Moura',
-    inStock: true,
-    stock: 8,
-    image: '/placeholder.svg',
-    rating: 4.7,
-    reviews: 156
-  },
-  {
-    id: 5,
-    name: 'Pneu Aro 14 Michelin',
-    description: 'Pneu 175/70R14 Michelin Energy XM2',
-    price: 245.90,
-    oldPrice: null,
-    category: 'Pneus',
-    brand: 'Michelin',
-    inStock: false,
-    stock: 0,
-    image: '/placeholder.svg',
-    rating: 4.8,
-    reviews: 78
-  }
-];
-
-export function useProducts(initialFilters = {}) {
+/**
+ * Hook para gerenciar produtos
+ * Integra com a API backend mantendo compatibilidade com frontend existente
+ */
+export const useProducts = (initialFilters = {}) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState({
+    category: 'Todos',
+    active: true,
+    search: '',
+    ...initialFilters
+  });
+  
+  const { loading, error, execute, clearError } = useApi();
 
-  const loadProducts = (currentFilters) => {
-    setLoading(true);
+  // Carregar produtos da API
+  const fetchProducts = useCallback(async (customFilters = null) => {
+    const apiFilters = customFilters || filters;
     
-    // Simular carregamento
-    const timer = setTimeout(() => {
-      try {
-        let filteredProducts = mockProducts;
-        
-        // Aplicar filtros se houver
-        if (currentFilters.category) {
-          filteredProducts = filteredProducts.filter(p => p.category === currentFilters.category);
-        }
-        
-        if (currentFilters.inStock !== undefined) {
-          filteredProducts = filteredProducts.filter(p => p.inStock === currentFilters.inStock);
-        }
+    // Converter filtros do frontend para formato da API
+    const backendFilters = {};
+    
+    if (apiFilters.category && apiFilters.category !== 'Todos') {
+      backendFilters.category = apiFilters.category;
+    }
+    
+    if (apiFilters.active !== undefined) {
+      backendFilters.active = apiFilters.active;
+    }
+    
+    if (apiFilters.search) {
+      backendFilters.search = apiFilters.search;
+    }
 
-        if (currentFilters.search) {
-          filteredProducts = filteredProducts.filter(p => 
-            p.name.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
-            p.description.toLowerCase().includes(currentFilters.search.toLowerCase())
-          );
+    return execute(
+      () => supabaseApi.getProducts(backendFilters),
+      (result) => {
+        // Validar se result e result.data existem e é array
+        if (!result || !result.data || !Array.isArray(result.data)) {
+          console.warn('Dados de produtos inválidos:', result);
+          setProducts([]);
+          return;
         }
-
-        setProducts(filteredProducts);
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        console.error('Erro ao carregar produtos:', err);
-        setError(err);
-        setLoading(false);
+        
+        // Transformar dados do backend para formato do frontend
+        const transformedProducts = result.data.map(product => ({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.salePrice || product.price,
+          originalPrice: product.promoPrice ? product.salePrice : null,
+          image: product.images?.[0] || "/api/placeholder/300/300",
+          rating: 4.5, // Valor padrão até implementarmos reviews
+          inStock: product.stock > 0,
+          discount: product.promoPrice 
+            ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
+            : null,
+          description: product.description,
+          stock: product.stock,
+          active: product.isActive
+        }));
+        
+        setProducts(transformedProducts);
       }
-    }, 500);
+    );
+  }, [filters, execute]);
 
-    return () => clearTimeout(timer);
-  };
+  // Buscar produto específico
+  const fetchProduct = useCallback(async (productId) => {
+    return execute(
+      () => supabaseApi.getProduct(productId),
+      (result) => {
+        // Validar se result e result.data existem
+        if (!result || !result.data) {
+          console.warn('Dados de produto inválidos:', result);
+          return null;
+        }
+        
+        // Transformar produto individual
+        const product = result.data;
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.salePrice || product.price,
+          originalPrice: product.promoPrice ? product.salePrice : null,
+          image: product.images?.[0] || "/api/placeholder/300/300",
+          rating: 4.5,
+          inStock: product.stock > 0,
+          discount: product.promoPrice 
+            ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
+            : null,
+          description: product.description,
+          stock: product.stock,
+          active: product.isActive,
+          specifications: product.specifications || {},
+          vehicleCompatibility: product.vehicleCompatibility || []
+        };
+      }
+    );
+  }, [execute]);
 
+  // Atualizar filtros
+  const updateFilters = useCallback((newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  // Limpar filtros
+  const clearFilters = useCallback(() => {
+    setFilters({
+      category: 'Todos',
+      active: true,
+      search: ''
+    });
+  }, []);
+
+  // Carregar produtos quando filtros mudarem
   useEffect(() => {
-    const cleanup = loadProducts(filters);
-    return cleanup;
-  }, [filters]);
-
-  const updateFilters = (newFilters) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...newFilters
-    }));
-  };
+    fetchProducts();
+  }, [fetchProducts]);
 
   return {
     products,
     loading,
     error,
+    filters,
+    fetchProducts,
+    fetchProduct,
     updateFilters,
-    clearError: () => setError(null)
+    clearFilters,
+    clearError
   };
-}
+};
 
-export default useProducts;
+/**
+ * Hook simples para buscar um produto específico
+ */
+export const useProduct = (productId) => {
+  const [product, setProduct] = useState(null);
+  const { loading, error, execute, clearError } = useApi();
+
+  const fetchProduct = useCallback(async () => {
+    if (!productId) return;
+    
+    return execute(
+      () => supabaseApi.getProduct(productId),
+      (result) => {
+        // Validar se result e result.data existem
+        if (!result || !result.data) {
+          console.warn('Dados de produto inválidos:', result);
+          setProduct(null);
+          return null;
+        }
+        
+        const product = result.data;
+        const transformedProduct = {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.salePrice || product.price,
+          originalPrice: product.promoPrice ? product.salePrice : null,
+          image: product.images?.[0] || "/api/placeholder/300/300",
+          rating: 4.5,
+          inStock: product.stock > 0,
+          discount: product.promoPrice 
+            ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
+            : null,
+          description: product.description,
+          stock: product.stock,
+          active: product.isActive,
+          specifications: product.specifications || {},
+          vehicleCompatibility: product.vehicleCompatibility || []
+        };
+        
+        setProduct(transformedProduct);
+        return transformedProduct;
+      }
+    );
+  }, [productId, execute]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+
+  return {
+    product,
+    loading,
+    error,
+    refetch: fetchProduct,
+    clearError
+  };
+};

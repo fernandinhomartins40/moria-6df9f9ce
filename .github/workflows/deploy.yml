@@ -1,75 +1,195 @@
-name: Deploy to VPS
+name: 🚀 Deploy Moria Peças & Serviços - Frontend Supabase
+
+concurrency:
+  group: moria-deploy-frontend
+  cancel-in-progress: true
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  VPS_HOST: '31.97.85.98'
+  VPS_USER: 'root'
+  APP_DIR: '/root/moria-pecas-servicos'
+  PORT: '3018'
+  IMAGE_NAME: 'moria-frontend-supabase'
+  CONTAINER_NAME: 'moria-app'
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: 🚀 Deploy Frontend Supabase para VPS
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
-    - name: Checkout code
+    - name: 📥 Checkout
       uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Install dependencies
+
+    - name: 🔑 Setup SSH Tools
       run: |
-        # Fix for Rollup optional dependencies bug
-        rm -rf node_modules package-lock.json
-        npm install --legacy-peer-deps
-    
-    - name: Build application
-      run: npm run build
-      env:
-        NODE_OPTIONS: '--max-old-space-size=4096'
-    
-    - name: Build Docker image
-      run: docker build -t moria-frontend .
-    
-    - name: Test Docker container
+        echo "🔑 Instalando ferramentas SSH..."
+        sudo apt-get update -q
+        sudo apt-get install -y sshpass
+        echo "✅ Ferramentas SSH instaladas"
+
+    - name: 🔍 Pre-Deploy Validation
       run: |
-        echo "🐳 Starting container..."
-        docker run -d --name test-container -p 3018:3018 moria-frontend
-        
-        echo "📋 Container info:"
-        docker ps -a
-        
-        echo "⏳ Waiting for container to start..."
-        sleep 30
-        
-        echo "🔍 Container logs:"
-        docker logs test-container
-        
-        echo "🗂️ Checking container files:"
-        docker exec test-container ls -la /usr/share/nginx/html/
-        docker exec test-container ls -la /usr/share/nginx/html/assets/
-        
-        echo "🔧 Nginx config check:"
-        docker exec test-container nginx -t
-        
-        echo "🩺 Testing health endpoint..."
-        curl -f http://localhost:3018/health || echo "❌ Health check failed"
-        
-        echo "🏠 Testing main endpoint..."
-        curl -I http://localhost:3018/ || echo "❌ Main endpoint failed"
-        
-        echo "📜 Testing assets endpoint..."
-        curl -I http://localhost:3018/assets/index.JqFDYeKe.js || echo "❌ JS asset failed"
-        curl -I http://localhost:3018/assets/index.Di41A8rt.css || echo "❌ CSS asset failed"
-        
-        echo "🧹 Cleaning up..."
-        docker stop test-container
-        docker rm test-container
-    
-    - name: Deploy to VPS (if main branch)
-      if: github.ref == 'refs/heads/main'
+        echo "🔍 Validando estrutura do projeto..."
+        echo "📋 Arquivos essenciais:"
+        ls -la package.json vite.config.ts Dockerfile .env.example || echo "⚠️ Alguns arquivos faltando"
+        echo "📋 Estrutura src/:"
+        ls -la src/config/supabase.ts src/services/supabaseApi.ts || echo "⚠️ Arquivos Supabase faltando"
+        echo "📋 Painéis preservados:"
+        ls -la src/pages/StorePanel.tsx src/pages/CustomerPanel.tsx || echo "⚠️ Painéis não encontrados"
+
+    - name: 📦 Prepare Deployment Package
       run: |
-        echo "🚀 Deploy to VPS would happen here"
-        echo "Image ready: moria-frontend"
+        echo "📦 Preparando pacote de deploy..."
+        echo "Commit: ${{ github.sha }}"
+        echo "Branch: ${{ github.ref_name }}"
+        
+        # Criar arquivo compacto (sem node_modules, dist, etc.)
+        tar --warning=no-file-changed -czf deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='dist' \
+          --exclude='build' \
+          --exclude='*.log' \
+          --exclude='coverage' \
+          --exclude='.env.local' \
+          --exclude='backup_before_supabase' \
+          . || true
+        
+        echo "📊 Tamanho do pacote:"
+        ls -lh deploy.tar.gz
+
+    - name: 📤 Upload to VPS
+      run: |
+        echo "📤 Enviando para VPS..."
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
+
+    - name: 🚀 Deploy on VPS
+      run: |
+        echo "🏗️ Executando deploy na VPS..."
+        echo "📋 Informações do deploy:"
+        echo "  📦 Commit: ${{ github.sha }}"
+        echo "  🌿 Branch: ${{ github.ref_name }}"
+        echo "  👤 Actor: ${{ github.actor }}"
+        echo "  🕐 Timestamp: $(date)"
+        
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+          set -e
+          
+          echo '🚀 Iniciando deploy do Frontend Supabase'
+          
+          # Parar e remover container anterior
+          echo '⏹️ Parando container anterior...'
+          docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rmi ${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
+          
+          # Backup do diretório anterior (segurança)
+          if [ -d '${{ env.APP_DIR }}' ]; then
+            echo '💾 Fazendo backup do deploy anterior...'
+            mv '${{ env.APP_DIR }}' '${{ env.APP_DIR }}.backup.\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true
+          fi
+          
+          # Criar diretório e extrair código
+          echo '📁 Criando diretório e extraindo código...'
+          mkdir -p ${{ env.APP_DIR }}
+          cd ${{ env.APP_DIR }}
+          tar -xzf /tmp/deploy.tar.gz
+          rm -f /tmp/deploy.tar.gz
+          
+          # Validar estrutura após extração
+          echo '🔍 Validando estrutura extraída...'
+          ls -la package.json Dockerfile src/ || echo '❌ ERRO: Estrutura inválida!'
+          echo '📋 Arquivos Supabase:'
+          ls -la src/config/supabase.ts src/services/supabaseApi.ts || echo '⚠️ Arquivos Supabase não encontrados'
+          
+          # Limpar cache do Docker
+          echo '🧹 Limpando cache do Docker...'
+          docker system prune -f || true
+          docker builder prune -f || true
+          
+          # Build da imagem Docker
+          echo '🏗️ Construindo imagem Docker otimizada...'
+          docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
+            --build-arg VITE_SUPABASE_URL='${{ secrets.VITE_SUPABASE_URL }}' \
+            --build-arg VITE_SUPABASE_ANON_KEY='${{ secrets.VITE_SUPABASE_ANON_KEY }}' \
+            .
+          
+          # Iniciar container
+          echo '🚀 Iniciando container...'
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.PORT }}:80 \
+            --restart unless-stopped \
+            -e NODE_ENV=production \
+            ${{ env.IMAGE_NAME }}:latest
+          
+          # Aguardar inicialização
+          echo '⏳ Aguardando inicialização (20s)...'
+          sleep 20
+          
+          # Verificar container
+          echo '🔍 Verificando container...'
+          if docker ps | grep -q ${{ env.CONTAINER_NAME }}; then
+            echo '✅ Container rodando!'
+            docker ps | grep ${{ env.CONTAINER_NAME }}
+          else
+            echo '❌ Container falhou!'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 20
+            exit 1
+          fi
+          
+          # Testar aplicação
+          echo '🔍 Testando aplicação...'
+          for i in {1..5}; do
+            if curl -f -s http://localhost:${{ env.PORT }}/health >/dev/null 2>&1; then
+              echo '✅ Health check passou!'
+              break
+            fi
+            echo \"Tentativa \$i/5 - aguardando 8s...\"
+            sleep 8
+          done
+          
+          # Verificação final
+          if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
+            echo '✅ Deploy Frontend Supabase concluído com sucesso!'
+            echo '📋 Verificando estrutura final...'
+            docker exec ${{ env.CONTAINER_NAME }} ls -la /usr/share/nginx/html/ | head -10
+            echo '🔍 Testando rotas principais:'
+            curl -s -o /dev/null -w 'Página Pública: %{http_code} ' http://localhost:${{ env.PORT }}/ && echo ''
+            curl -s -o /dev/null -w 'Painel Lojista: %{http_code} ' http://localhost:${{ env.PORT }}/store-panel && echo ''
+            curl -s -o /dev/null -w 'Painel Cliente: %{http_code} ' http://localhost:${{ env.PORT }}/customer && echo '✅'
+          else
+            echo '❌ Aplicação não respondeu após tentativas'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 15
+            exit 1
+          fi
+          
+          echo '✅ DEPLOY FRONTEND SUPABASE CONCLUÍDO!'
+          echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.PORT }}'
+          echo '🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.PORT }}/store-panel'
+          echo '👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.PORT }}/customer'
+        "
+
+    - name: 🎉 Deploy Success
+      run: |
+        echo "🎉 MORIA PEÇAS & SERVIÇOS DEPLOYADO COM SUCESSO!"
+        echo "✅ Frontend Supabase em produção"
+        echo ""
+        echo "🔗 LINKS FUNCIONAIS:"
+        echo "🌐 App Principal: http://${{ env.VPS_HOST }}:${{ env.PORT }}"
+        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.PORT }}/store-panel"
+        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.PORT }}/customer"
+        echo ""
+        echo "✅ Recursos disponíveis:"
+        echo "  📦 Catálogo de produtos e serviços"
+        echo "  🛒 Sistema de carrinho e checkout"
+        echo "  🏪 CRUD completo no painel lojista"
+        echo "  👤 Perfil e pedidos no painel cliente"
+        echo "  🚀 Powered by Supabase + PostgreSQL"
