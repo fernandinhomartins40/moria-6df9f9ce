@@ -764,35 +764,159 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="border rounded-lg p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-moria-orange text-white rounded-lg p-3">
-                      <Box className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{product.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{product.description}</p>
-                      <div className="flex items-center gap-4">
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                          {product.category}
-                        </Badge>
-                        {!product.isActive && (
-                          <Badge variant="secondary" className="bg-red-100 text-red-800">
-                            Inativo
+            {filteredProducts.map((product) => {
+              const isLowStock = product.stock <= (product.minStock || 5);
+              const isOutOfStock = product.stock === 0;
+              const hasPromo = product.promoPrice && product.promoPrice < product.salePrice;
+              
+              return (
+                <div key={product.id} className="border rounded-lg p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-moria-orange text-white rounded-lg p-3">
+                        <Box className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{product.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                        <div className="flex items-center gap-4">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            {product.category}
                           </Badge>
+                          {product.subcategory && (
+                            <Badge variant="outline">{product.subcategory}</Badge>
+                          )}
+                          {!product.isActive && (
+                            <Badge variant="secondary" className="bg-red-100 text-red-800">
+                              Inativo
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={isOutOfStock ? 'bg-red-100 text-red-800' : isLowStock ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                          {isOutOfStock ? 'Sem Estoque' : isLowStock ? 'Estoque Baixo' : 'Em Estoque'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Fornecedor: {product.supplier || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Preços</span>
+                      </div>
+                      <div className="text-sm">
+                        <p>Custo: <span className="font-medium">{formatPrice(product.costPrice || 0)}</span></p>
+                        <p>Venda: <span className="font-medium">{formatPrice(product.salePrice || product.price)}</span></p>
+                        {hasPromo && (
+                          <p className="text-green-600">Promoção: <span className="font-medium">{formatPrice(product.promoPrice!)}</span></p>
                         )}
                       </div>
                     </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Package className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Estoque</span>
+                      </div>
+                      <div className="text-sm">
+                        <p>Atual: <span className={`font-medium ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-yellow-600' : 'text-green-600'}`}>{product.stock} un.</span></p>
+                        <p>Mínimo: <span className="font-medium">{product.minStock || 5} un.</span></p>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Truck className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Compatibilidade</span>
+                      </div>
+                      <div className="text-sm">
+                        <p className="text-gray-600">
+                          {product.vehicleCompatibility?.slice(0, 2).join(', ') || 'Universal'}
+                        </p>
+                        {product.vehicleCompatibility && product.vehicleCompatibility.length > 2 && (
+                          <p className="text-xs text-gray-500">+{product.vehicleCompatibility.length - 2} mais</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Data</span>
+                      </div>
+                      <div className="text-sm">
+                        <p>Criado: {new Date(product.createdAt || product.created_at).toLocaleDateString('pt-BR')}</p>
+                        <p>Editado: {new Date(product.updatedAt || product.updated_at).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-green-600">{formatPrice(product.price)}</p>
-                    <p className="text-sm text-gray-500">Estoque: {product.stock}</p>
+
+                  <Separator className="mb-4" />
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-600">
+                      <p>Margem: <span className="font-medium">
+                        {product.salePrice && product.costPrice ? 
+                          (((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(1)) : 
+                          ((product.price - (product.costPrice || 0)) / product.price * 100).toFixed(1)
+                        }%
+                      </span></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={product.isActive ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const updatedProduct = { ...product, isActive: !product.isActive };
+                            await supabaseApi.updateProduct(product.id, updatedProduct);
+                            loadData(); // Recarregar dados do Supabase
+                          } catch (error) {
+                            console.error('Erro ao atualizar produto:', error);
+                          }
+                        }}
+                      >
+                        {product.isActive ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Ativo
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="h-4 w-4 mr-1" />
+                            Inativo
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={async () => {
+                          try {
+                            await supabaseApi.deleteProduct(product.id);
+                            loadData(); // Recarregar dados do Supabase
+                          } catch (error) {
+                            console.error('Erro ao excluir produto:', error);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
