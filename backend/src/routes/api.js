@@ -669,27 +669,24 @@ router.get('/promotions', async (req, res) => {
     if (active !== undefined) {
       where.isActive = active === 'true';
     }
-    if (type) {
-      where.type = type;
-    }
+    // Campo 'type' não existe no schema atual, removendo filtro
 
     const promotions = await prisma.promotion.findMany({
       where,
       orderBy: { createdAt: 'desc' }
     });
 
-    // Transformar dados
+    // Transformar dados conforme schema real
     const transformedPromotions = promotions.map(promotion => ({
       id: promotion.id,
-      name: promotion.name,
+      title: promotion.title,
       description: promotion.description,
-      type: promotion.type,
-      conditions: promotion.conditions ? JSON.parse(promotion.conditions) : {},
       discountType: promotion.discountType,
       discountValue: promotion.discountValue,
-      maxDiscount: promotion.maxDiscount,
-      startsAt: promotion.startsAt,
-      endsAt: promotion.endsAt,
+      category: promotion.category,
+      minAmount: promotion.minAmount,
+      startDate: promotion.startDate,
+      endDate: promotion.endDate,
       isActive: promotion.isActive,
       createdAt: promotion.createdAt
     }));
@@ -726,15 +723,14 @@ router.get('/promotions/:id', async (req, res) => {
 
     const transformedPromotion = {
       id: promotion.id,
-      name: promotion.name,
+      title: promotion.title,
       description: promotion.description,
-      type: promotion.type,
-      conditions: promotion.conditions ? JSON.parse(promotion.conditions) : {},
       discountType: promotion.discountType,
       discountValue: promotion.discountValue,
-      maxDiscount: promotion.maxDiscount,
-      startsAt: promotion.startsAt,
-      endsAt: promotion.endsAt,
+      category: promotion.category,
+      minAmount: promotion.minAmount,
+      startDate: promotion.startDate,
+      endDate: promotion.endDate,
       isActive: promotion.isActive,
       createdAt: promotion.createdAt
     };
@@ -757,12 +753,22 @@ router.post('/promotions', async (req, res) => {
   try {
     const promotionData = req.body;
     
-    if (promotionData.conditions && typeof promotionData.conditions === 'object') {
-      promotionData.conditions = JSON.stringify(promotionData.conditions);
+    // Remover campos inexistentes no schema antes de criar
+    const { conditions, type, startsAt, endsAt, maxDiscount, name, ...validData } = promotionData;
+    
+    // Mapear campos se necessário
+    if (name && !validData.title) {
+      validData.title = name;
+    }
+    if (startsAt && !validData.startDate) {
+      validData.startDate = startsAt;
+    }
+    if (endsAt && !validData.endDate) {
+      validData.endDate = endsAt;
     }
 
     const promotion = await prisma.promotion.create({
-      data: promotionData
+      data: validData
     });
 
     res.status(201).json({
@@ -784,13 +790,23 @@ router.put('/promotions/:id', async (req, res) => {
     const { id } = req.params;
     const promotionData = req.body;
     
-    if (promotionData.conditions && typeof promotionData.conditions === 'object') {
-      promotionData.conditions = JSON.stringify(promotionData.conditions);
+    // Remover campos inexistentes no schema antes de atualizar
+    const { conditions, type, startsAt, endsAt, maxDiscount, name, ...validData } = promotionData;
+    
+    // Mapear campos se necessário
+    if (name && !validData.title) {
+      validData.title = name;
+    }
+    if (startsAt && !validData.startDate) {
+      validData.startDate = startsAt;
+    }
+    if (endsAt && !validData.endDate) {
+      validData.endDate = endsAt;
     }
 
     const promotion = await prisma.promotion.update({
       where: { id: parseInt(id) },
-      data: promotionData
+      data: validData
     });
 
     res.json({

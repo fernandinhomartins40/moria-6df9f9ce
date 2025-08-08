@@ -95,7 +95,7 @@ export const usePromotions = (initialFilters = {}) => {
     const isLimited = endDate && new Date(endDate) - now < 48 * 60 * 60 * 1000;
     
     // Usar nome e dados reais do produto se disponível - ADAPTADO PARA SCHEMA REAL
-    const productName = realProduct?.name || promotion.title || promotion.name || 'Produto em Promoção';
+    const productName = realProduct?.name || promotion.title || 'Produto em Promoção';
     const productImage = realProduct?.images?.[0] || "/api/placeholder/300/300";
     const productCategory = realProduct?.category || promotion.category || "Geral";
     const stockAvailable = realProduct?.stock || 0;
@@ -113,7 +113,7 @@ export const usePromotions = (initialFilters = {}) => {
       limited: isLimited,
       endTime: promotion.endDate ? new Date(promotion.endDate) : null,
       description: realProduct?.description || promotion.description,
-      type: promotion.type || 'general', // Campo type pode não existir no schema atual
+      // Campo type não existe no schema, removido
       // Novos campos da Fase 2
       stock: stockAvailable,
       stockLow: stockLow,
@@ -146,7 +146,7 @@ export const usePromotions = (initialFilters = {}) => {
       const hours = duration / (1000 * 60 * 60);
       
       // Categorizar por duração ou título da promoção
-      const title = (promotion.title || promotion.name || '').toLowerCase();
+      const title = (promotion.title || '').toLowerCase();
       
       if (hours <= 24 || title.includes('flash') || title.includes('diári')) {
         daily.push(product);

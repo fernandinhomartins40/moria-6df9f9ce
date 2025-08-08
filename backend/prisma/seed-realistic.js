@@ -416,48 +416,36 @@ async function main() {
       isActive: true
     },
     {
-      name: "Flash: Velas NGK",
+      title: "Flash: Velas NGK",
       description: "Velas de ignição NGK com preço imperdível! Apenas por hoje!",
-      type: "daily",
-      discountType: "fixed",
+      discountType: "fixed_amount",
       discountValue: 3.60,
-      startsAt: now,
-      endsAt: tomorrow,
-      conditions: JSON.stringify({
-        productId: createdProducts.find(p => p.name.includes("Vela de Ignição"))?.id,
-        category: "Motor",
-        basePrice: 12.50
-      }),
+      category: "Motor",
+      minAmount: null,
+      startDate: now,
+      endDate: tomorrow,
       isActive: true
     },
     {
-      name: "Flash: Pastilha Freio",
+      title: "Flash: Pastilha Freio",
       description: "Pastilha de freio com desconto especial! Oferta válida apenas hoje!",
-      type: "daily",
       discountType: "percentage",
       discountValue: 15,
-      startsAt: now,
-      endsAt: tomorrow,
-      conditions: JSON.stringify({
-        productId: createdProducts.find(p => p.name.includes("Pastilha de Freio"))?.id,
-        category: "Freios",
-        basePrice: 45.90
-      }),
+      category: "Freios",
+      minAmount: null,
+      startDate: now,
+      endDate: tomorrow,
       isActive: true
     },
     {
-      name: "Flash: Óleo Castrol",
+      title: "Flash: Óleo Castrol",
       description: "Óleo Castrol GTX com preço promocional! Aproveite hoje!",
-      type: "daily",
       discountType: "percentage",
       discountValue: 20,
-      startsAt: now,
-      endsAt: tomorrow,
-      conditions: JSON.stringify({
-        productId: createdProducts.find(p => p.name.includes("Óleo Motor Castrol"))?.id,
-        category: "Motor",
-        basePrice: 18.90
-      }),
+      category: "Motor",
+      minAmount: null,
+      startDate: now,
+      endDate: tomorrow,
       isActive: true
     },
 

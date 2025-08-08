@@ -13,7 +13,7 @@ async function main() {
 
   const products = [
     {
-      title: "Filtro de Óleo Tecfil PSL140",
+      name: "Filtro de Óleo Tecfil PSL140",
       description: "Filtro de óleo original Tecfil compatível com diversos modelos VW, Fiat, Ford. Material de alta qualidade com vedações em borracha.",
       category: "Motor",
       price: 24.90,
@@ -33,7 +33,7 @@ async function main() {
       ])
     },
     {
-      title: "Óleo Motor Castrol GTX 20W50 1L",
+      name: "Óleo Motor Castrol GTX 20W50 1L",
       description: "Óleo lubrificante mineral Castrol GTX 20W50 para motores a gasolina e álcool.",
       category: "Motor",
       price: 18.90,
@@ -44,7 +44,7 @@ async function main() {
       rating: 4.7
     },
     {
-      title: "Vela de Ignição NGK BPR6ES",
+      name: "Vela de Ignição NGK BPR6ES",
       description: "Vela de ignição NGK modelo BPR6ES com eletrodo de níquel.",
       category: "Motor",
       price: 12.50,
@@ -56,7 +56,7 @@ async function main() {
       rating: 4.9
     },
     {
-      title: "Pastilha de Freio Cobreq N-509",
+      name: "Pastilha de Freio Cobreq N-509",
       description: "Pastilha de freio dianteira Cobreq modelo N-509. Composto cerâmico.",
       category: "Freios",
       price: 45.90,
@@ -67,7 +67,7 @@ async function main() {
       rating: 4.6
     },
     {
-      title: "Bateria Moura 60Ah M60GD",
+      name: "Bateria Moura 60Ah M60GD",
       description: "Bateria automotiva Moura 60Ah modelo M60GD. Tecnologia prata com 18 meses de garantia.",
       category: "Elétrica",
       price: 320.00,
@@ -94,7 +94,7 @@ async function main() {
 
   const services = [
     {
-      title: "Troca de Óleo e Filtro",
+      name: "Troca de Óleo e Filtro",
       description: "Serviço completo de troca de óleo motor com filtro.",
       category: "Motor",
       basePrice: 45.00,
@@ -105,7 +105,7 @@ async function main() {
       isActive: true
     },
     {
-      title: "Alinhamento e Balanceamento",
+      name: "Alinhamento e Balanceamento",
       description: "Alinhamento de direção computadorizado + balanceamento das 4 rodas.",
       category: "Suspensão",
       basePrice: 89.90,
@@ -117,7 +117,7 @@ async function main() {
       isActive: true
     },
     {
-      title: "Revisão de Freios Completa",
+      name: "Revisão de Freios Completa"
       description: "Inspeção completa do sistema de freios.",
       category: "Freios",
       basePrice: 25.00,
