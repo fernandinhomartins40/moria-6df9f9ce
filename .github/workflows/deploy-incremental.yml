@@ -53,6 +53,15 @@ jobs:
           # Comprimir pacote
           tar -czf moria-update.tar.gz -C update-package .
 
+      - name: 🚚 Transferir arquivos via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 31.97.85.98
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: "./moria-update.tar.gz"
+          target: "/tmp/"
+
       - name: 🚚 Deploy para VPS (Incremental)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -86,24 +95,21 @@ jobs:
             docker stop moria-app || true
             docker rm moria-app || true
             
-            # 3. BAIXAR NOVA VERSÃO
-            echo "📥 Baixando nova versão..."
+            # 3. EXTRAIR NOVA VERSÃO
+            echo "📥 Extraindo nova versão..."
             rm -rf $UPDATE_DIR
             mkdir -p $UPDATE_DIR
             
-            # Método mais simples e confiável usando curl com user agent
+            # Usar arquivo transferido via SCP
             cd /tmp
-            echo "🔄 Tentando download via curl..."
-            if curl -L -H "User-Agent: Mozilla/5.0" -o moria-update.tar.gz "https://github.com/fernandinhomartins40/moria-6df9f9ce/archive/refs/heads/main.tar.gz"; then
-              echo "✅ Download concluído, extraindo..."
+            if [ -f "moria-update.tar.gz" ]; then
+              echo "✅ Arquivo encontrado, extraindo..."
               tar -xzf moria-update.tar.gz -C $UPDATE_DIR --strip-components=1
               rm moria-update.tar.gz
+              echo "✅ Extração concluída"
             else
-              echo "❌ Erro no download - usando método alternativo"
-              # Criar estrutura mínima para continuar
-              echo "⚠️ Criando estrutura mínima para debug..."
-              mkdir -p $UPDATE_DIR
-              echo "Deploy test" > $UPDATE_DIR/README.md
+              echo "❌ Arquivo não encontrado - falha na transferência"
+              exit 1
             fi
             
             # 4. PRESERVAR BANCO DE DADOS
