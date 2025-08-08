@@ -264,13 +264,10 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                   placeholder="Ex: Motor, Freios, Elétrica"
                   className={errors.category ? 'border-red-500' : ''}
                 />
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.type && (
+                {errors.category && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    {errors.type}
+                    {errors.category}
                   </p>
                 )}
               </div>
