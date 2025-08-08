@@ -166,9 +166,9 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     try {
-      const response = await api.get('/api/products?active=true');
-      if (response?.data?.success && response?.data?.data) {
-        const productsData = response.data.data;
+      const response = await api.getProducts({ active: true });
+      if (response?.success && response?.data) {
+        const productsData = response.data;
         setProducts(productsData);
         
         // Atualizar cache
@@ -218,8 +218,8 @@ export const usePromotions = (initialFilters = {}) => {
         params.append('active', filters.active);
       }
       
-      const result = await api.get(`/api/promotions?${params.toString()}`);
-      return result.data;
+      const result = await api.getPromotions(Object.fromEntries(params));
+      return result;
     });
 
     if (response?.success && response?.data) {
