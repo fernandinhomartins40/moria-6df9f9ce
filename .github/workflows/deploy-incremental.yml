@@ -40,9 +40,10 @@ jobs:
           cp -r backend/src/ update-package/backend-src/
           cp -r backend/prisma/ update-package/backend-prisma/
           cp backend/package.json update-package/
-          cp backend/.env.example update-package/backend.env.example
-          cp docker-entrypoint.sh update-package/
-          cp Dockerfile update-package/
+          
+          # Copiar arquivos opcionais apenas se existirem
+          [ -f docker-entrypoint.sh ] && cp docker-entrypoint.sh update-package/ || echo "⚠️ docker-entrypoint.sh não encontrado"
+          [ -f Dockerfile ] && cp Dockerfile update-package/ || echo "⚠️ Dockerfile não encontrado"
           
           # Criar arquivo de versão
           echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > update-package/version.txt
