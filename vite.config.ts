@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     // Proxy para backend durante desenvolvimento
     proxy: {
       '/api': {
-        target: 'http://localhost:3081',
+        target: 'http://localhost:3018',
         changeOrigin: true,
         secure: false,
       }
