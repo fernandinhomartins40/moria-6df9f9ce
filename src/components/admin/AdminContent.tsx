@@ -41,6 +41,7 @@ import {
 import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
+import { AdminProductsSection } from './AdminProductsSection';
 import supabaseApi from '../../services/supabaseApi';
 
 interface StoreOrder {
