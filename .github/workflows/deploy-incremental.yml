@@ -133,21 +133,45 @@ jobs:
               echo "✅ Banco de dados restaurado"
             fi
             
-            # 7. INSTALAR DEPENDÊNCIAS DO BACKEND
+            # 7. REORGANIZAR ESTRUTURA DE DIRETÓRIOS
+            echo "🔧 Reorganizando estrutura..."
+            cd $PROJECT_DIR
+            
+            # Criar estrutura backend correta
+            mkdir -p backend/src backend/prisma
+            
+            # Mover arquivos para locais corretos
+            if [ -d "backend-src" ]; then
+              cp -r backend-src/* backend/src/
+              rm -rf backend-src
+            fi
+            
+            if [ -d "backend-prisma" ]; then
+              cp -r backend-prisma/* backend/prisma/
+              rm -rf backend-prisma
+            fi
+            
+            # 8. INSTALAR DEPENDÊNCIAS DO BACKEND
             echo "📦 Instalando dependências do backend..."
-            cd $PROJECT_DIR/backend
+            cd backend
             npm install --production
             
-            # 8. GERAR CLIENTE PRISMA (sem migration)
+            # 9. GERAR CLIENTE PRISMA (sem migration)
             echo "🔧 Regenerando cliente Prisma..."
             npx prisma generate
             
-            # 9. REBUILD CONTAINER
+            # 10. MOVER PACKAGE.JSON PARA LOCAL CORRETO
+            echo "📝 Configurando package.json..."
+            if [ -f "$PROJECT_DIR/package.json" ]; then
+              mv "$PROJECT_DIR/package.json" "$PROJECT_DIR/backend/"
+            fi
+            
+            # 11. REBUILD CONTAINER
             echo "🏗️ Reconstruindo container..."
             cd $PROJECT_DIR
             docker build -t moria-pecas-servicos:latest .
             
-            # 10. REINICIAR CONTAINER
+            # 12. REINICIAR CONTAINER
             echo "🚀 Iniciando novo container..."
             docker run -d \
               --name moria-app \
@@ -156,11 +180,11 @@ jobs:
               -v $PROJECT_DIR/backend/prisma:/app/backend/prisma \
               moria-pecas-servicos:latest
             
-            # 11. AGUARDAR INICIALIZAÇÃO
+            # 13. AGUARDAR INICIALIZAÇÃO
             echo "⏳ Aguardando inicialização..."
             sleep 10
             
-            # 12. VERIFICAR SAÚDE
+            # 14. VERIFICAR SAÚDE
             echo "🔍 Verificando saúde da aplicação..."
             if curl -f http://localhost:3018/api/health > /dev/null 2>&1; then
               echo "✅ Deploy incremental concluído com sucesso!"
@@ -186,7 +210,7 @@ jobs:
               exit 1
             fi
             
-            # 13. LIMPEZA
+            # 15. LIMPEZA
             echo "🧹 Limpeza de arquivos temporários..."
             rm -rf /tmp/moria-update
             docker system prune -f --volumes=false
