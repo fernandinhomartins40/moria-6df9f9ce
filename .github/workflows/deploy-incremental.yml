@@ -39,7 +39,10 @@ jobs:
           cp -r dist/ update-package/
           cp -r backend/src/ update-package/backend-src/
           cp -r backend/prisma/ update-package/backend-prisma/
-          cp backend/package.json update-package/
+          cp backend/package.json update-package/backend-package.json
+          cp backend/package-lock.json update-package/backend-package-lock.json
+          cp package.json update-package/
+          cp package-lock.json update-package/
           
           # Copiar arquivos opcionais apenas se existirem
           [ -f docker-entrypoint.sh ] && cp docker-entrypoint.sh update-package/ || echo "⚠️ docker-entrypoint.sh não encontrado"
@@ -153,6 +156,15 @@ jobs:
               rm -rf backend-prisma
             fi
             
+            # Organizar arquivos package.json e package-lock.json
+            if [ -f "backend-package.json" ]; then
+              mv backend-package.json backend/package.json
+            fi
+            
+            if [ -f "backend-package-lock.json" ]; then
+              mv backend-package-lock.json backend/package-lock.json
+            fi
+            
             # 8. INSTALAR DEPENDÊNCIAS DO BACKEND
             echo "📦 Instalando dependências do backend..."
             cd backend
@@ -162,18 +174,13 @@ jobs:
             echo "🔧 Regenerando cliente Prisma..."
             npx prisma generate
             
-            # 10. MOVER PACKAGE.JSON PARA LOCAL CORRETO
-            echo "📝 Configurando package.json..."
-            if [ -f "$PROJECT_DIR/package.json" ]; then
-              mv "$PROJECT_DIR/package.json" "$PROJECT_DIR/backend/"
-            fi
             
-            # 11. REBUILD CONTAINER
+            # 10. REBUILD CONTAINER
             echo "🏗️ Reconstruindo container..."
             cd $PROJECT_DIR
             docker build -t moria-pecas-servicos:latest .
             
-            # 12. REINICIAR CONTAINER
+            # 11. REINICIAR CONTAINER
             echo "🚀 Iniciando novo container..."
             docker run -d \
               --name moria-app \
@@ -182,11 +189,11 @@ jobs:
               -v $PROJECT_DIR/backend/prisma:/app/backend/prisma \
               moria-pecas-servicos:latest
             
-            # 13. AGUARDAR INICIALIZAÇÃO
+            # 12. AGUARDAR INICIALIZAÇÃO
             echo "⏳ Aguardando inicialização..."
             sleep 10
             
-            # 14. VERIFICAR SAÚDE
+            # 13. VERIFICAR SAÚDE
             echo "🔍 Verificando saúde da aplicação..."
             if curl -f http://localhost:3018/api/health > /dev/null 2>&1; then
               echo "✅ Deploy incremental concluído com sucesso!"
@@ -212,7 +219,7 @@ jobs:
               exit 1
             fi
             
-            # 15. LIMPEZA
+            # 14. LIMPEZA
             echo "🧹 Limpeza de arquivos temporários..."
             rm -rf /tmp/moria-update
             docker system prune -f --volumes=false
