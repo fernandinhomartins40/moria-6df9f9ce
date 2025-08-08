@@ -90,21 +90,21 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return applyPromotionsToState(newState);
 
     case 'REMOVE_ITEM':
-      const newState = {
+      const removeState = {
         ...state,
         items: state.items.filter(item => item.id !== action.payload),
       };
-      return applyPromotionsToState(newState);
+      return applyPromotionsToState(removeState);
 
     case 'UPDATE_QUANTITY':
       if (action.payload.quantity <= 0) {
-        const newState = {
+        const deleteState = {
           ...state,
           items: state.items.filter(item => item.id !== action.payload.id),
         };
-        return applyPromotionsToState(newState);
+        return applyPromotionsToState(deleteState);
       }
-      const newState = {
+      const updateState = {
         ...state,
         items: state.items.map(item =>
           item.id === action.payload.id
@@ -112,7 +112,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : item
         ),
       };
-      return applyPromotionsToState(newState);
+      return applyPromotionsToState(updateState);
 
     case 'CLEAR_CART':
       return {

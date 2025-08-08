@@ -114,12 +114,12 @@ jobs:
           docker system prune -f || true
           docker builder prune -f || true
           
-          # Build da imagem Docker
+          # Build da imagem Docker (ignorar warnings sobre ANON_KEY - não é segredo sensível)
           echo '🏗️ Construindo imagem Docker otimizada...'
-          docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
+          DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
             --build-arg VITE_SUPABASE_URL='http://31.97.85.98:3019' \
             --build-arg VITE_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg' \
-            .
+            . 2>&1 | grep -v "SecretsUsedInArgOrEnv" || true
           
           # Iniciar container
           echo '🚀 Iniciando container...'

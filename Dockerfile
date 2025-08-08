@@ -17,11 +17,12 @@ RUN npm ci --silent
 # Copiar código fonte
 COPY . .
 
-# Args para variáveis de ambiente do Supabase
+# Args para variáveis de ambiente do Supabase (não são segredos sensíveis - são públicos)
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 
 # Definir variáveis de ambiente para o build
+# Nota: VITE_SUPABASE_ANON_KEY é uma chave pública, não um segredo
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
