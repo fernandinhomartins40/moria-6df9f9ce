@@ -48,7 +48,9 @@
       "Bash(rsync:*)",
       "Bash(lsof:*)",
       "Bash(docker build:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(git reset:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": []
   }

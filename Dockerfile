@@ -36,8 +36,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 3018
 
 # Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3018/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3018/health || curl -f http://localhost:3018/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

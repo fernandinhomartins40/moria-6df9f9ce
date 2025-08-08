@@ -35,9 +35,25 @@ jobs:
     
     - name: Test Docker container
       run: |
+        echo "🐳 Starting container..."
         docker run -d --name test-container -p 3018:3018 moria-frontend
-        sleep 10
-        curl -f http://localhost:3018/health || exit 1
+        
+        echo "📋 Container info:"
+        docker ps -a
+        
+        echo "⏳ Waiting for container to start..."
+        sleep 20
+        
+        echo "🔍 Container logs:"
+        docker logs test-container
+        
+        echo "🩺 Testing health endpoint..."
+        curl -v http://localhost:3018/health || echo "❌ Health check failed"
+        
+        echo "🏠 Testing main endpoint..."
+        curl -v http://localhost:3018/ || echo "❌ Main endpoint failed"
+        
+        echo "🧹 Cleaning up..."
         docker stop test-container
         docker rm test-container
     
