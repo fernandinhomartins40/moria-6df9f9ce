@@ -43,7 +43,7 @@ export const useServices = (initialFilters = {}) => {
     }
 
     return execute(
-      () => api.getServices(backendFilters),
+      () => supabaseApi.getServices(backendFilters),
       (result) => {
         // Validar se result e result.data existem e é array
         if (!result || !result.data || !Array.isArray(result.data)) {
