@@ -83,8 +83,8 @@ export const useAdminPromotions = () => {
         discountType: promotionData.discountType,
         discountValue: parseFloat(promotionData.discountValue),
         maxDiscount: promotionData.maxDiscount ? parseFloat(promotionData.maxDiscount) : null,
-        startsAt: promotionData.startsAt ? new Date(promotionData.startsAt) : new Date(),
-        endsAt: promotionData.endsAt ? new Date(promotionData.endsAt) : null,
+        startsAt: promotionData.startsAt ? promotionData.startsAt : null,
+        endsAt: promotionData.endsAt ? promotionData.endsAt : null,
         isActive: promotionData.isActive !== undefined ? promotionData.isActive : true
       };
       
