@@ -41,6 +41,7 @@ import {
 import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
+import supabaseApi from '../../services/supabaseApi';
 
 interface StoreOrder {
   id: string;
@@ -150,218 +151,49 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('🔄 Carregando dados REAIS do Supabase...');
       
-      const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-      const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
-      const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
-      const storeCoupons = JSON.parse(localStorage.getItem('store_coupons') || '[]');
-      const storeProducts = JSON.parse(localStorage.getItem('store_products') || '[]');
-      const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
+      // Carregar dados REAIS do Supabase em paralelo
+      const [
+        productsResponse,
+        servicesResponse, 
+        couponsResponse,
+        ordersResponse,
+        promotionsResponse
+      ] = await Promise.all([
+        supabaseApi.getProducts({ active: undefined }), // Todos os produtos
+        supabaseApi.getServices({ active: undefined }), // Todos os serviços  
+        supabaseApi.getCoupons({ active: undefined }), // Todos os cupons
+        supabaseApi.getOrders(), // Todos os pedidos
+        supabaseApi.getPromotions({ active: undefined }) // Todas as promoções
+      ]);
+
+      console.log('📦 Produtos do Supabase:', productsResponse?.data?.length || 0);
+      console.log('🛠️ Serviços do Supabase:', servicesResponse?.data?.length || 0);
+      console.log('🎫 Cupons do Supabase:', couponsResponse?.data?.length || 0);
+      console.log('📝 Pedidos do Supabase:', ordersResponse?.data?.length || 0);
+
+      // Definir dados dos estados
+      setProducts(productsResponse?.data || []);
+      setServices(servicesResponse?.data || []);
+      setCoupons(couponsResponse?.data || []);
+      setOrders(ordersResponse?.data || []);
       
-      // Se não há serviços, criar alguns exemplos
-      if (storeServices.length === 0) {
-        const defaultServices: Service[] = [
-          {
-            id: 'srv-001',
-            name: 'Troca de Óleo',
-            description: 'Troca completa de óleo do motor com filtro',
-            category: 'Manutenção',
-            estimatedTime: '30 minutos',
-            basePrice: 120.00,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'srv-002',
-            name: 'Alinhamento e Balanceamento',
-            description: 'Alinhamento e balanceamento das 4 rodas',
-            category: 'Suspensão',
-            estimatedTime: '45 minutos',
-            basePrice: 80.00,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'srv-003',
-            name: 'Revisão Completa',
-            description: 'Revisão geral do veículo com check-up completo',
-            category: 'Revisão',
-            estimatedTime: '2 horas',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_services', JSON.stringify(defaultServices));
-        setServices(defaultServices);
-      } else {
-        setServices(storeServices);
-      }
-      
-      // Se não há cupons, criar alguns exemplos
-      if (storeCoupons.length === 0) {
-        const defaultCoupons: Coupon[] = [
-          {
-            id: 'coupon-001',
-            code: 'PRIMEIRA20',
-            description: '20% de desconto na primeira compra',
-            discountType: 'percentage',
-            discountValue: 20,
-            minValue: 100,
-            maxDiscount: 50,
-            expiresAt: '2024-12-31',
-            usageLimit: 100,
-            usedCount: 25,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'coupon-002',
-            code: 'FRETE10',
-            description: 'Frete grátis em compras acima de R$ 150',
-            discountType: 'free_shipping',
-            discountValue: 0,
-            minValue: 150,
-            expiresAt: '2024-12-31',
-            usedCount: 12,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'coupon-003',
-            code: 'COMBO15',
-            description: '15% de desconto em combos',
-            discountType: 'percentage',
-            discountValue: 15,
-            minValue: 200,
-            maxDiscount: 30,
-            expiresAt: '2024-11-30',
-            usageLimit: 50,
-            usedCount: 45,
-            isActive: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_coupons', JSON.stringify(defaultCoupons));
-        setCoupons(defaultCoupons);
-      } else {
-        setCoupons(storeCoupons);
-      }
-      
-      // Se não há produtos, criar alguns exemplos
-      if (storeProducts.length === 0) {
-        const defaultProducts: Product[] = [
-          {
-            id: 'prod-001',
-            name: 'Filtro de Óleo Mann W75/3',
-            description: 'Filtro de óleo de alta qualidade para motores 1.0, 1.4 e 1.6',
-            category: 'Filtros',
-            subcategory: 'Filtro de Óleo',
-            sku: 'FLT-W753',
-            supplier: 'Mann Filter',
-            costPrice: 15.90,
-            salePrice: 25.90,
-            promoPrice: 22.90,
-            stock: 45,
-            minStock: 10,
-            images: [],
-            specifications: {
-              'Aplicação': 'VW Fox, Gol, Voyage / Fiat Uno, Palio',
-              'Material': 'Papel filtrante especial',
-              'Garantia': '12 meses'
-            },
-            vehicleCompatibility: ['VW Fox', 'VW Gol', 'VW Voyage', 'Fiat Uno', 'Fiat Palio'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-002',
-            name: 'Pastilha de Freio Dianteira Cobreq',
-            description: 'Pastilha de freio dianteira com cerâmica para maior durabilidade',
-            category: 'Freios',
-            subcategory: 'Pastilhas',
-            sku: 'FRE-N1049',
-            supplier: 'Cobreq',
-            costPrice: 89.90,
-            salePrice: 139.90,
-            stock: 12,
-            minStock: 5,
-            images: [],
-            specifications: {
-              'Posição': 'Dianteira',
-              'Material': 'Cerâmica',
-              'Garantia': '20.000 km'
-            },
-            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Toyota Corolla'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-003',
-            name: 'Amortecedor Traseiro Monroe',
-            description: 'Amortecedor traseiro Monroe Gas-Matic para maior conforto',
-            category: 'Suspensão',
-            subcategory: 'Amortecedores',
-            sku: 'SUS-G8203',
-            supplier: 'Monroe',
-            costPrice: 125.00,
-            salePrice: 189.90,
-            stock: 8,
-            minStock: 3,
-            images: [],
-            specifications: {
-              'Posição': 'Traseiro',
-              'Tecnologia': 'Gas-Matic',
-              'Garantia': '2 anos'
-            },
-            vehicleCompatibility: ['VW Gol G5/G6', 'VW Voyage', 'VW Fox'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-004',
-            name: 'Vela de Ignição NGK',
-            description: 'Vela de ignição NGK com eletrodo de irídio',
-            category: 'Motor',
-            subcategory: 'Velas',
-            sku: 'MOT-BKR6E',
-            supplier: 'NGK',
-            costPrice: 18.50,
-            salePrice: 32.90,
-            stock: 3,
-            minStock: 8,
-            images: [],
-            specifications: {
-              'Tipo': 'Irídio',
-              'Abertura': '0.8mm',
-              'Garantia': '30.000 km'
-            },
-            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Honda City'],
-            isActive: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_products', JSON.stringify(defaultProducts));
-        setProducts(defaultProducts);
-      } else {
-        setProducts(storeProducts);
-      }
-      
-      setOrders(storeOrders);
-      setQuotes(storeQuotes);
-      setUsers(provisionalUsers);
+      // TODO: Implementar quotes e users no Supabase futuramente
+      setQuotes([]); // Orçamentos serão implementados no Supabase
+      setUsers([]); // Usuários serão migrados para auth.users
+
+      console.log('✅ Dados do Supabase carregados com sucesso!');
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Erro ao carregar dados do Supabase:', error);
+      
+      // Em caso de erro, definir arrays vazios
+      setProducts([]);
+      setServices([]);
+      setCoupons([]);
+      setOrders([]);
+      setQuotes([]);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -1252,12 +1084,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         <Button
                           variant={product.isActive ? "secondary" : "outline"}
                           size="sm"
-                          onClick={() => {
-                            const updatedProducts = products.map(p =>
-                              p.id === product.id ? { ...p, isActive: !p.isActive, updatedAt: new Date().toISOString() } : p
-                            );
-                            setProducts(updatedProducts);
-                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          onClick={async () => {
+                            try {
+                              const updatedProduct = { ...product, isActive: !product.isActive };
+                              await supabaseApi.updateProduct(product.id, updatedProduct);
+                              loadData(); // Recarregar dados do Supabase
+                            } catch (error) {
+                              console.error('Erro ao atualizar produto:', error);
+                            }
                           }}
                         >
                           {product.isActive ? (
@@ -1279,10 +1113,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => {
-                            const updatedProducts = products.filter(p => p.id !== product.id);
-                            setProducts(updatedProducts);
-                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          onClick={async () => {
+                            try {
+                              await supabaseApi.deleteProduct(product.id);
+                              loadData(); // Recarregar dados do Supabase
+                            } catch (error) {
+                              console.error('Erro ao excluir produto:', error);
+                            }
                           }}
                           className="text-red-600 hover:text-red-700 hover:border-red-300"
                         >

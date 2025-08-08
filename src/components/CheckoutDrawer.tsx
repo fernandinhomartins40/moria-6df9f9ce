@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import supabaseApi from "../services/supabaseApi";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -71,11 +72,9 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       createdAt: new Date().toISOString()
     };
 
-    // Salva no localStorage (simula backend)
-    const users = JSON.parse(localStorage.getItem('provisional_users') || '[]');
-    users.push(user);
-    localStorage.setItem('provisional_users', JSON.stringify(users));
-
+    // TODO: Salvar usuário no Supabase auth quando implementarmos autenticação
+    console.log('👤 Usuário provisório criado:', user.name, user.email);
+    
     return user;
   };
 
@@ -108,10 +107,28 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         source: 'website'
       };
 
-      const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-      orders.push(order);
-      localStorage.setItem('store_orders', JSON.stringify(orders));
-      results.order = order;
+      try {
+        // Salvar pedido no Supabase
+        const response = await supabaseApi.createOrder({
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          customerPhone: order.customerWhatsApp,
+          customerAddress: order.customerAddress,
+          notes: order.notes,
+          items: order.items.map(item => ({
+            type: 'product',
+            itemId: item.id,
+            itemName: item.name,
+            quantity: item.quantity,
+            unitPrice: item.price
+          }))
+        });
+        console.log('📦 Pedido salvo no Supabase:', response);
+        results.order = order;
+      } catch (error) {
+        console.error('❌ Erro ao salvar pedido no Supabase:', error);
+        results.order = order; // Manter localmente se falhar
+      }
     }
 
     // Criar orçamento apenas se houver serviços
@@ -134,9 +151,8 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         source: 'website'
       };
 
-      const quotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
-      quotes.push(quote);
-      localStorage.setItem('store_quotes', JSON.stringify(quotes));
+      // TODO: Implementar orçamentos no Supabase quando necessário
+      console.log('📋 Orçamento criado (temporário):', quote);
       results.quote = quote;
     }
 
