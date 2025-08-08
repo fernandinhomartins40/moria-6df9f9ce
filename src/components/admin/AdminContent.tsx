@@ -35,7 +35,8 @@ import {
   Box,
   Download,
   BarChart3,
-  FileText
+  FileText,
+  AlertCircle
 } from "lucide-react";
 import { AdminProductsSection } from './AdminProductsSection';
 import { AdminServicesSection } from './AdminServicesSection';
@@ -860,23 +861,27 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const renderServices = () => {
     return (
-      <AdminServicesSection
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+      <div className="space-y-6">
+        <AdminServicesSection
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      </div>
     );
   };
 
   const renderCoupons = () => {
     return (
-      <AdminCouponsSection
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+      <div className="space-y-6">
+        <AdminCouponsSection
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      </div>
     );
   };
 
@@ -1529,12 +1534,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const renderPromotions = () => {
     return (
-      <AdminPromotionsSection
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+      <div className="space-y-6">
+        <AdminPromotionsSection
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      </div>
     );
   };
 
@@ -1785,35 +1792,67 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
+  // Função helper para renderização segura com error boundary
+  const safeRender = (renderFunction: () => React.ReactNode, tabName: string) => {
+    try {
+      return renderFunction();
+    } catch (error) {
+      console.error(`Erro ao renderizar ${tabName}:`, error);
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Erro ao carregar {tabName}
+            </CardTitle>
+            <CardDescription>
+              Ocorreu um erro ao carregar esta seção. Tente recarregar a página.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="mt-4"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Recarregar Página
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+  };
+
   switch (activeTab) {
     case 'dashboard':
-      return renderDashboard();
+      return safeRender(renderDashboard, 'Dashboard');
     case 'orders':
-      return renderOrders();
+      return safeRender(renderOrders, 'Pedidos');
     case 'quotes':
-      return renderQuotes();
+      return safeRender(renderQuotes, 'Orçamentos');
     case 'customers':
-      return renderCustomers();
+      return safeRender(renderCustomers, 'Clientes');
     case 'products':
-      return (
+      return safeRender(() => (
         <AdminProductsSection 
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
         />
-      );
+      ), 'Produtos');
     case 'services':
-      return renderServices();
+      return safeRender(renderServices, 'Serviços');
     case 'coupons':
-      return renderCoupons();
+      return safeRender(renderCoupons, 'Cupons');
     case 'promotions':
-      return renderPromotions();
+      return safeRender(renderPromotions, 'Promoções');
     case 'reports':
-      return renderReports();
+      return safeRender(renderReports, 'Relatórios');
     case 'settings':
-      return renderSettings();
+      return safeRender(renderSettings, 'Configurações');
     default:
-      return renderDashboard();
+      return safeRender(renderDashboard, 'Dashboard');
   }
 }
