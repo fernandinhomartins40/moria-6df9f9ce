@@ -10,7 +10,6 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
 import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X } from 'lucide-react';
-import { useAdminProducts } from '../../hooks/useAdminProducts.js';
 import supabaseApi from '../../services/supabaseApi.ts';
 
 interface Promotion {
