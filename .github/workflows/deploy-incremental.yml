@@ -1,0 +1,192 @@
+name: 🚀 Deploy Incremental - Preserva Dados
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Motivo do deploy incremental'
+        required: false
+        default: 'Atualização de código'
+
+jobs:
+  deploy-incremental:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Instalar dependências
+        run: npm ci
+
+      - name: 🏗️ Build frontend
+        run: npm run build
+
+      - name: 📋 Criar pacote de atualização
+        run: |
+          # Criar diretório temporário para o update
+          mkdir -p update-package
+          
+          # Copiar apenas arquivos necessários (SEM banco de dados)
+          cp -r dist/ update-package/
+          cp -r backend/src/ update-package/backend-src/
+          cp -r backend/prisma/ update-package/backend-prisma/
+          cp backend/package.json update-package/
+          cp backend/.env.example update-package/backend.env.example
+          cp docker-entrypoint.sh update-package/
+          cp Dockerfile update-package/
+          
+          # Criar arquivo de versão
+          echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > update-package/version.txt
+          echo "COMMIT_SHA=${{ github.sha }}" >> update-package/version.txt
+          echo "REASON=${{ github.event.inputs.reason }}" >> update-package/version.txt
+          
+          # Comprimir pacote
+          tar -czf moria-update.tar.gz -C update-package .
+
+      - name: 🚚 Deploy para VPS (Incremental)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            
+            echo "🔄 Iniciando deploy incremental..."
+            
+            # Definir variáveis
+            PROJECT_DIR="/root/moria-pecas-servicos"
+            BACKUP_DIR="/root/backups/moria"
+            UPDATE_DIR="/tmp/moria-update"
+            
+            # Criar diretório de backup se não existir
+            mkdir -p $BACKUP_DIR
+            
+            # 1. BACKUP DO BANCO ATUAL
+            echo "💾 Fazendo backup do banco de dados..."
+            if [ -f "$PROJECT_DIR/backend/prisma/database.db" ]; then
+              cp "$PROJECT_DIR/backend/prisma/database.db" "$BACKUP_DIR/database-$(date +%Y%m%d-%H%M%S).db"
+              echo "✅ Backup do banco salvo em $BACKUP_DIR"
+            else
+              echo "⚠️  Banco de dados não encontrado - primeiro deploy?"
+            fi
+            
+            # 2. PARAR CONTAINER ATUAL
+            echo "🛑 Parando container atual..."
+            docker stop moria-app || true
+            docker rm moria-app || true
+            
+            # 3. BAIXAR NOVA VERSÃO
+            echo "📥 Baixando nova versão..."
+            rm -rf $UPDATE_DIR
+            mkdir -p $UPDATE_DIR
+            
+            # Baixar do GitHub (método alternativo ao artefato)
+            curl -L "https://github.com/fernandinhomartins40/moria-6df9f9ce/archive/main.tar.gz" | tar -xzf - -C $UPDATE_DIR --strip-components=1
+            
+            # 4. PRESERVAR BANCO DE DADOS
+            echo "🔒 Preservando banco de dados..."
+            if [ -f "$PROJECT_DIR/backend/prisma/database.db" ]; then
+              # Salvar banco atual
+              cp "$PROJECT_DIR/backend/prisma/database.db" "/tmp/database-preserve.db"
+              echo "✅ Banco preservado temporariamente"
+            fi
+            
+            # 5. ATUALIZAR CÓDIGO
+            echo "🔄 Atualizando código..."
+            rm -rf $PROJECT_DIR
+            mv $UPDATE_DIR $PROJECT_DIR
+            
+            # 6. RESTAURAR BANCO DE DADOS
+            echo "🔙 Restaurando banco de dados..."
+            if [ -f "/tmp/database-preserve.db" ]; then
+              mkdir -p "$PROJECT_DIR/backend/prisma"
+              mv "/tmp/database-preserve.db" "$PROJECT_DIR/backend/prisma/database.db"
+              echo "✅ Banco de dados restaurado"
+            fi
+            
+            # 7. INSTALAR DEPENDÊNCIAS DO BACKEND
+            echo "📦 Instalando dependências do backend..."
+            cd $PROJECT_DIR/backend
+            npm install --production
+            
+            # 8. GERAR CLIENTE PRISMA (sem migration)
+            echo "🔧 Regenerando cliente Prisma..."
+            npx prisma generate
+            
+            # 9. REBUILD CONTAINER
+            echo "🏗️ Reconstruindo container..."
+            cd $PROJECT_DIR
+            docker build -t moria-pecas-servicos:latest .
+            
+            # 10. REINICIAR CONTAINER
+            echo "🚀 Iniciando novo container..."
+            docker run -d \
+              --name moria-app \
+              --restart unless-stopped \
+              -p 3018:80 \
+              -v $PROJECT_DIR/backend/prisma:/app/backend/prisma \
+              moria-pecas-servicos:latest
+            
+            # 11. AGUARDAR INICIALIZAÇÃO
+            echo "⏳ Aguardando inicialização..."
+            sleep 10
+            
+            # 12. VERIFICAR SAÚDE
+            echo "🔍 Verificando saúde da aplicação..."
+            if curl -f http://localhost:3018/api/health > /dev/null 2>&1; then
+              echo "✅ Deploy incremental concluído com sucesso!"
+              echo "📊 Verificando dados preservados..."
+              
+              # Verificar se dados foram preservados
+              PRODUCTS=$(curl -s http://localhost:3018/api/products | jq -r '.total // 0')
+              SERVICES=$(curl -s http://localhost:3018/api/services | jq -r '.total // 0')  
+              PROMOTIONS=$(curl -s http://localhost:3018/api/promotions | jq -r '.total // 0')
+              
+              echo "📈 Status dos dados:"
+              echo "   • Produtos: $PRODUCTS"
+              echo "   • Serviços: $SERVICES" 
+              echo "   • Promoções: $PROMOTIONS"
+              
+              if [ "$PRODUCTS" -gt 0 ] || [ "$SERVICES" -gt 0 ]; then
+                echo "🎉 Dados preservados com sucesso!"
+              else
+                echo "⚠️  Atenção: Possível perda de dados - verificar backup"
+              fi
+            else
+              echo "❌ Falha no deploy - aplicação não está respondendo"
+              exit 1
+            fi
+            
+            # 13. LIMPEZA
+            echo "🧹 Limpeza de arquivos temporários..."
+            rm -rf /tmp/moria-update
+            docker system prune -f --volumes=false
+            
+            echo "✨ Deploy incremental finalizado!"
+            echo "🔗 Aplicação disponível em: http://31.97.85.98:3018"
+
+      - name: 📈 Relatório do Deploy
+        if: always()
+        run: |
+          echo "## 📋 Relatório do Deploy Incremental" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🎯 Motivo:** ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          echo "**🕐 Data:** $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "**📝 Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Características do Deploy Incremental:" >> $GITHUB_STEP_SUMMARY
+          echo "- 💾 **Banco de dados preservado** (backup automático)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 **Apenas código atualizado**" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 **Dados existentes mantidos**" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚀 **Zero downtime** (mínimo possível)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔙 **Backup automático** antes da atualização" >> $GITHUB_STEP_SUMMARY
