@@ -136,6 +136,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState<any>({});
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -185,6 +188,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       setUsers([]); // Usuários serão migrados para auth.users
 
       console.log('✅ Dados do Supabase carregados com sucesso!');
+      
+      // Carregar configurações também
+      await loadSettings();
     } catch (error) {
       console.error('❌ Erro ao carregar dados do Supabase:', error);
       
@@ -198,6 +204,50 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadSettings = async () => {
+    try {
+      setIsLoadingSettings(true);
+      const response = await supabaseApi.getSettings();
+      if (response?.success && response.data) {
+        const settingsMap = response.data.reduce((acc: any, setting: any) => {
+          acc[setting.key] = setting.value;
+          return acc;
+        }, {});
+        setSettings(settingsMap);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Salvar todas as configurações atualizadas
+      const updates = Object.entries(settings).map(([key, value]) =>
+        supabaseApi.updateSetting(key, String(value))
+      );
+      
+      await Promise.all(updates);
+      console.log('✅ Configurações salvas com sucesso!');
+      
+      // Recarregar dados
+      await loadSettings();
+      await loadData();
+    } catch (error) {
+      console.error('❌ Erro ao salvar configurações:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateSetting = (key: string, value: string) => {
+    setSettings((prev: any) => ({ ...prev, [key]: value }));
   };
 
   const filterOrders = () => {
@@ -1414,57 +1464,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
 
   const renderSettings = () => {
-    const [settings, setSettings] = useState<any>({});
-    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-      loadSettings();
-    }, []);
-
-    const loadSettings = async () => {
-      try {
-        setIsLoadingSettings(true);
-        const response = await supabaseApi.getSettings();
-        if (response?.success && response.data) {
-          const settingsMap = response.data.reduce((acc: any, setting: any) => {
-            acc[setting.key] = setting.value;
-            return acc;
-          }, {});
-          setSettings(settingsMap);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
-      } finally {
-        setIsLoadingSettings(false);
-      }
-    };
-
-    const handleSaveSettings = async () => {
-      try {
-        setIsSaving(true);
-        
-        // Salvar todas as configurações atualizadas
-        const updates = Object.entries(settings).map(([key, value]) =>
-          supabaseApi.updateSetting(key, String(value))
-        );
-        
-        await Promise.all(updates);
-        console.log('✅ Configurações salvas com sucesso!');
-        
-        // Recarregar dados
-        await loadSettings();
-        await loadData();
-      } catch (error) {
-        console.error('❌ Erro ao salvar configurações:', error);
-      } finally {
-        setIsSaving(false);
-      }
-    };
-
-    const updateSetting = (key: string, value: string) => {
-      setSettings((prev: any) => ({ ...prev, [key]: value }));
-    };
 
     if (isLoadingSettings) {
       return (
