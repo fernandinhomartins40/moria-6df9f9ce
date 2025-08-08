@@ -117,8 +117,8 @@ jobs:
           # Build da imagem Docker
           echo '🏗️ Construindo imagem Docker otimizada...'
           docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
-            --build-arg VITE_SUPABASE_URL='${{ secrets.VITE_SUPABASE_URL }}' \
-            --build-arg VITE_SUPABASE_ANON_KEY='${{ secrets.VITE_SUPABASE_ANON_KEY }}' \
+            --build-arg VITE_SUPABASE_URL='http://31.97.85.98:3019' \
+            --build-arg VITE_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg' \
             .
           
           # Iniciar container
