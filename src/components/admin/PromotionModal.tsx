@@ -8,14 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
+import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X } from 'lucide-react';
+import { useAdminProducts } from '../../hooks/useAdminProducts.js';
+import supabaseApi from '../../services/supabaseApi.ts';
 
 interface Promotion {
   id?: number;
   name: string;
   description: string;
   type: 'product' | 'category' | 'general';
-  conditions: Record<string, any>;
+  conditions: {
+    categories?: string[];
+    productIds?: number[];
+    minAmount?: number;
+    maxUsesPerCustomer?: number;
+  };
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   maxDiscount?: number;
@@ -43,7 +51,12 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     name: '',
     description: '',
     type: 'general',
-    conditions: {},
+    conditions: {
+      categories: [],
+      productIds: [],
+      minAmount: undefined,
+      maxUsesPerCustomer: undefined
+    },
     discountType: 'percentage',
     discountValue: 0,
     maxDiscount: undefined,
@@ -54,6 +67,36 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+
+  // Carregar dados necessários
+  useEffect(() => {
+    if (isOpen) {
+      loadInitialData();
+    }
+  }, [isOpen]);
+
+  const loadInitialData = async () => {
+    setLoadingData(true);
+    try {
+      // Carregar produtos para obter categorias e lista de produtos
+      const productsResponse = await supabaseApi.getProducts();
+      if (productsResponse?.success && productsResponse.data) {
+        const products = productsResponse.data;
+        setAvailableProducts(products);
+        
+        // Extrair categorias únicas
+        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        setAvailableCategories(categories);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   // Preencher form quando promoção é editada
   useEffect(() => {
@@ -63,7 +106,12 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
         name: promotion.name || '',
         description: promotion.description || '',
         type: promotion.type || 'general',
-        conditions: promotion.conditions || {},
+        conditions: {
+          categories: promotion.conditions?.categories || [],
+          productIds: promotion.conditions?.productIds || [],
+          minAmount: promotion.conditions?.minAmount,
+          maxUsesPerCustomer: promotion.conditions?.maxUsesPerCustomer
+        },
         discountType: promotion.discountType || 'percentage',
         discountValue: promotion.discountValue || 0,
         maxDiscount: promotion.maxDiscount || undefined,
@@ -81,7 +129,12 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
         name: '',
         description: '',
         type: 'general',
-        conditions: {},
+        conditions: {
+          categories: [],
+          productIds: [],
+          minAmount: undefined,
+          maxUsesPerCustomer: undefined
+        },
         discountType: 'percentage',
         discountValue: 0,
         maxDiscount: undefined,
@@ -100,6 +153,50 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const handleConditionChange = (conditionField: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      conditions: {
+        ...prev.conditions,
+        [conditionField]: value
+      }
+    }));
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    const currentCategories = formData.conditions?.categories || [];
+    const isSelected = currentCategories.includes(category);
+    
+    const newCategories = isSelected
+      ? currentCategories.filter(c => c !== category)
+      : [...currentCategories, category];
+    
+    handleConditionChange('categories', newCategories);
+  };
+
+  const handleProductToggle = (productId: number) => {
+    const currentProducts = formData.conditions?.productIds || [];
+    const isSelected = currentProducts.includes(productId);
+    
+    const newProducts = isSelected
+      ? currentProducts.filter(p => p !== productId)
+      : [...currentProducts, productId];
+    
+    handleConditionChange('productIds', newProducts);
+  };
+
+  const removeCategory = (category: string) => {
+    const currentCategories = formData.conditions?.categories || [];
+    const newCategories = currentCategories.filter(c => c !== category);
+    handleConditionChange('categories', newCategories);
+  };
+
+  const removeProduct = (productId: number) => {
+    const currentProducts = formData.conditions?.productIds || [];
+    const newProducts = currentProducts.filter(p => p !== productId);
+    handleConditionChange('productIds', newProducts);
   };
 
   const validateForm = (): boolean => {
@@ -473,31 +570,171 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
           {/* Aba Condições */}
           <TabsContent value="conditions" className="space-y-4">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">Condições de Aplicação</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                As condições específicas para aplicação da promoção serão implementadas 
-                futuramente, incluindo:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm text-gray-600">Produtos específicos</Label>
-                  <p className="text-xs text-gray-500">Selecionar produtos elegíveis</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Categorias específicas</Label>
-                  <p className="text-xs text-gray-500">Selecionar categorias elegíveis</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Valor mínimo do pedido</Label>
-                  <p className="text-xs text-gray-500">Valor mínimo para aplicar promoção</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Limite de uso por cliente</Label>
-                  <p className="text-xs text-gray-500">Quantas vezes cada cliente pode usar</p>
-                </div>
+            {loadingData ? (
+              <div className="text-center py-8">
+                <Loader2 className="mx-auto h-6 w-6 animate-spin text-moria-orange" />
+                <p className="text-sm text-gray-600 mt-2">Carregando dados...</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Seleção de Categorias - apenas para type = 'category' */}
+                {formData.type === 'category' && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Categorias Elegíveis *</Label>
+                    <p className="text-sm text-gray-600">Selecione as categorias onde esta promoção será aplicada</p>
+                    
+                    {/* Categorias selecionadas */}
+                    {formData.conditions?.categories && formData.conditions.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {formData.conditions.categories.map(category => (
+                          <Badge key={category} variant="secondary" className="gap-1">
+                            {category}
+                            <button
+                              type="button"
+                              onClick={() => removeCategory(category)}
+                              className="ml-1 hover:text-red-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Lista de categorias disponíveis */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {availableCategories.map(category => (
+                        <div key={category} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category}`}
+                            checked={formData.conditions?.categories?.includes(category) || false}
+                            onCheckedChange={() => handleCategoryToggle(category)}
+                          />
+                          <Label
+                            htmlFor={`category-${category}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {category}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Seleção de Produtos - apenas para type = 'product' */}
+                {formData.type === 'product' && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Produtos Específicos *</Label>
+                    <p className="text-sm text-gray-600">Selecione os produtos onde esta promoção será aplicada</p>
+                    
+                    {/* Produtos selecionados */}
+                    {formData.conditions?.productIds && formData.conditions.productIds.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        <Label className="text-sm font-medium">Produtos Selecionados:</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.conditions.productIds.map(productId => {
+                            const product = availableProducts.find(p => p.id === productId);
+                            return product ? (
+                              <Badge key={productId} variant="secondary" className="gap-1">
+                                {product.name}
+                                <button
+                                  type="button"
+                                  onClick={() => removeProduct(productId)}
+                                  className="ml-1 hover:text-red-600"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Lista de produtos disponíveis */}
+                    <div className="max-h-64 overflow-y-auto border rounded-lg">
+                      <div className="p-3 space-y-2">
+                        {availableProducts.map(product => (
+                          <div key={product.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                            <Checkbox
+                              id={`product-${product.id}`}
+                              checked={formData.conditions?.productIds?.includes(product.id) || false}
+                              onCheckedChange={() => handleProductToggle(product.id)}
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={`product-${product.id}`}
+                                className="text-sm font-medium cursor-pointer block"
+                              >
+                                {product.name}
+                              </Label>
+                              <p className="text-xs text-gray-500">
+                                {product.category} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Condições adicionais */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minAmount">Valor Mínimo do Pedido (R$)</Label>
+                    <Input
+                      id="minAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.conditions?.minAmount || ''}
+                      onChange={(e) => handleConditionChange('minAmount', parseFloat(e.target.value) || undefined)}
+                      placeholder="Ex: 100.00"
+                    />
+                    <p className="text-xs text-gray-500">Valor mínimo para aplicar a promoção</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="maxUsesPerCustomer">Limite de Uso por Cliente</Label>
+                    <Input
+                      id="maxUsesPerCustomer"
+                      type="number"
+                      min="1"
+                      value={formData.conditions?.maxUsesPerCustomer || ''}
+                      onChange={(e) => handleConditionChange('maxUsesPerCustomer', parseInt(e.target.value) || undefined)}
+                      placeholder="Ex: 1"
+                    />
+                    <p className="text-xs text-gray-500">Quantas vezes cada cliente pode usar</p>
+                  </div>
+                </div>
+
+                {/* Resumo da promoção */}
+                {(formData.type === 'category' && formData.conditions?.categories && formData.conditions.categories.length > 0) ||
+                 (formData.type === 'product' && formData.conditions?.productIds && formData.conditions.productIds.length > 0) ||
+                 formData.type === 'general' ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Resumo da Aplicação</h4>
+                    <div className="text-blue-800 text-sm space-y-1">
+                      {formData.type === 'general' && <p>• Aplicada em todos os produtos e serviços</p>}
+                      {formData.type === 'category' && formData.conditions?.categories && (
+                        <p>• Aplicada nas categorias: {formData.conditions.categories.join(', ')}</p>
+                      )}
+                      {formData.type === 'product' && formData.conditions?.productIds && (
+                        <p>• Aplicada em {formData.conditions.productIds.length} produto(s) específico(s)</p>
+                      )}
+                      {formData.conditions?.minAmount && (
+                        <p>• Valor mínimo do pedido: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.conditions.minAmount)}</p>
+                      )}
+                      {formData.conditions?.maxUsesPerCustomer && (
+                        <p>• Máximo {formData.conditions.maxUsesPerCustomer} uso(s) por cliente</p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
