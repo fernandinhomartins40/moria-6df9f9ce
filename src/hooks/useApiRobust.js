@@ -179,6 +179,7 @@ export const useApi = (endpoint, options = {}) => {
     retry,
     refresh,
     reset,
+    clearError: reset, // Alias para compatibilidade
     lastFetch,
     retryCount,
     canRetry: retryCount < retryAttempts,
@@ -256,6 +257,7 @@ export const usePaginatedApi = (endpoint, options = {}) => {
     loadMore,
     refresh: refreshPagination,
     reset: resetPagination,
+    clearError: resetPagination, // Alias para compatibilidade
     execute
   };
 };
@@ -365,6 +367,11 @@ export const useCrudApi = (baseEndpoint) => {
     }
   }, [baseEndpoint]);
 
+  const resetData = () => {
+    setData([]);
+    setError(null);
+  };
+
   return {
     data,
     loading,
@@ -375,10 +382,8 @@ export const useCrudApi = (baseEndpoint) => {
     update,
     remove,
     refresh: fetchAll,
-    reset: () => {
-      setData([]);
-      setError(null);
-    }
+    reset: resetData,
+    clearError: resetData // Alias para compatibilidade
   };
 };
 
