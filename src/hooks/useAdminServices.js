@@ -80,7 +80,7 @@ export const useAdminServices = () => {
         description: serviceData.description || '',
         category: serviceData.category,
         basePrice: parseFloat(serviceData.basePrice),
-        estimatedTime: parseInt(serviceData.estimatedTime) || 60,
+        estimatedTime: serviceData.estimatedTime || "60 minutos",
         specifications: serviceData.specifications || {},
         isActive: serviceData.isActive !== undefined ? serviceData.isActive : true
       };

@@ -69,22 +69,21 @@ export const useAdminPromotions = () => {
       setCreateLoading(true);
       setError(null);
       
-      // Validação básica
-      if (!promotionData.name || !promotionData.type || !promotionData.discountType || !promotionData.discountValue) {
-        throw new Error('Nome, tipo, tipo de desconto e valor são obrigatórios');
+      // Validação básica - usar campos corretos do schema
+      if (!promotionData.title || !promotionData.discountType || !promotionData.discountValue) {
+        throw new Error('Título, tipo de desconto e valor são obrigatórios');
       }
       
-      // Preparar dados para API
+      // Preparar dados para API - usar schema correto
       const apiData = {
-        name: promotionData.name,
+        title: promotionData.title,
         description: promotionData.description || '',
-        type: promotionData.type,
-        conditions: promotionData.conditions || {},
         discountType: promotionData.discountType,
         discountValue: parseFloat(promotionData.discountValue),
-        maxDiscount: promotionData.maxDiscount ? parseFloat(promotionData.maxDiscount) : null,
-        startsAt: promotionData.startsAt ? new Date(promotionData.startsAt) : new Date(),
-        endsAt: promotionData.endsAt ? new Date(promotionData.endsAt) : null,
+        category: promotionData.category || null,
+        minAmount: promotionData.minAmount ? parseFloat(promotionData.minAmount) : null,
+        startDate: promotionData.startDate ? new Date(promotionData.startDate) : new Date(),
+        endDate: promotionData.endDate ? new Date(promotionData.endDate) : null,
         isActive: promotionData.isActive !== undefined ? promotionData.isActive : true
       };
       
@@ -140,7 +139,7 @@ export const useAdminPromotions = () => {
         notify({
           type: 'success',
           title: 'Promoção atualizada',
-          message: `${updatedPromotion.name} foi atualizada com sucesso`
+          message: `${updatedPromotion.title} foi atualizada com sucesso`
         });
         
         return updatedPromotion;

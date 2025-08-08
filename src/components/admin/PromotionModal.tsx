@@ -12,15 +12,14 @@ import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings } from 'l
 
 interface Promotion {
   id?: number;
-  name: string;
+  title: string;
   description: string;
-  type: 'product' | 'category' | 'general';
-  conditions: Record<string, any>;
-  discountType: 'percentage' | 'fixed';
+  discountType: 'percentage' | 'fixed_amount';
   discountValue: number;
-  maxDiscount?: number;
-  startsAt?: string;
-  endsAt?: string;
+  category?: string;
+  minAmount?: number;
+  startDate?: string;
+  endDate?: string;
   isActive: boolean;
 }
 
@@ -40,15 +39,14 @@ const PROMOTION_TYPES = [
 
 export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = false }: PromotionModalProps) {
   const [formData, setFormData] = useState<Partial<Promotion>>({
-    name: '',
+    title: '',
     description: '',
-    type: 'general',
-    conditions: {},
+    category: '',
     discountType: 'percentage',
     discountValue: 0,
-    maxDiscount: undefined,
-    startsAt: '',
-    endsAt: '',
+    minAmount: undefined,
+    startDate: '',
+    endDate: '',
     isActive: true
   });
 
@@ -60,15 +58,14 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     if (promotion) {
       setFormData({
         id: promotion.id,
-        name: promotion.name || '',
+        title: promotion.title || '',
         description: promotion.description || '',
-        type: promotion.type || 'general',
-        conditions: promotion.conditions || {},
+        category: promotion.category || '',
         discountType: promotion.discountType || 'percentage',
         discountValue: promotion.discountValue || 0,
-        maxDiscount: promotion.maxDiscount || undefined,
-        startsAt: promotion.startsAt ? promotion.startsAt.split('T')[0] + 'T' + promotion.startsAt.split('T')[1]?.substring(0, 5) : '',
-        endsAt: promotion.endsAt ? promotion.endsAt.split('T')[0] + 'T' + promotion.endsAt.split('T')[1]?.substring(0, 5) : '',
+        minAmount: promotion.minAmount || undefined,
+        startDate: promotion.startDate ? promotion.startDate.split('T')[0] + 'T' + promotion.startDate.split('T')[1]?.substring(0, 5) : '',
+        endDate: promotion.endDate ? promotion.endDate.split('T')[0] + 'T' + promotion.endDate.split('T')[1]?.substring(0, 5) : '',
         isActive: promotion.isActive !== undefined ? promotion.isActive : true
       });
     } else {
@@ -78,15 +75,14 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
       tomorrow.setDate(tomorrow.getDate() + 1);
       
       setFormData({
-        name: '',
+        title: '',
         description: '',
-        type: 'general',
-        conditions: {},
+        category: '',
         discountType: 'percentage',
         discountValue: 0,
-        maxDiscount: undefined,
-        startsAt: now.toISOString().substring(0, 16),
-        endsAt: tomorrow.toISOString().substring(0, 16),
+        minAmount: undefined,
+        startDate: now.toISOString().substring(0, 16),
+        endDate: tomorrow.toISOString().substring(0, 16),
         isActive: true
       });
     }
@@ -106,12 +102,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     const newErrors: Record<string, string> = {};
 
     // Validações obrigatórias
-    if (!formData.name?.trim()) {
-      newErrors.name = 'Nome é obrigatório';
-    }
-
-    if (!formData.type) {
-      newErrors.type = 'Tipo de promoção é obrigatório';
+    if (!formData.title?.trim()) {
+      newErrors.title = 'Título é obrigatório';
     }
 
     if (!formData.discountValue || formData.discountValue <= 0) {
@@ -122,17 +114,17 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
       newErrors.discountValue = 'Percentual não pode ser maior que 100%';
     }
 
-    if (formData.maxDiscount && formData.maxDiscount < 0) {
-      newErrors.maxDiscount = 'Desconto máximo não pode ser negativo';
+    if (formData.minAmount && formData.minAmount < 0) {
+      newErrors.minAmount = 'Valor mínimo não pode ser negativo';
     }
 
     // Validação de datas
-    if (formData.startsAt && formData.endsAt) {
-      const startDate = new Date(formData.startsAt);
-      const endDate = new Date(formData.endsAt);
+    if (formData.startDate && formData.endDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
       
       if (endDate <= startDate) {
-        newErrors.endsAt = 'Data de fim deve ser posterior ao início';
+        newErrors.endDate = 'Data de fim deve ser posterior ao início';
       }
     }
 
@@ -149,12 +141,12 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
       const dataToSave = { ...formData };
       
       // Converter datas para ISO string se fornecidas
-      if (dataToSave.startsAt) {
-        dataToSave.startsAt = new Date(dataToSave.startsAt).toISOString();
+      if (dataToSave.startDate) {
+        dataToSave.startDate = new Date(dataToSave.startDate).toISOString();
       }
       
-      if (dataToSave.endsAt) {
-        dataToSave.endsAt = new Date(dataToSave.endsAt).toISOString();
+      if (dataToSave.endDate) {
+        dataToSave.endDate = new Date(dataToSave.endDate).toISOString();
       }
       
       // Remover campos undefined
@@ -247,39 +239,31 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
           <TabsContent value="basic" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome da Promoção *</Label>
+                <Label htmlFor="title">Título da Promoção *</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Ex: Black Friday 2024"
-                  className={errors.name ? 'border-red-500' : ''}
+                  className={errors.title ? 'border-red-500' : ''}
                 />
-                {errors.name && (
+                {errors.title && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    {errors.name}
+                    {errors.title}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Promoção *</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value) => handleInputChange('type', value)}
-                >
-                  <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROMOTION_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div>
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-xs text-gray-500">{type.description}</div>
-                        </div>
-                      </SelectItem>
+                <Label htmlFor="category">Categoria</Label>
+                <Input
+                  id="category"
+                  value={formData.category || ''}
+                  onChange={(e) => handleInputChange('category', e.target.value)}
+                  placeholder="Ex: Motor, Freios, Elétrica"
+                  className={errors.category ? 'border-red-500' : ''}
+                />
                     ))}
                   </SelectContent>
                 </Select>

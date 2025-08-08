@@ -273,11 +273,10 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
                   <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                   <Input
                     id="estimatedTime"
-                    type="number"
-                    min="1"
+                    type="text"
                     value={formData.estimatedTime}
-                    onChange={(e) => handleInputChange('estimatedTime', parseInt(e.target.value) || 0)}
-                    placeholder="60"
+                    onChange={(e) => handleInputChange('estimatedTime', e.target.value)}
+                    placeholder="Ex: 30 minutos, 2 horas"
                     className={`pl-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
                   />
                 </div>

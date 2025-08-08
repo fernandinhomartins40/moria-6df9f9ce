@@ -81,10 +81,9 @@ export const useAdminCoupons = () => {
         description: couponData.description || '',
         discountType: couponData.discountType,
         discountValue: parseFloat(couponData.discountValue),
-        maxDiscount: couponData.maxDiscount ? parseFloat(couponData.maxDiscount) : null,
-        minimumAmount: couponData.minimumAmount ? parseFloat(couponData.minimumAmount) : null,
-        usageLimit: parseInt(couponData.usageLimit) || 1,
-        usageCount: 0,
+        minAmount: couponData.minAmount ? parseFloat(couponData.minAmount) : null,
+        maxUses: parseInt(couponData.maxUses) || 1,
+        usedCount: 0,
         expiresAt: couponData.expiresAt ? new Date(couponData.expiresAt) : null,
         isActive: couponData.isActive !== undefined ? couponData.isActive : true
       };

@@ -20,10 +20,6 @@ interface Product {
   salePrice?: number;
   promoPrice?: number;
   stock: number;
-  minStock: number;
-  sku: string;
-  brand: string;
-  supplier: string;
   images: string[];
   isActive: boolean;
   specifications: Record<string, any>;
@@ -62,10 +58,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     salePrice: 0,
     promoPrice: 0,
     stock: 0,
-    minStock: 5,
-    sku: '',
-    brand: '',
-    supplier: '',
     images: [],
     isActive: true,
     specifications: {},
@@ -87,10 +79,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         salePrice: product.salePrice || 0,
         promoPrice: product.promoPrice || 0,
         stock: product.stock || 0,
-        minStock: product.minStock || 5,
-        sku: product.sku || '',
-        brand: product.brand || '',
-        supplier: product.supplier || '',
         images: product.images || [],
         isActive: product.isActive !== undefined ? product.isActive : true,
         specifications: product.specifications || {},
@@ -106,10 +94,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         salePrice: 0,
         promoPrice: 0,
         stock: 0,
-        minStock: 5,
-        sku: '',
-        brand: '',
-        supplier: '',
         images: [],
         isActive: true,
         specifications: {},
@@ -156,9 +140,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       newErrors.stock = 'Estoque não pode ser negativo';
     }
 
-    if (formData.minStock !== undefined && formData.minStock < 0) {
-      newErrors.minStock = 'Estoque mínimo não pode ser negativo';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -396,38 +377,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
             </div>
           </TabsContent>
 
-          {/* Aba Detalhes */}
+          {/* Aba Detalhes - Campos simplificados conforme schema atual */}
           <TabsContent value="details" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU / Código</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => handleInputChange('sku', e.target.value)}
-                  placeholder="SKU123456"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
-                <Input
-                  id="brand"
-                  value={formData.brand}
-                  onChange={(e) => handleInputChange('brand', e.target.value)}
-                  placeholder="Ex: Bosch, Mann, NGK"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="supplier">Fornecedor</Label>
-                <Input
-                  id="supplier"
-                  value={formData.supplier}
-                  onChange={(e) => handleInputChange('supplier', e.target.value)}
-                  placeholder="Nome do fornecedor"
-                />
-              </div>
+            <div className="text-center py-8 text-gray-500">
+              <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Campos adicionais serão implementados em futuras versões</p>
             </div>
           </TabsContent>
         </Tabs>

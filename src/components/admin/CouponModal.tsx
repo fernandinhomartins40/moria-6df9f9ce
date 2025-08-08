@@ -14,12 +14,11 @@ interface Coupon {
   id?: number;
   code: string;
   description: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: 'percentage' | 'fixed_amount';
   discountValue: number;
-  maxDiscount?: number;
-  minimumAmount?: number;
-  usageLimit: number;
-  usageCount: number;
+  minAmount?: number;
+  maxUses?: number;
+  usedCount: number;
   expiresAt?: string;
   isActive: boolean;
 }
@@ -38,10 +37,9 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
     description: '',
     discountType: 'percentage',
     discountValue: 0,
-    maxDiscount: undefined,
-    minimumAmount: undefined,
-    usageLimit: 1,
-    usageCount: 0,
+    minAmount: undefined,
+    maxUses: 1,
+    usedCount: 0,
     expiresAt: '',
     isActive: true
   });
@@ -58,10 +56,9 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
         description: coupon.description || '',
         discountType: coupon.discountType || 'percentage',
         discountValue: coupon.discountValue || 0,
-        maxDiscount: coupon.maxDiscount || undefined,
-        minimumAmount: coupon.minimumAmount || undefined,
-        usageLimit: coupon.usageLimit || 1,
-        usageCount: coupon.usageCount || 0,
+        minAmount: coupon.minAmount || undefined,
+        maxUses: coupon.maxUses || 1,
+        usedCount: coupon.usedCount || 0,
         expiresAt: coupon.expiresAt ? coupon.expiresAt.split('T')[0] : '',
         isActive: coupon.isActive !== undefined ? coupon.isActive : true
       });
@@ -72,10 +69,9 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
         description: '',
         discountType: 'percentage',
         discountValue: 0,
-        maxDiscount: undefined,
-        minimumAmount: undefined,
-        usageLimit: 1,
-        usageCount: 0,
+        minAmount: undefined,
+        maxUses: 1,
+        usedCount: 0,
         expiresAt: '',
         isActive: true
       });
@@ -119,16 +115,12 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
       newErrors.discountValue = 'Percentual não pode ser maior que 100%';
     }
 
-    if (!formData.usageLimit || formData.usageLimit < 1) {
-      newErrors.usageLimit = 'Limite de uso deve ser pelo menos 1';
+    if (!formData.maxUses || formData.maxUses < 1) {
+      newErrors.maxUses = 'Limite de uso deve ser pelo menos 1';
     }
 
-    if (formData.minimumAmount && formData.minimumAmount < 0) {
-      newErrors.minimumAmount = 'Valor mínimo não pode ser negativo';
-    }
-
-    if (formData.maxDiscount && formData.maxDiscount < 0) {
-      newErrors.maxDiscount = 'Desconto máximo não pode ser negativo';
+    if (formData.minAmount && formData.minAmount < 0) {
+      newErrors.minAmount = 'Valor mínimo não pode ser negativo';
     }
 
     if (formData.expiresAt) {

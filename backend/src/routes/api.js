@@ -614,17 +614,17 @@ router.post('/coupons/validate', async (req, res) => {
       });
     }
 
-    if (coupon.usageCount >= coupon.usageLimit) {
+    if (coupon.usedCount >= coupon.maxUses) {
       return res.status(400).json({
         success: false,
         error: 'Cupom esgotado'
       });
     }
 
-    if (coupon.minimumAmount && orderAmount < coupon.minimumAmount) {
+    if (coupon.minAmount && orderAmount < coupon.minAmount) {
       return res.status(400).json({
         success: false,
-        error: `Valor mínimo do pedido: R$ ${coupon.minimumAmount.toFixed(2)}`
+        error: `Valor mínimo do pedido: R$ ${coupon.minAmount.toFixed(2)}`
       });
     }
 
