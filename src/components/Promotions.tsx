@@ -8,6 +8,7 @@ import { usePromotions } from "../hooks/usePromotions.js";
 
 interface PromotionalProduct {
   id: number;
+  productId?: number;
   name: string;
   originalPrice: number;
   discountPrice: number;
@@ -16,6 +17,14 @@ interface PromotionalProduct {
   category: string;
   limited?: boolean;
   endTime?: Date;
+  description?: string;
+  type?: string;
+  // Novos campos da Fase 2
+  stock?: number;
+  stockLow?: boolean;
+  realProduct?: any;
+  promotionData?: any;
+  savings?: number;
 }
 
 // Simulated countdown timer hook
@@ -82,6 +91,10 @@ export function Promotions() {
           src={product.image} 
           alt={product.name}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            // Fallback para placeholder se imagem não carregar
+            e.currentTarget.src = "/api/placeholder/300/300";
+          }}
         />
         <Badge className="absolute top-2 left-2 bg-red-500 text-white font-bold animate-pulse">
           -{product.discount}%
@@ -90,6 +103,20 @@ export function Promotions() {
           <Badge className="absolute top-2 right-2 bg-moria-orange text-white font-bold">
             LIMITADO
           </Badge>
+        )}
+        {/* Novo: Indicador de estoque baixo */}
+        {product.stockLow && product.stock && product.stock > 0 && (
+          <Badge className="absolute bottom-2 left-2 bg-yellow-500 text-black font-bold text-xs">
+            Restam {product.stock}
+          </Badge>
+        )}
+        {/* Novo: Indicador de produto esgotado */}
+        {product.stock === 0 && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <Badge className="bg-red-600 text-white font-bold">
+              ESGOTADO
+            </Badge>
+          </div>
         )}
       </div>
 
@@ -110,17 +137,24 @@ export function Promotions() {
             R$ {product.discountPrice.toFixed(2)}
           </span>
           <div className="text-xs text-green-600 font-medium">
-            Economia de R$ {(product.originalPrice - product.discountPrice).toFixed(2)}
+            Economia de R$ {product.savings?.toFixed(2) || (product.originalPrice - product.discountPrice).toFixed(2)}
           </div>
+          {/* Novo: Mostrar informações de estoque */}
+          {product.stock !== undefined && product.stock > 0 && !product.stockLow && (
+            <div className="text-xs text-gray-600 mt-1">
+              Em estoque ({product.stock} disponíveis)
+            </div>
+          )}
         </div>
 
         <Button
           variant="hero"
           size="sm"
           className="w-full"
+          disabled={product.stock === 0}
           onClick={() => {
             addItem({
-              id: product.id,
+              id: product.productId || product.id, // Usar ID do produto real se disponível
               name: product.name,
               price: product.discountPrice,
               image: product.image,
@@ -129,8 +163,15 @@ export function Promotions() {
             openCart();
           }}
         >
-          Adicionar ao Carrinho
+          {product.stock === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
         </Button>
+        
+        {/* Novo: Informações adicionais do produto em development */}
+        {process.env.NODE_ENV === 'development' && product.realProduct && (
+          <div className="mt-2 text-xs text-gray-400 border-t pt-2">
+            ID Real: {product.productId} | Promoção: {product.id}
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -190,14 +231,22 @@ export function Promotions() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-300 h-48 rounded-t-lg mb-4"></div>
-                  <div className="space-y-3 p-4">
-                    <div className="bg-gray-300 h-4 rounded w-3/4"></div>
-                    <div className="bg-gray-300 h-4 rounded w-1/2"></div>
-                    <div className="bg-gray-300 h-8 rounded"></div>
+                <Card key={i} className="animate-pulse overflow-hidden">
+                  <div className="relative">
+                    <div className="bg-gray-600 h-48 w-full"></div>
+                    <div className="absolute top-2 left-2 bg-gray-500 h-6 w-12 rounded"></div>
+                    <div className="absolute top-2 right-2 bg-gray-500 h-6 w-16 rounded"></div>
                   </div>
-                </div>
+                  <div className="p-4 space-y-3">
+                    <div className="bg-gray-600 h-4 rounded w-1/3"></div>
+                    <div className="bg-gray-600 h-6 rounded w-4/5"></div>
+                    <div className="bg-gray-600 h-4 rounded w-2/3"></div>
+                    <div className="space-y-2">
+                      <div className="bg-gray-600 h-4 rounded w-1/2"></div>
+                      <div className="bg-gray-600 h-8 rounded w-full"></div>
+                    </div>
+                  </div>
+                </Card>
               ))}
             </div>
           ) : dailyOffers.length === 0 ? (
@@ -229,14 +278,22 @@ export function Promotions() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-300 h-48 rounded-t-lg mb-4"></div>
-                  <div className="space-y-3 p-4">
-                    <div className="bg-gray-300 h-4 rounded w-3/4"></div>
-                    <div className="bg-gray-300 h-4 rounded w-1/2"></div>
-                    <div className="bg-gray-300 h-8 rounded"></div>
+                <Card key={i} className="animate-pulse overflow-hidden">
+                  <div className="relative">
+                    <div className="bg-gray-600 h-48 w-full"></div>
+                    <div className="absolute top-2 left-2 bg-gray-500 h-6 w-12 rounded"></div>
+                    <div className="absolute top-2 right-2 bg-gray-500 h-6 w-16 rounded"></div>
                   </div>
-                </div>
+                  <div className="p-4 space-y-3">
+                    <div className="bg-gray-600 h-4 rounded w-1/3"></div>
+                    <div className="bg-gray-600 h-6 rounded w-4/5"></div>
+                    <div className="bg-gray-600 h-4 rounded w-2/3"></div>
+                    <div className="space-y-2">
+                      <div className="bg-gray-600 h-4 rounded w-1/2"></div>
+                      <div className="bg-gray-600 h-8 rounded w-full"></div>
+                    </div>
+                  </div>
+                </Card>
               ))}
             </div>
           ) : weeklyOffers.length === 0 ? (
@@ -274,14 +331,22 @@ export function Promotions() {
             {loading ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {[1, 2].map((i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="bg-moria-black/20 h-48 rounded-t-lg mb-4"></div>
-                    <div className="space-y-3 p-4">
-                      <div className="bg-moria-black/20 h-4 rounded w-3/4"></div>
-                      <div className="bg-moria-black/20 h-4 rounded w-1/2"></div>
-                      <div className="bg-moria-black/20 h-8 rounded"></div>
+                  <Card key={i} className="animate-pulse overflow-hidden bg-moria-black/10">
+                    <div className="relative">
+                      <div className="bg-moria-black/20 h-48 w-full"></div>
+                      <div className="absolute top-2 left-2 bg-moria-black/30 h-6 w-12 rounded"></div>
+                      <div className="absolute top-2 right-2 bg-moria-black/30 h-6 w-16 rounded"></div>
                     </div>
-                  </div>
+                    <div className="p-4 space-y-3">
+                      <div className="bg-moria-black/20 h-4 rounded w-1/3"></div>
+                      <div className="bg-moria-black/20 h-6 rounded w-4/5"></div>
+                      <div className="bg-moria-black/20 h-4 rounded w-2/3"></div>
+                      <div className="space-y-2">
+                        <div className="bg-moria-black/20 h-4 rounded w-1/2"></div>
+                        <div className="bg-moria-black/20 h-8 rounded w-full"></div>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
             ) : monthlyOffers.length === 0 ? (
