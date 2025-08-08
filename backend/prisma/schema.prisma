@@ -23,6 +23,10 @@ model Product {
   promoPrice      Float?   @map("promo_price")    // Preço com desconto
   images          String?  @map("images")         // JSON array de URLs
   stock           Int      @default(0) @map("stock")
+  minStock        Int      @default(5) @map("min_stock")  // Estoque mínimo
+  sku             String?  @map("sku")            // Código do produto
+  brand           String?  @map("brand")          // Marca
+  supplier        String?  @map("supplier")       // Fornecedor
   isActive        Boolean  @default(true) @map("is_active")
   rating          Float    @default(0) @map("rating")
   specifications  String?  @map("specifications") // JSON object
@@ -34,6 +38,7 @@ model Product {
   @@index([category])
   @@index([isActive])
   @@index([name])
+  @@index([sku])
   @@map("products")
 }
 

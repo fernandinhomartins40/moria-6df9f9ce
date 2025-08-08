@@ -23,13 +23,15 @@ export const useAdminProducts = () => {
     // Contexto não disponível
   }
 
-  const notify = useCallback((notification) => {
+
+  // Versão estável do notify para evitar dependências circulares
+  const stableNotify = useCallback((notification) => {
     if (addNotification) {
       addNotification(notification);
     } else {
       showToast(notification);
     }
-  }, [notify]);
+  }, [addNotification]);
 
   // Carregar produtos da API
   const fetchProducts = useCallback(async (filters = {}) => {
@@ -49,7 +51,7 @@ export const useAdminProducts = () => {
       const errorMessage = err.message || 'Erro ao carregar produtos';
       setError(errorMessage);
       
-      notify({
+      stableNotify({
         type: 'error',
         title: 'Erro ao carregar produtos',
         message: errorMessage
@@ -61,7 +63,7 @@ export const useAdminProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, [notify]);
+  }, [stableNotify]);
 
   // Criar novo produto
   const createProduct = useCallback(async (productData) => {
@@ -100,7 +102,7 @@ export const useAdminProducts = () => {
         const newProduct = response.data;
         setProducts(prev => [newProduct, ...prev]);
         
-        notify({
+        stableNotify({
           type: 'success',
           title: 'Produto criado',
           message: `${newProduct.name} foi criado com sucesso`
@@ -114,7 +116,7 @@ export const useAdminProducts = () => {
       const errorMessage = err.message || 'Erro ao criar produto';
       setError(errorMessage);
       
-      notify({
+      stableNotify({
         type: 'error',
         title: 'Erro ao criar produto',
         message: errorMessage
@@ -124,7 +126,7 @@ export const useAdminProducts = () => {
     } finally {
       setCreateLoading(false);
     }
-  }, [notify]);
+  }, [stableNotify]);
 
   // Atualizar produto
   const updateProduct = useCallback(async (productId, productData) => {
@@ -142,7 +144,7 @@ export const useAdminProducts = () => {
           prev.map(p => p.id === productId ? updatedProduct : p)
         );
         
-        notify({
+        stableNotify({
           type: 'success',
           title: 'Produto atualizado',
           message: `${updatedProduct.name} foi atualizado com sucesso`
@@ -156,7 +158,7 @@ export const useAdminProducts = () => {
       const errorMessage = err.message || 'Erro ao atualizar produto';
       setError(errorMessage);
       
-      notify({
+      stableNotify({
         type: 'error',
         title: 'Erro ao atualizar produto',
         message: errorMessage
@@ -166,7 +168,7 @@ export const useAdminProducts = () => {
     } finally {
       setUpdateLoading(false);
     }
-  }, [notify]);
+  }, [stableNotify]);
 
   // Deletar produto
   const deleteProduct = useCallback(async (productId) => {
@@ -180,7 +182,7 @@ export const useAdminProducts = () => {
         // Remover produto da lista local
         setProducts(prev => prev.filter(p => p.id !== productId));
         
-        notify({
+        stableNotify({
           type: 'success',
           title: 'Produto excluído',
           message: 'Produto foi excluído com sucesso'
@@ -194,7 +196,7 @@ export const useAdminProducts = () => {
       const errorMessage = err.message || 'Erro ao excluir produto';
       setError(errorMessage);
       
-      notify({
+      stableNotify({
         type: 'error',
         title: 'Erro ao excluir produto',
         message: errorMessage
@@ -204,7 +206,7 @@ export const useAdminProducts = () => {
     } finally {
       setDeleteLoading(false);
     }
-  }, [notify]);
+  }, [stableNotify]);
 
   // Toggle status do produto (ativar/desativar)
   const toggleProductStatus = useCallback(async (productId, currentStatus) => {
@@ -218,7 +220,7 @@ export const useAdminProducts = () => {
       
       await updateProduct(productId, { isActive: newStatus });
       
-      notify({
+      stableNotify({
         type: 'success',
         title: `Produto ${newStatus ? 'ativado' : 'desativado'}`,
         message: `${product.name} foi ${newStatus ? 'ativado' : 'desativado'} com sucesso`
@@ -229,7 +231,7 @@ export const useAdminProducts = () => {
       // Erro já tratado no updateProduct
       throw err;
     }
-  }, [products, updateProduct, notify]);
+  }, [products, updateProduct, stableNotify]);
 
   // Buscar produto específico
   const getProduct = useCallback(async (productId) => {
@@ -245,7 +247,7 @@ export const useAdminProducts = () => {
       const errorMessage = err.message || 'Erro ao buscar produto';
       setError(errorMessage);
       
-      notify({
+      stableNotify({
         type: 'error',
         title: 'Erro ao buscar produto',
         message: errorMessage
@@ -253,7 +255,7 @@ export const useAdminProducts = () => {
       
       throw err;
     }
-  }, [notify]);
+  }, [stableNotify]);
 
   // Carregar produtos na inicialização
   useEffect(() => {

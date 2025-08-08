@@ -97,7 +97,7 @@ export const useAdminPromotions = () => {
         notify({
           type: 'success',
           title: 'Promoção criada',
-          message: `${newPromotion.name} foi criada com sucesso`
+          message: `${newPromotion.title} foi criada com sucesso`
         });
         
         return newPromotion;
@@ -215,7 +215,7 @@ export const useAdminPromotions = () => {
       notify({
         type: 'success',
         title: `Promoção ${newStatus ? 'ativada' : 'desativada'}`,
-        message: `${promotion.name} foi ${newStatus ? 'ativada' : 'desativada'} com sucesso`
+        message: `${promotion.title} foi ${newStatus ? 'ativada' : 'desativada'} com sucesso`
       });
       
       return newStatus;
@@ -254,8 +254,8 @@ export const useAdminPromotions = () => {
     if (!promotion.isActive) return false;
     
     const now = new Date();
-    const starts = promotion.startsAt ? new Date(promotion.startsAt) : null;
-    const ends = promotion.endsAt ? new Date(promotion.endsAt) : null;
+    const starts = promotion.startDate ? new Date(promotion.startDate) : null;
+    const ends = promotion.endDate ? new Date(promotion.endDate) : null;
     
     if (starts && now < starts) return false;
     if (ends && now > ends) return false;
