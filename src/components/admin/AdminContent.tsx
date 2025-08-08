@@ -1409,6 +1409,66 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
 
   const renderSettings = () => {
+    const [settings, setSettings] = useState<any>({});
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+      loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+      try {
+        setIsLoadingSettings(true);
+        const response = await supabaseApi.getSettings();
+        if (response?.success && response.data) {
+          const settingsMap = response.data.reduce((acc: any, setting: any) => {
+            acc[setting.key] = setting.value;
+            return acc;
+          }, {});
+          setSettings(settingsMap);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    const handleSaveSettings = async () => {
+      try {
+        setIsSaving(true);
+        
+        // Salvar todas as configurações atualizadas
+        const updates = Object.entries(settings).map(([key, value]) =>
+          supabaseApi.updateSetting(key, String(value))
+        );
+        
+        await Promise.all(updates);
+        console.log('✅ Configurações salvas com sucesso!');
+        
+        // Recarregar dados
+        await loadSettings();
+        await loadData();
+      } catch (error) {
+        console.error('❌ Erro ao salvar configurações:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    const updateSetting = (key: string, value: string) => {
+      setSettings((prev: any) => ({ ...prev, [key]: value }));
+    };
+
+    if (isLoadingSettings) {
+      return (
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-moria-orange"></div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <Card>
@@ -1424,23 +1484,38 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Nome da Loja</label>
-                  <Input defaultValue="Moria Peças & Serviços" />
+                  <Input 
+                    value={settings.store_name || ''} 
+                    onChange={(e) => updateSetting('store_name', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">CNPJ</label>
-                  <Input defaultValue="12.345.678/0001-90" />
+                  <Input 
+                    value={settings.store_cnpj || ''} 
+                    onChange={(e) => updateSetting('store_cnpj', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Telefone</label>
-                  <Input defaultValue="(11) 99999-9999" />
+                  <Input 
+                    value={settings.store_phone || ''} 
+                    onChange={(e) => updateSetting('store_phone', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">E-mail</label>
-                  <Input defaultValue="contato@moriapecas.com" />
+                  <Input 
+                    value={settings.store_email || ''} 
+                    onChange={(e) => updateSetting('store_email', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Endereço</label>
-                  <Input defaultValue="Av. das Oficinas, 123 - Centro - São Paulo, SP" />
+                  <Input 
+                    value={settings.store_address || ''} 
+                    onChange={(e) => updateSetting('store_address', e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -1451,19 +1526,35 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Margem de Lucro Padrão (%)</label>
-                  <Input type="number" defaultValue="35" />
+                  <Input 
+                    type="number" 
+                    value={settings.default_profit_margin || ''} 
+                    onChange={(e) => updateSetting('default_profit_margin', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Valor Mínimo para Frete Grátis</label>
-                  <Input type="number" defaultValue="150" />
+                  <Input 
+                    type="number" 
+                    value={settings.free_shipping_minimum || ''} 
+                    onChange={(e) => updateSetting('free_shipping_minimum', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Taxa de Entrega (R$)</label>
-                  <Input type="number" defaultValue="15.90" />
+                  <Input 
+                    type="number" 
+                    value={settings.delivery_fee || ''} 
+                    onChange={(e) => updateSetting('delivery_fee', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tempo de Entrega (dias)</label>
-                  <Input type="number" defaultValue="3" />
+                  <Input 
+                    type="number" 
+                    value={settings.delivery_time || ''} 
+                    onChange={(e) => updateSetting('delivery_time', e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -1477,9 +1568,23 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Novos Pedidos</p>
                     <p className="text-sm text-gray-600">Receber notificação quando houver novos pedidos</p>
                   </div>
-                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Ativo
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={settings.notifications_new_orders === 'true' ? "bg-green-100 text-green-800" : ""}
+                    onClick={() => updateSetting('notifications_new_orders', settings.notifications_new_orders === 'true' ? 'false' : 'true')}
+                  >
+                    {settings.notifications_new_orders === 'true' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Ativo
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-4 w-4 mr-1" />
+                        Inativo
+                      </>
+                    )}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1487,9 +1592,23 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Estoque Baixo</p>
                     <p className="text-sm text-gray-600">Alerta quando produtos estão com estoque baixo</p>
                   </div>
-                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Ativo
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className={settings.notifications_low_stock === 'true' ? "bg-green-100 text-green-800" : ""}
+                    onClick={() => updateSetting('notifications_low_stock', settings.notifications_low_stock === 'true' ? 'false' : 'true')}
+                  >
+                    {settings.notifications_low_stock === 'true' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Ativo
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-4 w-4 mr-1" />
+                        Inativo
+                      </>
+                    )}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1497,12 +1616,47 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Relatórios Semanais</p>
                     <p className="text-sm text-gray-600">Receber relatório semanal de vendas por e-mail</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Clock className="h-4 w-4 mr-1" />
-                    Inativo
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className={settings.notifications_weekly_reports === 'true' ? "bg-green-100 text-green-800" : ""}
+                    onClick={() => updateSetting('notifications_weekly_reports', settings.notifications_weekly_reports === 'true' ? 'false' : 'true')}
+                  >
+                    {settings.notifications_weekly_reports === 'true' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Ativo
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-4 w-4 mr-1" />
+                        Inativo
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Botão Salvar */}
+            <div className="flex justify-end pt-4 border-t">
+              <Button 
+                onClick={handleSaveSettings} 
+                disabled={isSaving}
+                className="bg-moria-orange hover:bg-moria-orange/80"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Salvar Configurações
+                  </>
+                )}
+              </Button>
             </div>
 
             {/* Integrações */}

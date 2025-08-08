@@ -607,6 +607,124 @@ class SupabaseApiService {
   // PROMOÇÕES - Para painel lojista
   // ========================================
 
+  // ============================================
+  // SETTINGS - Configurações do sistema
+  // ============================================
+  
+  async getSettings(category?: string) {
+    try {
+      let query = supabase.from('settings').select('*');
+      
+      if (category) {
+        query = query.eq('category', category);
+      }
+      
+      const { data, error } = await query.order('category').order('key');
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data || []);
+    } catch (error) {
+      this.handleError(error, 'getSettings');
+    }
+  }
+
+  async getSetting(key: string) {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', key)
+        .single();
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data);
+    } catch (error) {
+      this.handleError(error, 'getSetting');
+    }
+  }
+
+  async updateSetting(key: string, value: string, description?: string) {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ 
+          value, 
+          description: description || undefined,
+          updated_at: new Date().toISOString()
+        })
+        .eq('key', key)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data);
+    } catch (error) {
+      this.handleError(error, 'updateSetting');
+    }
+  }
+
+  async createSetting(key: string, value: string, description?: string, category = 'general') {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .insert({
+          key,
+          value,
+          description,
+          category
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data);
+    } catch (error) {
+      this.handleError(error, 'createSetting');
+    }
+  }
+
+  // ============================================
+  // COMPANY INFO - Informações da empresa
+  // ============================================
+
+  async getCompanyInfo() {
+    try {
+      const { data, error } = await supabase
+        .from('company_info')
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data);
+    } catch (error) {
+      this.handleError(error, 'getCompanyInfo');
+    }
+  }
+
+  async updateCompanyInfo(companyData: any) {
+    try {
+      const { data, error } = await supabase
+        .from('company_info')
+        .update({
+          ...companyData,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return this.formatResponse(data);
+    } catch (error) {
+      this.handleError(error, 'updateCompanyInfo');
+    }
+  }
+
   async getPromotions(filters: any = {}) {
     try {
       let query = supabase.from('promotions').select('*');
