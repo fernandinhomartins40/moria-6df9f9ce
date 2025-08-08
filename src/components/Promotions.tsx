@@ -93,7 +93,7 @@ export function Promotions() {
           className="w-full h-48 object-cover"
           onError={(e) => {
             // Fallback para placeholder se imagem não carregar
-            e.currentTarget.src = "/api/placeholder/300/300";
+            e.currentTarget.src = "/placeholder.svg";
           }}
         />
         <Badge className="absolute top-2 left-2 bg-red-500 text-white font-bold animate-pulse">

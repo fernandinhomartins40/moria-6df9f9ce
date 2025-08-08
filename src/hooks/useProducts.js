@@ -12,7 +12,7 @@ const mockProducts = [
     brand: 'Bosch',
     inStock: true,
     stock: 25,
-    image: '/api/placeholder/300/300',
+    image: '/placeholder.svg',
     rating: 4.8,
     reviews: 127
   },
@@ -26,7 +26,7 @@ const mockProducts = [
     brand: 'TRW',
     inStock: true,
     stock: 15,
-    image: '/api/placeholder/300/300',
+    image: '/placeholder.svg',
     rating: 4.6,
     reviews: 89
   },
@@ -40,7 +40,7 @@ const mockProducts = [
     brand: 'Castrol',
     inStock: true,
     stock: 30,
-    image: '/api/placeholder/300/300',
+    image: '/placeholder.svg',
     rating: 4.9,
     reviews: 203
   },
@@ -54,7 +54,7 @@ const mockProducts = [
     brand: 'Moura',
     inStock: true,
     stock: 8,
-    image: '/api/placeholder/300/300',
+    image: '/placeholder.svg',
     rating: 4.7,
     reviews: 156
   },
@@ -68,49 +68,73 @@ const mockProducts = [
     brand: 'Michelin',
     inStock: false,
     stock: 0,
-    image: '/api/placeholder/300/300',
+    image: '/placeholder.svg',
     rating: 4.8,
     reviews: 78
   }
 ];
 
-export function useProducts(filters = {}) {
+export function useProducts(initialFilters = {}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState(initialFilters);
 
-  useEffect(() => {
+  const loadProducts = (currentFilters) => {
+    setLoading(true);
+    
     // Simular carregamento
     const timer = setTimeout(() => {
-      let filteredProducts = mockProducts;
-      
-      // Aplicar filtros se houver
-      if (filters.category) {
-        filteredProducts = filteredProducts.filter(p => p.category === filters.category);
-      }
-      
-      if (filters.inStock !== undefined) {
-        filteredProducts = filteredProducts.filter(p => p.inStock === filters.inStock);
-      }
+      try {
+        let filteredProducts = mockProducts;
+        
+        // Aplicar filtros se houver
+        if (currentFilters.category) {
+          filteredProducts = filteredProducts.filter(p => p.category === currentFilters.category);
+        }
+        
+        if (currentFilters.inStock !== undefined) {
+          filteredProducts = filteredProducts.filter(p => p.inStock === currentFilters.inStock);
+        }
 
-      if (filters.search) {
-        filteredProducts = filteredProducts.filter(p => 
-          p.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          p.description.toLowerCase().includes(filters.search.toLowerCase())
-        );
-      }
+        if (currentFilters.search) {
+          filteredProducts = filteredProducts.filter(p => 
+            p.name.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
+            p.description.toLowerCase().includes(currentFilters.search.toLowerCase())
+          );
+        }
 
-      setProducts(filteredProducts);
-      setLoading(false);
+        setProducts(filteredProducts);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error('Erro ao carregar produtos:', err);
+        setError(err);
+        setLoading(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
+  };
+
+  useEffect(() => {
+    const cleanup = loadProducts(filters);
+    return cleanup;
   }, [filters]);
+
+  const updateFilters = (newFilters) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters
+    }));
+  };
 
   return {
     products,
     loading,
-    error
+    error,
+    updateFilters,
+    clearError: () => setError(null)
   };
 }
 

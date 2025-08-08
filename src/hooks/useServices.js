@@ -10,7 +10,7 @@ const mockServices = [
     duration: '30 min',
     category: 'Manutenção',
     available: true,
-    image: '/api/placeholder/300/200'
+    image: '/placeholder.svg'
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const mockServices = [
     duration: '45 min',
     category: 'Pneus',
     available: true,
-    image: '/api/placeholder/300/200'
+    image: '/placeholder.svg'
   },
   {
     id: 3,
@@ -30,29 +30,71 @@ const mockServices = [
     duration: '2 horas',
     category: 'Revisão',
     available: true,
-    image: '/api/placeholder/300/200'
+    image: '/placeholder.svg'
   }
 ];
 
-export function useServices() {
+export function useServices(initialFilters = {}) {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState(initialFilters);
 
-  useEffect(() => {
+  const loadServices = (currentFilters) => {
+    setLoading(true);
+    
     // Simular carregamento
     const timer = setTimeout(() => {
-      setServices(mockServices);
-      setLoading(false);
+      try {
+        let filteredServices = mockServices;
+        
+        // Aplicar filtros se houver
+        if (currentFilters.category) {
+          filteredServices = filteredServices.filter(s => s.category === currentFilters.category);
+        }
+        
+        if (currentFilters.available !== undefined) {
+          filteredServices = filteredServices.filter(s => s.available === currentFilters.available);
+        }
+
+        if (currentFilters.search) {
+          filteredServices = filteredServices.filter(s => 
+            s.name.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
+            s.description.toLowerCase().includes(currentFilters.search.toLowerCase())
+          );
+        }
+
+        setServices(filteredServices);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error('Erro ao carregar serviços:', err);
+        setError(err);
+        setLoading(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, []);
+  };
+
+  useEffect(() => {
+    const cleanup = loadServices(filters);
+    return cleanup;
+  }, [filters]);
+
+  const updateFilters = (newFilters) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters
+    }));
+  };
 
   return {
     services,
     loading,
-    error
+    error,
+    updateFilters,
+    clearError: () => setError(null)
   };
 }
 
