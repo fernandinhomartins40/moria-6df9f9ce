@@ -504,7 +504,23 @@ class SupabaseApiService {
 
       if (error) throw error;
 
-      return this.formatResponse(data || []);
+      // Transformar dados do Supabase (snake_case -> camelCase) para o frontend
+      const transformedData = (data || []).map((coupon: any) => ({
+        id: coupon.id,
+        code: coupon.code,
+        description: coupon.description,
+        discountType: coupon.discount_type,
+        discountValue: coupon.discount_value,
+        minAmount: coupon.min_amount,
+        maxUses: coupon.max_uses,
+        usedCount: coupon.used_count,
+        expiresAt: coupon.expires_at,
+        isActive: coupon.is_active,
+        createdAt: coupon.created_at,
+        updatedAt: coupon.updated_at
+      }));
+
+      return this.formatResponse(transformedData);
     } catch (error) {
       this.handleError(error, 'getCoupons');
     }
@@ -512,9 +528,22 @@ class SupabaseApiService {
 
   async createCoupon(couponData: any) {
     try {
+      // Transformar dados para formato Supabase (camelCase -> snake_case)
+      const supabaseData = {
+        code: couponData.code,
+        description: couponData.description,
+        discount_type: couponData.discountType,
+        discount_value: couponData.discountValue,
+        min_amount: couponData.minAmount,
+        max_uses: couponData.maxUses,
+        used_count: couponData.usedCount || 0,
+        expires_at: couponData.expiresAt,
+        is_active: couponData.isActive ?? true
+      };
+
       const { data, error } = await supabase
         .from('coupons')
-        .insert(couponData)
+        .insert(supabaseData)
         .select()
         .single();
 
@@ -528,9 +557,22 @@ class SupabaseApiService {
 
   async updateCoupon(id: string, couponData: any) {
     try {
+      // Transformar dados para formato Supabase (camelCase -> snake_case)
+      const supabaseData = {
+        code: couponData.code,
+        description: couponData.description,
+        discount_type: couponData.discountType,
+        discount_value: couponData.discountValue,
+        min_amount: couponData.minAmount,
+        max_uses: couponData.maxUses,
+        used_count: couponData.usedCount,
+        expires_at: couponData.expiresAt,
+        is_active: couponData.isActive
+      };
+
       const { data, error } = await supabase
         .from('coupons')
-        .update(couponData)
+        .update(supabaseData)
         .eq('id', id)
         .select()
         .single();
