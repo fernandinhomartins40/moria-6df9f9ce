@@ -228,7 +228,7 @@ export const usePromotions = (initialFilters = {}, usePublicAPI = true) => {
 
   // Buscar promoções da API com cache inteligente
   const fetchPromotions = useCallback(async () => {
-    clearError();
+    // clearError será chamado automaticamente pelo execute do useApiRobust
     
     const cacheKey = `promotions_${JSON.stringify(filters)}`;
     
@@ -318,7 +318,7 @@ export const usePromotions = (initialFilters = {}, usePublicAPI = true) => {
       setWeeklyOffers([]);
       setMonthlyOffers([]);
     }
-  }, [filters, execute, clearError, products, cache, fetchProducts, usePublicAPI]);
+  }, [filters, execute, products, cache, fetchProducts, usePublicAPI]);
 
   // Carregar promoções ao montar o componente ou quando filtros mudarem
   useEffect(() => {
