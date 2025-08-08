@@ -351,39 +351,34 @@ async function main() {
   const coupons = [
     {
       code: "BEMVINDO10",
-      name: "Desconto Boas-vindas",
       description: "10% de desconto para novos clientes na primeira compra",
       discountType: "percentage",
       discountValue: 10,
-      minimumAmount: 50.00,
-      maxDiscount: 30.00,
-      usageLimit: 100,
-      usageCount: 0,
+      minAmount: 50.00,
+      maxUses: 100,
+      usedCount: 0,
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
       isActive: true
     },
     {
       code: "FRETE15",
-      name: "Desconto no Frete",
       description: "R$ 15,00 de desconto no frete para compras acima de R$ 100",
-      discountType: "fixed",
+      discountType: "fixed_amount",
       discountValue: 15.00,
-      minimumAmount: 100.00,
-      usageLimit: 50,
-      usageCount: 0,
+      minAmount: 100.00,
+      maxUses: 50,
+      usedCount: 0,
       expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 dias
       isActive: true
     },
     {
       code: "TROCA20",
-      name: "Desconto Troca de Óleo",
       description: "20% off em serviços de troca de óleo",
       discountType: "percentage", 
       discountValue: 20,
-      minimumAmount: 40.00,
-      maxDiscount: 25.00,
-      usageLimit: 30,
-      usageCount: 0,
+      minAmount: 40.00,
+      maxUses: 30,
+      usedCount: 0,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
       isActive: true
     }
@@ -410,19 +405,14 @@ async function main() {
   const promotions = [
     // PROMOÇÕES DIÁRIAS (Ofertas Flash)
     {
-      name: "Flash: Filtro de Óleo",
+      title: "Flash: Filtro de Óleo",
       description: "Oferta relâmpago! Filtro de óleo com desconto especial válido apenas hoje!",
-      type: "daily",
       discountType: "percentage",
       discountValue: 25,
-      maxDiscount: null,
-      startsAt: now,
-      endsAt: tomorrow,
-      conditions: JSON.stringify({
-        productId: createdProducts.find(p => p.name.includes("Filtro de Óleo"))?.id,
-        category: "Motor",
-        basePrice: 24.90
-      }),
+      category: "Motor",
+      minAmount: null,
+      startDate: now,
+      endDate: tomorrow,
       isActive: true
     },
     {
