@@ -191,10 +191,19 @@ jobs:
             
             # 12. AGUARDAR INICIALIZAÇÃO
             echo "⏳ Aguardando inicialização..."
-            sleep 10
+            sleep 15
+            
+            # DEBUG: Verificar status do container
+            echo "🔍 Debug - Status do container:"
+            docker ps -a --filter name=moria-app
+            echo "📝 Debug - Logs do container:"
+            docker logs moria-app --tail 20
             
             # 13. VERIFICAR SAÚDE
             echo "🔍 Verificando saúde da aplicação..."
+            echo "Debug - Testando curl..."
+            curl -v http://localhost:3018/api/health || echo "❌ Curl falhou"
+            
             if curl -f http://localhost:3018/api/health > /dev/null 2>&1; then
               echo "✅ Deploy incremental concluído com sucesso!"
               echo "📊 Verificando dados preservados..."
