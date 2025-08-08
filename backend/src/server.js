@@ -1,16 +1,33 @@
+// ========================================
+// SERVIDOR ROBUSTO - MORIA BACKEND
+// Migrado automaticamente para versão robusta
+// ========================================
+
+// CRÍTICO: Validação de environment ANTES de tudo
+const config = require('./config/environment');
+const logger = require('./config/logger');
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
-require('dotenv').config();
 
+// Middlewares robustos
+const loggingMiddleware = require('./middleware/logger');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+
+// Rotas
 const apiRoutes = require('./routes/api');
 const publicApiRoutes = require('./routes/publicApi');
+const healthRoutes = require('./routes/health');
+const diagnosticsRoutes = require('./routes/diagnostics');
 const { connectDatabase } = require('./config/database');
 
 const app = express();
-const PORT = process.env.PORT || 3081;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Usar configurações validadas
+const PORT = config.port;
+const NODE_ENV = config.nodeenv;
 
 // Middleware de segurança
 app.use(helmet({
@@ -25,26 +42,26 @@ app.use(helmet({
   },
 }));
 
-// CORS Configuration - Single Tenant
+// CORS Configuration robusta
 const corsOptions = {
-  origin: NODE_ENV === 'development' 
-    ? ['http://localhost:8080', 'http://127.0.0.1:8080'] // Vite dev server
-    : process.env.ALLOWED_ORIGIN || 'https://yourdomain.com', // Production domain
+  origin: config.corsOrigin,
   credentials: true,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 
+// Middleware de logging ANTES de qualquer rota
+app.use(loggingMiddleware);
+
 // Middleware básico
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Logs simples
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
-  next();
-});
+// Logging já configurado no middleware
+
+// Rotas de sistema (health checks e diagnósticos)
+app.use('/api/health', healthRoutes);
+app.use('/api/diagnostics', diagnosticsRoutes);
 
 // API Routes Públicas (SEM autenticação)
 app.use('/api/public', publicApiRoutes);
@@ -62,60 +79,103 @@ if (NODE_ENV === 'production') {
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
 } else {
-  // Em desenvolvimento, retorna uma mensagem informativa
+  // Em desenvolvimento, retorna dashboard de informações
   app.get('/', (req, res) => {
     res.json({ 
-      message: 'Backend funcionando em modo desenvolvimento',
+      service: config.appname,
+      message: 'Backend robusto funcionando em modo desenvolvimento',
       environment: NODE_ENV,
       port: PORT,
+      uptime: Math.floor(process.uptime()),
+      endpoints: {
+        health: `http://localhost:${PORT}/api/health`,
+        diagnostics: `http://localhost:${PORT}/api/diagnostics`,
+        publicApi: `http://localhost:${PORT}/api/public`,
+        privateApi: `http://localhost:${PORT}/api`
+      },
       frontend: 'http://localhost:5173',
-      apis: `http://localhost:${PORT}/api`
+      timestamp: new Date().toISOString()
     });
   });
 }
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(`[ERROR] ${err.message}`);
-  console.error(err.stack);
-  
-  res.status(err.status || 500).json({
-    error: NODE_ENV === 'production' 
-      ? 'Erro interno do servidor' 
-      : err.message
-  });
-});
+// Error handling robusto DEPOIS de todas as rotas
+app.use('/api/*', notFoundHandler);
+app.use(errorHandler);
 
-// 404 handler para APIs
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint não encontrado' });
-});
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+  logger.warn(`Recebido sinal ${signal}, iniciando shutdown graceful...`);
+  
+  server.close((err) => {
+    if (err) {
+      logger.error('Erro durante shutdown do servidor', err);
+    } else {
+      logger.info('Servidor fechado com sucesso');
+    }
+    
+    // Fechar conexão do banco
+    if (global.prisma) {
+      global.prisma.$disconnect()
+        .then(() => {
+          logger.info('Conexão do banco fechada');
+          process.exit(err ? 1 : 0);
+        })
+        .catch((dbErr) => {
+          logger.error('Erro ao fechar conexão do banco', dbErr);
+          process.exit(1);
+        });
+    } else {
+      process.exit(err ? 1 : 0);
+    }
+  });
+};
 
 // Start server with database connection
+let server;
+
 async function startServer() {
   try {
+    logger.systemEvent('server_startup_initiated');
+    
     // Conectar ao banco primeiro
     await connectDatabase();
+    logger.systemEvent('database_connected');
     
-    const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log('🚀 ========================================');
-      console.log(`📱 ${process.env.APP_NAME || 'Moria Backend'}`);
-      console.log(`👤 Cliente: ${process.env.CLIENT_NAME || 'Desenvolvimento'}`);
-      console.log(`🌍 Ambiente: ${NODE_ENV}`);
-      console.log(`💾 Banco: SQLite (database.db)`);
-      console.log(`🔗 Servidor: http://localhost:${PORT}`);
-      console.log(`📡 APIs: http://localhost:${PORT}/api`);
-      if (NODE_ENV === 'development') {
-        console.log(`⚛️  Frontend Dev: http://localhost:8080`);
+    server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info('🚀 ========================================');
+      logger.info(`📱 ${config.appname}`);
+      logger.info(`👤 Cliente: ${config.clientname}`);
+      logger.info(`🌍 Ambiente: ${NODE_ENV}`);
+      logger.info(`💾 Banco: SQLite (database.db)`);
+      logger.info(`🔗 Servidor: http://localhost:${PORT}`);
+      logger.info(`📡 APIs: http://localhost:${PORT}/api`);
+      logger.info(`🏥 Health: http://localhost:${PORT}/api/health`);
+      if (config.isDevelopment) {
+        logger.info(`⚛️  Frontend Dev: http://localhost:5173`);
+        logger.info(`🔧 Diagnostics: http://localhost:${PORT}/api/diagnostics`);
       }
-      console.log('========================================');
+      logger.info('========================================');
+      
+      logger.systemEvent('server_startup_completed', {
+        port: PORT,
+        environment: NODE_ENV,
+        uptime: process.uptime()
+      });
     });
     
     server.on('error', (err) => {
-      console.error('❌ Erro no servidor:', err);
+      logger.error('Erro no servidor', err);
+      process.exit(1);
     });
+    
+    // Configurar handlers de shutdown
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // nodemon
+    
   } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error.message);
+    logger.error('Erro ao iniciar servidor', error);
     process.exit(1);
   }
 }

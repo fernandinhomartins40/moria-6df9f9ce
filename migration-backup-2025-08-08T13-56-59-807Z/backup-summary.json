@@ -1,0 +1,19 @@
+{
+  "migrationId": "2025-08-08T13-56-59-807Z",
+  "timestamp": "2025-08-08T13:56:59.855Z",
+  "backupPath": "C:\\Projetos Cursor\\moria-6df9f9ce\\migration-backup-2025-08-08T13-56-59-807Z",
+  "filesBackedUp": 13,
+  "criticalFiles": [
+    "backend/prisma/database.db",
+    "backend/.env",
+    "backend/package.json",
+    "backend/src/server.js",
+    "backend/prisma/schema.prisma",
+    "package.json",
+    "src/services/api.js",
+    "src/hooks/useProducts.js",
+    "src/hooks/useServices.js",
+    "src/hooks/usePromotions.js"
+  ],
+  "notes": "Backup criado antes da migração para sistema robusto"
+}

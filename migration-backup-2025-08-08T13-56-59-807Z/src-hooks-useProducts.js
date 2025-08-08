@@ -1,28 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api.js';
-import { useApi } from './useApiRobust.js';
+import { useApi } from './useApi.js';
 import publicDataService from '../services/publicDataService.js';
-import LoadingState from '../components/states/LoadingState.tsx';
-import ErrorState from '../components/states/ErrorState.tsx';
-import { EmptyProductsState } from '../components/states/EmptyState.tsx';
 
 /**
- * Hook robusto para gerenciar produtos - VERSÃO ROBUSTA
- * Inclui cache inteligente, retry automático, estados informativos e debugging
+ * Hook para gerenciar produtos - ATUALIZADO PARA PÁGINAS PÚBLICAS
  * Usa APIs públicas por padrão, com fallback para APIs privadas se necessário
  */
-export const useProducts = (initialFilters = {}, options = {}) => {
-  const {
-    usePublicAPI = true,
-    enableCache = true,
-    enableRetry = true,
-    debugMode = import.meta.env.NODE_ENV === 'development',
-    onSuccess = null,
-    onError = null
-  } = options;
-
+export const useProducts = (initialFilters = {}, usePublicAPI = true) => {
   const [products, setProducts] = useState([]);
-  const [cache, setCache] = useState(new Map());
   const [filters, setFilters] = useState({
     category: 'Todos',
     active: true,
@@ -30,31 +16,7 @@ export const useProducts = (initialFilters = {}, options = {}) => {
     ...initialFilters
   });
   
-  // Usar hook robusto
-  const endpoint = usePublicAPI ? '/public/products' : '/products';
-  const { 
-    data, 
-    loading, 
-    error, 
-    execute, 
-    retry,
-    refresh,
-    reset,
-    canRetry,
-    isStale,
-    lastFetch 
-  } = useApi(endpoint, {
-    immediate: false,
-    retryAttempts: enableRetry ? 3 : 1,
-    onSuccess: (result) => {
-      if (debugMode) console.log('Products loaded successfully:', result);
-      if (onSuccess) onSuccess(result);
-    },
-    onError: (err) => {
-      if (debugMode) console.error('Products loading failed:', err);
-      if (onError) onError(err);
-    }
-  });
+  const { loading, error, execute, clearError } = useApi();
 
   // Carregar produtos da API (pública ou privada)
   const fetchProducts = useCallback(async (customFilters = null) => {
