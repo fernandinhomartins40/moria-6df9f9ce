@@ -704,18 +704,100 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     );
   };
 
-  const renderProducts = () => {
-    return (
-      <div className="space-y-6">
-        <AdminProductsSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      </div>
-    );
-  };
+  const renderProducts = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Gerenciar Produtos</CardTitle>
+            <CardDescription>Controle seu estoque e catálogo de peças automotivas</CardDescription>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadData}
+              disabled={isLoading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-moria-orange hover:bg-moria-orange/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar por nome, categoria..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Ativos</SelectItem>
+              <SelectItem value="inactive">Inativos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <Package className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+            <p className="text-lg font-medium mb-2">Nenhum produto encontrado</p>
+            <p>Adicione produtos ao seu catálogo ou ajuste os filtros.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="border rounded-lg p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-moria-orange text-white rounded-lg p-3">
+                      <Box className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{product.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                      <div className="flex items-center gap-4">
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                          {product.category}
+                        </Badge>
+                        {!product.isActive && (
+                          <Badge variant="secondary" className="bg-red-100 text-red-800">
+                            Inativo
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-green-600">{formatPrice(product.price)}</p>
+                    <p className="text-sm text-gray-500">Estoque: {product.stock}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   const renderCoupons = () => {
     return (
