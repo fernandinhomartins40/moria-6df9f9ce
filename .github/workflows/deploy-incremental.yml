@@ -44,6 +44,8 @@ jobs:
           # Copiar arquivos opcionais apenas se existirem
           [ -f docker-entrypoint.sh ] && cp docker-entrypoint.sh update-package/ || echo "⚠️ docker-entrypoint.sh não encontrado"
           [ -f Dockerfile ] && cp Dockerfile update-package/ || echo "⚠️ Dockerfile não encontrado"
+          [ -f nginx-full.conf ] && cp nginx-full.conf update-package/ || echo "⚠️ nginx-full.conf não encontrado"
+          [ -f nginx.conf ] && cp nginx.conf update-package/ || echo "⚠️ nginx.conf não encontrado"
           
           # Criar arquivo de versão
           echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > update-package/version.txt
