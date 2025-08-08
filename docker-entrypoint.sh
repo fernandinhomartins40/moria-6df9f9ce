@@ -10,6 +10,9 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Configurar variáveis de ambiente para Prisma
+export DATABASE_URL="file:./prisma/database.db"
+
 # Verificar se o banco existe e está acessível
 log "📋 Verificando banco SQLite..."
 if [ -f "/app/backend/prisma/database.db" ]; then
@@ -17,14 +20,17 @@ if [ -f "/app/backend/prisma/database.db" ]; then
 else
     log "⚠️ Banco não encontrado, criando..."
     cd /app/backend
-    npx prisma migrate deploy
-    npx prisma db seed || log "⚠️ Seed falhou, mas continuando..."
+    DATABASE_URL="file:./prisma/database.db" npx prisma migrate deploy
+    DATABASE_URL="file:./prisma/database.db" npx prisma db seed || log "⚠️ Seed falhou, mas continuando..."
 fi
+
+export NODE_ENV=production
+export PORT=3081
 
 # Iniciar backend Node.js em background
 log "🖥️ Iniciando backend Node.js na porta 3081..."
 cd /app/backend
-NODE_ENV=production PORT=3081 node src/server.js &
+node src/server.js &
 BACKEND_PID=$!
 
 # Aguardar backend inicializar
