@@ -1,0 +1,46 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps
+    
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_OPTIONS: '--max-old-space-size=4096'
+    
+    - name: Build Docker image
+      run: docker build -t moria-frontend .
+    
+    - name: Test Docker container
+      run: |
+        docker run -d --name test-container -p 3018:3018 moria-frontend
+        sleep 10
+        curl -f http://localhost:3018/health || exit 1
+        docker stop test-container
+        docker rm test-container
+    
+    - name: Deploy to VPS (if main branch)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "🚀 Deploy to VPS would happen here"
+        echo "Image ready: moria-frontend"
