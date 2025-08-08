@@ -166,9 +166,9 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     try {
-      const response = await supabaseApi.get('/api/products?active=true');
-      if (response?.data?.success && response?.data?.data) {
-        const productsData = response.data.data;
+      const response = await supabaseApi.getProducts({ active: true });
+      if (response?.success && response?.data) {
+        const productsData = response.data;
         setProducts(productsData);
         
         // Atualizar cache
@@ -212,14 +212,8 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     const response = await execute(async () => {
-      const params = new URLSearchParams();
-      
-      if (filters.active !== undefined) {
-        params.append('active', filters.active);
-      }
-      
-      const result = await supabaseApi.get(`/api/promotions?${params.toString()}`);
-      return result.data;
+      const result = await supabaseApi.getPromotions(filters);
+      return result;
     });
 
     if (response?.success && response?.data) {
