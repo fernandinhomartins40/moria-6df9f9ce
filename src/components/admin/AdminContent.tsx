@@ -704,6 +704,19 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     );
   };
 
+  const renderProducts = () => {
+    return (
+      <div className="space-y-6">
+        <AdminProductsSection
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+      </div>
+    );
+  };
+
   const renderCoupons = () => {
     return (
       <div className="space-y-6">
@@ -923,18 +936,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
-  const renderProducts = () => {
-    return (
-      <div className="space-y-6">
-        <AdminProductsSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      </div>
-    );
-  };
 
   const renderReports = () => {
     const currentMonth = new Date().getMonth();
