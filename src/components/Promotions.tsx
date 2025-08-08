@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Clock, Timer, TrendingDown, Package } from "lucide-react";
+import { Clock, Timer, TrendingDown, Package, Loader2 } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { usePromotions } from "../hooks/usePromotions.js";
 
 interface PromotionalProduct {
   id: number;
@@ -45,116 +46,32 @@ function useCountdown(targetDate: Date) {
   return timeLeft;
 }
 
-const dailyOffers: PromotionalProduct[] = [
-  {
-    id: 1,
-    name: "Kit Pastilha + Disco de Freio",
-    originalPrice: 280.00,
-    discountPrice: 189.90,
-    discount: 32,
-    image: "/api/placeholder/300/300",
-    category: "Freios",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-  },
-  {
-    id: 2,
-    name: "Filtro de Combustível Premium",
-    originalPrice: 85.00,
-    discountPrice: 59.90,
-    discount: 29,
-    image: "/api/placeholder/300/300",
-    category: "Filtros",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  },
-  {
-    id: 3,
-    name: "Óleo Sintético 5W40 + Filtro",
-    originalPrice: 120.00,
-    discountPrice: 79.90,
-    discount: 33,
-    image: "/api/placeholder/300/300",
-    category: "Óleos",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  },
-  {
-    id: 4,
-    name: "Vela de Ignição NGK (4un)",
-    originalPrice: 95.00,
-    discountPrice: 67.90,
-    discount: 28,
-    image: "/api/placeholder/300/300",
-    category: "Motor",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  }
-];
-
-const weeklyOffers: PromotionalProduct[] = [
-  {
-    id: 5,
-    name: "Kit Correia Dentada + Tensor",
-    originalPrice: 350.00,
-    discountPrice: 245.90,
-    discount: 30,
-    image: "/api/placeholder/300/300",
-    category: "Motor"
-  },
-  {
-    id: 6,
-    name: "Amortecedor Traseiro Par",
-    originalPrice: 580.00,
-    discountPrice: 419.90,
-    discount: 27,
-    image: "/api/placeholder/300/300",
-    category: "Suspensão"
-  },
-  {
-    id: 7,
-    name: "Bateria 60Ah Heliar",
-    originalPrice: 290.00,
-    discountPrice: 199.90,
-    discount: 31,
-    image: "/api/placeholder/300/300",
-    category: "Elétrica"
-  },
-  {
-    id: 8,
-    name: "Kit Embreagem Completo",
-    originalPrice: 450.00,
-    discountPrice: 329.90,
-    discount: 27,
-    image: "/api/placeholder/300/300",
-    category: "Motor"
-  }
-];
-
-const monthlyOffers: PromotionalProduct[] = [
-  {
-    id: 9,
-    name: "Kit Revisão Completa",
-    originalPrice: 650.00,
-    discountPrice: 449.90,
-    discount: 31,
-    image: "/api/placeholder/300/300",
-    category: "Manutenção"
-  },
-  {
-    id: 10,
-    name: "Kit Suspensão Completa",
-    originalPrice: 890.00,
-    discountPrice: 649.90,
-    discount: 27,
-    image: "/api/placeholder/300/300",
-    category: "Suspensão"
-  }
-];
+// Dados mock removidos - agora usa dados reais do SQLite via usePromotions hook
 
 export function Promotions() {
   const { addItem, openCart } = useCart();
-  const countdownTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  
+  // Usar dados reais da API do SQLite
+  const { 
+    dailyOffers: apiDailyOffers, 
+    weeklyOffers: apiWeeklyOffers, 
+    monthlyOffers: apiMonthlyOffers, 
+    loading, 
+    error 
+  } = usePromotions({
+    active: true
+  });
+
+  // Usar dados da API ou arrays vazios em caso de erro
+  const dailyOffers = error ? [] : apiDailyOffers;
+  const weeklyOffers = error ? [] : apiWeeklyOffers;
+  const monthlyOffers = error ? [] : apiMonthlyOffers;
+  
+  // Definir tempo de contagem baseado na primeira oferta diária ou padrão
+  const countdownTime = dailyOffers.length > 0 && dailyOffers[0].endTime 
+    ? dailyOffers[0].endTime 
+    : new Date(Date.now() + 24 * 60 * 60 * 1000);
+    
   const timeLeft = useCountdown(countdownTime);
 
 
@@ -270,11 +187,33 @@ export function Promotions() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dailyOffers.map((product) => (
-              <PromotionCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-300 h-48 rounded-t-lg mb-4"></div>
+                  <div className="space-y-3 p-4">
+                    <div className="bg-gray-300 h-4 rounded w-3/4"></div>
+                    <div className="bg-gray-300 h-4 rounded w-1/2"></div>
+                    <div className="bg-gray-300 h-8 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : dailyOffers.length === 0 ? (
+            <div className="text-center py-12">
+              <Timer className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-xl text-gray-400">
+                {error ? 'Erro ao carregar ofertas diárias' : 'Nenhuma oferta diária disponível no momento'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {dailyOffers.map((product) => (
+                <PromotionCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Weekly Offers */}
@@ -287,11 +226,33 @@ export function Promotions() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {weeklyOffers.map((product) => (
-              <PromotionCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-300 h-48 rounded-t-lg mb-4"></div>
+                  <div className="space-y-3 p-4">
+                    <div className="bg-gray-300 h-4 rounded w-3/4"></div>
+                    <div className="bg-gray-300 h-4 rounded w-1/2"></div>
+                    <div className="bg-gray-300 h-8 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : weeklyOffers.length === 0 ? (
+            <div className="text-center py-12">
+              <TrendingDown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-xl text-gray-400">
+                {error ? 'Erro ao carregar ofertas semanais' : 'Nenhuma oferta semanal disponível no momento'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {weeklyOffers.map((product) => (
+                <PromotionCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Monthly Offers */}
@@ -306,15 +267,37 @@ export function Promotions() {
                 </div>
               </div>
               <Badge className="bg-moria-black text-gold-accent font-bold text-lg px-4 py-2">
-                ATÉ 31% OFF
+                {monthlyOffers.length > 0 ? `ATÉ ${Math.max(...monthlyOffers.map(p => p.discount))}% OFF` : 'ATÉ 31% OFF'}
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {monthlyOffers.map((product) => (
-                <PromotionCard key={product.id} product={product} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {[1, 2].map((i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="bg-moria-black/20 h-48 rounded-t-lg mb-4"></div>
+                    <div className="space-y-3 p-4">
+                      <div className="bg-moria-black/20 h-4 rounded w-3/4"></div>
+                      <div className="bg-moria-black/20 h-4 rounded w-1/2"></div>
+                      <div className="bg-moria-black/20 h-8 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : monthlyOffers.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 text-moria-black/50 mx-auto mb-4" />
+                <p className="text-xl text-moria-black/70">
+                  {error ? 'Erro ao carregar ofertas mensais' : 'Nenhuma oferta mensal disponível no momento'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {monthlyOffers.map((product) => (
+                  <PromotionCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
