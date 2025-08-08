@@ -28,15 +28,22 @@ model Product {
   brand           String?  @map("brand")          // Marca
   supplier        String?  @map("supplier")       // Fornecedor
   isActive        Boolean  @default(true) @map("is_active")
+  isPublic        Boolean  @default(true) @map("is_public")    // Se pode aparecer em APIs públicas
+  status          String   @default("published") @map("status") // draft, published, archived
   rating          Float    @default(0) @map("rating")
   specifications  String?  @map("specifications") // JSON object
   vehicleCompatibility String? @map("vehicle_compatibility") // JSON array
+  // Campos sensíveis (nunca em APIs públicas)
+  costPrice       Float?   @map("cost_price")     // Custo interno
+  internalNotes   String?  @map("internal_notes") // Anotações internas
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Índices para performance
   @@index([category])
   @@index([isActive])
+  @@index([isPublic])
+  @@index([status])
   @@index([name])
   @@index([sku])
   @@map("products")
@@ -54,11 +61,18 @@ model Service {
   estimatedTime   String?  @map("estimated_time")  // "30 minutos", "2 horas"
   specifications  String?  @map("specifications")  // JSON object
   isActive        Boolean  @default(true) @map("is_active")
+  isPublic        Boolean  @default(true) @map("is_public")
+  status          String   @default("published") @map("status")
+  // Campos sensíveis
+  internalCost    Float?   @map("internal_cost")
+  internalNotes   String?  @map("internal_notes")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Índices para performance
   @@index([isActive])
+  @@index([isPublic])
+  @@index([status])
   @@index([name])
   @@map("services")
 }
@@ -120,10 +134,16 @@ model Promotion {
   startDate       DateTime @map("start_date")
   endDate         DateTime @map("end_date")
   isActive        Boolean  @default(true) @map("is_active")
+  isPublic        Boolean  @default(true) @map("is_public")
+  status          String   @default("published") @map("status")
+  maxUses         Int?     @map("max_uses")         // Máximo de usos
+  usedCount       Int      @default(0) @map("used_count")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([isActive])
+  @@index([isPublic])
+  @@index([status])
   @@index([startDate, endDate])
   @@map("promotions")
 }

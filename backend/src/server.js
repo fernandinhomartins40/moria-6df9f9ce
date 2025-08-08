@@ -5,6 +5,7 @@ const helmet = require('helmet');
 require('dotenv').config();
 
 const apiRoutes = require('./routes/api');
+const publicApiRoutes = require('./routes/publicApi');
 const { connectDatabase } = require('./config/database');
 
 const app = express();
@@ -45,7 +46,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes - sempre em /api/*
+// API Routes Públicas (SEM autenticação)
+app.use('/api/public', publicApiRoutes);
+
+// API Routes Privadas (COM autenticação futura)
 app.use('/api', apiRoutes);
 
 // Serve arquivos estáticos do build React (produção)

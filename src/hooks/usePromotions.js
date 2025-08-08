@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api.js';
 import { useApi } from './useApi.js';
+import publicDataService from '../services/publicDataService.js';
 
 /**
- * Hook avançado para gerenciar promoções na página pública
+ * Hook avançado para gerenciar promoções - ATUALIZADO PARA PÁGINAS PÚBLICAS
  * FASE 2: Cross-reference com produtos, cache inteligente e UX melhorada
+ * Usa APIs públicas por padrão, com fallback para APIs privadas se necessário
  */
-export const usePromotions = (initialFilters = {}) => {
+export const usePromotions = (initialFilters = {}, usePublicAPI = true) => {
   const [promotions, setPromotions] = useState([]);
   const [products, setProducts] = useState([]);
   const [dailyOffers, setDailyOffers] = useState([]);
@@ -160,7 +162,7 @@ export const usePromotions = (initialFilters = {}) => {
     return { daily, weekly, monthly };
   };
 
-  // Buscar produtos ativos para cross-reference
+  // Buscar produtos ativos para cross-reference (pública ou privada)
   const fetchProducts = useCallback(async () => {
     const cacheKey = 'products';
     
@@ -171,28 +173,58 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     try {
-      const response = await api.getProducts({ active: true });
-      if (response?.success && response?.data) {
-        const productsData = response.data;
-        setProducts(productsData);
+      let response;
+      
+      if (usePublicAPI) {
+        // Usar API pública
+        response = await publicDataService.getPublicProducts({ active: true });
+        const processedResult = publicDataService.processPublicResponse(response);
         
-        // Atualizar cache
-        setCache(prev => ({
-          ...prev,
-          [cacheKey]: {
-            data: productsData,
-            timestamp: new Date().toISOString()
-          }
-        }));
+        if (processedResult.error && !processedResult.fallback) {
+          console.warn('Erro ao buscar produtos públicos para promoções:', processedResult.error);
+          return [];
+        }
         
-        return productsData;
+        if (processedResult.data && processedResult.data.length > 0) {
+          const productsData = processedResult.data;
+          setProducts(productsData);
+          
+          // Atualizar cache
+          setCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              data: productsData,
+              timestamp: new Date().toISOString()
+            }
+          }));
+          
+          return productsData;
+        }
+      } else {
+        // Usar API privada
+        response = await api.getProducts({ active: true });
+        if (response?.success && response?.data) {
+          const productsData = response.data;
+          setProducts(productsData);
+          
+          // Atualizar cache
+          setCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              data: productsData,
+              timestamp: new Date().toISOString()
+            }
+          }));
+          
+          return productsData;
+        }
       }
     } catch (error) {
       console.warn('Erro ao buscar produtos para promoções:', error);
     }
     
     return [];
-  }, [cache]);
+  }, [cache, usePublicAPI]);
 
   // Buscar promoções da API com cache inteligente
   const fetchPromotions = useCallback(async () => {
@@ -216,16 +248,40 @@ export const usePromotions = (initialFilters = {}) => {
       productsData = await fetchProducts();
     }
 
-    const response = await execute(async () => {
-      const params = new URLSearchParams();
+    let response;
+    
+    if (usePublicAPI) {
+      // Usar API pública
+      response = await execute(async () => {
+        const result = await publicDataService.getPublicPromotions();
+        return result;
+      });
       
-      if (filters.active !== undefined) {
-        params.append('active', filters.active);
+      // Processar resposta da API pública
+      const processedResult = publicDataService.processPublicResponse(response);
+      
+      if (processedResult.error && !processedResult.fallback) {
+        console.warn('Erro na API pública de promoções:', processedResult.error);
+        setDailyOffers([]);
+        setWeeklyOffers([]);
+        setMonthlyOffers([]);
+        return;
       }
       
-      const result = await api.getPromotions(Object.fromEntries(params));
-      return result;
-    });
+      response = { success: true, data: processedResult.data };
+    } else {
+      // Usar API privada
+      response = await execute(async () => {
+        const params = new URLSearchParams();
+        
+        if (filters.active !== undefined) {
+          params.append('active', filters.active);
+        }
+        
+        const result = await api.getPromotions(Object.fromEntries(params));
+        return result;
+      });
+    }
 
     if (response?.success && response?.data) {
       const promotionsData = response.data;
@@ -262,7 +318,7 @@ export const usePromotions = (initialFilters = {}) => {
       setWeeklyOffers([]);
       setMonthlyOffers([]);
     }
-  }, [filters, execute, clearError, products, cache, fetchProducts]);
+  }, [filters, execute, clearError, products, cache, fetchProducts, usePublicAPI]);
 
   // Carregar promoções ao montar o componente ou quando filtros mudarem
   useEffect(() => {
