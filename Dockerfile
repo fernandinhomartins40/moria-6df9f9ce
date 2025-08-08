@@ -1,53 +1,27 @@
-# Dockerfile otimizado - Usa builds já prontos
-# Frontend (dist/) e Backend já processados pelo GitHub Actions
+# Imagem base do nginx
+FROM nginx:alpine
 
-# Estágio 1: Preparar Backend
-FROM node:18-alpine AS backend-builder
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-WORKDIR /app/backend
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/
 
-# Copiar package files do backend
-COPY backend/package*.json ./
+# Copy source files (temporário para teste)
+COPY src /usr/share/nginx/html/src
+COPY public /usr/share/nginx/html/public
+COPY index.html /usr/share/nginx/html/
+COPY *.ts *.js *.json /usr/share/nginx/html/
 
-# Instalar apenas dependências de produção
-RUN npm ci --omit=dev
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
-# Copiar código do backend
-COPY backend/ .
+# Expose port 3018
+EXPOSE 3018
 
-# Gerar Prisma Client
-RUN npx prisma generate
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3018/ || exit 1
 
-# Estágio 2: Runtime - Nginx + Node.js
-FROM node:18-alpine AS runtime
-
-# Instalar Nginx
-RUN apk add --no-cache nginx
-
-# Criar diretórios necessários
-RUN mkdir -p /app/frontend /app/backend /run/nginx
-
-# Copiar frontend já buildado (dist/)
-COPY dist/ /app/frontend/
-
-# Copiar backend preparado
-COPY --from=backend-builder /app/backend /app/backend
-
-# Configurar Nginx
-COPY nginx-full.conf /etc/nginx/nginx.conf
-
-# Script de inicialização
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-WORKDIR /app/backend
-
-# Criar banco SQLite e popular dados
-RUN npx prisma migrate deploy && \
-    npx prisma db seed || echo "Seed executado ou dados já existem"
-
-# Expor portas
-EXPOSE 80
-
-# Iniciar com script que roda Nginx + Backend
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

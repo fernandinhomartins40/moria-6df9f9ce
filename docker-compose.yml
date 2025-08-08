@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  moria-frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: moria-frontend
+    restart: unless-stopped
+    ports:
+      - "3018:3018"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3018/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.moria.rule=Host(`seu-dominio.com`)"
+      - "traefik.http.services.moria.loadbalancer.server.port=3018"
+
+networks:
+  moria-network:
+    driver: bridge
+
+# Para desenvolvimento local, descomente as seções abaixo:
+# volumes:
+#   moria_logs:
+#     driver: local

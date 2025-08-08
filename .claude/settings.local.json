@@ -44,7 +44,10 @@
       "Bash(npx prisma:*)",
       "Bash(npm run deploy:robust:*)",
       "Bash(set DATABASE_URL=file:./backend/prisma/database.db)",
-      "Bash(echo)"
+      "Bash(echo)",
+      "Bash(rsync:*)",
+      "Bash(lsof:*)",
+      "Bash(docker build:*)"
     ],
     "deny": []
   }
