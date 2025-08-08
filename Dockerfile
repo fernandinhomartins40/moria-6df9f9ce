@@ -5,10 +5,11 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json ./
 
 # Install dependencies with legacy peer deps to resolve conflicts
-RUN npm ci --legacy-peer-deps
+# Fix for Rollup optional dependencies bug
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
