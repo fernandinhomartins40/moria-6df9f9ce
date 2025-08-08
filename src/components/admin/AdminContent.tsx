@@ -38,7 +38,6 @@ import {
   FileText,
   AlertCircle
 } from "lucide-react";
-import { AdminProductsSection } from './AdminProductsSection';
 import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
@@ -1834,14 +1833,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     case 'customers':
       return safeRender(renderCustomers, 'Clientes');
     case 'products':
-      return safeRender(() => (
-        <AdminProductsSection 
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      ), 'Produtos');
+      return safeRender(renderProducts, 'Produtos');
     case 'services':
       return safeRender(renderServices, 'Serviços');
     case 'coupons':
