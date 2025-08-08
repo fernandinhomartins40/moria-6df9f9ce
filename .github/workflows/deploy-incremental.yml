@@ -91,8 +91,17 @@ jobs:
             rm -rf $UPDATE_DIR
             mkdir -p $UPDATE_DIR
             
-            # Baixar do GitHub (método alternativo ao artefato)
-            curl -L "https://github.com/fernandinhomartins40/moria-6df9f9ce/archive/main.tar.gz" | tar -xzf - -C $UPDATE_DIR --strip-components=1
+            # Usar código atual do build (método mais confiável)
+            cd /tmp
+            # Download direto via wget
+            if wget -q -O moria-update.tar.gz "https://github.com/fernandinhomartins40/moria-6df9f9ce/tarball/main"; then
+              echo "✅ Download concluído, extraindo..."
+              tar -xzf moria-update.tar.gz -C $UPDATE_DIR --strip-components=1
+              rm moria-update.tar.gz
+            else
+              echo "❌ Erro no download - usando git clone como alternativa"
+              git clone --depth=1 https://github.com/fernandinhomartins40/moria-6df9f9ce.git $UPDATE_DIR
+            fi
             
             # 4. PRESERVAR BANCO DE DADOS
             echo "🔒 Preservando banco de dados..."
