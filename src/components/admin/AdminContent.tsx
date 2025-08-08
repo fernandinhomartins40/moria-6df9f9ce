@@ -1142,20 +1142,46 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    // Dados simulados para gráficos baseados nos dados reais
-    const salesByMonth = Array.from({ length: 12 }, (_, i) => ({
-      month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
-      revenue: Math.max(0, stats.totalRevenue / 12 + (Math.random() - 0.5) * 1000),
-      orders: Math.max(0, Math.floor(stats.totalOrders / 12 + (Math.random() - 0.5) * 5))
-    }));
+    // Dados REAIS baseados nos pedidos do Supabase
+    const salesByMonth = Array.from({ length: 12 }, (_, i) => {
+      const monthOrders = orders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate.getMonth() === i && orderDate.getFullYear() === currentYear;
+      });
+      
+      return {
+        month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
+        revenue: monthOrders.reduce((sum, order) => sum + order.total, 0),
+        orders: monthOrders.length
+      };
+    });
 
-    const topCategories = [
-      { name: 'Filtros', value: 35, revenue: formatPrice(stats.totalRevenue * 0.35) },
-      { name: 'Freios', value: 25, revenue: formatPrice(stats.totalRevenue * 0.25) },
-      { name: 'Suspensão', value: 20, revenue: formatPrice(stats.totalRevenue * 0.20) },
-      { name: 'Motor', value: 15, revenue: formatPrice(stats.totalRevenue * 0.15) },
-      { name: 'Outros', value: 5, revenue: formatPrice(stats.totalRevenue * 0.05) }
-    ];
+    // Calcular categorias baseadas nos produtos REAIS do Supabase
+    const categoryStats = products.reduce((acc, product) => {
+      const category = product.category || 'Outros';
+      if (!acc[category]) {
+        acc[category] = { count: 0, revenue: 0 };
+      }
+      acc[category].count += 1;
+      // Estimar receita baseada nos pedidos que contêm este produto
+      const productOrders = orders.filter(order => 
+        order.items.some(item => item.id === product.id)
+      );
+      acc[category].revenue += productOrders.reduce((sum, order) => {
+        const productItem = order.items.find(item => item.id === product.id);
+        return sum + (productItem ? productItem.quantity * productItem.price : 0);
+      }, 0);
+      return acc;
+    }, {} as Record<string, { count: number; revenue: number }>);
+
+    const topCategories = Object.entries(categoryStats)
+      .map(([name, data]) => ({
+        name,
+        value: data.count,
+        revenue: formatPrice(data.revenue)
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
 
     return (
       <div className="space-y-6">
@@ -1165,9 +1191,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Receita do Mês</p>
+                  <p className="text-sm font-medium text-gray-600">Receita Total</p>
                   <p className="text-2xl font-bold text-green-600">{formatPrice(stats.totalRevenue)}</p>
-                  <p className="text-xs text-gray-500">+12.5% vs mês anterior</p>
+                  <p className="text-xs text-gray-500">Base: {orders.length} pedidos reais</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
               </div>
@@ -1178,9 +1204,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pedidos do Mês</p>
+                  <p className="text-sm font-medium text-gray-600">Total de Pedidos</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
-                  <p className="text-xs text-gray-500">+8.2% vs mês anterior</p>
+                  <p className="text-xs text-gray-500">{stats.pendingOrders} pendentes</p>
                 </div>
                 <ShoppingCart className="h-8 w-8 text-blue-600" />
               </div>
@@ -1193,7 +1219,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
                   <p className="text-2xl font-bold text-purple-600">{formatPrice(stats.averageTicket)}</p>
-                  <p className="text-xs text-gray-500">+3.1% vs mês anterior</p>
+                  <p className="text-xs text-gray-500">Valor médio por pedido</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
               </div>
@@ -1204,9 +1230,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Taxa Conversão</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.conversionRate.toFixed(1)}%</p>
-                  <p className="text-xs text-gray-500">+5.7% vs mês anterior</p>
+                  <p className="text-sm font-medium text-gray-600">Produtos Ativos</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.activeProducts}</p>
+                  <p className="text-xs text-gray-500">de {stats.totalProducts} produtos</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-orange-600" />
               </div>
