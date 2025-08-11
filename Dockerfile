@@ -4,15 +4,21 @@
 # ============================================
 
 # Stage 1: Build da aplicação React+Vite
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
 # Copiar package files para cache otimizado
 COPY package*.json ./
 
-# Instalar dependências (incluindo devDependencies para build)
-RUN npm ci --silent
+# Configurar npm para timeouts e registry confiável
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-timeout 120000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Instalar dependências com verbose para evitar timeouts
+RUN npm ci --verbose --no-audit --no-fund
 
 # Copiar código fonte
 COPY . .
