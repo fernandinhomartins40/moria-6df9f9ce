@@ -4,18 +4,16 @@
 # ============================================
 
 # Stage 1: Build da aplicação React+Vite
-FROM node:18-alpine AS builder
-
-# Instalar dependências do sistema para compilação
-RUN apk add --no-cache python3 make g++
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Copiar package files para cache otimizado
 COPY package*.json ./
 
-# Instalar dependências de forma otimizada para Alpine
-RUN npm ci --no-audit --no-fund --quiet
+# Instalar dependências com fallback para robustez
+RUN npm ci --no-audit --no-fund --silent || \
+    npm install --no-audit --no-fund --silent
 
 # Copiar código fonte
 COPY . .
