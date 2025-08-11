@@ -114,14 +114,27 @@ jobs:
           timeout 30 docker system prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza de cache completada (ou timeout)'
           timeout 20 docker builder prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza do builder completada (ou timeout)'
           
-          # Build da imagem Docker (ignorar warnings sobre ANON_KEY - não é segredo sensível)
+          # Build da imagem Docker com verificação de sucesso
           echo '🏗️ Construindo imagem Docker otimizada...'
-          timeout 300 sh -c '
-            DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
+          if ! DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
               --build-arg VITE_SUPABASE_URL="http://31.97.85.98:3019" \
               --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg" \
-              . 2>&1 | grep -v "SecretsUsedInArgOrEnv" || true
-          ' || echo '⚠️ Build completado (ou timeout de 5min)'
+              . 2>&1; then
+            echo '❌ ERRO: Build da imagem Docker falhou!'
+            echo '🔍 Verificando Dockerfile:'
+            ls -la Dockerfile || echo '❌ Dockerfile não encontrado!'
+            exit 1
+          fi
+          
+          # Verificar se a imagem foi criada
+          echo '🔍 Verificando se imagem foi criada...'
+          if docker images | grep -q "${{ env.IMAGE_NAME }}"; then
+            echo '✅ Imagem Docker criada com sucesso!'
+            docker images | grep "${{ env.IMAGE_NAME }}"
+          else
+            echo '❌ ERRO: Imagem Docker não foi criada!'
+            exit 1
+          fi
           
           # Iniciar container
           echo '🚀 Iniciando container...'
