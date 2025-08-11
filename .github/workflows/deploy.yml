@@ -90,6 +90,23 @@ jobs:
           docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
           docker rmi ${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
           
+          # Verificar e instalar Docker se necessário
+          echo '🐳 Verificando Docker...'
+          if ! command -v docker &> /dev/null; then
+            echo '📦 Docker não encontrado, instalando...'
+            apt-get update -q
+            apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+            echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+            apt-get update -q
+            apt-get install -y docker-ce docker-ce-cli containerd.io
+            systemctl start docker
+            systemctl enable docker
+            echo '✅ Docker instalado com sucesso!'
+          else
+            echo '✅ Docker já instalado!'
+          fi
+          
           # Backup do diretório anterior (segurança)
           if [ -d '${{ env.APP_DIR }}' ]; then
             echo '💾 Fazendo backup do deploy anterior...'
