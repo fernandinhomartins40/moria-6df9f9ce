@@ -117,8 +117,8 @@ jobs:
           # Build da imagem Docker com verificação de sucesso
           echo '🏗️ Construindo imagem Docker otimizada...'
           if ! DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
-              --build-arg VITE_SUPABASE_URL="http://31.97.85.98:3019" \
-              --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg" \
+              --build-arg VITE_SUPABASE_URL="http://82.25.69.57:8102" \
+              --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlLWluc3RhbmNlLW1hbmFnZXIiLCJpYXQiOjE3NTQ5MjAzNjgsImV4cCI6MTc4NjQ1NjM2OH0.lrqlo8hPKPw_DE6Zkl173EDYSj0Jg4qaJcE0xWk7R8Q" \
               . 2>&1; then
             echo '❌ ERRO: Build da imagem Docker falhou!'
             echo '🔍 Verificando Dockerfile:'

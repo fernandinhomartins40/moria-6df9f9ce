@@ -73,7 +73,7 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://supabase.co https://*.supabase.co http://31.97.85.98:3019 data: blob:;" always;
+    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://supabase.co https://*.supabase.co http://82.25.69.57:8102 data: blob:;" always;
 
     # Cache estático (JS, CSS, imagens)
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
