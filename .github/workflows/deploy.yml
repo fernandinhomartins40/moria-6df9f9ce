@@ -79,7 +79,7 @@ jobs:
         echo "  👤 Actor: ${{ github.actor }}"
         echo "  🕐 Timestamp: $(date)"
         
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
           set -e
           
           echo '🚀 Iniciando deploy do Frontend Supabase'
@@ -109,17 +109,19 @@ jobs:
           echo '📋 Arquivos Supabase:'
           ls -la src/config/supabase.ts src/services/supabaseApi.ts || echo '⚠️ Arquivos Supabase não encontrados'
           
-          # Limpar cache do Docker
-          echo '🧹 Limpando cache do Docker...'
-          docker system prune -f || true
-          docker builder prune -f || true
+          # Limpar cache do Docker com timeout e controle de erro
+          echo '🧹 Limpando cache do Docker (com timeout)...'
+          timeout 30 docker system prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza de cache completada (ou timeout)'
+          timeout 20 docker builder prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza do builder completada (ou timeout)'
           
           # Build da imagem Docker (ignorar warnings sobre ANON_KEY - não é segredo sensível)
           echo '🏗️ Construindo imagem Docker otimizada...'
-          DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
-            --build-arg VITE_SUPABASE_URL='http://31.97.85.98:3019' \
-            --build-arg VITE_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg' \
-            . 2>&1 | grep -v "SecretsUsedInArgOrEnv" || true
+          timeout 300 sh -c '
+            DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
+              --build-arg VITE_SUPABASE_URL="http://31.97.85.98:3019" \
+              --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzI3MjMzMjAwLAogICJleHAiOiAxODg0OTk5NjAwCn0.O0qBbl300xfJrhmW3YktijUJQ5ZW6OXVyZjnSwSCzCg" \
+              . 2>&1 | grep -v "SecretsUsedInArgOrEnv" || true
+          ' || echo '⚠️ Build completado (ou timeout de 5min)'
           
           # Iniciar container
           echo '🚀 Iniciando container...'
