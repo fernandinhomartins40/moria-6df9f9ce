@@ -1,24 +1,27 @@
 # ============================================
 # Dockerfile para Moria Peças & Serviços - Frontend Supabase
-# Multi-stage build otimizado para produção
+# Multi-stage build ULTRA otimizado para velocidade
 # ============================================
 
 # Stage 1: Build da aplicação React+Vite
-FROM node:18-slim AS builder
+FROM node:18-alpine AS builder
+
+# Instalar dependências do sistema para compilação
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
 # Copiar package files para cache otimizado
 COPY package*.json ./
 
-# Configurar npm para timeouts e registry confiável
+# Configurar npm para máxima velocidade e usar cache
 RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-timeout 120000 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000
+    npm config set fetch-timeout 30000 && \
+    npm config set maxsockets 50 && \
+    npm config set network-concurrency 16
 
-# Instalar dependências com verbose para evitar timeouts
-RUN npm ci --verbose --no-audit --no-fund
+# Usar npm install mais rápido que ci em Alpine
+RUN npm install --no-audit --no-fund --prefer-offline --loglevel=warn
 
 # Copiar código fonte
 COPY . .
@@ -70,7 +73,7 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://supabase.co https://*.supabase.co data: blob:;" always;
+    add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://supabase.co https://*.supabase.co http://31.97.85.98:3019 data: blob:;" always;
 
     # Cache estático (JS, CSS, imagens)
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
