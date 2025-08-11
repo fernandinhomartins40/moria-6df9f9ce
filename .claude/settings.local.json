@@ -40,7 +40,8 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npm uninstall:*)",
       "Bash(grep:*)",
-      "Bash(npm run setup:prod:*)"
+      "Bash(npm run setup:prod:*)",
+      "Bash(docker:*)"
     ],
     "deny": []
   }

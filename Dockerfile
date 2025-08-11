@@ -14,14 +14,8 @@ WORKDIR /app
 # Copiar package files para cache otimizado
 COPY package*.json ./
 
-# Configurar npm para máxima velocidade e usar cache
-RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-timeout 30000 && \
-    npm config set maxsockets 50 && \
-    npm config set network-concurrency 16
-
-# Usar npm install mais rápido que ci em Alpine
-RUN npm install --no-audit --no-fund --prefer-offline --loglevel=warn
+# Instalar dependências de forma otimizada para Alpine
+RUN npm ci --no-audit --no-fund --quiet
 
 # Copiar código fonte
 COPY . .

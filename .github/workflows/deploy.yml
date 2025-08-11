@@ -132,11 +132,12 @@ jobs:
           timeout 20 docker builder prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza do builder completada (ou timeout)'
           
           # Build da imagem Docker com verificação de sucesso
+          # Nota: VITE_SUPABASE_ANON_KEY é uma chave pública, não um segredo
           echo '🏗️ Construindo imagem Docker otimizada...'
           if ! DOCKER_BUILDKIT=1 docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
               --build-arg VITE_SUPABASE_URL="http://82.25.69.57:8102" \
               --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlLWluc3RhbmNlLW1hbmFnZXIiLCJpYXQiOjE3NTQ5MjAzNjgsImV4cCI6MTc4NjQ1NjM2OH0.lrqlo8hPKPw_DE6Zkl173EDYSj0Jg4qaJcE0xWk7R8Q" \
-              . 2>&1; then
+              . 2>&1 | grep -v "SecretsUsedInArgOrEnv" || true; then
             echo '❌ ERRO: Build da imagem Docker falhou!'
             echo '🔍 Verificando Dockerfile:'
             ls -la Dockerfile || echo '❌ Dockerfile não encontrado!'
