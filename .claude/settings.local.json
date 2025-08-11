@@ -39,7 +39,8 @@
       "Bash(PORT=3083 timeout 10 node src/server.js)",
       "Bash(npx prisma migrate:*)",
       "Bash(npm uninstall:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run setup:prod:*)"
     ],
     "deny": []
   }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../hooks/useAuth";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import supabaseApi from "../services/supabaseApi";
 import { Button } from "./ui/button";
@@ -8,6 +9,7 @@ import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
+import type { CheckoutFormData, OrderFormData, CartItem } from "@/types";
 import { 
   User, 
   Phone, 
@@ -16,7 +18,9 @@ import {
   Loader2,
   CheckCircle,
   Package,
-  Wrench
+  Wrench,
+  MapPin,
+  Mail
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,14 +29,42 @@ interface CheckoutDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-interface CheckoutForm {
-  name: string;
-  whatsapp: string;
+interface CheckoutFormState {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  address: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  notes: string;
 }
 
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart } = useCart();
-  const [form, setForm] = useState<CheckoutForm>({ name: "", whatsapp: "" });
+  const { user, isAuthenticated } = useAuth();
+  
+  const [form, setForm] = useState<CheckoutFormState>({
+    customerName: user?.name || "",
+    customerEmail: user?.email || "",
+    customerPhone: user?.phone || "",
+    address: {
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      zipCode: ""
+    },
+    notes: ""
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 

@@ -42,6 +42,7 @@ import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
 import { AdminProductsSection } from './AdminProductsSection';
+import { ProductModal } from './ProductModal';
 import supabaseApi from '../../services/supabaseApi';
 
 interface StoreOrder {
@@ -139,6 +140,11 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [settings, setSettings] = useState<any>({});
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Estados do modal de produtos
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductLoading, setIsProductLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -248,6 +254,65 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const updateSetting = (key: string, value: string) => {
     setSettings((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  // Funções do CRUD de produtos
+  const handleNewProduct = () => {
+    setSelectedProduct(null);
+    setIsProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+      try {
+        await supabaseApi.deleteProduct(productId);
+        console.log('✅ Produto excluído com sucesso');
+        await loadData(); // Recarregar lista
+      } catch (error) {
+        console.error('❌ Erro ao excluir produto:', error);
+      }
+    }
+  };
+
+  const handleSaveProduct = async (productData: Partial<Product>) => {
+    try {
+      setIsProductLoading(true);
+
+      if (selectedProduct?.id) {
+        // Editar produto existente
+        await supabaseApi.updateProduct(selectedProduct.id, productData);
+        console.log('✅ Produto atualizado com sucesso');
+      } else {
+        // Criar novo produto
+        await supabaseApi.createProduct(productData);
+        console.log('✅ Produto criado com sucesso');
+      }
+
+      await loadData(); // Recarregar lista
+      setIsProductModalOpen(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error('❌ Erro ao salvar produto:', error);
+      throw error; // Re-throw para o modal tratar
+    } finally {
+      setIsProductLoading(false);
+    }
+  };
+
+  const handleToggleProductStatus = async (product: Product) => {
+    try {
+      const updatedProduct = { ...product, isActive: !product.isActive };
+      await supabaseApi.updateProduct(product.id, updatedProduct);
+      console.log(`✅ Produto ${updatedProduct.isActive ? 'ativado' : 'desativado'} com sucesso`);
+      await loadData(); // Recarregar lista
+    } catch (error) {
+      console.error('❌ Erro ao atualizar status do produto:', error);
+    }
   };
 
   const filterOrders = () => {
@@ -776,6 +841,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <Button 
               size="sm" 
               className="bg-moria-orange hover:bg-moria-orange/90"
+              onClick={handleNewProduct}
             >
               <Plus className="h-4 w-4 mr-2" />
               Novo Produto
@@ -920,15 +986,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       <Button
                         variant={product.isActive ? "secondary" : "outline"}
                         size="sm"
-                        onClick={async () => {
-                          try {
-                            const updatedProduct = { ...product, isActive: !product.isActive };
-                            await supabaseApi.updateProduct(product.id, updatedProduct);
-                            loadData(); // Recarregar dados do Supabase
-                          } catch (error) {
-                            console.error('Erro ao atualizar produto:', error);
-                          }
-                        }}
+                        onClick={() => handleToggleProductStatus(product)}
                       >
                         {product.isActive ? (
                           <>
@@ -942,21 +1000,18 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                           </>
                         )}
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditProduct(product)}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         Editar
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={async () => {
-                          try {
-                            await supabaseApi.deleteProduct(product.id);
-                            loadData(); // Recarregar dados do Supabase
-                          } catch (error) {
-                            console.error('Erro ao excluir produto:', error);
-                          }
-                        }}
+                        onClick={() => handleDeleteProduct(product.id)}
                         className="text-red-600 hover:text-red-700 hover:border-red-300"
                       >
                         <AlertCircle className="h-4 w-4 mr-1" />
@@ -1868,4 +1923,48 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     default:
       return safeRender(renderDashboard, 'Dashboard');
   }
+
+  // Renderizar sempre o modal de produtos (será mostrado apenas quando isProductModalOpen for true)
+  return (
+    <>
+      {(() => {
+        switch (activeTab) {
+          case 'dashboard':
+            return safeRender(renderDashboard, 'Dashboard');
+          case 'orders':
+            return safeRender(renderOrders, 'Pedidos');
+          case 'quotes':
+            return safeRender(renderQuotes, 'Orçamentos');
+          case 'customers':
+            return safeRender(renderCustomers, 'Clientes');
+          case 'products':
+            return safeRender(renderProducts, 'Produtos');
+          case 'services':
+            return safeRender(renderServices, 'Serviços');
+          case 'coupons':
+            return safeRender(renderCoupons, 'Cupons');
+          case 'promotions':
+            return safeRender(renderPromotions, 'Promoções');
+          case 'reports':
+            return safeRender(renderReports, 'Relatórios');
+          case 'settings':
+            return safeRender(renderSettings, 'Configurações');
+          default:
+            return safeRender(renderDashboard, 'Dashboard');
+        }
+      })()}
+
+      {/* Modal de Produtos - sempre renderizado */}
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={() => {
+          setIsProductModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSave={handleSaveProduct}
+        product={selectedProduct}
+        loading={isProductLoading}
+      />
+    </>
+  );
 }

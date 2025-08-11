@@ -15,9 +15,42 @@ export function Footer() {
   const loadCompanyInfo = async () => {
     try {
       setIsLoading(true);
-      const response = await supabaseApi.getCompanyInfo();
-      if (response?.success && response.data) {
-        setCompanyInfo(response.data);
+      
+      // Buscar dados tanto de company_info quanto de settings
+      const [companyResponse, settingsResponse] = await Promise.all([
+        supabaseApi.getCompanyInfo().catch(err => ({ success: false, data: null })),
+        supabaseApi.getSettings().catch(err => ({ success: false, data: [] }))
+      ]);
+
+      let companyData = {};
+
+      // Processar dados da company_info se existirem
+      if (companyResponse?.success && companyResponse.data) {
+        companyData = { ...companyResponse.data };
+      }
+
+      // Processar dados das settings e mapear para company_info
+      if (settingsResponse?.success && settingsResponse.data) {
+        const settingsMap = settingsResponse.data.reduce((acc: any, setting: any) => {
+          acc[setting.key] = setting.value;
+          return acc;
+        }, {});
+
+        // Mapear settings para o formato esperado pelo Footer
+        companyData = {
+          ...companyData,
+          name: settingsMap.store_name || companyData.name || 'Moria Peças & Serviços',
+          phone: settingsMap.store_phone || companyData.phone,
+          email: settingsMap.store_email || companyData.email,
+          address: settingsMap.store_address || companyData.address,
+          whatsapp: settingsMap.whatsapp_number || companyData.whatsapp,
+        };
+      }
+
+      if (Object.keys(companyData).length > 0) {
+        setCompanyInfo(companyData);
+      } else {
+        throw new Error('Nenhum dado encontrado');
       }
     } catch (error) {
       console.error('Erro ao carregar informações da empresa:', error);
@@ -111,7 +144,7 @@ export function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-moria-orange" />
-                <p className="text-gray-300">{companyInfo?.phone || 'Telefone não disponível'}</p>
+                <p className="text-gray-300">{companyInfo?.phone || companyInfo?.whatsapp || 'Telefone não disponível'}</p>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-moria-orange" />

@@ -12,22 +12,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings } from 'lucide-react';
 
 interface Product {
-  id?: number;
+  id?: string;
   name: string;
   description: string;
   category: string;
+  subcategory?: string;
   price: number;
   salePrice?: number;
   promoPrice?: number;
   stock: number;
   minStock: number;
   sku: string;
-  brand: string;
   supplier: string;
+  costPrice?: number;
   images: string[];
   isActive: boolean;
-  specifications: Record<string, any>;
+  specifications: Record<string, string>;
   vehicleCompatibility: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ProductModalProps {
@@ -58,13 +61,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     name: '',
     description: '',
     category: '',
+    subcategory: '',
     price: 0,
     salePrice: 0,
     promoPrice: 0,
+    costPrice: 0,
     stock: 0,
     minStock: 5,
     sku: '',
-    brand: '',
     supplier: '',
     images: [],
     isActive: true,
@@ -83,13 +87,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         name: product.name || '',
         description: product.description || '',
         category: product.category || '',
+        subcategory: product.subcategory || '',
         price: product.price || 0,
         salePrice: product.salePrice || 0,
         promoPrice: product.promoPrice || 0,
+        costPrice: product.costPrice || 0,
         stock: product.stock || 0,
         minStock: product.minStock || 5,
         sku: product.sku || '',
-        brand: product.brand || '',
         supplier: product.supplier || '',
         images: product.images || [],
         isActive: product.isActive !== undefined ? product.isActive : true,
@@ -102,13 +107,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         name: '',
         description: '',
         category: '',
+        subcategory: '',
         price: 0,
         salePrice: 0,
         promoPrice: 0,
+        costPrice: 0,
         stock: 0,
         minStock: 5,
         sku: '',
-        brand: '',
         supplier: '',
         images: [],
         isActive: true,
@@ -290,6 +296,21 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
           {/* Aba Preços */}
           <TabsContent value="pricing" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="costPrice">Preço de Custo</Label>
+                <Input
+                  id="costPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.costPrice}
+                  onChange={(e) => handleInputChange('costPrice', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Preço Base *</Label>
@@ -410,12 +431,12 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="brand">Marca</Label>
+                <Label htmlFor="subcategory">Subcategoria</Label>
                 <Input
-                  id="brand"
-                  value={formData.brand}
-                  onChange={(e) => handleInputChange('brand', e.target.value)}
-                  placeholder="Ex: Bosch, Mann, NGK"
+                  id="subcategory"
+                  value={formData.subcategory}
+                  onChange={(e) => handleInputChange('subcategory', e.target.value)}
+                  placeholder="Ex: Filtro de Óleo, Pastilha Dianteira"
                 />
               </div>
 

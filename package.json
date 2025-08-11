@@ -11,7 +11,9 @@
     "deploy": "npm run build && npm run start",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "echo \"Tests not configured yet\""
+    "test": "echo \"Tests not configured yet\"",
+    "setup:prod": "node scripts/setup-production.js",
+    "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

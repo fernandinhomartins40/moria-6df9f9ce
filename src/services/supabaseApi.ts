@@ -4,8 +4,34 @@
 // ========================================
 
 import { supabase } from '@/config/supabase';
+import type { 
+  ApiResponse, 
+  Product, 
+  Service, 
+  Order, 
+  Promotion, 
+  Coupon, 
+  DashboardStats,
+  ProductFilters,
+  ServiceFilters,
+  OrderFilters,
+  CouponFilters,
+  PromotionFilters,
+  ProductFormData,
+  ServiceFormData,
+  PromotionFormData,
+  CouponFormData,
+  OrderFormData,
+  DatabaseProduct,
+  DatabaseService,
+  DatabasePromotion,
+  DatabaseCoupon,
+  HealthCheckResponse
+} from '@/types';
 
 class SupabaseApiService {
+  private enableLogs: boolean;
+
   constructor() {
     this.enableLogs = import.meta.env.DEV;
   }
@@ -13,7 +39,7 @@ class SupabaseApiService {
   /**
    * Log helper para desenvolvimento
    */
-  log(message: string, data: any = null) {
+  log(message: string, data?: any) {
     if (this.enableLogs) {
       console.log(`[SupabaseAPI] ${message}`, data || '');
     }
@@ -22,7 +48,7 @@ class SupabaseApiService {
   /**
    * Helper para formatar resposta no formato esperado pelo frontend
    */
-  formatResponse(data: any, total?: number) {
+  formatResponse<T>(data: T, total?: number): ApiResponse<T> {
     return {
       success: true,
       data: data,
@@ -33,7 +59,7 @@ class SupabaseApiService {
   /**
    * Helper para tratar erros
    */
-  handleError(error: any, operation: string) {
+  handleError(error: any, operation: string): never {
     const message = error.message || `Erro na operação: ${operation}`;
     this.log(`Error in ${operation}:`, message);
     throw new Error(message);
@@ -43,7 +69,7 @@ class SupabaseApiService {
   // HEALTH CHECK - Verificar conexão Supabase
   // ========================================
 
-  async healthCheck() {
+  async healthCheck(): Promise<HealthCheckResponse> {
     try {
       const { data, error } = await supabase.from('products').select('count').limit(1);
       
@@ -65,7 +91,7 @@ class SupabaseApiService {
   // DASHBOARD STATS - Para painel do lojista
   // ========================================
 
-  async getDashboardStats() {
+  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     try {
       // Buscar estatísticas em paralelo
       const [productsResult, ordersResult, servicesResult, recentOrdersResult] = await Promise.all([
@@ -98,7 +124,7 @@ class SupabaseApiService {
   // PRODUCTS - CRUD Completo para painel lojista
   // ========================================
 
-  async getProducts(filters: any = {}) {
+  async getProducts(filters: ProductFilters = {}): Promise<ApiResponse<Product[]>> {
     try {
       let query = supabase.from('products_view').select('*');
 
@@ -120,21 +146,27 @@ class SupabaseApiService {
       if (error) throw error;
 
       // Transformar dados para formato esperado pelo frontend
-      const transformedData = (data || []).map((product: any) => ({
+      const transformedData: Product[] = (data || []).map((product: DatabaseProduct & { effective_price?: number; discount_percentage?: number }) => ({
         id: product.id,
         name: product.name,
         description: product.description,
         category: product.category,
+        subcategory: product.subcategory,
         price: product.price,
         salePrice: product.sale_price,
         promoPrice: product.promo_price,
+        costPrice: product.cost_price,
         images: product.images || [],
         stock: product.stock,
+        minStock: product.min_stock,
+        sku: product.sku,
+        supplier: product.supplier,
         isActive: product.is_active,
         rating: product.rating,
         specifications: product.specifications || {},
         vehicleCompatibility: product.vehicle_compatibility || [],
         createdAt: product.created_at,
+        updatedAt: product.updated_at,
         effective_price: product.effective_price,
         discount_percentage: product.discount_percentage
       }));
@@ -164,16 +196,22 @@ class SupabaseApiService {
         name: data.name,
         description: data.description,
         category: data.category,
+        subcategory: data.subcategory,
         price: data.price,
         salePrice: data.sale_price,
         promoPrice: data.promo_price,
+        costPrice: data.cost_price,
         images: data.images || [],
         stock: data.stock,
+        minStock: data.min_stock,
+        sku: data.sku,
+        supplier: data.supplier,
         isActive: data.is_active,
         rating: data.rating,
         specifications: data.specifications || {},
         vehicleCompatibility: data.vehicle_compatibility || [],
-        createdAt: data.created_at
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
 
       return this.formatResponse(transformedData);
@@ -182,18 +220,23 @@ class SupabaseApiService {
     }
   }
 
-  async createProduct(productData: any) {
+  async createProduct(productData: ProductFormData): Promise<ApiResponse<Product>> {
     try {
       // Transformar dados para formato Supabase
       const supabaseData = {
         name: productData.name,
         description: productData.description,
         category: productData.category,
+        subcategory: productData.subcategory,
         price: productData.price,
         sale_price: productData.salePrice,
         promo_price: productData.promoPrice,
+        cost_price: productData.costPrice,
         images: productData.images || [],
         stock: productData.stock || 0,
+        min_stock: productData.minStock || 5,
+        sku: productData.sku,
+        supplier: productData.supplier,
         is_active: productData.isActive ?? true,
         rating: productData.rating || 0,
         specifications: productData.specifications || {},
@@ -220,11 +263,16 @@ class SupabaseApiService {
         name: productData.name,
         description: productData.description,
         category: productData.category,
+        subcategory: productData.subcategory,
         price: productData.price,
         sale_price: productData.salePrice,
         promo_price: productData.promoPrice,
+        cost_price: productData.costPrice,
         images: productData.images || [],
         stock: productData.stock,
+        min_stock: productData.minStock,
+        sku: productData.sku,
+        supplier: productData.supplier,
         is_active: productData.isActive,
         rating: productData.rating,
         specifications: productData.specifications || {},
