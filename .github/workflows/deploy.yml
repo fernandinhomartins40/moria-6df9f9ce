@@ -135,16 +135,14 @@ jobs:
 
           # Configurar variáveis de produção
           echo '⚙️ Configurando ambiente de produção...'
-          cat > .env.production << EOF
-VPS_HOST=${{ env.VPS_HOST }}
-FRONTEND_PORT=${{ env.FRONTEND_PORT }}
-BACKEND_PORT=${{ env.BACKEND_PORT }}
-NGINX_PORT=${{ env.NGINX_PORT }}
-JWT_SECRET=moria-production-jwt-${{ github.sha }}
-NODE_ENV=production
-VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api
-VITE_APP_NAME=Moria Peças & Serviços
-EOF
+          echo \"VPS_HOST=${{ env.VPS_HOST }}\" > .env.production
+          echo \"FRONTEND_PORT=${{ env.FRONTEND_PORT }}\" >> .env.production
+          echo \"BACKEND_PORT=${{ env.BACKEND_PORT }}\" >> .env.production
+          echo \"NGINX_PORT=${{ env.NGINX_PORT }}\" >> .env.production
+          echo \"JWT_SECRET=moria-production-jwt-${{ github.sha }}\" >> .env.production
+          echo \"NODE_ENV=production\" >> .env.production
+          echo \"VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api\" >> .env.production
+          echo \"VITE_APP_NAME=Moria Peças & Serviços\" >> .env.production
 
           # Deploy com Docker Compose
           echo '🐳 Executando deploy com Docker Compose...'
