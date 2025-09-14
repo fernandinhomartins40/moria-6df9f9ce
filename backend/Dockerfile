@@ -20,6 +20,9 @@ COPY . .
 # Criar diretório para banco de dados
 RUN mkdir -p /app/database
 
+# Tornar script executável
+RUN chmod +x /app/scripts/start.sh
+
 # Variáveis de ambiente padrão
 ENV NODE_ENV=production
 ENV PORT=3001
@@ -34,8 +37,8 @@ LABEL version="1.0.0"
 LABEL description="Backend Node.js + Express + SQLite3"
 
 # Comando de health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-# Comando para iniciar aplicação
-CMD ["npm", "start"]
+# Comando para iniciar aplicação com migrações
+CMD ["/app/scripts/start.sh"]

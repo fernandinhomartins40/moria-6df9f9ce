@@ -31,6 +31,20 @@ router.get('/category/:category',
   PromotionController.getPromotionsByCategory
 );
 
+// Listar promoções com filtros (rota pública para active=true)
+router.get('/',
+  validate(queryValidation.pagination, 'query'),
+  validate({ active: Joi.boolean().optional() }, 'query'),
+  (req, res, next) => {
+    // Se active=true, permitir acesso público
+    if (req.query.active === 'true') {
+      return PromotionController.getActivePromotions(req, res, next);
+    }
+    // Caso contrário, requer autenticação (chamará próximo middleware)
+    next();
+  }
+);
+
 // ============ ROTAS PÚBLICAS - CUPONS ============
 
 // Validar cupom
@@ -52,7 +66,7 @@ router.use(requireAdmin);
 
 // === PROMOÇÕES (Admin) ===
 
-// Listar todas as promoções
+// Listar todas as promoções (admin)
 router.get('/',
   validate(queryValidation.pagination, 'query'),
   validate({ is_active: Joi.boolean().optional() }, 'query'),

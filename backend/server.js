@@ -90,7 +90,8 @@ app.get('/api', (req, res) => {
       services: '/api/services/*',
       orders: '/api/orders/*',
       promotions: '/api/promotions/*',
-      coupons: '/api/coupons/*'
+      settings: '/api/settings/*',
+      companyInfo: '/api/company-info'
     }
   });
 });
@@ -105,6 +106,7 @@ const productRoutes = require('./src/routes/products.js');
 const serviceRoutes = require('./src/routes/services.js');
 const orderRoutes = require('./src/routes/orders.js');
 const promotionRoutes = require('./src/routes/promotions.js');
+const settingRoutes = require('./src/routes/settings.js');
 
 // Importar middlewares de erro
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.js');
@@ -115,6 +117,13 @@ app.use('/api/products', productRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/settings', settingRoutes);
+
+// Rotas específicas
+app.get('/api/company-info', (req, res, next) => {
+  req.url = '/company-info';
+  settingRoutes(req, res, next);
+});
 
 // ========================================
 // MIDDLEWARE DE ERRO GLOBAL

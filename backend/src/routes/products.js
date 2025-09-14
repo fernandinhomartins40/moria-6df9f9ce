@@ -49,6 +49,7 @@ router.get('/:id',
 );
 
 // Rotas administrativas (requer autenticação e admin)
+// IMPORTANTE: Rotas administrativas ficam depois das públicas
 router.use(authenticateToken);
 router.use(requireAdmin);
 
