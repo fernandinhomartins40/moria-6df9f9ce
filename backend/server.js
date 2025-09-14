@@ -103,6 +103,10 @@ app.get('/api', (req, res) => {
 // ROTAS DA API - FASE 3 IMPLEMENTADA
 // ========================================
 
+// Importar middlewares de erro e autenticação primeiro
+const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.js');
+const { rateLimit } = require('./src/middleware/auth.js');
+
 // Importar rotas
 const authRoutes = require('./src/routes/auth.js');
 const productRoutes = require('./src/routes/products.js');
@@ -110,10 +114,6 @@ const serviceRoutes = require('./src/routes/services.js');
 const orderRoutes = require('./src/routes/orders.js');
 const promotionRoutes = require('./src/routes/promotions.js');
 const settingRoutes = require('./src/routes/settings.js');
-
-// Importar middlewares de erro e autenticação
-const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.js');
-const { rateLimit } = require('./src/middleware/auth.js');
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
