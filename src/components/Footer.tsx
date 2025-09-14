@@ -16,10 +16,10 @@ export function Footer() {
     try {
       setIsLoading(true);
       
-      // Buscar dados tanto de company_info quanto de settings
+      // Buscar dados tanto de company_info quanto de settings públicas
       const [companyResponse, settingsResponse] = await Promise.all([
-        apiClient.get('/company-info').catch(err => ({ success: false, data: null })),
-        apiClient.get('/settings').catch(err => ({ success: false, data: [] }))
+        apiClient.get('/settings/company-info').catch(err => ({ success: false, data: null })),
+        apiClient.get('/settings/public').catch(err => ({ success: false, data: [] }))
       ]);
 
       let companyData = {};

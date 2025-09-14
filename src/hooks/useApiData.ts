@@ -51,7 +51,14 @@ const API_METHOD_MAP = {
     delete: (id: string) => apiClient.cancelOrder(id, 'Cancelado pelo usuário')
   },
   promotions: {
-    getAll: (filters?: any) => apiClient.getPromotions(filters),
+    getAll: (filters?: any) => {
+      // Se está buscando apenas promoções ativas (uso público), usar rota pública
+      if (filters?.is_active === true && Object.keys(filters).length <= 2) {
+        return apiClient.getActivePromotions();
+      }
+      // Caso contrário, usar rota administrativa
+      return apiClient.getPromotions(filters);
+    },
     getById: (id: string) => apiClient.get(`/promotions/${id}`),
     create: (data: any) => apiClient.createPromotion(data),
     update: (id: string, data: any) => apiClient.updatePromotion(id, data),

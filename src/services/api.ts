@@ -96,6 +96,20 @@ class ApiClient {
   ): Promise<ApiResponse<T> | ApiError> {
     try {
       const url = `${this.baseURL}${endpoint}`;
+      const method = (options.method || 'GET').toString();
+      const authToken = localStorage.getItem('moria_auth_token');
+      const requiresAuth = this.requiresAuth(endpoint, method);
+
+      // Debug log para rastrear chamadas de API
+      const hasToken = !!authToken;
+      const willSendToken = hasToken && requiresAuth;
+
+      console.group(`🔗 API Call: ${method} ${endpoint}`);
+      console.log(`📍 URL: ${url}`);
+      console.log(`🔐 Requer auth: ${requiresAuth ? '✅' : '❌'}`);
+      console.log(`🎫 Token disponível: ${hasToken ? '✅' : '❌'}`);
+      console.log(`📤 Enviando token: ${willSendToken ? '✅' : '❌'}`);
+
       const config: RequestInit = {
         headers: {
           'Content-Type': 'application/json',
@@ -105,16 +119,18 @@ class ApiClient {
       };
 
       // Adicionar token apenas para rotas que requerem autenticação
-      const authToken = localStorage.getItem('moria_auth_token');
-      const method = (options.method || 'GET').toString();
-      if (authToken && this.requiresAuth(endpoint, method)) {
+      if (authToken && requiresAuth) {
         config.headers = {
           ...config.headers,
           Authorization: `Bearer ${authToken}`,
         };
+        console.log(`🔑 Token adicionado ao header`);
       }
 
       const response = await fetch(url, config);
+
+      // Log da resposta
+      console.log(`📥 Status: ${response.status} ${response.statusText}`);
 
       // Verificar se a resposta é JSON
       const contentType = response.headers.get('content-type');
@@ -136,8 +152,40 @@ class ApiClient {
           }
         }
 
+        // Se é erro 401 em uma rota que deveria ser pública, tentar sem token
+        if (response.status === 401 && !this.requiresAuth(endpoint, method)) {
+          console.warn(`🔄 Erro 401 em rota pública: ${endpoint}. Tentando novamente sem token...`);
+
+          try {
+            // Tentar novamente sem Authorization header
+            const retryConfig = { ...config };
+            if (retryConfig.headers && typeof retryConfig.headers === 'object') {
+              const headers = { ...retryConfig.headers };
+              delete headers['Authorization'];
+              retryConfig.headers = headers;
+            }
+
+            const retryResponse = await fetch(url, retryConfig);
+            const retryContentType = retryResponse.headers.get('content-type');
+            const retryIsJson = retryContentType && retryContentType.includes('application/json');
+            const retryData = retryIsJson ? await retryResponse.json() : { message: await retryResponse.text() };
+
+            if (retryResponse.ok) {
+              console.log(`✅ Sucesso ao tentar novamente sem token: ${endpoint}`);
+              return { success: true, ...retryData };
+            }
+          } catch (retryError) {
+            console.error(`❌ Falha ao tentar novamente sem token: ${endpoint}`, retryError);
+          }
+        }
+
+        console.log(`❌ Erro: ${data.message || response.statusText}`);
+        console.groupEnd();
         throw new Error(data.message || `Erro ${response.status}: ${response.statusText}`);
       }
+
+      console.log(`✅ Sucesso`);
+      console.groupEnd();
 
       return {
         data: data.data || data,
@@ -145,6 +193,9 @@ class ApiClient {
         message: data.message,
       };
     } catch (error) {
+      console.log(`💥 Exceção: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.groupEnd();
+
       console.error('API Error:', error);
       return {
         success: false,
@@ -307,6 +358,48 @@ class ApiClient {
 
   async deleteCoupon(id: string) {
     return this.delete(`/promotions/coupons/${id}`);
+  }
+
+  // Métodos específicos para configurações
+  async getPublicSettings() {
+    return this.get('/settings/public');
+  }
+
+  async getCompanyInfo() {
+    return this.get('/settings/company-info');
+  }
+
+  async getSettingsByCategory(category: string) {
+    return this.get(`/settings/category/${category}`);
+  }
+
+  // Métodos administrativos de settings (requerem autenticação)
+  async getAllSettings() {
+    return this.get('/settings');
+  }
+
+  async getSettingByKey(key: string) {
+    return this.get(`/settings/${key}`);
+  }
+
+  async createSetting(settingData: any) {
+    return this.post('/settings', settingData);
+  }
+
+  async updateSetting(id: string, settingData: any) {
+    return this.put(`/settings/${id}`, settingData);
+  }
+
+  async updateSettingByKey(key: string, value: any) {
+    return this.patch(`/settings/key/${key}`, { value });
+  }
+
+  async upsertSetting(settingData: any) {
+    return this.post('/settings/upsert', settingData);
+  }
+
+  async deleteSetting(id: string) {
+    return this.delete(`/settings/${id}`);
   }
 
   // Métodos de autenticação
