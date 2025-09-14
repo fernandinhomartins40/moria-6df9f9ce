@@ -99,8 +99,23 @@ jobs:
           # Parar stack anterior (se existir)
           echo '⏹️ Parando stack anterior...'
           if command -v docker &> /dev/null; then
-            cd '${{ env.APP_DIR }}' 2>/dev/null && docker compose -p ${{ env.COMPOSE_PROJECT }} down --remove-orphans 2>/dev/null || true
+            # Parar todos os containers do projeto Moria
+            docker compose -p ${{ env.COMPOSE_PROJECT }} down --remove-orphans 2>/dev/null || true
+            docker compose -p moria down --remove-orphans 2>/dev/null || true
+
+            # Parar containers específicos se ainda estiverem rodando
+            docker stop moria-backend moria-frontend moria-proxy 2>/dev/null || true
+            docker rm moria-backend moria-frontend moria-proxy 2>/dev/null || true
+
+            # Liberar portas específicas forçadamente
+            docker ps --filter "publish=${{ env.BACKEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
+            docker ps --filter "publish=${{ env.FRONTEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
+            docker ps --filter "publish=${{ env.NGINX_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
+
+            # Limpeza geral
             docker system prune -f >/dev/null 2>&1 || true
+
+            echo '✅ Stack anterior parada e portas liberadas'
           fi
 
           # Instalar/Atualizar Docker
@@ -151,13 +166,41 @@ jobs:
           export NGINX_PORT=${{ env.NGINX_PORT }}
           export VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api
 
+          # Verificar se portas estão realmente livres
+          echo '🔍 Verificando portas antes do deploy...'
+          for port in ${{ env.BACKEND_PORT }} ${{ env.FRONTEND_PORT }} ${{ env.NGINX_PORT }}; do
+            if netstat -tuln | grep -q ":$port "; then
+              echo "⚠️ Porta $port ainda ocupada, forçando liberação..."
+              fuser -k ${port}/tcp 2>/dev/null || true
+              sleep 2
+            fi
+          done
+
           # Build e start dos serviços
+          echo '🏗️ Building imagens...'
           docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache
-          docker compose -p ${{ env.COMPOSE_PROJECT }} up -d
+
+          echo '🚀 Iniciando containers...'
+
+          # Tentar start normal primeiro
+          if ! docker compose -p ${{ env.COMPOSE_PROJECT }} up -d; then
+            echo '⚠️ Falha no start normal, tentando restart forçado...'
+
+            # Restart mais agressivo
+            docker compose -p ${{ env.COMPOSE_PROJECT }} down --volumes --remove-orphans 2>/dev/null || true
+            docker system prune -af >/dev/null 2>&1 || true
+
+            # Aguardar um pouco
+            sleep 10
+
+            # Tentar novamente
+            echo '🔄 Tentativa 2: Iniciando containers...'
+            docker compose -p ${{ env.COMPOSE_PROJECT }} up -d
+          fi
 
           # Aguardar inicialização
-          echo '⏳ Aguardando stack inicializar (30s)...'
-          sleep 30
+          echo '⏳ Aguardando stack inicializar (45s)...'
+          sleep 45
 
           # Verificar serviços
           echo '🔍 Verificando serviços...'
