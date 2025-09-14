@@ -10,12 +10,12 @@ on:
   workflow_dispatch:
 
 env:
-  VPS_HOST: '31.97.85.98'
+  VPS_HOST: '72.60.10.108'
   VPS_USER: 'root'
   APP_DIR: '/root/moria-pecas-servicos'
-  FRONTEND_PORT: '3018'
-  BACKEND_PORT: '3019'
-  NGINX_PORT: '3020'
+  FRONTEND_PORT: '3030'
+  BACKEND_PORT: '3031'
+  NGINX_PORT: '3032'
   COMPOSE_PROJECT: 'moria'
 
 jobs:
