@@ -50,7 +50,8 @@
       "Bash(export FRONTEND_PORT=8080)",
       "Bash(export BACKEND_PORT=3001)",
       "Bash(export VITE_API_BASE_URL=http://localhost:3001/api)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(pgrep:*)"
     ],
     "deny": []
   }

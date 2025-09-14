@@ -34,6 +34,10 @@ class ApiClient {
       '^/auth/logout$',
       '^/auth/users',
 
+      // IMPORTANTE: Rotas administrativas que sempre requerem auth + admin role
+      '^/orders$', // GET /orders (listar todos os pedidos - apenas admin)
+      '^/orders/[^/]+$', // GET /orders/:id (ver detalhes - admin ou próprio usuário)
+
       // Pedidos do usuário
       '^/orders/my-orders',
       '^/orders/[^/]+/cancel$',
@@ -47,22 +51,22 @@ class ApiClient {
       '^/settings/(?!public$|company-info$|category/)',
       '^/settings$',
 
-      // Rotas administrativas específicas de produtos
+      // PRODUTOS: Apenas rotas administrativas requerem auth
       '^/products/admin/',
 
-      // Rotas administrativas específicas de serviços
+      // SERVIÇOS: Apenas rotas administrativas requerem auth
       '^/services/admin/',
 
-      // Rotas administrativas de promoções
+      // PROMOÇÕES: Rotas administrativas requerem auth
       '^/promotions/(?!active$|product/|category/|coupons/active$|coupons/validate/)',
-      '^/promotions$',
-      '^/promotions/[^/]+$',
+      '^/promotions$', // GET /promotions (admin - listar todas)
+      '^/promotions/[^/]+$', // GET/PUT/DELETE /promotions/:id (admin)
       '^/promotions/coupons/(?!active$|validate/)',
-      '^/promotions/coupons$',
-      '^/promotions/coupons/[^/]+$',
+      '^/promotions/coupons$', // GET /promotions/coupons (admin)
+      '^/promotions/coupons/[^/]+$', // operations on specific coupons (admin)
     ];
 
-    // Métodos que sempre requerem autenticação (exceto em rotas específicas de auth)
+    // Métodos que sempre requerem autenticação (exceto em rotas específicas públicas)
     const authRequiredMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
     // Se o método requer autenticação e não é uma rota pública específica
@@ -71,7 +75,7 @@ class ApiClient {
         '^/auth/login$',
         '^/auth/register$',
         '^/auth/refresh$',
-        '^/orders$', // Criar pedido (guest)
+        '^/orders$', // Criar pedido como guest (POST /orders)
       ];
 
       const isPublicPost = publicPostRoutes.some(pattern => {
@@ -89,6 +93,9 @@ class ApiClient {
       return regex.test(endpoint);
     });
   }
+
+  private refreshAttempts: Map<string, number> = new Map();
+  private readonly MAX_REFRESH_ATTEMPTS = 1;
 
   private async request<T>(
     endpoint: string,
@@ -139,21 +146,42 @@ class ApiClient {
       const data = isJson ? await response.json() : { message: await response.text() };
 
       if (!response.ok) {
-        // Se token expirou, tentar renovar
-        if (response.status === 401 && authToken && endpoint !== '/auth/refresh') {
+        // Prevenir loops infinitos de refresh
+        const refreshKey = `${endpoint}-${method}`;
+        const currentAttempts = this.refreshAttempts.get(refreshKey) || 0;
+
+        // Se token expirou e ainda não tentamos fazer refresh muitas vezes
+        if (response.status === 401 && authToken && endpoint !== '/auth/refresh' &&
+            requiresAuth && currentAttempts < this.MAX_REFRESH_ATTEMPTS) {
+
+          console.warn(`🔄 Token expirado para ${endpoint}. Tentativa ${currentAttempts + 1}/${this.MAX_REFRESH_ATTEMPTS}`);
+          this.refreshAttempts.set(refreshKey, currentAttempts + 1);
+
           const refreshResult = await this.refreshToken();
           if (refreshResult.success) {
             // Tentar novamente com o novo token
-            return this.request(endpoint, options);
+            console.log(`✅ Token renovado com sucesso. Tentando ${endpoint} novamente...`);
+            const result = await this.request(endpoint, options);
+            // Limpar contador de tentativas em caso de sucesso
+            this.refreshAttempts.delete(refreshKey);
+            return result;
           } else {
-            // Se não conseguiu renovar, remover token e redirecionar para login
+            // Se não conseguiu renovar, remover token
+            console.error(`❌ Falha ao renovar token para ${endpoint}`);
             localStorage.removeItem('moria_auth_token');
             localStorage.removeItem('moria_refresh_token');
+            this.refreshAttempts.delete(refreshKey);
           }
         }
 
+        // Limpar contador após exceder tentativas
+        if (currentAttempts >= this.MAX_REFRESH_ATTEMPTS) {
+          this.refreshAttempts.delete(refreshKey);
+          console.warn(`⚠️ Máximo de tentativas de refresh excedido para ${endpoint}`);
+        }
+
         // Se é erro 401 em uma rota que deveria ser pública, tentar sem token
-        if (response.status === 401 && !this.requiresAuth(endpoint, method)) {
+        if (response.status === 401 && !requiresAuth) {
           console.warn(`🔄 Erro 401 em rota pública: ${endpoint}. Tentando novamente sem token...`);
 
           try {
@@ -172,6 +200,7 @@ class ApiClient {
 
             if (retryResponse.ok) {
               console.log(`✅ Sucesso ao tentar novamente sem token: ${endpoint}`);
+              console.groupEnd();
               return { success: true, ...retryData };
             }
           } catch (retryError) {

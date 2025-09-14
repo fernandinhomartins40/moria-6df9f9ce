@@ -6,7 +6,46 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.js');
 
-// Middleware de autenticação JWT
+// Cache para tokens inválidos/revogados (simple in-memory cache)
+const revokedTokens = new Set();
+
+// Rate limiting simples por IP
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutos
+const RATE_LIMIT_MAX_ATTEMPTS = 100; // 100 tentativas por janela
+
+// Middleware de rate limiting
+const rateLimit = (req, res, next) => {
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+
+  if (!rateLimitMap.has(clientIP)) {
+    rateLimitMap.set(clientIP, { count: 1, windowStart: now });
+    return next();
+  }
+
+  const rateLimitData = rateLimitMap.get(clientIP);
+
+  // Reset da janela se passou o tempo
+  if (now - rateLimitData.windowStart > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(clientIP, { count: 1, windowStart: now });
+    return next();
+  }
+
+  // Verificar se excedeu o limite
+  if (rateLimitData.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+    return res.status(429).json({
+      success: false,
+      message: 'Muitas tentativas. Tente novamente em 15 minutos.'
+    });
+  }
+
+  // Incrementar contador
+  rateLimitData.count++;
+  next();
+};
+
+// Middleware de autenticação JWT aprimorado
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
@@ -19,8 +58,24 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // Verificar se token foi revogado
+    if (revokedTokens.has(token)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token revogado'
+      });
+    }
+
     // Verificar token JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verificar issuer para maior segurança
+    if (decoded.iss !== 'moria-backend') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token inválido - issuer incorreto'
+      });
+    }
 
     // Buscar usuário no banco
     const user = await User.findById(decoded.userId);
@@ -40,21 +95,32 @@ const authenticateToken = async (req, res, next) => {
 
     // Adicionar usuário na requisição
     req.user = user;
+    req.token = token; // Para possível revogação posterior
     next();
   } catch (error) {
-    console.error('Erro na autenticação:', error.message);
+    const errorType = error.name;
+    const clientIP = req.ip || req.connection.remoteAddress;
 
-    if (error.name === 'JsonWebTokenError') {
+    console.error(`Erro na autenticação [${clientIP}]:`, error.message);
+
+    if (errorType === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         message: 'Token inválido'
       });
     }
 
-    if (error.name === 'TokenExpiredError') {
+    if (errorType === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
         message: 'Token expirado'
+      });
+    }
+
+    if (errorType === 'NotBeforeError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token ainda não é válido'
       });
     }
 
@@ -122,10 +188,33 @@ const generateRefreshToken = (userId) => {
   );
 };
 
+// Função para revogar token
+const revokeToken = (token) => {
+  revokedTokens.add(token);
+
+  // Limpar tokens revogados antigas (cleanup simples)
+  if (revokedTokens.size > 1000) {
+    const tokensArray = Array.from(revokedTokens);
+    const toRemove = tokensArray.slice(0, 500);
+    toRemove.forEach(t => revokedTokens.delete(t));
+  }
+
+  console.log(`Token revogado. Total de tokens revogados: ${revokedTokens.size}`);
+};
+
+// Função para limpar rate limit de um IP específico (admin)
+const clearRateLimit = (ip) => {
+  rateLimitMap.delete(ip);
+  console.log(`Rate limit limpo para IP: ${ip}`);
+};
+
 module.exports = {
   authenticateToken,
   requireAdmin,
   optionalAuth,
   generateToken,
-  generateRefreshToken
+  generateRefreshToken,
+  rateLimit,
+  revokeToken,
+  clearRateLimit
 };

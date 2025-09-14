@@ -18,8 +18,12 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3001
+      - HOST=0.0.0.0
       - JWT_SECRET=${JWT_SECRET:-moria-super-secret-jwt-key-change-in-production}
       - DATABASE_URL=/app/database/database.sqlite
+      - VPS_HOST=${VPS_HOST:-72.60.10.108}
+      - FRONTEND_PORT=${FRONTEND_PORT:-3030}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://72.60.10.108:3030,http://localhost:3000,http://localhost:5173,http://localhost:8080}
     volumes:
       - backend_data:/app/database
     networks:

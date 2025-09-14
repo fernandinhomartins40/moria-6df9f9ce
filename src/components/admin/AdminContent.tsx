@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { 
-  Package, 
-  Wrench, 
-  User, 
-  Phone, 
-  Calendar, 
+import {
+  Package,
+  Wrench,
+  User,
+  Phone,
+  Calendar,
   DollarSign,
   ShoppingBag,
   MessageCircle,
@@ -44,6 +44,7 @@ import { AdminPromotionsSection } from './AdminPromotionsSection';
 import { AdminProductsSection } from './AdminProductsSection';
 import { ProductModal } from './ProductModal';
 import { apiClient } from '../../services/api';
+import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 interface StoreOrder {
   id: string;
@@ -123,6 +124,9 @@ interface AdminContentProps {
 }
 
 export function AdminContent({ activeTab }: AdminContentProps) {
+  // Hook de autenticação administrativa
+  const adminAuth = useAdminAuth();
+
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -140,15 +144,40 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [settings, setSettings] = useState<any>({});
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Estados do modal de produtos
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductLoading, setIsProductLoading] = useState(false);
 
+  // Carregar dados apenas se o usuário for admin
   useEffect(() => {
-    loadData();
-  }, []);
+    const initializeAdminData = async () => {
+      // Aguardar autenticação completar
+      if (adminAuth.isLoading) {
+        console.log('⏳ Aguardando verificação de permissões administrativas...');
+        return;
+      }
+
+      // Verificar se usuário tem permissão de admin
+      if (!adminAuth.canAccessAdminFeatures) {
+        console.warn('🚫 Usuário não tem permissões administrativas');
+        // Limpar dados sensíveis
+        setOrders([]);
+        setQuotes([]);
+        setServices([]);
+        setCoupons([]);
+        setProducts([]);
+        setUsers([]);
+        return;
+      }
+
+      console.log('🔓 Usuário autorizado, carregando dados administrativos...');
+      await loadData();
+    };
+
+    initializeAdminData();
+  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures]);
 
   useEffect(() => {
     filterOrders();
@@ -159,23 +188,29 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   }, [orders, quotes, services, coupons, products, searchTerm, statusFilter]);
 
   const loadData = async () => {
+    // Verificar se o usuário tem permissão antes de carregar dados
+    if (!adminAuth.canAccessAdminFeatures) {
+      console.warn('🚫 LoadData: Usuário não autorizado para dados administrativos');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log('🔄 Carregando dados REAIS do API...');
-      
-      // Carregar dados REAIS do API em paralelo
+      console.log('🔄 Carregando dados administrativos REAIS do API...');
+
+      // Carregar dados REAIS do API em paralelo com autenticação forçada
       const [
         productsResponse,
-        servicesResponse, 
+        servicesResponse,
         couponsResponse,
         ordersResponse,
         promotionsResponse
       ] = await Promise.all([
-        apiClient.getProducts({ active: undefined }), // Todos os produtos
-        apiClient.getServices({ active: undefined }), // Todos os serviços  
-        apiClient.getCoupons({ active: undefined }), // Todos os cupons
-        apiClient.getOrders(), // Todos os pedidos
-        apiClient.getPromotions({ active: undefined }) // Todas as promoções
+        apiClient.getProducts({ active: undefined }, true), // Todos os produtos (admin)
+        apiClient.getServices({ active: undefined }, true), // Todos os serviços (admin)
+        apiClient.getCoupons({ active: undefined }), // Todos os cupons (admin)
+        apiClient.getOrders(), // Todos os pedidos (admin)
+        apiClient.getPromotions({ active: undefined }) // Todas as promoções (admin)
       ]);
 
       console.log('📦 Produtos do API:', productsResponse?.data?.length || 0);
@@ -183,23 +218,46 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       console.log('🎫 Cupons do API:', couponsResponse?.data?.length || 0);
       console.log('📝 Pedidos do API:', ordersResponse?.data?.length || 0);
 
-      // Definir dados dos estados
-      setProducts(productsResponse?.data || []);
-      setServices(servicesResponse?.data || []);
-      setCoupons(couponsResponse?.data || []);
-      setOrders(ordersResponse?.data || []);
-      
+      // Verificar se as respostas são válidas
+      if (productsResponse?.success) {
+        setProducts(productsResponse.data || []);
+      } else {
+        console.warn('⚠️ Erro ao carregar produtos:', productsResponse?.message);
+        setProducts([]);
+      }
+
+      if (servicesResponse?.success) {
+        setServices(servicesResponse.data || []);
+      } else {
+        console.warn('⚠️ Erro ao carregar serviços:', servicesResponse?.message);
+        setServices([]);
+      }
+
+      if (couponsResponse?.success) {
+        setCoupons(couponsResponse.data || []);
+      } else {
+        console.warn('⚠️ Erro ao carregar cupons:', couponsResponse?.message);
+        setCoupons([]);
+      }
+
+      if (ordersResponse?.success) {
+        setOrders(ordersResponse.data || []);
+      } else {
+        console.warn('⚠️ Erro ao carregar pedidos:', ordersResponse?.message);
+        setOrders([]);
+      }
+
       // TODO: Implementar quotes e users no API futuramente
       setQuotes([]); // Orçamentos serão implementados no API
       setUsers([]); // Usuários serão migrados para auth.users
 
-      console.log('✅ Dados do API carregados com sucesso!');
-      
+      console.log('✅ Dados administrativos carregados com sucesso!');
+
       // Carregar configurações também
       await loadSettings();
     } catch (error) {
-      console.error('❌ Erro ao carregar dados do API:', error);
-      
+      console.error('❌ Erro ao carregar dados administrativos:', error);
+
       // Em caso de erro, definir arrays vazios
       setProducts([]);
       setServices([]);

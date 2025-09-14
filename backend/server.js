@@ -47,6 +47,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Rate limiting para todas as rotas da API
+app.use('/api', rateLimit);
+
 // Parse JSON e URL encoded
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -108,8 +111,9 @@ const orderRoutes = require('./src/routes/orders.js');
 const promotionRoutes = require('./src/routes/promotions.js');
 const settingRoutes = require('./src/routes/settings.js');
 
-// Importar middlewares de erro
+// Importar middlewares de erro e autenticação
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.js');
+const { rateLimit } = require('./src/middleware/auth.js');
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
