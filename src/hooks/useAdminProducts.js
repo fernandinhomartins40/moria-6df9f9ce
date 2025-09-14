@@ -35,18 +35,11 @@ export const useAdminProducts = () => {
     }
   }, [addNotification]);
 
-  // Carregar produtos da API com verificação de autenticação
+  // Carregar produtos da API (rota pública, mas mostrar dados extras se for admin)
   const fetchProducts = useCallback(async (filters = {}) => {
-    // Verificar se pode fazer chamadas administrativas
-    if (!adminAuth.canMakeAdminCall('/products')) {
-      if (!adminAuth.isLoading) {
-        setError('Acesso não autorizado');
-        notify({
-          type: 'error',
-          title: 'Acesso negado',
-          message: 'Você precisa estar logado como administrador para ver os produtos'
-        });
-      }
+    // Aguardar autenticação completar antes de decidir como buscar
+    if (adminAuth.isLoading) {
+      console.log('⏳ Aguardando autenticação completar...');
       return [];
     }
 
@@ -54,10 +47,13 @@ export const useAdminProducts = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Carregando produtos (admin)...');
+      // Se for admin, usar autenticação para ver dados extras (produtos inativos, etc)
+      const useAuth = adminAuth.canAccessAdminFeatures;
 
-      // Usar includeAuth: true para forçar autenticação
-      const response = await apiClient.getProducts(filters, true);
+      console.log(`🔍 Carregando produtos ${useAuth ? '(admin)' : '(público)'}...`);
+
+      // Usar autenticação apenas se for admin
+      const response = await apiClient.getProducts(filters, useAuth);
 
       if (response && response.success && Array.isArray(response.data)) {
         console.log(`✅ Produtos carregados: ${response.data.length} itens`);
@@ -313,14 +309,9 @@ export const useAdminProducts = () => {
         return;
       }
 
-      // Só carregar se for admin
-      if (adminAuth.canAccessAdminFeatures) {
-        console.log('🔓 Usuário autorizado, carregando produtos...');
-        await fetchProducts();
-      } else {
-        console.log('🔒 Usuário não é admin, não carregando produtos');
-        setProducts([]); // Limpar produtos se não for admin
-      }
+      // Carregar produtos sempre (admin vê mais dados, usuários veem só produtos ativos)
+      console.log(`🔓 Carregando produtos para ${adminAuth.canAccessAdminFeatures ? 'admin' : 'usuário normal'}...`);
+      await fetchProducts();
     };
 
     loadInitialData();
