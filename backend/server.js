@@ -47,9 +47,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Rate limiting para todas as rotas da API
-app.use('/api', rateLimit);
-
 // Parse JSON e URL encoded
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -103,9 +100,8 @@ app.get('/api', (req, res) => {
 // ROTAS DA API - FASE 3 IMPLEMENTADA
 // ========================================
 
-// Importar middlewares de erro e autenticação primeiro
+// Importar middlewares de erro
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler.js');
-const { rateLimit } = require('./src/middleware/auth.js');
 
 // Importar rotas
 const authRoutes = require('./src/routes/auth.js');
