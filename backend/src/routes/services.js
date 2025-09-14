@@ -4,6 +4,7 @@
 // ========================================
 
 const express = require('express');
+const Joi = require('joi');
 const { validate } = require('../utils/validations.js');
 const { serviceValidation, queryValidation, idSchema } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth.js');
