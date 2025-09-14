@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 
 export interface CartItem {
   id: number;
@@ -42,9 +42,10 @@ interface CartState {
   isOpen: boolean;
   availablePromotions: Promotion[];
   appliedPromotions: Promotion[];
+  appliedCoupon: any | null;
 }
 
-type CartAction = 
+type CartAction =
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity' | 'originalPrice' | 'appliedPromotion'> }
   | { type: 'REMOVE_ITEM'; payload: number }
   | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
@@ -53,13 +54,16 @@ type CartAction =
   | { type: 'OPEN_CART' }
   | { type: 'CLOSE_CART' }
   | { type: 'LOAD_PROMOTIONS'; payload: Promotion[] }
-  | { type: 'APPLY_PROMOTIONS' };
+  | { type: 'APPLY_PROMOTIONS' }
+  | { type: 'APPLY_COUPON'; payload: any }
+  | { type: 'REMOVE_COUPON' };
 
 const initialState: CartState = {
   items: [],
   isOpen: false,
   availablePromotions: [],
   appliedPromotions: [],
+  appliedCoupon: null,
 };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
@@ -259,6 +263,7 @@ interface CartContextType {
   originalTotalPrice: number;
   totalSavings: number;
   appliedPromotions: Promotion[];
+  appliedCoupon: any | null;
   addItem: (item: Omit<CartItem, 'quantity' | 'originalPrice' | 'appliedPromotion'>) => void;
   removeItem: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
@@ -267,6 +272,9 @@ interface CartContextType {
   openCart: () => void;
   closeCart: () => void;
   loadPromotions: () => Promise<void>;
+  validateCoupon: (code: string) => Promise<{ valid: boolean; coupon?: any; message?: string; discount?: number }>;
+  applyCoupon: (coupon: any) => void;
+  removeCoupon: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -286,13 +294,65 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const loadPromotions = async () => {
     try {
-      const response = await supabaseApi.getPromotions({ active: true });
+      const response = await apiClient.getActivePromotions();
       if (response?.success && response.data) {
-        dispatch({ type: 'LOAD_PROMOTIONS', payload: response.data });
+        // Mapear dados da API para formato esperado pelo frontend
+        const promotions = response.data.map((promo: any) => ({
+          id: promo.id,
+          name: promo.name,
+          type: 'general' as const, // Adaptar conforme necessário
+          conditions: {
+            categories: JSON.parse(promo.applicable_categories || '[]'),
+            productIds: JSON.parse(promo.applicable_products || '[]'),
+            minAmount: promo.min_amount || 0,
+            maxUsesPerCustomer: promo.usage_limit_per_user
+          },
+          discountType: promo.type === 'percentage' ? 'percentage' as const : 'fixed' as const,
+          discountValue: promo.discount_value,
+          maxDiscount: promo.type === 'percentage' ? undefined : promo.discount_value,
+          startsAt: promo.start_date,
+          endsAt: promo.end_date,
+          isActive: promo.is_active
+        }));
+        dispatch({ type: 'LOAD_PROMOTIONS', payload: promotions });
       }
     } catch (error) {
       console.error('Erro ao carregar promoções:', error);
     }
+  };
+
+  const validateCoupon = async (code: string): Promise<{ valid: boolean; coupon?: any; message?: string; discount?: number }> => {
+    try {
+      const result = await apiClient.validateCoupon(code, totalPrice);
+
+      if (result.success) {
+        return {
+          valid: true,
+          coupon: result.data.coupon,
+          message: result.data.message || 'Cupom válido!',
+          discount: result.data.discount
+        };
+      } else {
+        return {
+          valid: false,
+          message: result.message || 'Cupom inválido'
+        };
+      }
+    } catch (error) {
+      console.error('Erro ao validar cupom:', error);
+      return {
+        valid: false,
+        message: 'Erro ao validar cupom'
+      };
+    }
+  };
+
+  const applyCoupon = (coupon: any) => {
+    dispatch({ type: 'APPLY_COUPON', payload: coupon });
+  };
+
+  const removeCoupon = () => {
+    dispatch({ type: 'REMOVE_COUPON' });
   };
 
   const contextValue: CartContextType = {
@@ -303,6 +363,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     originalTotalPrice,
     totalSavings,
     appliedPromotions: state.appliedPromotions,
+    appliedCoupon: state.appliedCoupon,
     addItem: (item) => dispatch({ type: 'ADD_ITEM', payload: item }),
     removeItem: (id) => dispatch({ type: 'REMOVE_ITEM', payload: id }),
     updateQuantity: (id, quantity) => dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } }),
@@ -311,6 +372,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     openCart: () => dispatch({ type: 'OPEN_CART' }),
     closeCart: () => dispatch({ type: 'CLOSE_CART' }),
     loadPromotions,
+    validateCoupon,
+    applyCoupon,
+    removeCoupon,
   };
 
   return (

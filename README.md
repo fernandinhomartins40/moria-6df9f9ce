@@ -1,20 +1,20 @@
 # 🚗 Moria Peças & Serviços
 
-**Sistema completo de e-commerce para oficina automotiva com Supabase**
+**Sistema completo de e-commerce para oficina automotiva**
 
 ## 🏗️ Arquitetura
 
-**Frontend-Only com Supabase Backend**
+**Frontend + Backend Próprio**
 - ✅ **Frontend**: React + Vite + TypeScript + Tailwind + shadcn/ui
-- ✅ **Backend**: Supabase (PostgreSQL + Row Level Security)
-- ✅ **Painéis**: Lojista e Cliente mantidos
-- ✅ **Deploy**: Simplificado (apenas frontend)
+- ✅ **Backend**: Node.js + Express + SQLite3 + Knex.js
+- ✅ **Painéis**: Lojista e Cliente
+- ✅ **Deploy**: Frontend containerizado + Backend API
 
 ## 🚀 Configuração Rápida
 
 ### **Pré-requisitos:**
 - Node.js 18+ e npm
-- Conta no [Supabase](https://supabase.com) (gratuita)
+- SQLite3 (será instalado automaticamente)
 
 ### **1. Clone e instale:**
 ```bash
@@ -23,20 +23,25 @@ cd <YOUR_PROJECT_NAME>
 npm install
 ```
 
-### **2. Configure Supabase:**
+### **2. Configure variáveis de ambiente:**
 
-**Siga o guia completo:** [`docs/INSTRUCOES_SUPABASE.md`](./docs/INSTRUCOES_SUPABASE.md)
+Copie o arquivo de exemplo:
+```bash
+cp .env.example .env.local
+```
 
-Resumo rápido:
-1. Crie projeto no [Supabase](https://supabase.com)
-2. Execute o schema: [`docs/supabase_schema.sql`](./docs/supabase_schema.sql)
-3. Configure `.env.local`:
-   ```env
-   VITE_SUPABASE_URL=https://sua-url.supabase.co
-   VITE_SUPABASE_ANON_KEY=sua-chave-aqui
-   ```
+Configure as variáveis em `.env.local`:
+```env
+VITE_API_BASE_URL=http://localhost:3001/api
+VITE_APP_NAME=Moria Peças & Serviços
+VITE_APP_ENV=development
+```
 
-### **3. Execute:**
+### **3. Prepare o backend:**
+
+**Nota**: O backend Node.js será implementado posteriormente. Por enquanto, a aplicação usa dados mockados.
+
+### **4. Execute o frontend:**
 ```bash
 npm run dev
 ```
@@ -70,114 +75,93 @@ npm run dev
 
 ---
 
-## 🛡️ Segurança (RLS)
-
-### **Dados Públicos:**
-- ✅ Produtos e serviços ativos
-- ✅ Promoções vigentes
-
-### **Dados Privados:**
-- ✅ Pedidos (apenas do usuário)
-- ✅ Perfil e favoritos
-
-### **Apenas Admin:**
-- ✅ Gerenciar produtos/serviços
-- ✅ Ver todos pedidos
-- ✅ Configurações da loja
-
----
-
 ## 🗂️ Estrutura do Projeto
 
 ```
 📁 src/
-├── 📁 config/
-│   └── 📄 supabase.ts          # Configuração Supabase
 ├── 📁 services/
-│   └── 📄 supabaseApi.ts       # API client Supabase
+│   └── 📄 api.ts                # API client para backend Node.js
 ├── 📁 hooks/
 │   ├── 📄 useAuth.ts           # Autenticação
-│   ├── 📄 useSupabaseData.ts   # Hook genérico
+│   ├── 📄 useApiData.ts        # Hook genérico para API
 │   └── 📄 useAdmin*.js         # Hooks dos painéis
 ├── 📁 components/
 │   ├── 📁 ui/                  # shadcn/ui components
 │   ├── 📁 admin/               # Componentes do painel lojista
 │   └── 📁 customer/            # Componentes do painel cliente
+├── 📁 contexts/
+│   ├── 📄 AuthContext.tsx      # Contexto de autenticação
+│   ├── 📄 CartContext.tsx      # Contexto do carrinho
+│   └── 📄 NotificationContext.tsx # Contexto de notificações
 └── 📁 pages/
     ├── 📄 Index.tsx            # Página pública
     ├── 📄 StorePanel.tsx       # Painel lojista
     └── 📄 CustomerPanel.tsx    # Painel cliente
 
-📁 docs/                        # Documentação
-├── 📄 supabase_schema.sql      # Schema PostgreSQL
-├── 📄 INSTRUCOES_SUPABASE.md   # Setup do Supabase
-└── 📄 MIGRACAO_CONCLUIDA.md    # Info da migração
+📁 backend/ (será implementado)
+├── 📄 server.js                # Servidor Express
+├── 📄 database.js              # Configuração SQLite + Knex
+├── 📁 routes/                  # Rotas da API
+├── 📁 models/                  # Modelos do banco
+└── 📁 migrations/              # Migrações do banco
 
-📁 backup_before_supabase/      # Backup do backend anterior
-📄 Dockerfile                   # Container otimizado
-📄 .github/workflows/deploy.yml # Deploy automatizado
+📄 Dockerfile                   # Container do frontend
 ```
 
 ---
 
-## 📊 Banco de Dados (Supabase)
+## 📊 Banco de Dados (Planejado)
+
+### **Stack do Backend:**
+- **Node.js + Express** - Servidor API
+- **SQLite3** - Banco de dados leve e confiável
+- **Knex.js** - Query builder e migrações
+- **JWT** - Autenticação stateless
 
 ### **Tabelas principais:**
 - `products` - Peças automotivas
-- `services` - Serviços oferecidos  
+- `services` - Serviços oferecidos
 - `orders` + `order_items` - Sistema de pedidos
 - `promotions` - Campanhas de desconto
 - `coupons` - Cupons de desconto
-- `app_configs` - Configurações da loja
+- `users` - Usuários do sistema
+- `addresses` - Endereços dos clientes
 
-### **Recursos avançados:**
-- ✅ **Views otimizadas** para consultas complexas
-- ✅ **Triggers** para updated_at automático
-- ✅ **Índices** para performance
-- ✅ **Row Level Security** para segurança
+### **Recursos planejados:**
+- ✅ **Migrações** com Knex.js
+- ✅ **Seeders** para dados iniciais
+- ✅ **Validação** de dados na API
+- ✅ **Paginação** e filtros otimizados
 
 ---
 
 ## 🚀 Deploy
 
-### **Frontend (Recomendado: Vercel/Netlify)**
+### **Frontend (Docker)**
 
-**Vercel:**
 ```bash
-# 1. Build
-npm run build
+# Build da imagem
+docker build -t moria-frontend .
 
-# 2. Deploy
-npx vercel
-
-# 3. Configure environment variables no dashboard
+# Executar container
+docker run -p 80:80 moria-frontend
 ```
 
-**Netlify:**
+### **Backend (Futuro)**
+
 ```bash
-# 1. Build  
-npm run build
+# Instalar dependências
+npm install
 
-# 2. Deploy pasta dist/
+# Executar migrações
+npm run migrate
+
+# Executar seeds
+npm run seed
+
+# Iniciar servidor
+npm run start:prod
 ```
-
-### **Configuração de Produção:**
-
-**No Supabase:**
-- Configure domínio em Authentication → Settings
-- Configure CORS se necessário
-
-**No hosting:**
-- Configure variáveis: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-
----
-
-## 📈 Monitoramento
-
-**Dashboard Supabase disponível:**
-- ✅ **Métricas**: Requisições, performance, uso
-- ✅ **Logs**: Database, API, Auth em tempo real
-- ✅ **Alertas**: Configuráveis por uso/erro
 
 ---
 
@@ -185,63 +169,101 @@ npm run build
 
 ### **Frontend:**
 - **React 18** - Interface moderna
-- **Vite** - Build tool rápida  
+- **Vite** - Build tool rápida
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling utilitário
 - **shadcn/ui** - Componentes acessíveis
 - **React Query** - State management
+- **React Router** - Roteamento SPA
 
-### **Backend:**
-- **Supabase** - BaaS completo
-- **PostgreSQL** - Banco robusto
-- **Row Level Security** - Segurança automática
-- **Real-time** - Capacidades nativas
+### **Backend (Planejado):**
+- **Node.js** - Runtime JavaScript
+- **Express** - Framework web minimalista
+- **SQLite3** - Banco de dados embarcado
+- **Knex.js** - Query builder SQL
+- **JWT** - JSON Web Tokens
+- **bcrypt** - Hash de senhas
 
 ---
 
 ## 📝 Scripts Disponíveis
 
+### Frontend:
 ```bash
 npm run dev         # Desenvolvimento
 npm run build       # Build para produção
 npm run preview     # Preview do build
 npm run lint        # Análise de código
+npm run typecheck   # Verificação de tipos
+```
+
+### Backend (Futuro):
+```bash
+npm run dev         # Desenvolvimento com nodemon
+npm run build       # Build do TypeScript
+npm run start       # Produção
+npm run migrate     # Executar migrações
+npm run seed        # Executar seeds
+npm run reset       # Resetar banco de dados
 ```
 
 ---
 
-## 🎯 Vantagens da Arquitetura
+## 🎯 Vantagens da Nova Arquitetura
 
 ### **Operacionais:**
-- ✅ **Zero manutenção** de servidor
-- ✅ **Backup automático**  
-- ✅ **Escala automática**
-- ✅ **Deploy simples**
+- ✅ **Controle total** sobre o backend
+- ✅ **Banco local** (SQLite) - sem dependência externa
+- ✅ **Deploy simples** - frontend + API
+- ✅ **Backup fácil** - arquivo único SQLite
 
 ### **Performance:**
-- ✅ **CDN global**
-- ✅ **Cache otimizado**
-- ✅ **PostgreSQL** performático
-
-### **Segurança:**
-- ✅ **SSL gerenciado**
-- ✅ **RLS automático**
-- ✅ **Isolamento de dados**
+- ✅ **API otimizada** para as necessidades específicas
+- ✅ **SQLite** - extremamente rápido para reads
+- ✅ **Cache** implementado conforme necessário
 
 ### **Desenvolvimento:**
-- ✅ **Real-time** nativo
-- ✅ **Types** automáticos
-- ✅ **API REST/GraphQL** geradas
-- ✅ **Dashboard** built-in
+- ✅ **Full Stack JavaScript/TypeScript**
+- ✅ **Desenvolvimento offline** completo
+- ✅ **Migrations** e **seeds** versionados
+- ✅ **API REST** padronizada
+
+### **Custo:**
+- ✅ **Zero custos** de BaaS
+- ✅ **VPS simples** suficiente
+- ✅ **Escalabilidade** controlada
 
 ---
 
-## 🆘 Suporte
+## 📈 Roadmap do Backend
 
-1. **Configuração**: Veja [`docs/INSTRUCOES_SUPABASE.md`](./docs/INSTRUCOES_SUPABASE.md)
-2. **Migração**: Veja [`docs/MIGRACAO_CONCLUIDA.md`](./docs/MIGRACAO_CONCLUIDA.md)
-3. **Backup**: Disponível em `backup_before_supabase/`
+### **Fase 1 - API Básica:**
+- [ ] Setup do servidor Express
+- [ ] Configuração SQLite + Knex
+- [ ] Autenticação JWT
+- [ ] CRUD de produtos
+
+### **Fase 2 - Funcionalidades Core:**
+- [ ] Sistema de pedidos
+- [ ] Gerenciamento de estoque
+- [ ] Painel administrativo
+- [ ] API de promoções
+
+### **Fase 3 - Features Avançadas:**
+- [ ] Upload de imagens
+- [ ] Relatórios e dashboard
+- [ ] Sistema de notificações
+- [ ] Cache Redis (opcional)
 
 ---
 
-**✨ Sistema pronto para produção com Supabase!**
+## 🆘 Próximos Passos
+
+1. **Implementar Backend**: Criar API Node.js + SQLite3
+2. **Conectar Frontend**: Substituir dados mockados pela API real
+3. **Autenticação**: Implementar login/registro completo
+4. **Deploy**: Configurar ambiente de produção
+
+---
+
+**✨ Aplicação preparada para backend Node.js + SQLite3 + Knex!**

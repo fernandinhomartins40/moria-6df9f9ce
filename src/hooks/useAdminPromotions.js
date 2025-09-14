@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useNotification } from '../contexts/NotificationContext';
 import { showToast } from '../components/ui/toast-custom';
 
@@ -37,7 +37,7 @@ export const useAdminPromotions = () => {
       setLoading(true);
       setError(null);
       
-      const response = await supabaseApi.getPromotions(filters);
+      const response = await apiClient.getPromotions(filters);
       
       if (response && response.success && Array.isArray(response.data)) {
         setPromotions(response.data);
@@ -88,7 +88,7 @@ export const useAdminPromotions = () => {
         isActive: promotionData.isActive !== undefined ? promotionData.isActive : true
       };
       
-      const response = await supabaseApi.createPromotion(apiData);
+      const response = await apiClient.createPromotion(apiData);
       
       if (response && response.success) {
         // Adicionar promoção à lista local
@@ -127,7 +127,7 @@ export const useAdminPromotions = () => {
       setUpdateLoading(true);
       setError(null);
       
-      const response = await supabaseApi.updatePromotion(promotionId, promotionData);
+      const response = await apiClient.updatePromotion(promotionId, promotionData);
       
       if (response && response.success) {
         const updatedPromotion = response.data;
@@ -169,7 +169,7 @@ export const useAdminPromotions = () => {
       setDeleteLoading(true);
       setError(null);
       
-      const response = await supabaseApi.deletePromotion(promotionId);
+      const response = await apiClient.deletePromotion(promotionId);
       
       if (response && response.success) {
         // Remover promoção da lista local
@@ -229,7 +229,7 @@ export const useAdminPromotions = () => {
   // Buscar promoção específica
   const getPromotion = useCallback(async (promotionId) => {
     try {
-      const response = await supabaseApi.getPromotion(promotionId);
+      const response = await apiClient.getPromotion(promotionId);
       
       if (response && response.success) {
         return response.data;

@@ -41,7 +41,16 @@
       "Bash(npm uninstall:*)",
       "Bash(grep:*)",
       "Bash(npm run setup:prod:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(npx knex migrate:make:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(npm run seed:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(chmod:*)",
+      "Bash(export FRONTEND_PORT=8080)",
+      "Bash(export BACKEND_PORT=3001)",
+      "Bash(export VITE_API_BASE_URL=http://localhost:3001/api)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

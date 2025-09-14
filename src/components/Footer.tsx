@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Phone, Clock, Mail, Facebook, Instagram, Wrench, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
-import supabaseApi from "../services/supabaseApi";
+import { apiClient } from "../services/api";
 
 export function Footer() {
   const [companyInfo, setCompanyInfo] = useState<any>(null);
@@ -18,8 +18,8 @@ export function Footer() {
       
       // Buscar dados tanto de company_info quanto de settings
       const [companyResponse, settingsResponse] = await Promise.all([
-        supabaseApi.getCompanyInfo().catch(err => ({ success: false, data: null })),
-        supabaseApi.getSettings().catch(err => ({ success: false, data: [] }))
+        apiClient.get('/company-info').catch(err => ({ success: false, data: null })),
+        apiClient.get('/settings').catch(err => ({ success: false, data: [] }))
       ]);
 
       let companyData = {};

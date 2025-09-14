@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../hooks/useAuth";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
-import supabaseApi from "../services/supabaseApi";
+import { apiClient } from "../services/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -104,7 +104,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       createdAt: new Date().toISOString()
     };
 
-    // TODO: Salvar usuário no Supabase auth quando implementarmos autenticação
+    // TODO: Salvar usuário na API quando implementarmos autenticação
     console.log('👤 Usuário provisório criado:', user.name, user.email);
     
     return user;
@@ -140,8 +140,8 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       };
 
       try {
-        // Salvar pedido no Supabase
-        const response = await supabaseApi.createOrder({
+        // Salvar pedido na API
+        const response = await apiClient.createOrder({
           customerName: order.customerName,
           customerEmail: order.customerEmail,
           customerPhone: order.customerWhatsApp,
@@ -155,10 +155,10 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
             unitPrice: item.price
           }))
         });
-        console.log('📦 Pedido salvo no Supabase:', response);
+        console.log('📦 Pedido salvo na API:', response);
         results.order = order;
       } catch (error) {
-        console.error('❌ Erro ao salvar pedido no Supabase:', error);
+        console.error('❌ Erro ao salvar pedido na API:', error);
         results.order = order; // Manter localmente se falhar
       }
     }
@@ -183,7 +183,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         source: 'website'
       };
 
-      // TODO: Implementar orçamentos no Supabase quando necessário
+      // TODO: Implementar orçamentos na API quando necessário
       console.log('📋 Orçamento criado (temporário):', quote);
       results.quote = quote;
     }

@@ -1,7 +1,7 @@
-name: 🚀 Deploy Moria Peças & Serviços - Frontend Supabase
+name: 🚀 Deploy Moria Peças & Serviços - Full Stack
 
 concurrency:
-  group: moria-deploy-frontend
+  group: moria-deploy-fullstack
   cancel-in-progress: true
 
 on:
@@ -13,16 +13,17 @@ env:
   VPS_HOST: '31.97.85.98'
   VPS_USER: 'root'
   APP_DIR: '/root/moria-pecas-servicos'
-  PORT: '3018'
-  IMAGE_NAME: 'moria-frontend-supabase'
-  CONTAINER_NAME: 'moria-app'
+  FRONTEND_PORT: '3018'
+  BACKEND_PORT: '3019'
+  NGINX_PORT: '3020'
+  COMPOSE_PROJECT: 'moria'
 
 jobs:
   deploy:
-    name: 🚀 Deploy Frontend Supabase para VPS
+    name: 🚀 Deploy Full Stack para VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
+    timeout-minutes: 20
+
     steps:
     - name: 📥 Checkout
       uses: actions/checkout@v4
@@ -36,223 +37,187 @@ jobs:
 
     - name: 🔍 Pre-Deploy Validation
       run: |
-        echo "🔍 Validando estrutura do projeto..."
-        echo "📋 Arquivos essenciais:"
-        ls -la package.json vite.config.ts Dockerfile .env.example || echo "⚠️ Alguns arquivos faltando"
-        echo "📋 Estrutura src/:"
-        ls -la src/config/supabase.ts src/services/supabaseApi.ts || echo "⚠️ Arquivos Supabase faltando"
-        echo "📋 Painéis preservados:"
-        ls -la src/pages/StorePanel.tsx src/pages/CustomerPanel.tsx || echo "⚠️ Painéis não encontrados"
+        echo "🔍 Validando estrutura do projeto FULL STACK..."
+        echo "📋 Frontend:"
+        ls -la package.json vite.config.ts Dockerfile .env.example || echo "⚠️ Arquivos frontend faltando"
+        ls -la src/services/api.ts || echo "⚠️ API client faltando"
+        echo "📋 Backend:"
+        ls -la backend/package.json backend/server.js backend/Dockerfile || echo "⚠️ Arquivos backend faltando"
+        echo "📋 Docker:"
+        ls -la docker-compose.yml nginx/ || echo "⚠️ Arquivos Docker faltando"
 
-    - name: 📦 Prepare Deployment Package
+    - name: 📦 Prepare Full Stack Package
       run: |
-        echo "📦 Preparando pacote de deploy..."
+        echo "📦 Preparando pacote FULL STACK..."
         echo "Commit: ${{ github.sha }}"
         echo "Branch: ${{ github.ref_name }}"
-        
-        # Criar arquivo compacto (sem node_modules, dist, etc.)
+        echo "Backend: Node.js + SQLite3"
+        echo "Frontend: React + Vite"
+
+        # Criar arquivo compacto incluindo backend
         tar --warning=no-file-changed -czf deploy.tar.gz \
           --exclude='.git' \
-          --exclude='node_modules' \
+          --exclude='**/node_modules' \
           --exclude='dist' \
           --exclude='build' \
           --exclude='*.log' \
           --exclude='coverage' \
           --exclude='.env.local' \
+          --exclude='backend/database' \
           --exclude='backup_before_supabase' \
           . || true
-        
-        echo "📊 Tamanho do pacote:"
+
+        echo "📊 Tamanho do pacote FULL STACK:"
         ls -lh deploy.tar.gz
 
     - name: 📤 Upload to VPS
       run: |
-        echo "📤 Enviando para VPS..."
+        echo "📤 Enviando FULL STACK para VPS..."
         sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
 
-    - name: 🚀 Deploy on VPS
+    - name: 🚀 Deploy Full Stack on VPS
       run: |
-        echo "🏗️ Executando deploy na VPS..."
+        echo "🏗️ Executando deploy FULL STACK na VPS..."
         echo "📋 Informações do deploy:"
         echo "  📦 Commit: ${{ github.sha }}"
         echo "  🌿 Branch: ${{ github.ref_name }}"
         echo "  👤 Actor: ${{ github.actor }}"
         echo "  🕐 Timestamp: $(date)"
-        
+        echo "  🎯 Stack: Node.js Backend + React Frontend"
+
         sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
           set -e
-          
-          echo '🚀 Iniciando deploy do Frontend Supabase'
-          
-          # Atualizar sistema e instalar dependências básicas
-          echo '📦 Configurando VPS limpa...'
+
+          echo '🚀 Iniciando deploy FULL STACK - Node.js + React'
+
+          # Configurar sistema
+          echo '📦 Configurando VPS...'
           export DEBIAN_FRONTEND=noninteractive
           apt-get update -y
-          apt-get upgrade -y
           apt-get install -y curl wget gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
-          
-          # Parar containers anteriores (se existirem)
-          echo '⏹️ Parando containers anteriores...'
+
+          # Parar stack anterior (se existir)
+          echo '⏹️ Parando stack anterior...'
           if command -v docker &> /dev/null; then
-            docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
-            docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
-            docker rmi ${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
+            cd '${{ env.APP_DIR }}' 2>/dev/null && docker compose -p ${{ env.COMPOSE_PROJECT }} down --remove-orphans 2>/dev/null || true
+            docker system prune -f >/dev/null 2>&1 || true
           fi
-          
-          # Instalar Docker (sempre na VPS limpa)
-          echo '🐳 Instalando Docker...'
+
+          # Instalar/Atualizar Docker
+          echo '🐳 Configurando Docker + Compose...'
           if ! command -v docker &> /dev/null; then
-            echo '📦 Instalando Docker CE...'
-            
-            # Remover versões antigas se existirem
+            # Instalar Docker
             apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
-            
-            # Adicionar repositório Docker
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
             echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-            
-            # Instalar Docker
             apt-get update -y
             apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-            
-            # Iniciar e habilitar Docker
-            systemctl start docker
-            systemctl enable docker
-            
-            # Testar Docker
-            docker --version
-            echo '✅ Docker instalado e funcionando!'
-          else
-            echo '✅ Docker já instalado!'
-            docker --version
+            systemctl start docker && systemctl enable docker
           fi
-          
-          # Backup do diretório anterior (segurança)
+          docker --version && docker compose version
+
+          # Backup e preparação
           if [ -d '${{ env.APP_DIR }}' ]; then
-            echo '💾 Fazendo backup do deploy anterior...'
+            echo '💾 Fazendo backup...'
             mv '${{ env.APP_DIR }}' '${{ env.APP_DIR }}.backup.\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true
           fi
-          
-          # Criar diretório e extrair código
-          echo '📁 Criando diretório e extraindo código...'
-          mkdir -p ${{ env.APP_DIR }}
-          cd ${{ env.APP_DIR }}
-          tar -xzf /tmp/deploy.tar.gz
-          rm -f /tmp/deploy.tar.gz
-          
-          # Validar estrutura após extração
-          echo '🔍 Validando estrutura extraída...'
-          ls -la package.json Dockerfile src/ || echo '❌ ERRO: Estrutura inválida!'
-          echo '📋 Arquivos Supabase:'
-          ls -la src/config/supabase.ts src/services/supabaseApi.ts || echo '⚠️ Arquivos Supabase não encontrados'
-          
-          # Limpar cache do Docker com timeout e controle de erro
-          echo '🧹 Limpando cache do Docker (com timeout)...'
-          timeout 30 docker system prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza de cache completada (ou timeout)'
-          timeout 20 docker builder prune -f >/dev/null 2>&1 || echo '⚠️ Limpeza do builder completada (ou timeout)'
-          
-          # Build da imagem Docker com logs detalhados
-          echo '🏗️ Construindo imagem Docker otimizada...'
-          echo '📋 Parâmetros do build:'
-          echo '  URL: http://82.25.69.57:8102'
-          echo '  Docker: \$(docker --version)'
-          echo '  Buildkit: habilitado'
-          
-          # Build com logs completos (removendo apenas warnings irrelevantes)
-          if ! DOCKER_BUILDKIT=1 docker build --progress=plain --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest \
-              --build-arg VITE_SUPABASE_URL="http://82.25.69.57:8102" \
-              --build-arg VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlLWluc3RhbmNlLW1hbmFnZXIiLCJpYXQiOjE3NTQ5MjAzNjgsImV4cCI6MTc4NjQ1NjM2OH0.lrqlo8hPKPw_DE6Zkl173EDYSj0Jg4qaJcE0xWk7R8Q" \
-              . 2>&1 | grep -v "SecretsUsedInArgOrEnv"; then
-            echo '❌ ERRO: Build da imagem Docker falhou!'
-            echo '🔍 Informações de debug:'
-            echo '  Dockerfile:'
-            ls -la Dockerfile || echo '❌ Dockerfile não encontrado!'
-            echo '  Docker info:'
-            docker info | head -10
-            echo '  Espaço em disco:'
-            df -h | head -5
-            exit 1
-          fi
-          
-          # Verificar se a imagem foi criada
-          echo '🔍 Verificando se imagem foi criada...'
-          if docker images | grep -q "${{ env.IMAGE_NAME }}"; then
-            echo '✅ Imagem Docker criada com sucesso!'
-            docker images | grep "${{ env.IMAGE_NAME }}"
-          else
-            echo '❌ ERRO: Imagem Docker não foi criada!'
-            exit 1
-          fi
-          
-          # Iniciar container
-          echo '🚀 Iniciando container...'
-          docker run -d \
-            --name ${{ env.CONTAINER_NAME }} \
-            -p ${{ env.PORT }}:80 \
-            --restart unless-stopped \
-            -e NODE_ENV=production \
-            ${{ env.IMAGE_NAME }}:latest
-          
+
+          # Extrair código
+          echo '📁 Extraindo FULL STACK...'
+          mkdir -p ${{ env.APP_DIR }} && cd ${{ env.APP_DIR }}
+          tar -xzf /tmp/deploy.tar.gz && rm -f /tmp/deploy.tar.gz
+
+          # Validar estrutura
+          echo '🔍 Validando estrutura FULL STACK...'
+          ls -la docker-compose.yml backend/Dockerfile || { echo '❌ Arquivos essenciais faltando!'; exit 1; }
+          ls -la backend/package.json backend/server.js || { echo '❌ Backend incompleto!'; exit 1; }
+          ls -la package.json src/services/api.ts || { echo '❌ Frontend incompleto!'; exit 1; }
+
+          # Configurar variáveis de produção
+          echo '⚙️ Configurando ambiente de produção...'
+          cat > .env.production << EOF
+VPS_HOST=${{ env.VPS_HOST }}
+FRONTEND_PORT=${{ env.FRONTEND_PORT }}
+BACKEND_PORT=${{ env.BACKEND_PORT }}
+NGINX_PORT=${{ env.NGINX_PORT }}
+JWT_SECRET=moria-production-jwt-${{ github.sha }}
+NODE_ENV=production
+VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api
+VITE_APP_NAME=Moria Peças & Serviços
+EOF
+
+          # Deploy com Docker Compose
+          echo '🐳 Executando deploy com Docker Compose...'
+          export BACKEND_PORT=${{ env.BACKEND_PORT }}
+          export FRONTEND_PORT=${{ env.FRONTEND_PORT }}
+          export NGINX_PORT=${{ env.NGINX_PORT }}
+          export VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api
+
+          # Build e start dos serviços
+          docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache
+          docker compose -p ${{ env.COMPOSE_PROJECT }} up -d
+
           # Aguardar inicialização
-          echo '⏳ Aguardando inicialização (20s)...'
-          sleep 20
-          
-          # Verificar container
-          echo '🔍 Verificando container...'
-          if docker ps | grep -q ${{ env.CONTAINER_NAME }}; then
-            echo '✅ Container rodando!'
-            docker ps | grep ${{ env.CONTAINER_NAME }}
-          else
-            echo '❌ Container falhou!'
-            docker logs ${{ env.CONTAINER_NAME }} --tail 20
-            exit 1
-          fi
-          
-          # Testar aplicação
-          echo '🔍 Testando aplicação...'
-          for i in {1..5}; do
-            if curl -f -s http://localhost:${{ env.PORT }}/health >/dev/null 2>&1; then
-              echo '✅ Health check passou!'
+          echo '⏳ Aguardando stack inicializar (30s)...'
+          sleep 30
+
+          # Verificar serviços
+          echo '🔍 Verificando serviços...'
+          docker compose -p ${{ env.COMPOSE_PROJECT }} ps
+
+          # Testar backend
+          echo '🔍 Testando backend...'
+          for i in {1..10}; do
+            if curl -f -s http://localhost:${{ env.BACKEND_PORT }}/api/health >/dev/null 2>&1; then
+              echo '✅ Backend health check passou!'
               break
             fi
-            echo \"Tentativa \$i/5 - aguardando 8s...\"
-            sleep 8
+            echo \"Backend - Tentativa \$i/10 - aguardando 5s...\"
+            sleep 5
           done
-          
+
+          # Testar frontend
+          echo '🔍 Testando frontend...'
+          for i in {1..8}; do
+            if curl -f -s http://localhost:${{ env.FRONTEND_PORT }}/health >/dev/null 2>&1; then
+              echo '✅ Frontend health check passou!'
+              break
+            fi
+            echo \"Frontend - Tentativa \$i/8 - aguardando 5s...\"
+            sleep 5
+          done
+
           # Verificação final
-          if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
-            echo '✅ Deploy Frontend Supabase concluído com sucesso!'
-            echo '📋 Verificando estrutura final...'
-            docker exec ${{ env.CONTAINER_NAME }} ls -la /usr/share/nginx/html/ | head -10
-            echo '🔍 Testando rotas principais:'
-            curl -s -o /dev/null -w 'Página Pública: %{http_code} ' http://localhost:${{ env.PORT }}/ && echo ''
-            curl -s -o /dev/null -w 'Painel Lojista: %{http_code} ' http://localhost:${{ env.PORT }}/store-panel && echo ''
-            curl -s -o /dev/null -w 'Painel Cliente: %{http_code} ' http://localhost:${{ env.PORT }}/customer && echo '✅'
+          echo '🎯 Verificação final...'
+          if curl -f -s http://localhost:${{ env.BACKEND_PORT }}/api/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.FRONTEND_PORT }}/ >/dev/null 2>&1; then
+            echo '✅ DEPLOY FULL STACK CONCLUÍDO COM SUCESSO!'
+            echo '🌐 Frontend: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}'
+            echo '🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api'
+            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api/health'
           else
-            echo '❌ Aplicação não respondeu após tentativas'
-            docker logs ${{ env.CONTAINER_NAME }} --tail 15
+            echo '❌ Falha na verificação final!'
+            docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
             exit 1
           fi
-          
-          echo '✅ DEPLOY FRONTEND SUPABASE CONCLUÍDO!'
-          echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.PORT }}'
-          echo '🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.PORT }}/store-panel'
-          echo '👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.PORT }}/customer'
         "
 
-    - name: 🎉 Deploy Success
+    - name: 🎉 Full Stack Deploy Success
       run: |
-        echo "🎉 MORIA PEÇAS & SERVIÇOS DEPLOYADO COM SUCESSO!"
-        echo "✅ Frontend Supabase em produção"
+        echo "🎉 MORIA PEÇAS & SERVIÇOS FULL STACK DEPLOYADO!"
+        echo "✅ Backend Node.js + Frontend React em produção"
         echo ""
         echo "🔗 LINKS FUNCIONAIS:"
-        echo "🌐 App Principal: http://${{ env.VPS_HOST }}:${{ env.PORT }}"
-        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.PORT }}/store-panel"
-        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.PORT }}/customer"
+        echo "🌐 Frontend: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}"
+        echo "🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api"
+        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api/health"
+        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}/store-panel"
+        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}/customer"
         echo ""
-        echo "✅ Recursos disponíveis:"
-        echo "  📦 Catálogo de produtos e serviços"
-        echo "  🛒 Sistema de carrinho e checkout"
-        echo "  🏪 CRUD completo no painel lojista"
-        echo "  👤 Perfil e pedidos no painel cliente"
-        echo "  🚀 Powered by Supabase + PostgreSQL"
+        echo "✅ Stack Completa:"
+        echo "  🎯 Backend: Node.js + Express + SQLite3 + JWT"
+        echo "  🎨 Frontend: React + Vite + TypeScript"
+        echo "  🐳 Deploy: Docker Compose"
+        echo "  📦 Produtos e serviços da API própria"
+        echo "  🛒 Carrinho com promoções do backend"
+        echo "  🔐 Autenticação JWT segura"
+        echo "  🗄️ Dados persistidos em SQLite3"

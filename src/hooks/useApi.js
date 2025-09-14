@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useNotification } from '../contexts/NotificationContext';
 
 /**

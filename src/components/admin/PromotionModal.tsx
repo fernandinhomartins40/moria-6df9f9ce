@@ -10,7 +10,7 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
 import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X } from 'lucide-react';
-import supabaseApi from '../../services/supabaseApi.ts';
+import { apiClient } from '../../services/api.ts';
 
 interface Promotion {
   id?: number;
@@ -81,7 +81,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     setLoadingData(true);
     try {
       // Carregar produtos para obter categorias e lista de produtos
-      const productsResponse = await supabaseApi.getProducts();
+      const productsResponse = await apiClient.getProducts();
       if (productsResponse?.success && productsResponse.data) {
         const products = productsResponse.data;
         setAvailableProducts(products);

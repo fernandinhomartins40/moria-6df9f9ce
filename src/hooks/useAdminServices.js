@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useNotification } from '../contexts/NotificationContext';
 import { showToast } from '../components/ui/toast-custom';
 
@@ -37,7 +37,7 @@ export const useAdminServices = () => {
       setLoading(true);
       setError(null);
       
-      const response = await supabaseApi.getServices(filters);
+      const response = await apiClient.getServices(filters);
       
       if (response && response.success && Array.isArray(response.data)) {
         setServices(response.data);
@@ -85,7 +85,7 @@ export const useAdminServices = () => {
         isActive: serviceData.isActive !== undefined ? serviceData.isActive : true
       };
       
-      const response = await supabaseApi.createService(apiData);
+      const response = await apiClient.createService(apiData);
       
       if (response && response.success) {
         // Adicionar serviço à lista local
@@ -124,7 +124,7 @@ export const useAdminServices = () => {
       setUpdateLoading(true);
       setError(null);
       
-      const response = await supabaseApi.updateService(serviceId, serviceData);
+      const response = await apiClient.updateService(serviceId, serviceData);
       
       if (response && response.success) {
         const updatedService = response.data;
@@ -166,7 +166,7 @@ export const useAdminServices = () => {
       setDeleteLoading(true);
       setError(null);
       
-      const response = await supabaseApi.deleteService(serviceId);
+      const response = await apiClient.deleteService(serviceId);
       
       if (response && response.success) {
         // Remover serviço da lista local
@@ -226,7 +226,7 @@ export const useAdminServices = () => {
   // Buscar serviço específico
   const getService = useCallback(async (serviceId) => {
     try {
-      const response = await supabaseApi.getService(serviceId);
+      const response = await apiClient.getService(serviceId);
       
       if (response && response.success) {
         return response.data;

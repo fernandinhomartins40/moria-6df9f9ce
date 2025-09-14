@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { SupabaseAuthProvider } from "./contexts/SupabaseAuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Index from "./pages/Index";
@@ -20,7 +20,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SupabaseAuthProvider>
+    <AuthProvider>
       <CartProvider>
         <NotificationProvider>
           <TooltipProvider>
@@ -45,7 +45,7 @@ const App = () => (
           </TooltipProvider>
         </NotificationProvider>
       </CartProvider>
-    </SupabaseAuthProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -1,46 +1,47 @@
 // ========================================
-// HOOK DE AUTENTICAÇÃO UNIFICADO
-// Usa o novo SupabaseAuthContext para compatibilidade
+// HOOK DE AUTENTICAÇÃO
+// Usa o AuthContext local para gerenciamento de autenticação
 // ========================================
 
-import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
-import type { LoginCredentials, RegisterData, Customer, UseAuthReturn } from '@/types';
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
 
-// Hook principal de autenticação (compatível com código existente)
-export function useAuth(): UseAuthReturn {
-  return useSupabaseAuth();
+// Hook principal de autenticação
+export function useAuth() {
+  return useAuthContext();
 }
 
 // Hook para compatibilidade com código legado que usa signIn/signUp
 export function useAuthState() {
-  const auth = useSupabaseAuth();
-  
+  const auth = useAuthContext();
+
   return {
-    user: auth.supabaseUser,
-    session: auth.session,
+    user: auth.customer ? {
+      id: auth.customer.id,
+      email: auth.customer.email,
+      user_metadata: {
+        name: auth.customer.name,
+        phone: auth.customer.phone
+      }
+    } : null,
+    session: auth.isAuthenticated ? { user: auth.customer } : null,
     loading: auth.isLoading,
     signIn: async (email: string, password: string) => {
-      const success = await auth.login({ email, password });
+      const success = await auth.login(email, password);
       return success ? {} : { error: 'Falha no login' };
     },
-    signUp: async (email: string, password: string) => {
-      const success = await auth.register({ email, password, name: '', phone: '' });
+    signUp: async (email: string, password: string, userData?: any) => {
+      const success = await auth.register({
+        email,
+        password,
+        name: userData?.name || '',
+        phone: userData?.phone || ''
+      });
       return success ? {} : { error: 'Falha no registro' };
     },
     signOut: auth.logout,
-    resetPassword: async (email: string) => {
-      // Implementar reset de senha via Supabase
-      return { error: 'Reset de senha não implementado' };
+    updateUser: async (updates: any) => {
+      const success = await auth.updateProfile(updates);
+      return success ? {} : { error: 'Falha ao atualizar' };
     }
-  };
-}
-
-// Hook para verificar se usuário é admin
-export function useIsAdmin() {
-  const { user } = useAuth();
-  
-  return {
-    isAdmin: user?.role === 'admin',
-    user
   };
 }

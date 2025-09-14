@@ -1,0 +1,105 @@
+# ============================================
+# Docker Compose - Moria Peças & Serviços
+# Frontend React + Backend Node.js + Nginx
+# ============================================
+
+version: '3.8'
+
+services:
+  # Backend API Node.js
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: moria-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-moria-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=/app/database/database.sqlite
+    volumes:
+      - backend_data:/app/database
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend React + Nginx
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
+        - VITE_APP_NAME=${VITE_APP_NAME:-Moria Peças & Serviços}
+    container_name: moria-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Proxy Reverso Nginx (Opcional - para produção)
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: moria-proxy
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - moria-network
+    profiles:
+      - production
+
+volumes:
+  backend_data:
+    driver: local
+    name: moria_backend_data
+
+networks:
+  moria-network:
+    driver: bridge
+    name: moria_network
+
+# ============================================
+# COMANDOS ÚTEIS:
+#
+# Desenvolvimento:
+# docker-compose up --build
+#
+# Produção:
+# docker-compose --profile production up --build -d
+#
+# Rebuild específico:
+# docker-compose up --build backend
+# docker-compose up --build frontend
+#
+# Logs:
+# docker-compose logs -f backend
+# docker-compose logs -f frontend
+#
+# Backup do banco:
+# docker-compose exec backend cp /app/database/database.sqlite /tmp/
+# docker cp moria-backend:/tmp/database.sqlite ./backup/
+# ============================================

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useNotification } from '../contexts/NotificationContext';
 import { showToast } from '../components/ui/toast-custom';
 
@@ -38,7 +38,7 @@ export const useAdminCoupons = () => {
       setLoading(true);
       setError(null);
       
-      const response = await supabaseApi.getCoupons(filters);
+      const response = await apiClient.getCoupons(filters);
       
       if (response && response.success && Array.isArray(response.data)) {
         setCoupons(response.data);
@@ -89,7 +89,7 @@ export const useAdminCoupons = () => {
         isActive: couponData.isActive !== undefined ? couponData.isActive : true
       };
       
-      const response = await supabaseApi.createCoupon(apiData);
+      const response = await apiClient.createCoupon(apiData);
       
       if (response && response.success) {
         // Adicionar cupom à lista local
@@ -128,7 +128,7 @@ export const useAdminCoupons = () => {
       setUpdateLoading(true);
       setError(null);
       
-      const response = await supabaseApi.updateCoupon(couponId, couponData);
+      const response = await apiClient.updateCoupon(couponId, couponData);
       
       if (response && response.success) {
         const updatedCoupon = response.data;
@@ -170,7 +170,7 @@ export const useAdminCoupons = () => {
       setDeleteLoading(true);
       setError(null);
       
-      const response = await supabaseApi.deleteCoupon(couponId);
+      const response = await apiClient.deleteCoupon(couponId);
       
       if (response && response.success) {
         // Remover cupom da lista local
@@ -233,7 +233,7 @@ export const useAdminCoupons = () => {
       setValidateLoading(true);
       setError(null);
       
-      const response = await supabaseApi.validateCoupon({ code, orderAmount });
+      const response = await apiClient.validateCoupon({ code, orderAmount });
       
       if (response && response.success) {
         notify({
@@ -265,7 +265,7 @@ export const useAdminCoupons = () => {
   // Buscar cupom específico
   const getCoupon = useCallback(async (couponId) => {
     try {
-      const response = await supabaseApi.getCoupon(couponId);
+      const response = await apiClient.getCoupon(couponId);
       
       if (response && response.success) {
         return response.data;

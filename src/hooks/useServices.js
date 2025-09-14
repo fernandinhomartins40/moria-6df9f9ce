@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useApi } from './useApi.js';
 
 /**
@@ -43,7 +43,7 @@ export const useServices = (initialFilters = {}) => {
     }
 
     return execute(
-      () => supabaseApi.getServices(backendFilters),
+      () => apiClient.getServices(backendFilters),
       (result) => {
         // Validar se result e result.data existem e é array
         if (!result || !result.data || !Array.isArray(result.data)) {

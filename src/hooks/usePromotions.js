@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useApi } from './useApi.js';
 
 /**
@@ -166,7 +166,7 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     try {
-      const response = await supabaseApi.getProducts({ active: true });
+      const response = await apiClient.getProducts({ active: true });
       if (response?.success && response?.data) {
         const productsData = response.data;
         setProducts(productsData);
@@ -212,7 +212,7 @@ export const usePromotions = (initialFilters = {}) => {
     }
 
     const response = await execute(async () => {
-      const result = await supabaseApi.getPromotions(filters);
+      const result = await apiClient.getPromotions(filters);
       return result;
     });
 

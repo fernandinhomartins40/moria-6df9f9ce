@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useApi } from './useApi.js';
 
 /**
@@ -37,7 +37,7 @@ export const useProducts = (initialFilters = {}) => {
     }
 
     return execute(
-      () => supabaseApi.getProducts(backendFilters),
+      () => apiClient.getProducts(backendFilters),
       (result) => {
         // Validar se result e result.data existem e é array
         if (!result || !result.data || !Array.isArray(result.data)) {
@@ -72,7 +72,7 @@ export const useProducts = (initialFilters = {}) => {
   // Buscar produto específico
   const fetchProduct = useCallback(async (productId) => {
     return execute(
-      () => supabaseApi.getProduct(productId),
+      () => apiClient.getProduct(productId),
       (result) => {
         // Validar se result e result.data existem
         if (!result || !result.data) {
@@ -147,7 +147,7 @@ export const useProduct = (productId) => {
     if (!productId) return;
     
     return execute(
-      () => supabaseApi.getProduct(productId),
+      () => apiClient.getProduct(productId),
       (result) => {
         // Validar se result e result.data existem
         if (!result || !result.data) {

@@ -1,6 +1,6 @@
 // ========================================
 // TIPOS TYPESCRIPT PARA BANCO DE DADOS
-// Define todas as interfaces para as entidades do Supabase
+// Define todas as interfaces para as entidades do banco
 // ========================================
 
 export interface DatabaseProduct {

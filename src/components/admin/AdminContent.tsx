@@ -43,7 +43,7 @@ import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
 import { AdminProductsSection } from './AdminProductsSection';
 import { ProductModal } from './ProductModal';
-import supabaseApi from '../../services/supabaseApi';
+import { apiClient } from '../../services/api';
 
 interface StoreOrder {
   id: string;
@@ -161,9 +161,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      console.log('🔄 Carregando dados REAIS do Supabase...');
+      console.log('🔄 Carregando dados REAIS do API...');
       
-      // Carregar dados REAIS do Supabase em paralelo
+      // Carregar dados REAIS do API em paralelo
       const [
         productsResponse,
         servicesResponse, 
@@ -171,17 +171,17 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         ordersResponse,
         promotionsResponse
       ] = await Promise.all([
-        supabaseApi.getProducts({ active: undefined }), // Todos os produtos
-        supabaseApi.getServices({ active: undefined }), // Todos os serviços  
-        supabaseApi.getCoupons({ active: undefined }), // Todos os cupons
-        supabaseApi.getOrders(), // Todos os pedidos
-        supabaseApi.getPromotions({ active: undefined }) // Todas as promoções
+        apiClient.getProducts({ active: undefined }), // Todos os produtos
+        apiClient.getServices({ active: undefined }), // Todos os serviços  
+        apiClient.getCoupons({ active: undefined }), // Todos os cupons
+        apiClient.getOrders(), // Todos os pedidos
+        apiClient.getPromotions({ active: undefined }) // Todas as promoções
       ]);
 
-      console.log('📦 Produtos do Supabase:', productsResponse?.data?.length || 0);
-      console.log('🛠️ Serviços do Supabase:', servicesResponse?.data?.length || 0);
-      console.log('🎫 Cupons do Supabase:', couponsResponse?.data?.length || 0);
-      console.log('📝 Pedidos do Supabase:', ordersResponse?.data?.length || 0);
+      console.log('📦 Produtos do API:', productsResponse?.data?.length || 0);
+      console.log('🛠️ Serviços do API:', servicesResponse?.data?.length || 0);
+      console.log('🎫 Cupons do API:', couponsResponse?.data?.length || 0);
+      console.log('📝 Pedidos do API:', ordersResponse?.data?.length || 0);
 
       // Definir dados dos estados
       setProducts(productsResponse?.data || []);
@@ -189,16 +189,16 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       setCoupons(couponsResponse?.data || []);
       setOrders(ordersResponse?.data || []);
       
-      // TODO: Implementar quotes e users no Supabase futuramente
-      setQuotes([]); // Orçamentos serão implementados no Supabase
+      // TODO: Implementar quotes e users no API futuramente
+      setQuotes([]); // Orçamentos serão implementados no API
       setUsers([]); // Usuários serão migrados para auth.users
 
-      console.log('✅ Dados do Supabase carregados com sucesso!');
+      console.log('✅ Dados do API carregados com sucesso!');
       
       // Carregar configurações também
       await loadSettings();
     } catch (error) {
-      console.error('❌ Erro ao carregar dados do Supabase:', error);
+      console.error('❌ Erro ao carregar dados do API:', error);
       
       // Em caso de erro, definir arrays vazios
       setProducts([]);
@@ -215,7 +215,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const loadSettings = async () => {
     try {
       setIsLoadingSettings(true);
-      const response = await supabaseApi.getSettings();
+      const response = await apiClient.getSettings();
       if (response?.success && response.data) {
         const settingsMap = response.data.reduce((acc: any, setting: any) => {
           acc[setting.key] = setting.value;
@@ -236,7 +236,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       
       // Salvar todas as configurações atualizadas
       const updates = Object.entries(settings).map(([key, value]) =>
-        supabaseApi.updateSetting(key, String(value))
+        apiClient.updateSetting(key, String(value))
       );
       
       await Promise.all(updates);
@@ -270,7 +270,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const handleDeleteProduct = async (productId: string) => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
-        await supabaseApi.deleteProduct(productId);
+        await apiClient.deleteProduct(productId);
         console.log('✅ Produto excluído com sucesso');
         await loadData(); // Recarregar lista
       } catch (error) {
@@ -285,11 +285,11 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
       if (selectedProduct?.id) {
         // Editar produto existente
-        await supabaseApi.updateProduct(selectedProduct.id, productData);
+        await apiClient.updateProduct(selectedProduct.id, productData);
         console.log('✅ Produto atualizado com sucesso');
       } else {
         // Criar novo produto
-        await supabaseApi.createProduct(productData);
+        await apiClient.createProduct(productData);
         console.log('✅ Produto criado com sucesso');
       }
 
@@ -307,7 +307,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const handleToggleProductStatus = async (product: Product) => {
     try {
       const updatedProduct = { ...product, isActive: !product.isActive };
-      await supabaseApi.updateProduct(product.id, updatedProduct);
+      await apiClient.updateProduct(product.id, updatedProduct);
       console.log(`✅ Produto ${updatedProduct.isActive ? 'ativado' : 'desativado'} com sucesso`);
       await loadData(); // Recarregar lista
     } catch (error) {
@@ -1252,7 +1252,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    // Dados REAIS baseados nos pedidos do Supabase
+    // Dados REAIS baseados nos pedidos do API
     const salesByMonth = Array.from({ length: 12 }, (_, i) => {
       const monthOrders = orders.filter(order => {
         const orderDate = new Date(order.createdAt);
@@ -1266,7 +1266,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       };
     });
 
-    // Calcular categorias baseadas nos produtos REAIS do Supabase
+    // Calcular categorias baseadas nos produtos REAIS do API
     const categoryStats = products.reduce((acc, product) => {
       const category = product.category || 'Outros';
       if (!acc[category]) {

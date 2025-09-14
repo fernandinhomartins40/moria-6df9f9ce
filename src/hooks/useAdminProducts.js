@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 import { useNotification } from '../contexts/NotificationContext';
 import { showToast } from '../components/ui/toast-custom';
 
@@ -37,7 +37,7 @@ export const useAdminProducts = () => {
       setLoading(true);
       setError(null);
       
-      const response = await supabaseApi.getProducts(filters);
+      const response = await apiClient.getProducts(filters);
       
       if (response && response.success && Array.isArray(response.data)) {
         setProducts(response.data);
@@ -93,7 +93,7 @@ export const useAdminProducts = () => {
         vehicleCompatibility: productData.vehicleCompatibility || []
       };
       
-      const response = await supabaseApi.createProduct(apiData);
+      const response = await apiClient.createProduct(apiData);
       
       if (response && response.success) {
         // Adicionar produto à lista local
@@ -132,7 +132,7 @@ export const useAdminProducts = () => {
       setUpdateLoading(true);
       setError(null);
       
-      const response = await supabaseApi.updateProduct(productId, productData);
+      const response = await apiClient.updateProduct(productId, productData);
       
       if (response && response.success) {
         const updatedProduct = response.data;
@@ -174,7 +174,7 @@ export const useAdminProducts = () => {
       setDeleteLoading(true);
       setError(null);
       
-      const response = await supabaseApi.deleteProduct(productId);
+      const response = await apiClient.deleteProduct(productId);
       
       if (response && response.success) {
         // Remover produto da lista local
@@ -234,7 +234,7 @@ export const useAdminProducts = () => {
   // Buscar produto específico
   const getProduct = useCallback(async (productId) => {
     try {
-      const response = await supabaseApi.getProduct(productId);
+      const response = await apiClient.getProduct(productId);
       
       if (response && response.success) {
         return response.data;

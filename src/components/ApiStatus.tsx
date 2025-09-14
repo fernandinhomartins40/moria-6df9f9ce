@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
-import supabaseApi from '../services/supabaseApi.ts';
+import { apiClient } from '../services/api.ts';
 
 interface ApiStatusProps {
   className?: string;
@@ -16,20 +16,20 @@ export function ApiStatus({ className = '' }: ApiStatusProps) {
   const checkApiStatus = async () => {
     try {
       setStatus('checking');
-      setMessage('Verificando conexão com o Supabase...');
+      setMessage('Verificando conexão com a API...');
       
-      const response = await supabaseApi.healthCheck();
+      const response = await apiClient.get('/health');
       
       if (response && response.success) {
         setStatus('online');
-        setMessage('Supabase conectado e funcionando');
+        setMessage('API conectada e funcionando');
       } else {
         setStatus('offline');
-        setMessage('Supabase respondeu mas com erro');
+        setMessage('API respondeu mas com erro');
       }
     } catch (error) {
       setStatus('offline');
-      setMessage(`Erro de conexão: ${error.message || 'Supabase não disponível'}`);
+      setMessage(`Erro de conexão: ${error.message || 'API não disponível'}`);
     }
   };
 
@@ -75,7 +75,7 @@ export function ApiStatus({ className = '' }: ApiStatusProps) {
     <Alert variant={getVariant()} className={`${className} mb-4`}>
       {getIcon()}
       <AlertDescription className="ml-2">
-        <strong>Status do Supabase:</strong> {message}
+        <strong>Status da API:</strong> {message}
         {status === 'offline' && (
           <button
             onClick={checkApiStatus}
