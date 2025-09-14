@@ -21,20 +21,20 @@ router.get('/active',
 
 // Buscar promoções por produto
 router.get('/product/:product_id',
-  validate({ product_id: idSchema }, 'params'),
+  validate(Joi.object({ product_id: idSchema }), 'params'),
   PromotionController.getPromotionsByProduct
 );
 
 // Buscar promoções por categoria
 router.get('/category/:category',
-  validate({ category: Joi.string().required() }, 'params'),
+  validate(Joi.object({ category: Joi.string().required() }), 'params'),
   PromotionController.getPromotionsByCategory
 );
 
 // Listar promoções com filtros (rota pública para active=true)
 router.get('/',
   validate(queryValidation.pagination, 'query'),
-  validate({ active: Joi.boolean().optional() }, 'query'),
+  validate(Joi.object({ active: Joi.boolean().optional() }), 'query'),
   (req, res, next) => {
     // Se active=true, permitir acesso público
     if (req.query.active === 'true') {
@@ -49,8 +49,8 @@ router.get('/',
 
 // Validar cupom
 router.get('/coupons/validate/:code',
-  validate({ code: Joi.string().required() }, 'params'),
-  validate({ order_amount: Joi.number().positive().optional() }, 'query'),
+  validate(Joi.object({ code: Joi.string().required() }), 'params'),
+  validate(Joi.object({ order_amount: Joi.number().positive().optional() }), 'query'),
   optionalAuth,
   PromotionController.validateCoupon
 );
@@ -69,13 +69,13 @@ router.use(requireAdmin);
 // Listar todas as promoções (admin)
 router.get('/',
   validate(queryValidation.pagination, 'query'),
-  validate({ is_active: Joi.boolean().optional() }, 'query'),
+  validate(Joi.object({ is_active: Joi.boolean().optional() }), 'query'),
   PromotionController.getPromotions
 );
 
 // Obter promoção por ID
 router.get('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   PromotionController.getPromotionById
 );
 
@@ -107,7 +107,7 @@ router.post('/',
 
 // Atualizar promoção
 router.put('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate({
     name: Joi.string().min(2).max(200).optional(),
     description: Joi.string().max(1000).optional(),
@@ -134,7 +134,7 @@ router.put('/:id',
 
 // Deletar promoção
 router.delete('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   PromotionController.deletePromotion
 );
 
@@ -143,13 +143,13 @@ router.delete('/:id',
 // Listar todos os cupons
 router.get('/coupons/',
   validate(queryValidation.pagination, 'query'),
-  validate({ is_active: Joi.boolean().optional() }, 'query'),
+  validate(Joi.object({ is_active: Joi.boolean().optional() }), 'query'),
   PromotionController.getCoupons
 );
 
 // Obter cupom por ID
 router.get('/coupons/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   PromotionController.getCouponById
 );
 
@@ -180,7 +180,7 @@ router.post('/coupons/',
 
 // Atualizar cupom
 router.put('/coupons/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate({
     code: Joi.string().max(20).optional(),
     name: Joi.string().min(2).max(200).optional(),
@@ -206,7 +206,7 @@ router.put('/coupons/:id',
 
 // Deletar cupom
 router.delete('/coupons/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   PromotionController.deleteCoupon
 );
 

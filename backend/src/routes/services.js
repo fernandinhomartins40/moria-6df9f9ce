@@ -38,7 +38,7 @@ router.get('/category/:category',
 
 router.get('/:id',
   optionalAuth,
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.getServiceById
 );
 
@@ -46,7 +46,7 @@ router.get('/:id',
 router.use(authenticateToken);
 
 router.post('/:id/book',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.incrementBookings
 );
 
@@ -59,13 +59,13 @@ router.post('/',
 );
 
 router.put('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate(serviceValidation.update, 'body'),
   ServiceController.updateService
 );
 
 router.delete('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.deleteService
 );
 

@@ -4,6 +4,7 @@
 // ========================================
 
 const express = require('express');
+const Joi = require('joi');
 const { validate } = require('../utils/validations.js');
 const { orderValidation, queryValidation, idSchema } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth.js');
@@ -32,22 +33,22 @@ router.get('/my-orders',
 
 // Obter pedido específico
 router.get('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   OrderController.getOrderById
 );
 
 // Cancelar pedido
 router.put('/:id/cancel',
-  validate({ id: idSchema }, 'params'),
-  validate({
-    reason: require('joi').string().max(200).optional()
-  }, 'body'),
+  validate(Joi.object({ id: idSchema }), 'params'),
+  validate(Joi.object({
+    reason: Joi.string().max(200).optional()
+  }), 'body'),
   OrderController.cancelOrder
 );
 
 // Reordenar (criar novo pedido baseado em um anterior)
 router.post('/:id/reorder',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   OrderController.reorder
 );
 
@@ -63,7 +64,7 @@ router.get('/',
 
 // Atualizar status do pedido (admin)
 router.put('/:id/status',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate(orderValidation.updateStatus, 'body'),
   OrderController.updateOrderStatus
 );
@@ -71,8 +72,8 @@ router.put('/:id/status',
 // Obter estatísticas de pedidos (admin)
 router.get('/admin/stats',
   validate({
-    start_date: require('joi').date().iso().optional(),
-    end_date: require('joi').date().iso().optional()
+    start_date: Joi.date().iso().optional(),
+    end_date: Joi.date().iso().optional()
   }, 'query'),
   OrderController.getOrderStats
 );

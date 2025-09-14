@@ -4,6 +4,7 @@
 // ========================================
 
 const express = require('express');
+const Joi = require('joi');
 const { validate } = require('../utils/validations.js');
 const { productValidation, queryValidation, idSchema } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth.js');
@@ -44,7 +45,7 @@ router.get('/category/:category',
 
 router.get('/:id',
   optionalAuth,
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   ProductController.getProductById
 );
 
@@ -59,13 +60,13 @@ router.post('/',
 );
 
 router.put('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate(productValidation.update, 'body'),
   ProductController.updateProduct
 );
 
 router.delete('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   ProductController.deleteProduct
 );
 
@@ -74,11 +75,11 @@ router.get('/admin/stats',
 );
 
 router.put('/:id/stock',
-  validate({ id: idSchema }, 'params'),
-  validate({
-    stock: require('joi').number().integer().min(0).required(),
-    operation: require('joi').string().valid('set', 'add', 'subtract').default('set')
-  }, 'body'),
+  validate(Joi.object({ id: idSchema }), 'params'),
+  validate(Joi.object({
+    stock: Joi.number().integer().min(0).required(),
+    operation: Joi.string().valid('set', 'add', 'subtract').default('set')
+  }), 'body'),
   ProductController.updateStock
 );
 

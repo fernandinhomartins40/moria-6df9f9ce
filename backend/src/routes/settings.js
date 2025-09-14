@@ -68,7 +68,7 @@ router.get('/',
 );
 
 router.get('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   SettingController.getSettingByKey
 );
 
@@ -78,7 +78,7 @@ router.post('/',
 );
 
 router.put('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   validate(settingValidation.update, 'body'),
   SettingController.updateSetting
 );
@@ -94,7 +94,7 @@ router.post('/upsert',
 );
 
 router.delete('/:id',
-  validate({ id: idSchema }, 'params'),
+  validate(Joi.object({ id: idSchema }), 'params'),
   SettingController.deleteSetting
 );
 

@@ -4,6 +4,7 @@
 // ========================================
 
 const express = require('express');
+const Joi = require('joi');
 const { validate } = require('../utils/validations.js');
 const { userValidation } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin } = require('../middleware/auth.js');
@@ -39,10 +40,10 @@ router.put('/profile',
 );
 
 router.put('/change-password',
-  validate({
-    currentPassword: require('joi').string().required(),
-    newPassword: require('joi').string().min(6).required()
-  }, 'body'),
+  validate(Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required()
+  }), 'body'),
   AuthController.changePassword
 );
 
