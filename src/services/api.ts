@@ -25,6 +25,71 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
+  private requiresAuth(endpoint: string, method: string = 'GET'): boolean {
+    // Rotas que REQUEREM autenticação
+    const authRequiredRoutes = [
+      // Autenticação
+      '^/auth/profile$',
+      '^/auth/change-password$',
+      '^/auth/logout$',
+      '^/auth/users',
+
+      // Pedidos do usuário
+      '^/orders/my-orders',
+      '^/orders/[^/]+/cancel$',
+      '^/orders/[^/]+/reorder$',
+      '^/orders/[^/]+/status$',
+
+      // Agendamento de serviços
+      '^/services/[^/]+/book$',
+
+      // Configurações administrativas (exceto públicas)
+      '^/settings/(?!public$|company-info$|category/)',
+      '^/settings$',
+
+      // Rotas administrativas específicas de produtos
+      '^/products/admin/',
+
+      // Rotas administrativas específicas de serviços
+      '^/services/admin/',
+
+      // Rotas administrativas de promoções
+      '^/promotions/(?!active$|product/|category/|coupons/active$|coupons/validate/)',
+      '^/promotions$',
+      '^/promotions/[^/]+$',
+      '^/promotions/coupons/(?!active$|validate/)',
+      '^/promotions/coupons$',
+      '^/promotions/coupons/[^/]+$',
+    ];
+
+    // Métodos que sempre requerem autenticação (exceto em rotas específicas de auth)
+    const authRequiredMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+
+    // Se o método requer autenticação e não é uma rota pública específica
+    if (authRequiredMethods.includes(method.toUpperCase())) {
+      const publicPostRoutes = [
+        '^/auth/login$',
+        '^/auth/register$',
+        '^/auth/refresh$',
+        '^/orders$', // Criar pedido (guest)
+      ];
+
+      const isPublicPost = publicPostRoutes.some(pattern => {
+        const regex = new RegExp(pattern);
+        return regex.test(endpoint);
+      });
+
+      if (!isPublicPost) {
+        return true;
+      }
+    }
+
+    return authRequiredRoutes.some(pattern => {
+      const regex = new RegExp(pattern);
+      return regex.test(endpoint);
+    });
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -39,9 +104,10 @@ class ApiClient {
         ...options,
       };
 
-      // Adicionar token de autenticação se disponível
+      // Adicionar token apenas para rotas que requerem autenticação
       const authToken = localStorage.getItem('moria_auth_token');
-      if (authToken) {
+      const method = (options.method || 'GET').toString();
+      if (authToken && this.requiresAuth(endpoint, method)) {
         config.headers = {
           ...config.headers,
           Authorization: `Bearer ${authToken}`,
@@ -89,8 +155,21 @@ class ApiClient {
   }
 
   // Métodos CRUD genéricos
-  async get<T>(endpoint: string): Promise<ApiResponse<T> | ApiError> {
-    return this.request<T>(endpoint, { method: 'GET' });
+  async get<T>(endpoint: string, includeAuth: boolean = false): Promise<ApiResponse<T> | ApiError> {
+    const options: RequestInit = { method: 'GET' };
+
+    // Forçar autenticação se solicitado
+    if (includeAuth) {
+      const authToken = localStorage.getItem('moria_auth_token');
+      if (authToken) {
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${authToken}`,
+        };
+      }
+    }
+
+    return this.request<T>(endpoint, options);
   }
 
   async post<T>(endpoint: string, data: any): Promise<ApiResponse<T> | ApiError> {
@@ -112,13 +191,13 @@ class ApiClient {
   }
 
   // Métodos específicos para produtos
-  async getProducts(filters?: any) {
+  async getProducts(filters?: any, includeUserData: boolean = false) {
     const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/products${queryParams ? `?${queryParams}` : ''}`);
+    return this.get(`/products${queryParams ? `?${queryParams}` : ''}`, includeUserData);
   }
 
-  async getProduct(id: string) {
-    return this.get(`/products/${id}`);
+  async getProduct(id: string, includeUserData: boolean = false) {
+    return this.get(`/products/${id}`, includeUserData);
   }
 
   async createProduct(productData: any) {
@@ -134,13 +213,13 @@ class ApiClient {
   }
 
   // Métodos específicos para serviços
-  async getServices(filters?: any) {
+  async getServices(filters?: any, includeUserData: boolean = false) {
     const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/services${queryParams ? `?${queryParams}` : ''}`);
+    return this.get(`/services${queryParams ? `?${queryParams}` : ''}`, includeUserData);
   }
 
-  async getService(id: string) {
-    return this.get(`/services/${id}`);
+  async getService(id: string, includeUserData: boolean = false) {
+    return this.get(`/services/${id}`, includeUserData);
   }
 
   async createService(serviceData: any) {
@@ -161,8 +240,8 @@ class ApiClient {
     return this.get(`/orders${queryParams ? `?${queryParams}` : ''}`);
   }
 
-  async getOrder(id: string) {
-    return this.get(`/orders/${id}`);
+  async getOrder(id: string, includeUserData: boolean = false) {
+    return this.get(`/orders/${id}`, includeUserData);
   }
 
   async createOrder(orderData: any) {

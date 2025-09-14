@@ -12,13 +12,19 @@ const OrderController = require('../controllers/OrderController.js');
 
 const router = express.Router();
 
-// Todas as rotas de pedidos requerem autenticação
-router.use(optionalAuth);
-
+// Rotas públicas (sem autenticação obrigatória)
 // Criar pedido (pode ser feito sem login para guests)
 router.post('/',
+  optionalAuth,
   validate(orderValidation.create, 'body'),
   OrderController.createOrder
+);
+
+// Obter pedido específico (com token opcional para guests)
+router.get('/:id',
+  optionalAuth,
+  validate(Joi.object({ id: idSchema }), 'params'),
+  OrderController.getOrderById
 );
 
 // Rotas que requerem autenticação
@@ -31,11 +37,6 @@ router.get('/my-orders',
   OrderController.getMyOrders
 );
 
-// Obter pedido específico
-router.get('/:id',
-  validate(Joi.object({ id: idSchema }), 'params'),
-  OrderController.getOrderById
-);
 
 // Cancelar pedido
 router.put('/:id/cancel',
