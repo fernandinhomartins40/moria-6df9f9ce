@@ -35,8 +35,7 @@ import {
   Box,
   Download,
   BarChart3,
-  FileText,
-  AlertCircle
+  FileText
 } from "lucide-react";
 import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
