@@ -211,7 +211,10 @@ const queryValidation = {
     min_price: Joi.number().positive().optional(),
     max_price: Joi.number().positive().optional(),
     search: Joi.string().max(100).optional(),
-    is_active: Joi.boolean().optional(),
+    is_active: Joi.alternatives().try(
+      Joi.boolean(),
+      Joi.string().valid('all', 'true', 'false')
+    ).optional(),
     on_sale: Joi.boolean().optional()
   }),
 

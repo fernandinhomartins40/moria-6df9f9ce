@@ -382,7 +382,7 @@ class ApiClient {
   // Métodos específicos para cupons (nota: rotas são /promotions/coupons no backend)
   async getCoupons(filters?: any) {
     const queryString = this.buildQueryParams(filters);
-    return this.get(`/promotions/coupons${queryString}`);
+    return this.get(`/promotions/coupons/${queryString}`);
   }
 
   async getActiveCoupons() {
@@ -395,7 +395,7 @@ class ApiClient {
   }
 
   async createCoupon(couponData: any) {
-    return this.post('/promotions/coupons', couponData);
+    return this.post('/promotions/coupons/', couponData);
   }
 
   async updateCoupon(id: string, couponData: any) {
@@ -422,6 +422,11 @@ class ApiClient {
   // Métodos administrativos de settings (requerem autenticação)
   async getAllSettings() {
     return this.get('/settings');
+  }
+
+  // Alias para compatibilidade
+  async getSettings() {
+    return this.getAllSettings();
   }
 
   async getSettingByKey(key: string) {
