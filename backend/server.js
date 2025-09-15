@@ -65,8 +65,14 @@ app.use(helmet({
 
 // CORS configurado (se habilitado)
 if (env.get('ENABLE_CORS')) {
+  // Converter CORS_ORIGIN de string separada por vírgulas para array
+  const corsOrigin = env.get('CORS_ORIGIN');
+  const allowedOrigins = corsOrigin
+    ? corsOrigin.split(',').map(origin => origin.trim()).filter(Boolean)
+    : [];
+
   const corsOptions = {
-    origin: env.get('CORS_ORIGIN'),
+    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
