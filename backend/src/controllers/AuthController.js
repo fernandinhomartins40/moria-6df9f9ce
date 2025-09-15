@@ -7,6 +7,7 @@ const User = require('../models/User.js');
 const { generateToken, generateRefreshToken } = require('../middleware/auth.js');
 const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
 const { validateUserData } = require('../utils/validators.js');
+const env = require('../config/environment.js');
 
 // Registrar novo usuário
 const register = asyncHandler(async (req, res) => {
@@ -226,7 +227,7 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   try {
     const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.get('JWT_SECRET'));
 
     if (decoded.type !== 'refresh') {
       throw new AppError('Token inválido', 401);

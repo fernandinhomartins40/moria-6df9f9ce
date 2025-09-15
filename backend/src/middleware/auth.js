@@ -5,6 +5,7 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.js');
+const env = require('../config/environment.js');
 
 // Cache para tokens inválidos/revogados (simple in-memory cache)
 const revokedTokens = new Set();
@@ -67,7 +68,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     // Verificar token JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.get('JWT_SECRET'));
 
     // Verificar issuer para maior segurança
     if (decoded.iss !== 'moria-backend') {
@@ -153,7 +154,7 @@ const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.get('JWT_SECRET'));
     const user = await User.findById(decoded.userId);
 
     req.user = user && user.is_active ? user : null;
@@ -168,9 +169,9 @@ const optionalAuth = async (req, res, next) => {
 const generateToken = (userId) => {
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET,
+    env.get('JWT_SECRET'),
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      expiresIn: env.get('JWT_EXPIRES_IN'),
       issuer: 'moria-backend'
     }
   );
@@ -180,9 +181,9 @@ const generateToken = (userId) => {
 const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId, type: 'refresh' },
-    process.env.JWT_SECRET,
+    env.get('JWT_SECRET'),
     {
-      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+      expiresIn: env.get('REFRESH_TOKEN_EXPIRES_IN'),
       issuer: 'moria-backend'
     }
   );
