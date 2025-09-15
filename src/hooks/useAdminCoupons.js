@@ -289,7 +289,7 @@ export const useAdminCoupons = () => {
   // Carregar cupons na inicialização
   useEffect(() => {
     fetchCoupons();
-  }, [fetchCoupons]);
+  }, []);
 
   // Limpar erro
   const clearError = useCallback(() => {

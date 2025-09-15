@@ -250,7 +250,7 @@ export const useAdminServices = () => {
   // Carregar serviços na inicialização
   useEffect(() => {
     fetchServices();
-  }, [fetchServices]);
+  }, []);
 
   // Limpar erro
   const clearError = useCallback(() => {

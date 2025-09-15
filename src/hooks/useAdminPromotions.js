@@ -272,7 +272,7 @@ export const useAdminPromotions = () => {
   // Carregar promoções na inicialização
   useEffect(() => {
     fetchPromotions();
-  }, [fetchPromotions]);
+  }, []);
 
   // Limpar erro
   const clearError = useCallback(() => {
