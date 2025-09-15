@@ -218,6 +218,17 @@ const queryValidation = {
     on_sale: Joi.boolean().optional()
   }),
 
+  serviceFilters: Joi.object({
+    category: Joi.string().optional(),
+    search: Joi.string().max(100).optional(),
+    is_active: Joi.alternatives().try(
+      Joi.boolean(),
+      Joi.string().valid('all', 'true', 'false')
+    ).optional(),
+    min_price: Joi.number().positive().optional(),
+    max_price: Joi.number().positive().optional()
+  }),
+
   orderFilters: Joi.object({
     status: Joi.string().valid('pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled').optional(),
     user_id: Joi.number().integer().positive().optional(),

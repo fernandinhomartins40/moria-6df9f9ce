@@ -15,6 +15,7 @@ const router = express.Router();
 // Rotas públicas (sem autenticação obrigatória)
 router.get('/',
   optionalAuth,
+  validate(queryValidation.serviceFilters, 'query'),
   validate(queryValidation.pagination, 'query'),
   ServiceController.getServices
 );
