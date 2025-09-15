@@ -10,6 +10,9 @@ const Redis = require('ioredis');
 const logger = require('../utils/logger');
 const env = require('../config/environment');
 
+// Import helper para IPv6 adequado
+const { ipKeyGenerator } = require('express-rate-limit');
+
 class RateLimiter {
   constructor() {
     this.redis = this.initRedis();
@@ -95,8 +98,8 @@ class RateLimiter {
       windowMs: 1 * 60 * 1000, // 1 minuto
       max: 30, // 30 requisições por minuto
       keyGenerator: (req) => {
-        // Rate limit por usuário se autenticado, senão por IP
-        return req.user?.id || req.ip;
+        // Rate limit por usuário se autenticado, senão por IP (IPv6-safe)
+        return req.user?.id || ipKeyGenerator(req);
       }
     });
   }
@@ -155,7 +158,7 @@ class RateLimiter {
       windowMs: 5 * 60 * 1000, // 5 minutos
       max: 20, // 20 requisições
       keyGenerator: (req) => {
-        return req.user?.id || req.ip;
+        return req.user?.id || ipKeyGenerator(req);
       },
       message: {
         success: false,
@@ -183,7 +186,7 @@ class RateLimiter {
     return this.createLimiter({
       windowMs: 1 * 60 * 1000, // 1 minuto
       max: 10, // 10 requisições por minuto
-      keyGenerator: (req) => req.ip,
+      keyGenerator: ipKeyGenerator,
       message: {
         success: false,
         error: 'Rate limit restrito ativo',
