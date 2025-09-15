@@ -1,6 +1,6 @@
 name: 🚀 Deploy Moria Peças & Serviços - Full Stack
 
-# FORCE CACHE INVALIDATION - Fixed shell escape syntax errors - 2025-09-15T23:00:00Z
+# FORCE CACHE INVALIDATION - Fixed SSH command with HERE document - 2025-09-15T23:15:00Z
 
 concurrency:
   group: moria-deploy-fullstack
@@ -84,10 +84,10 @@ jobs:
         echo "  📦 Commit: ${{ github.sha }}"
         echo "  🌿 Branch: ${{ github.ref_name }}"
         echo "  👤 Actor: ${{ github.actor }}"
-        echo "  🕐 Timestamp: $(date)"
+        echo "  🕐 Timestamp: $(date -u)"
         echo "  🎯 Stack: Node.js Backend + React Frontend"
 
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << DEPLOY_SCRIPT
           set -e
 
           echo '🚀 Iniciando deploy FULL STACK - Node.js + React'
@@ -133,7 +133,7 @@ jobs:
             # Instalar Docker
             apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-            echo \"deb [arch=\\\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \\\$(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+            echo "deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
             apt-get update -y
             apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
             systemctl start docker && systemctl enable docker
@@ -143,7 +143,7 @@ jobs:
           # Backup e preparação
           if [ -d '${{ env.APP_DIR }}' ]; then
             echo '💾 Fazendo backup...'
-            mv '${{ env.APP_DIR }}' '${{ env.APP_DIR }}.backup.\\\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true
+            mv '${{ env.APP_DIR }}' '${{ env.APP_DIR }}.backup.\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true
           fi
 
           # Extrair código
@@ -202,8 +202,8 @@ jobs:
 
           # Build com cache totalmente limpo e timestamp único
           echo '🔨 Construindo imagens completamente novas...'
-          BUILD_TIMESTAMP=\\\$(date +%s)
-          DOCKER_BUILDKIT=1 docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --pull --build-arg BUILD_TIMESTAMP=\\\$BUILD_TIMESTAMP
+          BUILD_TIMESTAMP=\$(date +%s)
+          DOCKER_BUILDKIT=1 docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --pull --build-arg BUILD_TIMESTAMP=\$BUILD_TIMESTAMP
 
           echo '🚀 Iniciando containers...'
 
@@ -238,7 +238,7 @@ jobs:
               echo '✅ Backend health check passou!'
               break
             fi
-            echo \"Backend - Tentativa \\\$i/10 - aguardando 5s...\"
+            echo "Backend - Tentativa \$i/10 - aguardando 5s..."
             sleep 5
           done
 
@@ -249,7 +249,7 @@ jobs:
               echo '✅ Frontend health check passou!'
               break
             fi
-            echo \"Frontend - Tentativa \\\$i/8 - aguardando 5s...\"
+            echo "Frontend - Tentativa \$i/8 - aguardando 5s..."
             sleep 5
           done
 
@@ -265,7 +265,7 @@ jobs:
             docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
             exit 1
           fi
-        "
+        DEPLOY_SCRIPT
 
     - name: 🎉 Full Stack Deploy Success
       run: |
