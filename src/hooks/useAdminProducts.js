@@ -98,18 +98,31 @@ export const useAdminProducts = () => {
 
       console.log('➕ Criando novo produto...');
 
+      // Função auxiliar para conversão segura de números
+      const safeParseFloat = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      const safeParseInt = (value, defaultValue = 0) => {
+        if (value === null || value === undefined || value === '') return defaultValue;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? defaultValue : parsed;
+      };
+
       // Preparar dados para API (converter camelCase para snake_case)
       const apiData = {
         name: productData.name,
         description: productData.description || '',
         category: productData.category,
         subcategory: productData.subcategory || '',
-        price: parseFloat(productData.price),
-        sale_price: productData.salePrice ? parseFloat(productData.salePrice) : null,
-        promo_price: productData.promoPrice ? parseFloat(productData.promoPrice) : null,
-        cost_price: productData.costPrice ? parseFloat(productData.costPrice) : null,
-        stock: parseInt(productData.stock) || 0,
-        min_stock: parseInt(productData.minStock) || 5,
+        price: parseFloat(productData.price), // Este campo é obrigatório, então manter parseFloat
+        sale_price: safeParseFloat(productData.salePrice),
+        promo_price: safeParseFloat(productData.promoPrice),
+        cost_price: safeParseFloat(productData.costPrice),
+        stock: safeParseInt(productData.stock, 0),
+        min_stock: safeParseInt(productData.minStock, 5),
         sku: productData.sku || '',
         supplier: productData.supplier || '',
         images: productData.images || [],
@@ -140,12 +153,28 @@ export const useAdminProducts = () => {
     } catch (err) {
       const errorMessage = err.message || 'Erro ao criar produto';
       console.error('❌ Erro ao criar produto:', err);
+
+      // Log detalhado do erro de validação se disponível
+      if (err.response?.data?.errors) {
+        console.error('📋 Detalhes do erro de validação:', err.response.data.errors);
+        console.error('📤 Dados que causaram erro:', apiData);
+      }
+
       setError(errorMessage);
+
+      // Mostrar detalhes específicos se for erro de validação
+      let detailMessage = errorMessage;
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorDetails = err.response.data.errors
+          .map(error => `${error.field}: ${error.message}`)
+          .join(', ');
+        detailMessage = `${errorMessage} (${errorDetails})`;
+      }
 
       notify({
         type: 'error',
         title: 'Erro ao criar produto',
-        message: errorMessage
+        message: detailMessage
       });
 
       throw err;
@@ -170,19 +199,35 @@ export const useAdminProducts = () => {
       // Preparar dados para API (converter camelCase para snake_case)
       const apiData = {};
 
+      // Função auxiliar para conversão segura de números
+      const safeParseFloat = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      const safeParseInt = (value, defaultValue = 0) => {
+        if (value === null || value === undefined || value === '') return defaultValue;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? defaultValue : parsed;
+      };
+
       // Converter apenas os campos que estão presentes
       if (productData.name !== undefined) apiData.name = productData.name;
       if (productData.description !== undefined) apiData.description = productData.description;
       if (productData.category !== undefined) apiData.category = productData.category;
       if (productData.subcategory !== undefined) apiData.subcategory = productData.subcategory;
-      if (productData.price !== undefined) apiData.price = parseFloat(productData.price);
-      if (productData.salePrice !== undefined) apiData.sale_price = productData.salePrice ? parseFloat(productData.salePrice) : null;
-      if (productData.promoPrice !== undefined) apiData.promo_price = productData.promoPrice ? parseFloat(productData.promoPrice) : null;
-      if (productData.costPrice !== undefined) apiData.cost_price = productData.costPrice ? parseFloat(productData.costPrice) : null;
-      if (productData.stock !== undefined) apiData.stock = parseInt(productData.stock) || 0;
-      if (productData.minStock !== undefined) apiData.min_stock = parseInt(productData.minStock) || 5;
-      if (productData.sku !== undefined) apiData.sku = productData.sku;
-      if (productData.supplier !== undefined) apiData.supplier = productData.supplier;
+      if (productData.price !== undefined) {
+        const price = safeParseFloat(productData.price);
+        if (price !== null && price > 0) apiData.price = price;
+      }
+      if (productData.salePrice !== undefined) apiData.sale_price = safeParseFloat(productData.salePrice);
+      if (productData.promoPrice !== undefined) apiData.promo_price = safeParseFloat(productData.promoPrice);
+      if (productData.costPrice !== undefined) apiData.cost_price = safeParseFloat(productData.costPrice);
+      if (productData.stock !== undefined) apiData.stock = safeParseInt(productData.stock, 0);
+      if (productData.minStock !== undefined) apiData.min_stock = safeParseInt(productData.minStock, 5);
+      if (productData.sku !== undefined) apiData.sku = productData.sku || '';
+      if (productData.supplier !== undefined) apiData.supplier = productData.supplier || '';
       if (productData.images !== undefined) apiData.images = productData.images || [];
       if (productData.isActive !== undefined) apiData.is_active = productData.isActive;
       if (productData.specifications !== undefined) apiData.specifications = productData.specifications || {};
@@ -215,12 +260,28 @@ export const useAdminProducts = () => {
     } catch (err) {
       const errorMessage = err.message || 'Erro ao atualizar produto';
       console.error('❌ Erro ao atualizar produto:', err);
+
+      // Log detalhado do erro de validação se disponível
+      if (err.response?.data?.errors) {
+        console.error('📋 Detalhes do erro de validação:', err.response.data.errors);
+        console.error('📤 Dados que causaram erro:', apiData);
+      }
+
       setError(errorMessage);
+
+      // Mostrar detalhes específicos se for erro de validação
+      let detailMessage = errorMessage;
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorDetails = err.response.data.errors
+          .map(error => `${error.field}: ${error.message}`)
+          .join(', ');
+        detailMessage = `${errorMessage} (${errorDetails})`;
+      }
 
       notify({
         type: 'error',
         title: 'Erro ao atualizar produto',
-        message: errorMessage
+        message: detailMessage
       });
 
       throw err;

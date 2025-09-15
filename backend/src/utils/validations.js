@@ -252,6 +252,13 @@ const validate = (schema, property = 'body') => {
         message: detail.message
       }));
 
+      // Log detalhado para debug
+      console.error('❌ Erro de validação:', {
+        property,
+        originalData: data,
+        errors: errors
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Dados de entrada inválidos',
