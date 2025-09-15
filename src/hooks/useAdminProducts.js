@@ -79,7 +79,7 @@ export const useAdminProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, [adminAuth, notify]);
+  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures, notify]);
 
   // Criar novo produto com verificação de autenticação
   const createProduct = useCallback(async (productData) => {
@@ -337,7 +337,7 @@ export const useAdminProducts = () => {
     };
 
     loadInitialData();
-  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures, fetchProducts]);
+  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures]);
 
   // Limpar erro
   const clearError = useCallback(() => {
