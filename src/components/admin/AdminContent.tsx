@@ -128,14 +128,10 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
-  const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -159,8 +155,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         // Limpar dados sensíveis
         setOrders([]);
         setQuotes([]);
-        setServices([]);
-        setCoupons([]);
         setProducts([]);
         setUsers([]);
         return;
@@ -176,9 +170,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   useEffect(() => {
     filterOrders();
     filterQuotes();
-    filterServices();
-    filterCoupons();
-  }, [orders, quotes, services, coupons, searchTerm, statusFilter]);
+  }, [orders, quotes, searchTerm, statusFilter]);
 
   const loadData = async () => {
     // Verificar se o usuário tem permissão antes de carregar dados
@@ -194,21 +186,15 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       // Carregar dados REAIS do API em paralelo com autenticação forçada
       const [
         productsResponse,
-        servicesResponse,
-        couponsResponse,
         ordersResponse,
         promotionsResponse
       ] = await Promise.all([
         apiClient.getProducts({ is_active: 'all' }, true), // Todos os produtos (admin)
-        apiClient.getServices({ is_active: 'all' }, true), // Todos os serviços (admin)
-        apiClient.getCoupons(), // Todos os cupons (admin)
         apiClient.getOrders(), // Todos os pedidos (admin)
         apiClient.getPromotions() // Todas as promoções (admin)
       ]);
 
       console.log('📦 Produtos do API:', productsResponse?.data?.length || 0);
-      console.log('🛠️ Serviços do API:', servicesResponse?.data?.length || 0);
-      console.log('🎫 Cupons do API:', couponsResponse?.data?.length || 0);
       console.log('📝 Pedidos do API:', ordersResponse?.data?.length || 0);
 
       // Verificar se as respostas são válidas
@@ -219,19 +205,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         setProducts([]);
       }
 
-      if (servicesResponse?.success) {
-        setServices(servicesResponse.data || []);
-      } else {
-        console.warn('⚠️ Erro ao carregar serviços:', servicesResponse?.message);
-        setServices([]);
-      }
-
-      if (couponsResponse?.success) {
-        setCoupons(couponsResponse.data || []);
-      } else {
-        console.warn('⚠️ Erro ao carregar cupons:', couponsResponse?.message);
-        setCoupons([]);
-      }
 
       if (ordersResponse?.success) {
         setOrders(ordersResponse.data || []);
@@ -253,8 +226,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
       // Em caso de erro, definir arrays vazios
       setProducts([]);
-      setServices([]);
-      setCoupons([]);
       setOrders([]);
       setQuotes([]);
       setUsers([]);
@@ -346,48 +317,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setFilteredQuotes(filtered);
   };
 
-  const filterServices = () => {
-    let filtered = services;
 
-    if (searchTerm) {
-      filtered = filtered.filter(service =>
-        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter === "active") {
-      filtered = filtered.filter(service => service.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter(service => !service.isActive);
-    }
-
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    setFilteredServices(filtered);
-  };
-
-  const filterCoupons = () => {
-    let filtered = coupons;
-
-    if (searchTerm) {
-      filtered = filtered.filter(coupon =>
-        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter === "active") {
-      filtered = filtered.filter(coupon => coupon.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter(coupon => !coupon.isActive);
-    } else if (statusFilter === "expired") {
-      filtered = filtered.filter(coupon => new Date(coupon.expiresAt) < new Date());
-    }
-
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    setFilteredCoupons(filtered);
-  };
 
 
   const formatPrice = (price: number) => {
@@ -415,13 +345,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const stats = {
     totalOrders: orders.length,
     totalQuotes: quotes.length,
-    totalServices: services.length,
-    totalCoupons: coupons.length,
+    totalServices: 0, // Gerenciado por AdminServicesSection
+    totalCoupons: 0, // Gerenciado por AdminCouponsSection
     totalProducts: products.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
     pendingQuotes: quotes.filter(q => q.status === 'pending').length,
-    activeServices: services.filter(s => s.isActive).length,
-    activeCoupons: coupons.filter(c => c.isActive && new Date(c.expiresAt) > new Date()).length,
+    activeServices: 0, // Gerenciado por AdminServicesSection
+    activeCoupons: 0, // Gerenciado por AdminCouponsSection
     activeProducts: products.filter(p => p.isActive).length,
     lowStockProducts: products.filter(p => p.stock <= p.minStock).length,
     outOfStockProducts: products.filter(p => p.stock === 0).length,
@@ -600,22 +530,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Atividades simuladas baseadas nos dados existentes */}
+              {/* Atividades baseadas nos dados disponíveis */}
               {[
-                ...services.slice(0, 2).map(service => ({
-                  type: 'service',
-                  icon: Wrench,
-                  color: 'text-orange-600',
-                  title: `Serviço "${service.name}" ${service.isActive ? 'ativado' : 'criado'}`,
-                  time: service.updatedAt
-                })),
-                ...coupons.slice(0, 2).map(coupon => ({
-                  type: 'coupon',
-                  icon: Gift,
-                  color: 'text-green-600',
-                  title: `Cupom "${coupon.code}" ${coupon.isActive ? 'ativado' : 'criado'}`,
-                  time: coupon.updatedAt
-                })),
+                // Serviços e cupons agora são gerenciados pelas seções individuais
                 ...orders.slice(0, 2).map(order => ({
                   type: 'order',
                   icon: ShoppingBag,
