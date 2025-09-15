@@ -6,7 +6,14 @@
 const Joi = require('joi');
 
 // Schema base para IDs
-const idSchema = Joi.number().integer().positive().required();
+const idSchema = Joi.alternatives().try(
+  Joi.number().integer().positive(),
+  Joi.string().pattern(/^\d+$/).custom((value, helpers) => {
+    const num = parseInt(value, 10);
+    if (num <= 0) return helpers.error('any.invalid');
+    return num;
+  })
+).required();
 
 // Schema para datas
 const dateSchema = Joi.date().iso();

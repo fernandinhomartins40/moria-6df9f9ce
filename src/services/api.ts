@@ -270,10 +270,27 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  // Utilitário para filtrar parâmetros undefined/null/empty
+  private buildQueryParams(filters?: any): string {
+    if (!filters) return '';
+
+    const validParams: Record<string, string> = {};
+
+    Object.keys(filters).forEach(key => {
+      const value = filters[key];
+      if (value !== undefined && value !== null && value !== '') {
+        validParams[key] = String(value);
+      }
+    });
+
+    const queryParams = new URLSearchParams(validParams).toString();
+    return queryParams ? `?${queryParams}` : '';
+  }
+
   // Métodos específicos para produtos
   async getProducts(filters?: any, includeUserData: boolean = false) {
-    const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/products${queryParams ? `?${queryParams}` : ''}`, includeUserData);
+    const queryString = this.buildQueryParams(filters);
+    return this.get(`/products${queryString}`, includeUserData);
   }
 
   async getProduct(id: string, includeUserData: boolean = false) {
@@ -294,8 +311,8 @@ class ApiClient {
 
   // Métodos específicos para serviços
   async getServices(filters?: any, includeUserData: boolean = false) {
-    const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/services${queryParams ? `?${queryParams}` : ''}`, includeUserData);
+    const queryString = this.buildQueryParams(filters);
+    return this.get(`/services${queryString}`, includeUserData);
   }
 
   async getService(id: string, includeUserData: boolean = false) {
@@ -316,8 +333,8 @@ class ApiClient {
 
   // Métodos específicos para pedidos
   async getOrders(filters?: any) {
-    const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/orders${queryParams ? `?${queryParams}` : ''}`);
+    const queryString = this.buildQueryParams(filters);
+    return this.get(`/orders${queryString}`);
   }
 
   async getOrder(id: string, includeUserData: boolean = false) {
@@ -334,8 +351,8 @@ class ApiClient {
 
   // Métodos específicos para promoções
   async getPromotions(filters?: any) {
-    const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/promotions${queryParams ? `?${queryParams}` : ''}`);
+    const queryString = this.buildQueryParams(filters);
+    return this.get(`/promotions${queryString}`);
   }
 
   async getActivePromotions() {
@@ -364,8 +381,8 @@ class ApiClient {
 
   // Métodos específicos para cupons (nota: rotas são /promotions/coupons no backend)
   async getCoupons(filters?: any) {
-    const queryParams = new URLSearchParams(filters).toString();
-    return this.get(`/promotions/coupons${queryParams ? `?${queryParams}` : ''}`);
+    const queryString = this.buildQueryParams(filters);
+    return this.get(`/promotions/coupons${queryString}`);
   }
 
   async getActiveCoupons() {

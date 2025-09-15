@@ -205,11 +205,11 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         ordersResponse,
         promotionsResponse
       ] = await Promise.all([
-        apiClient.getProducts({ active: undefined }, true), // Todos os produtos (admin)
-        apiClient.getServices({ active: undefined }, true), // Todos os serviços (admin)
-        apiClient.getCoupons({ active: undefined }), // Todos os cupons (admin)
+        apiClient.getProducts({ is_active: 'all' }, true), // Todos os produtos (admin)
+        apiClient.getServices({ is_active: 'all' }, true), // Todos os serviços (admin)
+        apiClient.getCoupons(), // Todos os cupons (admin)
         apiClient.getOrders(), // Todos os pedidos (admin)
-        apiClient.getPromotions({ active: undefined }) // Todas as promoções (admin)
+        apiClient.getPromotions() // Todas as promoções (admin)
       ]);
 
       console.log('📦 Produtos do API:', productsResponse?.data?.length || 0);
