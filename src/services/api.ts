@@ -382,7 +382,8 @@ class ApiClient {
   // Métodos específicos para cupons (nota: rotas são /promotions/coupons no backend)
   async getCoupons(filters?: any) {
     const queryString = this.buildQueryParams(filters);
-    return this.get(`/promotions/coupons/${queryString}`);
+    const baseUrl = '/promotions/coupons/';
+    return this.get(queryString ? `${baseUrl.slice(0, -1)}${queryString}` : baseUrl);
   }
 
   async getActiveCoupons() {
