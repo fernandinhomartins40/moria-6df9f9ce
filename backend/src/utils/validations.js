@@ -255,7 +255,7 @@ const validate = (schema, property = 'body') => {
       // Log detalhado para debug
       console.error('❌ Erro de validação:', {
         property,
-        originalData: data,
+        originalData: req[property],
         errors: errors
       });
 
