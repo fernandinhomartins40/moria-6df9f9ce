@@ -1,6 +1,6 @@
 name: 🚀 Deploy Moria Peças & Serviços - Full Stack
 
-# FORCE CACHE INVALIDATION - Updated with product validation fixes - 2025-09-15T00:30:00Z
+# FORCE CACHE INVALIDATION - Updated with port fixes and improved image cleanup - 2025-09-15T22:30:00Z
 
 concurrency:
   group: moria-deploy-fullstack
@@ -102,22 +102,29 @@ jobs:
           echo '⏹️ Parando stack anterior...'
           if command -v docker &> /dev/null; then
             # Parar todos os containers do projeto Moria
-            docker compose -p ${{ env.COMPOSE_PROJECT }} down --remove-orphans 2>/dev/null || true
-            docker compose -p moria down --remove-orphans 2>/dev/null || true
+            docker compose -p ${{ env.COMPOSE_PROJECT }} down --volumes --remove-orphans 2>/dev/null || true
+            docker compose -p moria down --volumes --remove-orphans 2>/dev/null || true
 
             # Parar containers específicos se ainda estiverem rodando
             docker stop moria-backend moria-frontend moria-proxy 2>/dev/null || true
-            docker rm moria-backend moria-frontend moria-proxy 2>/dev/null || true
+            docker rm -f moria-backend moria-frontend moria-proxy 2>/dev/null || true
+
+            # Remover TODAS as imagens relacionadas ao projeto
+            echo '🗑️ Removendo imagens antigas do Moria...'
+            docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "(moria|none)" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
+
+            # Limpeza agressiva de imagens órfãs
+            docker image prune -af 2>/dev/null || true
 
             # Liberar portas específicas forçadamente
             docker ps --filter "publish=${{ env.BACKEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
             docker ps --filter "publish=${{ env.FRONTEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
             docker ps --filter "publish=${{ env.NGINX_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
 
-            # Limpeza geral
-            docker system prune -f >/dev/null 2>&1 || true
+            # Limpeza completa do sistema
+            docker system prune -af --volumes >/dev/null 2>&1 || true
 
-            echo '✅ Stack anterior parada e portas liberadas'
+            echo '✅ Stack anterior parada, imagens antigas removidas e portas liberadas'
           fi
 
           # Instalar/Atualizar Docker
@@ -182,15 +189,21 @@ jobs:
           # Build e start dos serviços com invalidação forçada de cache
           echo '🏗️ Building imagens com invalidação total de cache...'
 
-          # Remover imagens antigas do projeto
-          docker images | grep moria | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+          # Remover TODAS as imagens antigas do projeto (novamente por segurança)
+          echo '🧹 Limpeza final de imagens antes do build...'
+          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "(moria|<none>)" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
 
-          # Limpar cache de build
+          # Limpar completamente cache de build e buildkit
           docker builder prune -af 2>/dev/null || true
+          docker buildx prune -af 2>/dev/null || true
+
+          # Forçar remoção de qualquer volume órfão
+          docker volume prune -af 2>/dev/null || true
 
           # Build com cache totalmente limpo e timestamp único
+          echo '🔨 Construindo imagens completamente novas...'
           BUILD_TIMESTAMP=\$(date +%s)
-          docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --build-arg BUILD_TIMESTAMP=\$BUILD_TIMESTAMP
+          DOCKER_BUILDKIT=1 docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --pull --build-arg BUILD_TIMESTAMP=\$BUILD_TIMESTAMP
 
           echo '🚀 Iniciando containers...'
 

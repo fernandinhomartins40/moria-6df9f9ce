@@ -100,7 +100,7 @@ app.use(express.urlencoded({
 
 // Logging de requisições (se habilitado)
 if (env.get('ENABLE_REQUEST_LOGGING')) {
-  const morganFormat = env.isDevelopment() ? 'dev' : 'combined';
+  let morganFormat = env.isDevelopment() ? 'dev' : 'combined';
   const morganOptions = {};
 
   // Skip logging in test environment

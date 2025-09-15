@@ -13,7 +13,7 @@ const config = {
   development: {
     client: 'sqlite3',
     connection: {
-      filename: path.resolve(__dirname, process.env.DATABASE_PATH || './database/moria.sqlite')
+      filename: path.resolve(__dirname, process.env.DATABASE_URL || './database/moria.sqlite')
     },
     migrations: {
       directory: path.resolve(__dirname, './migrations'),
@@ -38,7 +38,7 @@ const config = {
   production: {
     client: 'sqlite3',
     connection: {
-      filename: path.resolve(__dirname, process.env.DATABASE_PATH || './database/moria.sqlite')
+      filename: path.resolve(__dirname, process.env.DATABASE_URL || './database/moria.sqlite')
     },
     migrations: {
       directory: path.resolve(__dirname, './migrations'),
