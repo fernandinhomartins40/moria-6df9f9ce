@@ -1,5 +1,7 @@
 name: 🚀 Deploy Moria Peças & Serviços - Full Stack
 
+# FORCE CACHE INVALIDATION - Updated with product validation fixes - 2025-09-15T00:30:00Z
+
 concurrency:
   group: moria-deploy-fullstack
   cancel-in-progress: true
@@ -177,9 +179,18 @@ jobs:
             fi
           done
 
-          # Build e start dos serviços
-          echo '🏗️ Building imagens...'
-          docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache
+          # Build e start dos serviços com invalidação forçada de cache
+          echo '🏗️ Building imagens com invalidação total de cache...'
+
+          # Remover imagens antigas do projeto
+          docker images | grep moria | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+
+          # Limpar cache de build
+          docker builder prune -af 2>/dev/null || true
+
+          # Build com cache totalmente limpo e timestamp único
+          BUILD_TIMESTAMP=\$(date +%s)
+          docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --build-arg BUILD_TIMESTAMP=\$BUILD_TIMESTAMP
 
           echo '🚀 Iniciando containers...'
 

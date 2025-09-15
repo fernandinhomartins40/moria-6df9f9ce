@@ -14,6 +14,10 @@ COPY package*.json ./
 # Instalar dependências
 RUN npm ci --only=production --no-audit --no-fund --silent
 
+# Cache invalidation - força rebuild quando há mudanças
+ARG BUILD_TIMESTAMP
+ENV BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+
 # Copiar código fonte
 COPY . .
 

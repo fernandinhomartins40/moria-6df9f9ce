@@ -15,6 +15,10 @@ COPY package*.json ./
 RUN npm ci --no-audit --no-fund --silent || \
     npm install --no-audit --no-fund --silent
 
+# Cache invalidation - força rebuild quando há mudanças
+ARG BUILD_TIMESTAMP
+ENV BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+
 # Copiar código fonte
 COPY . .
 
