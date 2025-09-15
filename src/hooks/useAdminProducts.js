@@ -166,7 +166,28 @@ export const useAdminProducts = () => {
 
       console.log(`📝 Atualizando produto ${productId}...`);
 
-      const response = await apiClient.updateProduct(productId, productData);
+      // Preparar dados para API (converter camelCase para snake_case)
+      const apiData = {};
+
+      // Converter apenas os campos que estão presentes
+      if (productData.name !== undefined) apiData.name = productData.name;
+      if (productData.description !== undefined) apiData.description = productData.description;
+      if (productData.category !== undefined) apiData.category = productData.category;
+      if (productData.subcategory !== undefined) apiData.subcategory = productData.subcategory;
+      if (productData.price !== undefined) apiData.price = parseFloat(productData.price);
+      if (productData.salePrice !== undefined) apiData.sale_price = productData.salePrice ? parseFloat(productData.salePrice) : null;
+      if (productData.promoPrice !== undefined) apiData.promo_price = productData.promoPrice ? parseFloat(productData.promoPrice) : null;
+      if (productData.costPrice !== undefined) apiData.cost_price = productData.costPrice ? parseFloat(productData.costPrice) : null;
+      if (productData.stock !== undefined) apiData.stock = parseInt(productData.stock) || 0;
+      if (productData.minStock !== undefined) apiData.min_stock = parseInt(productData.minStock) || 5;
+      if (productData.sku !== undefined) apiData.sku = productData.sku;
+      if (productData.supplier !== undefined) apiData.supplier = productData.supplier;
+      if (productData.images !== undefined) apiData.images = productData.images || [];
+      if (productData.isActive !== undefined) apiData.is_active = productData.isActive;
+      if (productData.specifications !== undefined) apiData.specifications = productData.specifications || {};
+      if (productData.vehicleCompatibility !== undefined) apiData.vehicle_compatibility = productData.vehicleCompatibility || [];
+
+      const response = await apiClient.updateProduct(productId, apiData);
 
       if (response && response.success) {
         const updatedProduct = response.data;
