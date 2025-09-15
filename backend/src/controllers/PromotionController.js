@@ -43,13 +43,17 @@ const getPromotionsByCategory = asyncHandler(async (req, res) => {
   });
 });
 
-// Listar todas as promoções (admin)
+// Listar todas as promoções (admin/público)
 const getPromotions = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, is_active } = req.query;
+  const { page = 1, limit = 10, active } = req.query;
 
   const filters = {};
-  if (is_active !== undefined) {
-    filters.is_active = is_active === 'true';
+
+  // Se parâmetro active=true ou não há usuário autenticado, mostrar apenas ativas
+  if (active === 'true' || !req.user) {
+    filters.is_active = true;
+  } else if (active === 'false') {
+    filters.is_active = false;
   }
 
   const result = await Promotion.findWithPagination(filters, parseInt(page), parseInt(limit));

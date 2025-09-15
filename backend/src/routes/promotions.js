@@ -39,16 +39,16 @@ router.get('/coupons/active',
   PromotionController.getActiveCoupons
 );
 
+// Listar promoções (rota pública para parâmetros active=true)
+router.get('/',
+  PromotionController.getPromotions
+);
+
 // ============ ROTAS ADMINISTRATIVAS ============
 router.use(authenticateToken);
 router.use(requireAdmin);
 
 // === PROMOÇÕES (Admin) ===
-
-// Listar todas as promoções (admin)
-router.get('/',
-  PromotionController.getPromotions
-);
 
 // Obter promoção por ID
 router.get('/:id',

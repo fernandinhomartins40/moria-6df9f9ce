@@ -31,10 +31,18 @@ export function Footer() {
 
       // Processar dados das settings e mapear para company_info
       if (settingsResponse?.success && settingsResponse.data) {
-        const settingsMap = settingsResponse.data.reduce((acc: any, setting: any) => {
-          acc[setting.key] = setting.value;
-          return acc;
-        }, {});
+        let settingsMap = {};
+
+        // Verificar se data é array (settings/public) ou objeto (settings/company-info)
+        if (Array.isArray(settingsResponse.data)) {
+          settingsMap = settingsResponse.data.reduce((acc: any, setting: any) => {
+            acc[setting.key] = setting.value;
+            return acc;
+          }, {});
+        } else if (typeof settingsResponse.data === 'object') {
+          // Se for objeto, usar diretamente
+          settingsMap = settingsResponse.data;
+        }
 
         // Mapear settings para o formato esperado pelo Footer
         companyData = {
