@@ -62,10 +62,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     description: '',
     category: '',
     subcategory: '',
-    price: 0,
-    salePrice: 0,
-    promoPrice: 0,
-    costPrice: 0,
+    price: undefined,
+    salePrice: undefined,
+    promoPrice: undefined,
+    costPrice: undefined,
     stock: 0,
     minStock: 5,
     sku: '',
@@ -78,6 +78,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+
+  // Funções auxiliares para conversão segura de números
+  const safeParseFloat = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const safeParseInt = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
 
   // Preencher form quando produto é editado
   useEffect(() => {
@@ -108,10 +121,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         description: '',
         category: '',
         subcategory: '',
-        price: 0,
-        salePrice: 0,
-        promoPrice: 0,
-        costPrice: 0,
+        price: undefined,
+        salePrice: undefined,
+        promoPrice: undefined,
+        costPrice: undefined,
         stock: 0,
         minStock: 5,
         sku: '',
@@ -150,11 +163,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       newErrors.price = 'Preço deve ser maior que zero';
     }
 
-    if (formData.salePrice && formData.salePrice <= 0) {
+    if (formData.salePrice !== undefined && formData.salePrice <= 0) {
       newErrors.salePrice = 'Preço de venda deve ser maior que zero';
     }
 
-    if (formData.promoPrice && formData.promoPrice <= 0) {
+    if (formData.promoPrice !== undefined && formData.promoPrice <= 0) {
       newErrors.promoPrice = 'Preço promocional deve ser maior que zero';
     }
 
@@ -304,8 +317,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.costPrice}
-                  onChange={(e) => handleInputChange('costPrice', parseFloat(e.target.value) || 0)}
+                  value={formData.costPrice ?? ''}
+                  onChange={(e) => handleInputChange('costPrice', safeParseFloat(e.target.value))}
                   placeholder="0.00"
                 />
               </div>
@@ -319,8 +332,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                  value={formData.price ?? ''}
+                  onChange={(e) => handleInputChange('price', safeParseFloat(e.target.value))}
                   placeholder="0.00"
                   className={errors.price ? 'border-red-500' : ''}
                 />
@@ -339,8 +352,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.salePrice}
-                  onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
+                  value={formData.salePrice ?? ''}
+                  onChange={(e) => handleInputChange('salePrice', safeParseFloat(e.target.value))}
                   placeholder="0.00"
                   className={errors.salePrice ? 'border-red-500' : ''}
                 />
@@ -359,8 +372,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.promoPrice}
-                  onChange={(e) => handleInputChange('promoPrice', parseFloat(e.target.value) || 0)}
+                  value={formData.promoPrice ?? ''}
+                  onChange={(e) => handleInputChange('promoPrice', safeParseFloat(e.target.value))}
                   placeholder="0.00"
                   className={errors.promoPrice ? 'border-red-500' : ''}
                 />
@@ -384,7 +397,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   min="0"
                   value={formData.stock}
-                  onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('stock', safeParseInt(e.target.value))}
                   placeholder="0"
                   className={errors.stock ? 'border-red-500' : ''}
                 />
@@ -403,7 +416,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                   type="number"
                   min="0"
                   value={formData.minStock}
-                  onChange={(e) => handleInputChange('minStock', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange('minStock', safeParseInt(e.target.value))}
                   placeholder="5"
                   className={errors.minStock ? 'border-red-500' : ''}
                 />

@@ -57,7 +57,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
       maxUsesPerCustomer: undefined
     },
     discountType: 'percentage',
-    discountValue: 0,
+    discountValue: undefined,
     maxDiscount: undefined,
     startsAt: '',
     endsAt: '',
@@ -69,6 +69,19 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableProducts, setAvailableProducts] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+
+  // Funções auxiliares para conversão segura de números
+  const safeParseFloat = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const safeParseInt = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
 
   // Carregar dados necessários
   useEffect(() => {
@@ -135,7 +148,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
           maxUsesPerCustomer: undefined
         },
         discountType: 'percentage',
-        discountValue: 0,
+        discountValue: undefined,
         maxDiscount: undefined,
         startsAt: now.toISOString().substring(0, 16),
         endsAt: tomorrow.toISOString().substring(0, 16),
@@ -456,8 +469,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                       step={formData.discountType === 'percentage' ? "1" : "0.01"}
                       min="0"
                       max={formData.discountType === 'percentage' ? "100" : undefined}
-                      value={formData.discountValue}
-                      onChange={(e) => handleInputChange('discountValue', parseFloat(e.target.value) || 0)}
+                      value={formData.discountValue ?? ''}
+                      onChange={(e) => handleInputChange('discountValue', safeParseFloat(e.target.value))}
                       placeholder="0"
                       className={`pl-10 ${errors.discountValue ? 'border-red-500' : ''}`}
                     />
@@ -480,8 +493,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                         type="number"
                         step="0.01"
                         min="0"
-                        value={formData.maxDiscount || ''}
-                        onChange={(e) => handleInputChange('maxDiscount', parseFloat(e.target.value) || undefined)}
+                        value={formData.maxDiscount ?? ''}
+                        onChange={(e) => handleInputChange('maxDiscount', safeParseFloat(e.target.value))}
                         placeholder="Sem limite"
                         className={`pl-10 ${errors.maxDiscount ? 'border-red-500' : ''}`}
                       />
@@ -688,8 +701,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.conditions?.minAmount || ''}
-                      onChange={(e) => handleConditionChange('minAmount', parseFloat(e.target.value) || undefined)}
+                      value={formData.conditions?.minAmount ?? ''}
+                      onChange={(e) => handleConditionChange('minAmount', safeParseFloat(e.target.value))}
                       placeholder="Ex: 100.00"
                     />
                     <p className="text-xs text-gray-500">Valor mínimo para aplicar a promoção</p>
@@ -701,8 +714,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                       id="maxUsesPerCustomer"
                       type="number"
                       min="1"
-                      value={formData.conditions?.maxUsesPerCustomer || ''}
-                      onChange={(e) => handleConditionChange('maxUsesPerCustomer', parseInt(e.target.value) || undefined)}
+                      value={formData.conditions?.maxUsesPerCustomer ?? ''}
+                      onChange={(e) => handleConditionChange('maxUsesPerCustomer', safeParseInt(e.target.value))}
                       placeholder="Ex: 1"
                     />
                     <p className="text-xs text-gray-500">Quantas vezes cada cliente pode usar</p>

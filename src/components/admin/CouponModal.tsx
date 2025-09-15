@@ -37,7 +37,7 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
     code: '',
     description: '',
     discountType: 'percentage',
-    discountValue: 0,
+    discountValue: undefined,
     maxDiscount: undefined,
     minimumAmount: undefined,
     usageLimit: 1,
@@ -48,6 +48,19 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+
+  // Funções auxiliares para conversão segura de números
+  const safeParseFloat = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const safeParseInt = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
 
   // Preencher form quando cupom é editado
   useEffect(() => {
@@ -71,7 +84,7 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
         code: '',
         description: '',
         discountType: 'percentage',
-        discountValue: 0,
+        discountValue: undefined,
         maxDiscount: undefined,
         minimumAmount: undefined,
         usageLimit: 1,
@@ -339,8 +352,8 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
                       step={formData.discountType === 'percentage' ? "1" : "0.01"}
                       min="0"
                       max={formData.discountType === 'percentage' ? "100" : undefined}
-                      value={formData.discountValue}
-                      onChange={(e) => handleInputChange('discountValue', parseFloat(e.target.value) || 0)}
+                      value={formData.discountValue ?? ''}
+                      onChange={(e) => handleInputChange('discountValue', safeParseFloat(e.target.value))}
                       placeholder="0"
                       className={`pl-10 ${errors.discountValue ? 'border-red-500' : ''}`}
                     />
@@ -363,8 +376,8 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
                         type="number"
                         step="0.01"
                         min="0"
-                        value={formData.maxDiscount || ''}
-                        onChange={(e) => handleInputChange('maxDiscount', parseFloat(e.target.value) || undefined)}
+                        value={formData.maxDiscount ?? ''}
+                        onChange={(e) => handleInputChange('maxDiscount', safeParseFloat(e.target.value))}
                         placeholder="Sem limite"
                         className={`pl-10 ${errors.maxDiscount ? 'border-red-500' : ''}`}
                       />
@@ -405,8 +418,8 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.minimumAmount || ''}
-                    onChange={(e) => handleInputChange('minimumAmount', parseFloat(e.target.value) || undefined)}
+                    value={formData.minimumAmount ?? ''}
+                    onChange={(e) => handleInputChange('minimumAmount', safeParseFloat(e.target.value))}
                     placeholder="Sem mínimo"
                     className={`pl-10 ${errors.minimumAmount ? 'border-red-500' : ''}`}
                   />
@@ -428,8 +441,8 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
                   id="usageLimit"
                   type="number"
                   min="1"
-                  value={formData.usageLimit}
-                  onChange={(e) => handleInputChange('usageLimit', parseInt(e.target.value) || 0)}
+                  value={formData.usageLimit ?? ''}
+                  onChange={(e) => handleInputChange('usageLimit', safeParseInt(e.target.value))}
                   placeholder="1"
                   className={errors.usageLimit ? 'border-red-500' : ''}
                 />

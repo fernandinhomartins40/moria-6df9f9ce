@@ -48,7 +48,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
     name: '',
     description: '',
     category: '',
-    basePrice: 0,
+    basePrice: undefined,
     estimatedTime: 60,
     specifications: {},
     isActive: true
@@ -56,6 +56,19 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+
+  // Funções auxiliares para conversão segura de números
+  const safeParseFloat = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const safeParseInt = (value: string): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
 
   // Preencher form quando serviço é editado
   useEffect(() => {
@@ -76,7 +89,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
         name: '',
         description: '',
         category: '',
-        basePrice: 0,
+        basePrice: undefined,
         estimatedTime: 60,
         specifications: {},
         isActive: true
@@ -250,8 +263,8 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.basePrice}
-                    onChange={(e) => handleInputChange('basePrice', parseFloat(e.target.value) || 0)}
+                    value={formData.basePrice ?? ''}
+                    onChange={(e) => handleInputChange('basePrice', safeParseFloat(e.target.value))}
                     placeholder="0.00"
                     className={`pl-10 ${errors.basePrice ? 'border-red-500' : ''}`}
                   />
@@ -276,7 +289,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
                     type="number"
                     min="1"
                     value={formData.estimatedTime}
-                    onChange={(e) => handleInputChange('estimatedTime', parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange('estimatedTime', safeParseInt(e.target.value))}
                     placeholder="60"
                     className={`pl-10 ${errors.estimatedTime ? 'border-red-500' : ''}`}
                   />

@@ -41,7 +41,6 @@ import { AdminServicesSection } from './AdminServicesSection';
 import { AdminCouponsSection } from './AdminCouponsSection';
 import { AdminPromotionsSection } from './AdminPromotionsSection';
 import { AdminProductsSection } from './AdminProductsSection';
-import { ProductModal } from './ProductModal';
 import { apiClient } from '../../services/api';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 
@@ -126,6 +125,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   // Hook de autenticação administrativa
   const adminAuth = useAdminAuth();
 
+
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -136,7 +136,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -144,10 +143,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Estados do modal de produtos
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isProductLoading, setIsProductLoading] = useState(false);
 
   // Carregar dados apenas se o usuário for admin
   useEffect(() => {
@@ -183,8 +178,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     filterQuotes();
     filterServices();
     filterCoupons();
-    filterProducts();
-  }, [orders, quotes, services, coupons, products, searchTerm, statusFilter]);
+  }, [orders, quotes, services, coupons, searchTerm, statusFilter]);
 
   const loadData = async () => {
     // Verificar se o usuário tem permissão antes de carregar dados
@@ -313,86 +307,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setSettings((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  // Funções do CRUD de produtos
-  const handleNewProduct = () => {
-    setSelectedProduct(null);
-    setIsProductModalOpen(true);
-  };
-
-  const handleEditProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setIsProductModalOpen(true);
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      try {
-        const response = await apiClient.deleteProduct(productId);
-        console.log('✅ Produto excluído com sucesso');
-
-        // Recarregar apenas produtos em vez de todos os dados
-        if (response?.success) {
-          const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
-          if (productsResponse?.success) {
-            setProducts(productsResponse.data || []);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Erro ao excluir produto:', error);
-      }
-    }
-  };
-
-  const handleSaveProduct = async (productData: Partial<Product>) => {
-    try {
-      setIsProductLoading(true);
-
-      let response;
-      if (selectedProduct?.id) {
-        // Editar produto existente
-        response = await apiClient.updateProduct(selectedProduct.id, productData);
-        console.log('✅ Produto atualizado com sucesso');
-      } else {
-        // Criar novo produto
-        response = await apiClient.createProduct(productData);
-        console.log('✅ Produto criado com sucesso');
-      }
-
-      // Recarregar apenas produtos em vez de todos os dados
-      if (response?.success) {
-        const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
-        if (productsResponse?.success) {
-          setProducts(productsResponse.data || []);
-        }
-      }
-
-      setIsProductModalOpen(false);
-      setSelectedProduct(null);
-    } catch (error) {
-      console.error('❌ Erro ao salvar produto:', error);
-      throw error; // Re-throw para o modal tratar
-    } finally {
-      setIsProductLoading(false);
-    }
-  };
-
-  const handleToggleProductStatus = async (product: Product) => {
-    try {
-      const updatedProduct = { ...product, isActive: !product.isActive };
-      const response = await apiClient.updateProduct(product.id, updatedProduct);
-      console.log(`✅ Produto ${updatedProduct.isActive ? 'ativado' : 'desativado'} com sucesso`);
-
-      // Recarregar apenas produtos em vez de todos os dados
-      if (response?.success) {
-        const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
-        if (productsResponse?.success) {
-          setProducts(productsResponse.data || []);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erro ao atualizar status do produto:', error);
-    }
-  };
 
   const filterOrders = () => {
     let filtered = orders;
@@ -475,32 +389,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setFilteredCoupons(filtered);
   };
 
-  const filterProducts = () => {
-    let filtered = products;
-
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.supplier.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter === "active") {
-      filtered = filtered.filter(product => product.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter(product => !product.isActive);
-    } else if (statusFilter === "low_stock") {
-      filtered = filtered.filter(product => product.stock <= product.minStock);
-    } else if (statusFilter === "out_of_stock") {
-      filtered = filtered.filter(product => product.stock === 0);
-    }
-
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    setFilteredProducts(filtered);
-  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -1814,17 +1702,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     <>
       {renderMainContent()}
 
-      {/* Modal de Produtos - sempre renderizado */}
-      <ProductModal
-        isOpen={isProductModalOpen}
-        onClose={() => {
-          setIsProductModalOpen(false);
-          setSelectedProduct(null);
-        }}
-        onSave={handleSaveProduct}
-        product={selectedProduct}
-        loading={isProductLoading}
-      />
     </>
   );
 }

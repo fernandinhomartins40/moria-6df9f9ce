@@ -219,11 +219,7 @@ export const useAdminProducts = () => {
       if (productData.subcategory !== undefined) apiData.subcategory = productData.subcategory;
       if (productData.price !== undefined) {
         const price = safeParseFloat(productData.price);
-        if (price !== null && price > 0) {
-          apiData.price = price;
-        } else {
-          console.warn('⚠️ Price inválido, não incluindo no update:', productData.price, '→', price);
-        }
+        if (price !== null && price > 0) apiData.price = price;
       }
       if (productData.salePrice !== undefined) apiData.sale_price = safeParseFloat(productData.salePrice);
       if (productData.promoPrice !== undefined) apiData.promo_price = safeParseFloat(productData.promoPrice);
@@ -238,7 +234,6 @@ export const useAdminProducts = () => {
       if (productData.vehicleCompatibility !== undefined) apiData.vehicle_compatibility = productData.vehicleCompatibility || [];
 
       console.log('📤 Dados enviados para API:', apiData);
-      console.log('📤 Dados enviados JSON:', JSON.stringify(apiData, null, 2));
 
       const response = await apiClient.updateProduct(productId, apiData);
 
