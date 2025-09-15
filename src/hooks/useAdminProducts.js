@@ -98,23 +98,24 @@ export const useAdminProducts = () => {
 
       console.log('➕ Criando novo produto...');
 
-      // Preparar dados para API
+      // Preparar dados para API (converter camelCase para snake_case)
       const apiData = {
         name: productData.name,
         description: productData.description || '',
         category: productData.category,
+        subcategory: productData.subcategory || '',
         price: parseFloat(productData.price),
-        salePrice: productData.salePrice ? parseFloat(productData.salePrice) : null,
-        promoPrice: productData.promoPrice ? parseFloat(productData.promoPrice) : null,
+        sale_price: productData.salePrice ? parseFloat(productData.salePrice) : null,
+        promo_price: productData.promoPrice ? parseFloat(productData.promoPrice) : null,
+        cost_price: productData.costPrice ? parseFloat(productData.costPrice) : null,
         stock: parseInt(productData.stock) || 0,
-        minStock: parseInt(productData.minStock) || 5,
+        min_stock: parseInt(productData.minStock) || 5,
         sku: productData.sku || '',
-        brand: productData.brand || '',
         supplier: productData.supplier || '',
         images: productData.images || [],
-        isActive: productData.isActive !== undefined ? productData.isActive : true,
+        is_active: productData.isActive !== undefined ? productData.isActive : true,
         specifications: productData.specifications || {},
-        vehicleCompatibility: productData.vehicleCompatibility || []
+        vehicle_compatibility: productData.vehicleCompatibility || []
       };
 
       const response = await apiClient.createProduct(apiData);
