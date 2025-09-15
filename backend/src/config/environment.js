@@ -121,7 +121,7 @@ class EnvironmentManager {
 
   validateProductionConfig(config) {
     const requiredKeys = ['JWT_SECRET', 'DATABASE_URL'];
-    const missing = requiredKeys.filter(key => !process.env[key]);
+    const missing = requiredKeys.filter(key => !config[key]);
 
     if (missing.length > 0) {
       throw new Error(`Variáveis obrigatórias em produção: ${missing.join(', ')}`);
@@ -144,11 +144,16 @@ class EnvironmentManager {
       throw new Error('DATABASE_URL inválida para produção');
     }
 
-    // Validar CORS Origin
-    try {
-      new URL(config.CORS_ORIGIN);
-    } catch (error) {
-      throw new Error('CORS_ORIGIN deve ser uma URL válida em produção');
+    // Validar CORS Origin (pode ser múltiplas URLs separadas por vírgula)
+    if (config.CORS_ORIGIN) {
+      const origins = config.CORS_ORIGIN.split(',').map(url => url.trim());
+      for (const origin of origins) {
+        try {
+          new URL(origin);
+        } catch (error) {
+          throw new Error(`CORS_ORIGIN contém URL inválida em produção: ${origin}`);
+        }
+      }
     }
   }
 
