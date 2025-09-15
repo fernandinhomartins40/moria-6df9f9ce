@@ -327,9 +327,16 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const handleDeleteProduct = async (productId: string) => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
-        await apiClient.deleteProduct(productId);
+        const response = await apiClient.deleteProduct(productId);
         console.log('✅ Produto excluído com sucesso');
-        await loadData(); // Recarregar lista
+
+        // Recarregar apenas produtos em vez de todos os dados
+        if (response?.success) {
+          const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
+          if (productsResponse?.success) {
+            setProducts(productsResponse.data || []);
+          }
+        }
       } catch (error) {
         console.error('❌ Erro ao excluir produto:', error);
       }
@@ -340,17 +347,25 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     try {
       setIsProductLoading(true);
 
+      let response;
       if (selectedProduct?.id) {
         // Editar produto existente
-        await apiClient.updateProduct(selectedProduct.id, productData);
+        response = await apiClient.updateProduct(selectedProduct.id, productData);
         console.log('✅ Produto atualizado com sucesso');
       } else {
         // Criar novo produto
-        await apiClient.createProduct(productData);
+        response = await apiClient.createProduct(productData);
         console.log('✅ Produto criado com sucesso');
       }
 
-      await loadData(); // Recarregar lista
+      // Recarregar apenas produtos em vez de todos os dados
+      if (response?.success) {
+        const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
+        if (productsResponse?.success) {
+          setProducts(productsResponse.data || []);
+        }
+      }
+
       setIsProductModalOpen(false);
       setSelectedProduct(null);
     } catch (error) {
@@ -364,9 +379,16 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const handleToggleProductStatus = async (product: Product) => {
     try {
       const updatedProduct = { ...product, isActive: !product.isActive };
-      await apiClient.updateProduct(product.id, updatedProduct);
+      const response = await apiClient.updateProduct(product.id, updatedProduct);
       console.log(`✅ Produto ${updatedProduct.isActive ? 'ativado' : 'desativado'} com sucesso`);
-      await loadData(); // Recarregar lista
+
+      // Recarregar apenas produtos em vez de todos os dados
+      if (response?.success) {
+        const productsResponse = await apiClient.getProducts({ is_active: 'all' }, true);
+        if (productsResponse?.success) {
+          setProducts(productsResponse.data || []);
+        }
+      }
     } catch (error) {
       console.error('❌ Erro ao atualizar status do produto:', error);
     }

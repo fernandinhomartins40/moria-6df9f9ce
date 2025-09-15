@@ -165,6 +165,7 @@ export const useAdminProducts = () => {
       setError(null);
 
       console.log(`📝 Atualizando produto ${productId}...`);
+      console.log('📋 Dados recebidos:', productData);
 
       // Preparar dados para API (converter camelCase para snake_case)
       const apiData = {};
@@ -186,6 +187,8 @@ export const useAdminProducts = () => {
       if (productData.isActive !== undefined) apiData.is_active = productData.isActive;
       if (productData.specifications !== undefined) apiData.specifications = productData.specifications || {};
       if (productData.vehicleCompatibility !== undefined) apiData.vehicle_compatibility = productData.vehicleCompatibility || [];
+
+      console.log('📤 Dados enviados para API:', apiData);
 
       const response = await apiClient.updateProduct(productId, apiData);
 
