@@ -1,6 +1,6 @@
 name: 🚀 Deploy Moria Peças & Serviços - Full Stack
 
-# FORCE CACHE INVALIDATION - Fixed SSH command with HERE document - 2025-09-15T23:15:00Z
+# FORCE CACHE INVALIDATION - Fixed VITE_APP_NAME escaping - 2025-09-15T23:20:00Z
 
 concurrency:
   group: moria-deploy-fullstack
@@ -166,7 +166,7 @@ jobs:
           echo \"JWT_SECRET=moria-production-jwt-${{ github.sha }}\" >> .env.production
           echo \"NODE_ENV=production\" >> .env.production
           echo \"VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api\" >> .env.production
-          echo \"VITE_APP_NAME=Moria Peças & Serviços\" >> .env.production
+          echo \"VITE_APP_NAME='Moria Peças & Serviços'\" >> .env.production
           echo \"CORS_ORIGIN=http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }},http://localhost:3000,http://localhost:5173,http://localhost:8080\" >> .env.production
 
           # Deploy com Docker Compose
