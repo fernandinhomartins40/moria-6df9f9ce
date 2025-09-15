@@ -43,6 +43,10 @@ echo "  Projeto: ${COMPOSE_PROJECT_NAME:-moria}"
 echo "⏹️ Parando stack anterior..."
 docker compose -p ${COMPOSE_PROJECT_NAME:-moria} down --remove-orphans 2>/dev/null || true
 
+# Definir timestamp para forçar rebuild
+export BUILD_TIMESTAMP=$(date +%s)
+echo "⏰ Build Timestamp: $BUILD_TIMESTAMP"
+
 # Limpar cache (opcional)
 if [ "$1" = "--clean" ]; then
     echo "🧹 Limpando cache Docker..."
@@ -52,7 +56,7 @@ fi
 
 # Build e start
 echo "🏗️ Construindo imagens..."
-docker compose -p ${COMPOSE_PROJECT_NAME:-moria} build
+docker compose -p ${COMPOSE_PROJECT_NAME:-moria} build --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP
 
 echo "🚀 Iniciando stack..."
 docker compose -p ${COMPOSE_PROJECT_NAME:-moria} up -d
