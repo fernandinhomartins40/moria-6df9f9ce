@@ -143,7 +143,13 @@ class ApiClient {
       const contentType = response.headers.get('content-type');
       const isJson = contentType && contentType.includes('application/json');
 
-      const data = isJson ? await response.json() : { message: await response.text() };
+      let data;
+      try {
+        data = isJson ? await response.json() : { message: await response.text() };
+      } catch (parseError) {
+        console.error('❌ Erro ao fazer parse da resposta:', parseError);
+        data = { message: 'Erro ao processar resposta do servidor' };
+      }
 
       if (!response.ok) {
         // Prevenir loops infinitos de refresh
@@ -196,7 +202,14 @@ class ApiClient {
             const retryResponse = await fetch(url, retryConfig);
             const retryContentType = retryResponse.headers.get('content-type');
             const retryIsJson = retryContentType && retryContentType.includes('application/json');
-            const retryData = retryIsJson ? await retryResponse.json() : { message: await retryResponse.text() };
+
+            let retryData;
+            try {
+              retryData = retryIsJson ? await retryResponse.json() : { message: await retryResponse.text() };
+            } catch (retryParseError) {
+              console.error('❌ Erro ao fazer parse da resposta retry:', retryParseError);
+              retryData = { message: 'Erro ao processar resposta do servidor' };
+            }
 
             if (retryResponse.ok) {
               console.log(`✅ Sucesso ao tentar novamente sem token: ${endpoint}`);
@@ -208,18 +221,18 @@ class ApiClient {
           }
         }
 
-        console.log(`❌ Erro: ${data.message || response.statusText}`);
+        console.log(`❌ Erro: ${data?.message || response.statusText}`);
         console.groupEnd();
-        throw new Error(data.message || `Erro ${response.status}: ${response.statusText}`);
+        throw new Error(data?.message || `Erro ${response.status}: ${response.statusText}`);
       }
 
       console.log(`✅ Sucesso`);
       console.groupEnd();
 
       return {
-        data: data.data || data,
-        success: data.success !== false,
-        message: data.message,
+        data: data?.data || data,
+        success: data?.success !== false,
+        message: data?.message,
       };
     } catch (error) {
       console.log(`💥 Exceção: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
