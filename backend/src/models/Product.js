@@ -300,6 +300,59 @@ class Product extends BaseModel {
       throw error;
     }
   }
+
+  // Métodos de favoritos
+  async getFavoritesByUser(userId) {
+    try {
+      return await this.db(this.tableName)
+        .join('favorites', 'products.id', 'favorites.product_id')
+        .where('favorites.user_id', userId)
+        .select('products.*')
+        .orderBy('favorites.created_at', 'desc');
+    } catch (error) {
+      console.error('Erro ao buscar favoritos do usuário:', error);
+      throw error;
+    }
+  }
+
+  async isFavorite(userId, productId) {
+    try {
+      const result = await this.db('favorites')
+        .where('user_id', userId)
+        .where('product_id', productId)
+        .first();
+      return !!result;
+    } catch (error) {
+      console.error('Erro ao verificar se produto é favorito:', error);
+      throw error;
+    }
+  }
+
+  async addToFavorites(userId, productId) {
+    try {
+      return await this.db('favorites').insert({
+        user_id: userId,
+        product_id: productId,
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar aos favoritos:', error);
+      throw error;
+    }
+  }
+
+  async removeFromFavorites(userId, productId) {
+    try {
+      return await this.db('favorites')
+        .where('user_id', userId)
+        .where('product_id', productId)
+        .del();
+    } catch (error) {
+      console.error('Erro ao remover dos favoritos:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new Product();

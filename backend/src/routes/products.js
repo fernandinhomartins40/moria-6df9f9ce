@@ -4,19 +4,16 @@
 // ========================================
 
 const express = require('express');
-const Joi = require('joi');
-const { validate } = require('../utils/validations.js');
-const { productValidation, queryValidation, idSchema } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth.js');
 const ProductController = require('../controllers/ProductController.js');
+const rateLimiter = require('../middleware/rateLimiter.js');
+const DataTransformer = require('../middleware/dataTransform.js');
 
 const router = express.Router();
 
 // Rotas públicas (sem autenticação obrigatória)
 router.get('/',
   optionalAuth,
-  validate(queryValidation.productFilters, 'query'),
-  validate(queryValidation.pagination, 'query'),
   ProductController.getProducts
 );
 
@@ -25,7 +22,6 @@ router.get('/popular',
 );
 
 router.get('/on-sale',
-  validate(queryValidation.pagination, 'query'),
   ProductController.getProductsOnSale
 );
 
@@ -34,18 +30,21 @@ router.get('/categories',
 );
 
 router.get('/search',
-  validate(queryValidation.pagination, 'query'),
+  rateLimiter.search(),
   ProductController.searchProducts
 );
 
 router.get('/category/:category',
-  validate(queryValidation.pagination, 'query'),
   ProductController.getProductsByCategory
+);
+
+// Rotas de favoritos - DEVEM vir antes da rota /:id
+router.get('/favorites',
+  ProductController.getFavorites
 );
 
 router.get('/:id',
   optionalAuth,
-  validate(Joi.object({ id: idSchema }), 'params'),
   ProductController.getProductById
 );
 
@@ -53,20 +52,24 @@ router.get('/:id',
 // IMPORTANTE: Rotas administrativas ficam depois das públicas
 router.use(authenticateToken);
 router.use(requireAdmin);
+router.use(rateLimiter.admin()); // Rate limiting para administradores
 
 router.post('/',
-  validate(productValidation.create, 'body'),
+  DataTransformer.productTransform(),
   ProductController.createProduct
 );
 
 router.put('/:id',
-  validate(Joi.object({ id: idSchema }), 'params'),
-  validate(productValidation.update, 'body'),
+  DataTransformer.productTransform(),
+  ProductController.updateProduct
+);
+
+router.patch('/:id',
+  DataTransformer.productTransform(),
   ProductController.updateProduct
 );
 
 router.delete('/:id',
-  validate(Joi.object({ id: idSchema }), 'params'),
   ProductController.deleteProduct
 );
 
@@ -75,12 +78,16 @@ router.get('/admin/stats',
 );
 
 router.put('/:id/stock',
-  validate(Joi.object({ id: idSchema }), 'params'),
-  validate(Joi.object({
-    stock: Joi.number().integer().min(0).required(),
-    operation: Joi.string().valid('set', 'add', 'subtract').default('set')
-  }), 'body'),
   ProductController.updateStock
+);
+
+// Rotas de favoritos (que requerem autenticação)
+router.post('/:id/favorite',
+  ProductController.addToFavorites
+);
+
+router.delete('/:id/favorite',
+  ProductController.removeFromFavorites
 );
 
 module.exports = router;

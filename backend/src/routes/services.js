@@ -4,19 +4,16 @@
 // ========================================
 
 const express = require('express');
-const Joi = require('joi');
-const { validate } = require('../utils/validations.js');
-const { serviceValidation, queryValidation, idSchema } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth.js');
 const ServiceController = require('../controllers/ServiceController.js');
+const rateLimiter = require('../middleware/rateLimiter.js');
+const DataTransformer = require('../middleware/dataTransform.js');
 
 const router = express.Router();
 
 // Rotas públicas (sem autenticação obrigatória)
 router.get('/',
   optionalAuth,
-  validate(queryValidation.serviceFilters, 'query'),
-  validate(queryValidation.pagination, 'query'),
   ServiceController.getServices
 );
 
@@ -29,18 +26,16 @@ router.get('/categories',
 );
 
 router.get('/search',
-  validate(queryValidation.pagination, 'query'),
+  rateLimiter.search(),
   ServiceController.searchServices
 );
 
 router.get('/category/:category',
-  validate(queryValidation.pagination, 'query'),
   ServiceController.getServicesByCategory
 );
 
 router.get('/:id',
   optionalAuth,
-  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.getServiceById
 );
 
@@ -48,26 +43,24 @@ router.get('/:id',
 router.use(authenticateToken);
 
 router.post('/:id/book',
-  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.incrementBookings
 );
 
 // Rotas administrativas (requer admin)
 router.use(requireAdmin);
+router.use(rateLimiter.admin()); // Rate limiting para administradores
 
 router.post('/',
-  validate(serviceValidation.create, 'body'),
+  DataTransformer.serviceTransform(),
   ServiceController.createService
 );
 
 router.put('/:id',
-  validate(Joi.object({ id: idSchema }), 'params'),
-  validate(serviceValidation.update, 'body'),
+  DataTransformer.serviceTransform(),
   ServiceController.updateService
 );
 
 router.delete('/:id',
-  validate(Joi.object({ id: idSchema }), 'params'),
   ServiceController.deleteService
 );
 

@@ -24,22 +24,26 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-// Tipos para produtos (frontend)
+// Tipos para produtos (frontend) - Usando snake_case para compatibilidade com backend
 export interface Product {
   id: string;
   name: string;
   description: string;
   category: string;
   price: number;
-  salePrice?: number;
-  promoPrice?: number;
+  sale_price?: number;
+  promo_price?: number;
+  cost_price?: number;
+  image_url?: string;
   images: string[];
   stock: number;
-  isActive: boolean;
+  is_active: boolean;
+  is_favorite?: boolean;
   rating: number;
   specifications: Record<string, any>;
-  vehicleCompatibility: string[];
-  createdAt: string;
+  vehicle_compatibility: string[];
+  created_at: string;
+  updated_at?: string;
   effective_price?: number;
   discount_percentage?: number;
 }
@@ -152,15 +156,15 @@ export interface Address {
   isDefault: boolean;
 }
 
-// Tipos para carrinho de compras
+// Tipos para carrinho de compras - Usando snake_case para compatibilidade com backend
 export interface CartItem {
   id: string;
   type: 'product' | 'service';
   name: string;
   price: number;
-  salePrice?: number;
-  promoPrice?: number;
-  image?: string;
+  sale_price?: number;
+  promo_price?: number;
+  image_url?: string;
   quantity: number;
   stock?: number;
   category?: string;
@@ -194,20 +198,25 @@ export interface DashboardStats {
   }>;
 }
 
-// Tipos para formulários de criação/edição
+// Tipos para formulários de criação/edição - Usando snake_case para compatibilidade com backend
 export interface ProductFormData {
   name: string;
   description: string;
   category: string;
-  price: number;
-  salePrice?: number;
-  promoPrice?: number;
+  price?: number;
+  original_price?: number;
+  sale_price?: number;
+  discount_price?: number;
+  promo_price?: number;
+  cost_price?: number;
+  image_url?: string;
   images: string[];
   stock: number;
-  isActive: boolean;
+  is_active: boolean;
+  is_favorite?: boolean;
   rating?: number;
   specifications: Record<string, any>;
-  vehicleCompatibility: string[];
+  vehicle_compatibility: string[];
 }
 
 export interface ServiceFormData {

@@ -4,26 +4,27 @@
 // ========================================
 
 const express = require('express');
-const Joi = require('joi');
-const { validate } = require('../utils/validations.js');
-const { userValidation } = require('../utils/validations.js');
 const { authenticateToken, requireAdmin } = require('../middleware/auth.js');
 const AuthController = require('../controllers/AuthController.js');
+const rateLimiter = require('../middleware/rateLimiter.js');
+const DataTransformer = require('../middleware/dataTransform.js');
 
 const router = express.Router();
 
-// Rotas públicas (sem autenticação)
+// Rotas públicas (sem autenticação) com rate limiting específico
 router.post('/register',
-  validate(userValidation.create, 'body'),
+  rateLimiter.auth(),
+  DataTransformer.userTransform(),
   AuthController.register
 );
 
 router.post('/login',
-  validate(userValidation.login, 'body'),
+  rateLimiter.auth(),
   AuthController.login
 );
 
 router.post('/refresh',
+  rateLimiter.auth(),
   AuthController.refreshToken
 );
 
@@ -35,15 +36,10 @@ router.get('/profile',
 );
 
 router.put('/profile',
-  validate(userValidation.update, 'body'),
   AuthController.updateProfile
 );
 
 router.put('/change-password',
-  validate(Joi.object({
-    currentPassword: Joi.string().required(),
-    newPassword: Joi.string().min(6).required()
-  }), 'body'),
   AuthController.changePassword
 );
 
@@ -51,15 +47,15 @@ router.post('/logout',
   AuthController.logout
 );
 
-// Rotas administrativas
+// Rotas administrativas com rate limiting específico
 router.use(requireAdmin); // Todas as rotas abaixo requerem admin
+router.use(rateLimiter.admin()); // Rate limiting para administradores
 
 router.get('/users',
   AuthController.listUsers
 );
 
 router.put('/users/:id',
-  validate(userValidation.update, 'body'),
   AuthController.updateUser
 );
 

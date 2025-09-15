@@ -6,30 +6,37 @@
 const User = require('../models/User.js');
 const { generateToken, generateRefreshToken } = require('../middleware/auth.js');
 const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { validateUserData } = require('../utils/validators.js');
 
 // Registrar novo usuário
 const register = asyncHandler(async (req, res) => {
-  const { email, password, name, phone, cpf, birth_date } = req.body;
+  // Validar dados de entrada
+  const validation = validateUserData(req.body);
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dados de entrada inválidos',
+      errors: validation.errors
+    });
+  }
+
+  const userData = validation.data;
 
   // Verificar se usuário já existe
-  const existingUser = await User.findByEmail(email);
+  const existingUser = await User.findByEmail(userData.email);
   if (existingUser) {
     throw new AppError('Email já cadastrado no sistema', 409);
   }
 
-  // Criar usuário
-  const userData = {
-    email,
-    password, // O model vai fazer o hash automaticamente
-    name,
-    phone,
-    cpf,
-    birth_date,
+  // Completar dados do usuário
+  const completeUserData = {
+    ...userData,
     role: 'customer', // Padrão
     is_active: true
   };
 
-  const newUser = await User.create(userData);
+  const newUser = await User.create(completeUserData);
 
   // Gerar tokens
   const token = generateToken(newUser.id);
@@ -53,8 +60,23 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
+  // Validação simples para login
+  if (!email || !email.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email é obrigatório'
+    });
+  }
+
+  if (!password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Senha é obrigatória'
+    });
+  }
+
   // Buscar usuário por email
-  const user = await User.findByEmail(email);
+  const user = await User.findByEmail(email.trim());
   if (!user) {
     throw new AppError('Email ou senha incorretos', 401);
   }
@@ -106,7 +128,19 @@ const getProfile = asyncHandler(async (req, res) => {
 // Atualizar perfil do usuário
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const updateData = req.body;
+
+  // Validar dados de entrada para atualização
+  const validation = validateUserData(req.body, { isUpdate: true });
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dados de entrada inválidos',
+      errors: validation.errors
+    });
+  }
+
+  const updateData = validation.data;
 
   // Se está tentando alterar email, verificar duplicação
   if (updateData.email && updateData.email !== req.user.email) {
@@ -119,8 +153,6 @@ const updateProfile = asyncHandler(async (req, res) => {
   // Não permitir alteração de role via este endpoint
   delete updateData.role;
   delete updateData.is_active;
-  delete updateData.created_at;
-  delete updateData.updated_at;
 
   // Atualizar usuário
   const updatedUser = await User.update(userId, updateData);
@@ -145,6 +177,28 @@ const updateProfile = asyncHandler(async (req, res) => {
 const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user.id;
+
+  // Validação simples dos campos
+  if (!currentPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Senha atual é obrigatória'
+    });
+  }
+
+  if (!newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Nova senha é obrigatória'
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Nova senha deve ter pelo menos 6 caracteres'
+    });
+  }
 
   // Verificar senha atual
   const user = await User.findById(userId, true); // incluir password_hash
@@ -243,7 +297,19 @@ const listUsers = asyncHandler(async (req, res) => {
 // Atualizar usuário (admin)
 const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updateData = req.body;
+
+  // Validar dados de entrada para atualização
+  const validation = validateUserData(req.body, { isUpdate: true });
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dados de entrada inválidos',
+      errors: validation.errors
+    });
+  }
+
+  const updateData = validation.data;
 
   // Verificar se usuário existe
   const user = await User.findById(id);

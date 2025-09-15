@@ -1,86 +1,120 @@
 // ========================================
-// ERROR HANDLER MIDDLEWARE - MORIA BACKEND
-// Tratamento centralizado de erros
+// MIDDLEWARE DE TRATAMENTO DE ERROS CENTRALIZADO - MORIA BACKEND
+// Sistema profissional de error handling - Fase 4
 // ========================================
 
-// Middleware de tratamento de erro global
-const errorHandler = (error, req, res, next) => {
-  console.error('Erro capturado pelo middleware:', {
-    message: error.message,
-    stack: error.stack,
-    url: req.url,
-    method: req.method,
-    timestamp: new Date().toISOString()
-  });
+const logger = require('../utils/logger');
+const env = require('../config/environment');
 
-  // Erro de validação do Joi
-  if (error.isJoi || error.details) {
-    return res.status(400).json({
-      success: false,
-      message: 'Dados de entrada inválidos',
-      errors: error.details?.map(detail => ({
-        field: detail.path.join('.'),
-        message: detail.message
-      }))
+class AppError extends Error {
+  constructor(message, statusCode, isOperational = true) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    this.timestamp = new Date().toISOString();
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+class ErrorHandler {
+  static handle(err, req, res, next) {
+    let error = { ...err };
+    error.message = err.message;
+
+    // Log do erro
+    logger.error('Error Handler', {
+      error: error.message,
+      stack: error.stack,
+      url: req.originalUrl,
+      method: req.method,
+      ip: logger.getClientIP(req),
+      userId: req.user?.id
     });
+
+    // Cast de erros específicos
+    if (err.name === 'CastError') {
+      error = this.handleCastError(err);
+    }
+
+    if (err.code === 'SQLITE_CONSTRAINT') {
+      error = this.handleDuplicateFieldError(err);
+    }
+
+    if (err.name === 'ValidationError') {
+      error = this.handleValidationError(err);
+    }
+
+    if (err.name === 'JsonWebTokenError') {
+      error = this.handleJWTError(err);
+    }
+
+    if (err.name === 'TokenExpiredError') {
+      error = this.handleJWTExpiredError(err);
+    }
+
+    this.sendError(error, req, res);
   }
 
-  // Erro de duplicação no banco (SQLite UNIQUE constraint)
-  if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.errno === 19) {
-    return res.status(409).json({
-      success: false,
-      message: 'Dados já existem no sistema',
-      details: 'Conflito de dados únicos'
-    });
+  static handleCastError(err) {
+    const message = `Recurso não encontrado com ID: ${err.value}`;
+    return new AppError(message, 400);
   }
 
-  // Erro de banco de dados
-  if (error.code && error.code.startsWith('SQLITE_')) {
-    return res.status(500).json({
-      success: false,
-      message: 'Erro no banco de dados',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Erro interno'
-    });
+  static handleDuplicateFieldError(err) {
+    const message = 'Dados duplicados encontrados';
+    return new AppError(message, 400);
   }
 
-  // Erro de JWT
-  if (error.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token de autenticação inválido'
-    });
+  static handleValidationError(err) {
+    const errors = Object.values(err.errors).map(val => val.message);
+    const message = `Dados inválidos: ${errors.join('. ')}`;
+    return new AppError(message, 400);
   }
 
-  if (error.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token de autenticação expirado'
-    });
+  static handleJWTError(err) {
+    return new AppError('Token inválido', 401);
   }
 
-  // Erro de recurso não encontrado
-  if (error.name === 'NotFoundError' || error.status === 404) {
-    return res.status(404).json({
-      success: false,
-      message: 'Recurso não encontrado'
-    });
+  static handleJWTExpiredError(err) {
+    return new AppError('Token expirado', 401);
   }
 
-  // Erro de permissão
-  if (error.name === 'UnauthorizedError' || error.status === 403) {
-    return res.status(403).json({
-      success: false,
-      message: 'Acesso negado'
-    });
+  static sendError(err, req, res) {
+    // Operational errors: enviar detalhes para cliente
+    if (err.isOperational) {
+      res.status(err.statusCode || 500).json({
+        success: false,
+        error: err.message,
+        timestamp: err.timestamp || new Date().toISOString(),
+        path: req.originalUrl
+      });
+    } else {
+      // Programming errors: não vazar detalhes
+      logger.error('Programming Error', {
+        error: err.message,
+        stack: err.stack,
+        url: req.originalUrl
+      });
+
+      res.status(500).json({
+        success: false,
+        error: env.isProduction()
+          ? 'Algo deu errado!'
+          : err.message,
+        timestamp: new Date().toISOString(),
+        path: req.originalUrl
+      });
+    }
   }
 
-  // Erro interno do servidor (padrão)
-  return res.status(error.statusCode || 500).json({
-    success: false,
-    message: error.message || 'Erro interno do servidor',
-    details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-  });
-};
+  // Helper para async handlers
+  static asyncHandler(fn) {
+    return (req, res, next) => {
+      Promise.resolve(fn(req, res, next)).catch(next);
+    };
+  }
+}
 
 // Middleware para capturar rotas não encontradas
 const notFoundHandler = (req, res) => {
@@ -120,28 +154,28 @@ const notFoundHandler = (req, res) => {
   });
 };
 
-// Wrapper para async functions
-const asyncHandler = (fn) => {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
+// Tratamento de uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error('UNCAUGHT EXCEPTION! Shutting down...', {
+    error: err.message,
+    stack: err.stack
+  });
+  process.exit(1);
+});
 
-// Classe de erro customizada
-class AppError extends Error {
-  constructor(message, statusCode = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.status = statusCode >= 400 && statusCode < 500 ? 'fail' : 'error';
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+// Tratamento de unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  logger.error('UNHANDLED REJECTION! Shutting down...', {
+    error: err.message,
+    stack: err.stack
+  });
+  process.exit(1);
+});
 
 module.exports = {
-  errorHandler,
+  AppError,
+  ErrorHandler,
+  errorHandler: ErrorHandler.handle,
   notFoundHandler,
-  asyncHandler,
-  AppError
+  asyncHandler: ErrorHandler.asyncHandler
 };

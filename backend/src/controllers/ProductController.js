@@ -5,6 +5,7 @@
 
 const Product = require('../models/Product.js');
 const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { validateProductData } = require('../utils/validators.js');
 
 // Listar produtos
 const getProducts = asyncHandler(async (req, res) => {
@@ -70,7 +71,18 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // Criar produto (admin)
 const createProduct = asyncHandler(async (req, res) => {
-  const productData = req.body;
+  // Validar dados de entrada com sistema customizado
+  const validation = validateProductData(req.body);
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dados de entrada inválidos',
+      errors: validation.errors
+    });
+  }
+
+  const productData = validation.data;
 
   // Verificar se SKU já existe (se fornecido)
   if (productData.sku) {
@@ -92,7 +104,27 @@ const createProduct = asyncHandler(async (req, res) => {
 // Atualizar produto (admin)
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updateData = req.body;
+
+  // Validar ID
+  if (!id || isNaN(parseInt(id))) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID do produto inválido'
+    });
+  }
+
+  // Validar dados de entrada com sistema customizado (para update)
+  const validation = validateProductData(req.body, { isUpdate: true });
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dados de entrada inválidos',
+      errors: validation.errors
+    });
+  }
+
+  const updateData = validation.data;
 
   // Verificar se produto existe
   const product = await Product.findById(id);
@@ -253,6 +285,76 @@ const updateStock = asyncHandler(async (req, res) => {
   });
 });
 
+// Listar favoritos do usuário
+const getFavorites = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new AppError('Usuário não autenticado', 401);
+  }
+
+  const favorites = await Product.getFavoritesByUser(userId);
+
+  res.json({
+    success: true,
+    data: favorites
+  });
+});
+
+// Adicionar produto aos favoritos
+const addToFavorites = asyncHandler(async (req, res) => {
+  const { id: productId } = req.params;
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new AppError('Usuário não autenticado', 401);
+  }
+
+  // Verificar se produto existe
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new AppError('Produto não encontrado', 404);
+  }
+
+  // Verificar se já está nos favoritos
+  const existingFavorite = await Product.isFavorite(userId, productId);
+  if (existingFavorite) {
+    throw new AppError('Produto já está nos favoritos', 409);
+  }
+
+  await Product.addToFavorites(userId, productId);
+
+  res.json({
+    success: true,
+    message: 'Produto adicionado aos favoritos',
+    data: { productId, userId }
+  });
+});
+
+// Remover produto dos favoritos
+const removeFromFavorites = asyncHandler(async (req, res) => {
+  const { id: productId } = req.params;
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new AppError('Usuário não autenticado', 401);
+  }
+
+  // Verificar se está nos favoritos
+  const existingFavorite = await Product.isFavorite(userId, productId);
+  if (!existingFavorite) {
+    throw new AppError('Produto não está nos favoritos', 404);
+  }
+
+  await Product.removeFromFavorites(userId, productId);
+
+  res.json({
+    success: true,
+    message: 'Produto removido dos favoritos',
+    data: { productId, userId }
+  });
+});
+
 module.exports = {
   getProducts,
   getProductById,
@@ -265,5 +367,8 @@ module.exports = {
   searchProducts,
   getCategories,
   getProductStats,
-  updateStock
+  updateStock,
+  getFavorites,
+  addToFavorites,
+  removeFromFavorites
 };

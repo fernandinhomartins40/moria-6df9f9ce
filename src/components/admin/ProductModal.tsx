@@ -18,19 +18,23 @@ interface Product {
   category: string;
   subcategory?: string;
   price: number;
-  salePrice?: number;
-  promoPrice?: number;
+  original_price?: number;
+  sale_price?: number;
+  discount_price?: number;
+  promo_price?: number;
+  cost_price?: number;
   stock: number;
-  minStock: number;
+  min_stock: number;
   sku: string;
   supplier: string;
-  costPrice?: number;
+  image_url?: string;
   images: string[];
-  isActive: boolean;
+  is_active: boolean;
+  is_favorite?: boolean;
   specifications: Record<string, string>;
-  vehicleCompatibility: string[];
-  createdAt?: string;
-  updatedAt?: string;
+  vehicle_compatibility: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProductModalProps {
@@ -63,17 +67,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     category: '',
     subcategory: '',
     price: undefined,
-    salePrice: undefined,
-    promoPrice: undefined,
-    costPrice: undefined,
+    sale_price: undefined,
+    promo_price: undefined,
+    cost_price: undefined,
     stock: 0,
-    minStock: 5,
+    min_stock: 5,
     sku: '',
     supplier: '',
+    image_url: '',
     images: [],
-    isActive: true,
+    is_active: true,
+    is_favorite: false,
     specifications: {},
-    vehicleCompatibility: []
+    vehicle_compatibility: []
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -101,18 +107,22 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         description: product.description || '',
         category: product.category || '',
         subcategory: product.subcategory || '',
-        price: product.price || 0,
-        salePrice: product.salePrice || 0,
-        promoPrice: product.promoPrice || 0,
-        costPrice: product.costPrice || 0,
+        price: product.price || product.original_price || 0,
+        original_price: product.original_price || product.price || 0,
+        sale_price: product.sale_price || 0,
+        discount_price: product.discount_price || 0,
+        promo_price: product.promo_price || 0,
+        cost_price: product.cost_price || 0,
         stock: product.stock || 0,
-        minStock: product.minStock || 5,
+        min_stock: product.min_stock || 5,
         sku: product.sku || '',
         supplier: product.supplier || '',
+        image_url: product.image_url || '',
         images: product.images || [],
-        isActive: product.isActive !== undefined ? product.isActive : true,
+        is_active: product.is_active !== undefined ? product.is_active : true,
+        is_favorite: product.is_favorite || false,
         specifications: product.specifications || {},
-        vehicleCompatibility: product.vehicleCompatibility || []
+        vehicle_compatibility: product.vehicle_compatibility || []
       });
     } else {
       // Resetar form para novo produto
@@ -122,17 +132,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         category: '',
         subcategory: '',
         price: undefined,
-        salePrice: undefined,
-        promoPrice: undefined,
-        costPrice: undefined,
+        sale_price: undefined,
+        promo_price: undefined,
+        cost_price: undefined,
         stock: 0,
-        minStock: 5,
+        min_stock: 5,
         sku: '',
         supplier: '',
+        image_url: '',
         images: [],
-        isActive: true,
+        is_active: true,
+        is_favorite: false,
         specifications: {},
-        vehicleCompatibility: []
+        vehicle_compatibility: []
       });
     }
     setErrors({});
@@ -159,24 +171,25 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       newErrors.category = 'Categoria é obrigatória';
     }
 
-    if (!formData.price || formData.price <= 0) {
+    // Verificar se pelo menos um preço foi informado
+    if ((!formData.price || formData.price <= 0) && (!formData.original_price || formData.original_price <= 0)) {
       newErrors.price = 'Preço deve ser maior que zero';
     }
 
-    if (formData.salePrice !== undefined && formData.salePrice <= 0) {
-      newErrors.salePrice = 'Preço de venda deve ser maior que zero';
+    if (formData.sale_price !== undefined && formData.sale_price < 0) {
+      newErrors.sale_price = 'Preço de venda não pode ser negativo';
     }
 
-    if (formData.promoPrice !== undefined && formData.promoPrice <= 0) {
-      newErrors.promoPrice = 'Preço promocional deve ser maior que zero';
+    if (formData.promo_price !== undefined && formData.promo_price < 0) {
+      newErrors.promo_price = 'Preço promocional não pode ser negativo';
     }
 
     if (formData.stock !== undefined && formData.stock < 0) {
       newErrors.stock = 'Estoque não pode ser negativo';
     }
 
-    if (formData.minStock !== undefined && formData.minStock < 0) {
-      newErrors.minStock = 'Estoque mínimo não pode ser negativo';
+    if (formData.min_stock !== undefined && formData.min_stock < 0) {
+      newErrors.min_stock = 'Estoque mínimo não pode ser negativo';
     }
 
     setErrors(newErrors);
@@ -295,11 +308,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
             <div className="flex items-center space-x-2">
               <Switch
                 id="active"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                checked={formData.is_active}
+                onCheckedChange={(checked) => handleInputChange('is_active', checked)}
               />
               <Label htmlFor="active">Produto ativo</Label>
-              {formData.isActive ? (
+              {formData.is_active ? (
                 <Badge variant="outline" className="text-green-600">Ativo</Badge>
               ) : (
                 <Badge variant="outline" className="text-gray-500">Inativo</Badge>
@@ -311,14 +324,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
           <TabsContent value="pricing" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="costPrice">Preço de Custo</Label>
+                <Label htmlFor="cost_price">Preço de Custo</Label>
                 <Input
-                  id="costPrice"
+                  id="cost_price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.costPrice ?? ''}
-                  onChange={(e) => handleInputChange('costPrice', safeParseFloat(e.target.value))}
+                  value={formData.cost_price ?? ''}
+                  onChange={(e) => handleInputChange('cost_price', safeParseFloat(e.target.value))}
                   placeholder="0.00"
                 />
               </div>
@@ -346,41 +359,41 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="salePrice">Preço de Venda</Label>
+                <Label htmlFor="sale_price">Preço de Venda</Label>
                 <Input
-                  id="salePrice"
+                  id="sale_price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.salePrice ?? ''}
-                  onChange={(e) => handleInputChange('salePrice', safeParseFloat(e.target.value))}
+                  value={formData.sale_price ?? ''}
+                  onChange={(e) => handleInputChange('sale_price', safeParseFloat(e.target.value))}
                   placeholder="0.00"
-                  className={errors.salePrice ? 'border-red-500' : ''}
+                  className={errors.sale_price ? 'border-red-500' : ''}
                 />
-                {errors.salePrice && (
+                {errors.sale_price && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    {errors.salePrice}
+                    {errors.sale_price}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="promoPrice">Preço Promocional</Label>
+                <Label htmlFor="promo_price">Preço Promocional</Label>
                 <Input
-                  id="promoPrice"
+                  id="promo_price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.promoPrice ?? ''}
-                  onChange={(e) => handleInputChange('promoPrice', safeParseFloat(e.target.value))}
+                  value={formData.promo_price ?? ''}
+                  onChange={(e) => handleInputChange('promo_price', safeParseFloat(e.target.value))}
                   placeholder="0.00"
-                  className={errors.promoPrice ? 'border-red-500' : ''}
+                  className={errors.promo_price ? 'border-red-500' : ''}
                 />
-                {errors.promoPrice && (
+                {errors.promo_price && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    {errors.promoPrice}
+                    {errors.promo_price}
                   </p>
                 )}
               </div>
@@ -410,20 +423,20 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="minStock">Estoque Mínimo</Label>
+                <Label htmlFor="min_stock">Estoque Mínimo</Label>
                 <Input
-                  id="minStock"
+                  id="min_stock"
                   type="number"
                   min="0"
-                  value={formData.minStock}
-                  onChange={(e) => handleInputChange('minStock', safeParseInt(e.target.value))}
+                  value={formData.min_stock}
+                  onChange={(e) => handleInputChange('min_stock', safeParseInt(e.target.value))}
                   placeholder="5"
-                  className={errors.minStock ? 'border-red-500' : ''}
+                  className={errors.min_stock ? 'border-red-500' : ''}
                 />
-                {errors.minStock && (
+                {errors.min_stock && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    {errors.minStock}
+                    {errors.min_stock}
                   </p>
                 )}
               </div>

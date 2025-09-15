@@ -283,6 +283,13 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  async patch<T>(endpoint: string, data: any): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Utilitário para filtrar parâmetros undefined/null/empty
   private buildQueryParams(filters?: any): string {
     if (!filters) return '';
@@ -316,6 +323,10 @@ class ApiClient {
 
   async updateProduct(id: string, productData: any) {
     return this.put(`/products/${id}`, productData);
+  }
+
+  async patchProduct(id: string, productData: any) {
+    return this.patch(`/products/${id}`, productData);
   }
 
   async deleteProduct(id: string) {
