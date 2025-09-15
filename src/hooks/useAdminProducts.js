@@ -118,9 +118,6 @@ export const useAdminProducts = () => {
         category: productData.category,
         subcategory: productData.subcategory || '',
         price: parseFloat(productData.price), // Este campo é obrigatório, então manter parseFloat
-        sale_price: safeParseFloat(productData.salePrice),
-        promo_price: safeParseFloat(productData.promoPrice),
-        cost_price: safeParseFloat(productData.costPrice),
         stock: safeParseInt(productData.stock, 0),
         min_stock: safeParseInt(productData.minStock, 5),
         sku: productData.sku || '',
@@ -130,6 +127,16 @@ export const useAdminProducts = () => {
         specifications: productData.specifications || {},
         vehicle_compatibility: productData.vehicleCompatibility || []
       };
+
+      // Adicionar campos opcionais apenas se não forem null
+      const salePrice = safeParseFloat(productData.salePrice);
+      if (salePrice !== null) apiData.sale_price = salePrice;
+
+      const promoPrice = safeParseFloat(productData.promoPrice);
+      if (promoPrice !== null) apiData.promo_price = promoPrice;
+
+      const costPrice = safeParseFloat(productData.costPrice);
+      if (costPrice !== null) apiData.cost_price = costPrice;
 
       const response = await apiClient.createProduct(apiData);
 
@@ -221,9 +228,18 @@ export const useAdminProducts = () => {
         const price = safeParseFloat(productData.price);
         if (price !== null && price > 0) apiData.price = price;
       }
-      if (productData.salePrice !== undefined) apiData.sale_price = safeParseFloat(productData.salePrice);
-      if (productData.promoPrice !== undefined) apiData.promo_price = safeParseFloat(productData.promoPrice);
-      if (productData.costPrice !== undefined) apiData.cost_price = safeParseFloat(productData.costPrice);
+      if (productData.salePrice !== undefined) {
+        const salePrice = safeParseFloat(productData.salePrice);
+        if (salePrice !== null) apiData.sale_price = salePrice;
+      }
+      if (productData.promoPrice !== undefined) {
+        const promoPrice = safeParseFloat(productData.promoPrice);
+        if (promoPrice !== null) apiData.promo_price = promoPrice;
+      }
+      if (productData.costPrice !== undefined) {
+        const costPrice = safeParseFloat(productData.costPrice);
+        if (costPrice !== null) apiData.cost_price = costPrice;
+      }
       if (productData.stock !== undefined) apiData.stock = safeParseInt(productData.stock, 0);
       if (productData.minStock !== undefined) apiData.min_stock = safeParseInt(productData.minStock, 5);
       if (productData.sku !== undefined) apiData.sku = productData.sku || '';
