@@ -245,13 +245,17 @@ export function ImageUpload({
   // Processar imagem com crop
   const processImageWithCrop = async (imageId: string, tempPath: string, cropData: CropData) => {
     try {
+      console.log('🔄 Iniciando processamento com crop:', { imageId, tempPath, cropData });
+
       setImages(prev => prev.map(img =>
         img.id === imageId
           ? { ...img, status: 'processing', progress: 75 }
           : img
       ));
 
+      console.log('📤 Chamando processImageAPI...');
       const processResult = await processImageAPI(tempPath, cropData);
+      console.log('✅ processImageAPI sucesso:', processResult);
 
       setImages(prev => {
         const updated = prev.map(img =>
@@ -269,7 +273,13 @@ export function ImageUpload({
       });
 
     } catch (error) {
-      console.error('Erro no processamento com crop:', error);
+      console.error('❌ Erro no processamento com crop:', error);
+      console.error('❌ Detalhes do erro:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        error
+      });
+
       setImages(prev => {
         const updated = prev.map(img =>
           img.id === imageId
