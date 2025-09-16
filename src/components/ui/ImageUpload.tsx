@@ -87,6 +87,63 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     onImagesChangeRef.current(images);
   }, [images]);
 
+  // Processar imagens realmente no backend (chamado quando salvar produto)
+  const processImagesForSaving = useCallback(async (): Promise<UploadedImage[]> => {
+    const imagesToProcess = images.filter(img =>
+      (img.status === 'cropped' || img.status === 'ready') && img.file
+    );
+
+    const processedImages: UploadedImage[] = [];
+
+    for (const image of imagesToProcess) {
+      try {
+        // Marcar como processando
+        setImages(prev => prev.map(img =>
+          img.id === image.id
+            ? { ...img, status: 'processing', progress: 50 }
+            : img
+        ));
+
+        // Fazer upload da imagem original
+        const uploadResult = await uploadToAPI(image.file!);
+
+        // Processar com crop se tiver cropData, senão processar direto
+        const processResult = await processImageAPI(
+          uploadResult.data.tempPath,
+          image.cropData
+        );
+
+        // Atualizar com URLs processadas
+        const processedImage: UploadedImage = {
+          ...image,
+          status: 'ready',
+          progress: 100,
+          processedUrls: processResult.data.urls,
+          metadata: uploadResult.data.metadata
+        };
+
+        setImages(prev => prev.map(img =>
+          img.id === image.id ? processedImage : img
+        ));
+
+        processedImages.push(processedImage);
+
+      } catch (error) {
+        setImages(prev => prev.map(img =>
+          img.id === image.id
+            ? {
+                ...img,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento'
+              }
+            : img
+        ));
+      }
+    }
+
+    return processedImages;
+  }, [images]);
+
   // Expor funções para o componente pai
   useImperativeHandle(ref, () => ({
     processImagesForSaving
@@ -435,63 +492,6 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     setCropImage(imageForCrop);
   };
 
-  // Processar imagens realmente no backend (chamado quando salvar produto)
-  const processImagesForSaving = async (): Promise<UploadedImage[]> => {
-    const imagesToProcess = images.filter(img =>
-      (img.status === 'cropped' || img.status === 'ready') && img.file
-    );
-
-    const processedImages: UploadedImage[] = [];
-
-    for (const image of imagesToProcess) {
-      try {
-        // Marcar como processando
-        setImages(prev => prev.map(img =>
-          img.id === image.id
-            ? { ...img, status: 'processing', progress: 50 }
-            : img
-        ));
-
-        // Fazer upload da imagem original
-        const uploadResult = await uploadToAPI(image.file!);
-
-        // Processar com crop se tiver cropData, senão processar direto
-        const processResult = await processImageAPI(
-          uploadResult.data.tempPath,
-          image.cropData
-        );
-
-        // Atualizar com URLs processadas
-        const processedImage: UploadedImage = {
-          ...image,
-          status: 'ready',
-          progress: 100,
-          processedUrls: processResult.data.urls,
-          metadata: uploadResult.data.metadata
-        };
-
-        setImages(prev => prev.map(img =>
-          img.id === image.id ? processedImage : img
-        ));
-
-        processedImages.push(processedImage);
-
-      } catch (error) {
-        setImages(prev => prev.map(img =>
-          img.id === image.id
-            ? {
-                ...img,
-                status: 'error',
-                error: error instanceof Error ? error.message : 'Erro no processamento'
-              }
-            : img
-        ));
-      }
-    }
-
-    return processedImages;
-  };
-
   // Drag & Drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -719,3 +719,5 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     </div>
   );
 });
+
+ImageUpload.displayName = 'ImageUpload';
