@@ -39,6 +39,11 @@ router.get('/coupons/active',
   PromotionController.getActiveCoupons
 );
 
+// Listar todos os cupons (públicos) - diferente da rota admin
+router.get('/coupons/',
+  PromotionController.getActiveCoupons
+);
+
 // Listar promoções (rota pública para parâmetros active=true)
 router.get('/',
   PromotionController.getPromotions
@@ -72,28 +77,28 @@ router.delete('/:id',
 
 // === CUPONS (Admin) ===
 
-// Listar todos os cupons
-router.get('/coupons/',
+// Listar todos os cupons (admin)
+router.get('/admin/coupons/',
   PromotionController.getCoupons
 );
 
-// Obter cupom por ID
-router.get('/coupons/:id',
+// Obter cupom por ID (admin)
+router.get('/admin/coupons/:id',
   PromotionController.getCouponById
 );
 
-// Criar cupom
-router.post('/coupons/',
+// Criar cupom (admin)
+router.post('/admin/coupons/',
   PromotionController.createCoupon
 );
 
-// Atualizar cupom
-router.put('/coupons/:id',
+// Atualizar cupom (admin)
+router.put('/admin/coupons/:id',
   PromotionController.updateCoupon
 );
 
-// Deletar cupom
-router.delete('/coupons/:id',
+// Deletar cupom (admin)
+router.delete('/admin/coupons/:id',
   PromotionController.deleteCoupon
 );
 
