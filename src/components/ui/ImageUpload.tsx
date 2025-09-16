@@ -70,6 +70,11 @@ export function ImageUpload({
     setImages(initialImages);
   }, [initialImages]);
 
+  // Notificar mudanças sempre que images mudar
+  useEffect(() => {
+    onImagesChange(images);
+  }, [images, onImagesChange]);
+
   // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
     // Usar o método uploadFile correto do apiClient
@@ -190,9 +195,6 @@ export function ImageUpload({
         }
       }
     }
-
-    // Notificar mudanças
-    onImagesChange(images);
   }, [images, maxImages, aspectRatio, disabled, onImagesChange]);
 
   // Processar imagem diretamente (sem crop)
@@ -218,8 +220,6 @@ export function ImageUpload({
             : img
         );
 
-        // Notificar mudanças após atualizar
-        onImagesChange(updated);
         return updated;
       });
 
@@ -236,8 +236,6 @@ export function ImageUpload({
             : img
         );
 
-        // Notificar mudanças mesmo em caso de erro
-        onImagesChange(updated);
         return updated;
       });
     }
@@ -266,8 +264,6 @@ export function ImageUpload({
             : img
         );
 
-        // Notificar mudanças após atualizar
-        onImagesChange(updated);
         return updated;
       });
 
@@ -284,8 +280,6 @@ export function ImageUpload({
             : img
         );
 
-        // Notificar mudanças mesmo em caso de erro
-        onImagesChange(updated);
         return updated;
       });
     }
@@ -334,8 +328,6 @@ export function ImageUpload({
             : img
         );
 
-        // Notificar mudanças mesmo em caso de erro
-        onImagesChange(updated);
         return updated;
       });
     }
@@ -353,12 +345,7 @@ export function ImageUpload({
 
   // Remover imagem
   const removeImage = (imageId: string) => {
-    setImages(prev => {
-      const updated = prev.filter(img => img.id !== imageId);
-      // Notificar mudanças sempre
-      onImagesChange(updated);
-      return updated;
-    });
+    setImages(prev => prev.filter(img => img.id !== imageId));
   };
 
   // Abrir cropper para edição
