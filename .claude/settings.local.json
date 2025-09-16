@@ -7,7 +7,16 @@
       "Bash(npm cache clean:*)",
       "Bash(git add:*)",
       "Bash(git push:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(ssh:*)",
+      "Bash(tar:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint)",
+      "Bash(npm start)",
+      "Bash(sqlite3:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

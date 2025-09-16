@@ -134,6 +134,8 @@ export function ImageUpload({
     for (const newImage of newImages) {
       // Se tem aspect ratio definido, abrir cropper IMEDIATAMENTE
       if (aspectRatio !== null) {
+        console.log('Abrindo cropper para imagem:', newImage.id, 'aspectRatio:', aspectRatio);
+
         // Marcar como esperando crop
         setImages(prev => prev.map(img =>
           img.id === newImage.id
@@ -146,6 +148,7 @@ export function ImageUpload({
         ));
 
         // Abrir cropper com a imagem local (blob URL)
+        console.log('Definindo cropImage:', newImage);
         setCropImage(newImage);
 
         // Não processar agora - vai processar apenas quando o usuário aplicar o crop
@@ -415,7 +418,12 @@ export function ImageUpload({
   };
 
   // Se estamos no modo crop
+  console.log('Verificando cropImage:', cropImage);
   if (cropImage) {
+    console.log('Renderizando ImageCropper com:', {
+      imageUrl: cropImage.tempUrl,
+      aspectRatio
+    });
     return (
       <ImageCropper
         imageUrl={cropImage.tempUrl!}

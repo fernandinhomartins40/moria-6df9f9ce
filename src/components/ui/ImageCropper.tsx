@@ -54,11 +54,19 @@ export function ImageCropper({
     }
 
     img.onload = () => {
-      const container = containerRef.current;
-      if (!container) return;
+      console.log('Imagem carregada no cropper:', imageUrl);
 
-      const containerWidth = Math.min(maxWidth, container.clientWidth);
-      const containerHeight = Math.min(maxHeight, container.clientHeight);
+      // Usar dimensões padrão se container não estiver disponível
+      let containerWidth = maxWidth || 800;
+      let containerHeight = maxHeight || 600;
+
+      const container = containerRef.current;
+      if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+        containerWidth = Math.min(maxWidth, container.clientWidth);
+        containerHeight = Math.min(maxHeight, container.clientHeight);
+      }
+
+      console.log('Dimensões do container:', { containerWidth, containerHeight });
 
       // Calcular tamanho para caber no container
       const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -73,6 +81,8 @@ export function ImageCropper({
         displayWidth = containerHeight * imgAspect;
       }
 
+      console.log('Dimensões calculadas:', { displayWidth, displayHeight });
+
       setImageSize({
         width: displayWidth,
         height: displayHeight
@@ -81,6 +91,13 @@ export function ImageCropper({
       // Centralizar crop inicial
       const initialCropSize = Math.min(displayWidth, displayHeight) * 0.6;
       setCropArea({
+        x: (displayWidth - initialCropSize) / 2,
+        y: (displayHeight - initialCropSize) / 2,
+        width: initialCropSize,
+        height: aspectRatio ? initialCropSize : initialCropSize
+      });
+
+      console.log('Crop inicial:', {
         x: (displayWidth - initialCropSize) / 2,
         y: (displayHeight - initialCropSize) / 2,
         width: initialCropSize,
