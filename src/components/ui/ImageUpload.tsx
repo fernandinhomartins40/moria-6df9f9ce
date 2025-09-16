@@ -149,11 +149,12 @@ export function ImageUpload({
             : img
         ));
 
-        // Abrir cropper com a imagem local (blob URL)
+        // Abrir cropper com a imagem local (blob URL) - APENAS UMA POR VEZ
         console.log('Definindo cropImage:', newImage);
         setCropImage(newImage);
 
-        // Não processar agora - vai processar apenas quando o usuário aplicar o crop
+        // Parar o loop aqui - processar apenas uma imagem por vez
+        break;
       } else {
         // Sem crop - processar diretamente
         try {
@@ -333,6 +334,9 @@ export function ImageUpload({
     }
 
     setCropImage(null);
+
+    // Processar próxima imagem pendente se houver
+    processNextPendingImage();
   };
 
   // Cancelar crop
@@ -341,6 +345,18 @@ export function ImageUpload({
       setImages(prev => prev.filter(img => img.id !== cropImage.id));
     }
     setCropImage(null);
+
+    // Processar próxima imagem pendente se houver
+    processNextPendingImage();
+  };
+
+  // Processar próxima imagem com status awaiting-crop
+  const processNextPendingImage = () => {
+    const nextImage = images.find(img => img.status === 'awaiting-crop' && img.id !== cropImage?.id);
+    if (nextImage && aspectRatio !== null) {
+      console.log('Processando próxima imagem pendente:', nextImage.id);
+      setCropImage(nextImage);
+    }
   };
 
   // Remover imagem
