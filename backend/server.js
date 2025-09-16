@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const dotenv = require('dotenv');
+const path = require('path');
 const { testConnection, ensureDatabaseSetup, closeDatabase } = require('./src/database.js');
 
 // Carregar variáveis de ambiente
@@ -240,6 +241,10 @@ const serviceRoutes = require('./src/routes/services.js');
 const orderRoutes = require('./src/routes/orders.js');
 const promotionRoutes = require('./src/routes/promotions.js');
 const settingRoutes = require('./src/routes/settings.js');
+const imageRoutes = require('./src/routes/images.js');
+
+// Servir arquivos estáticos (uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Registrar rotas
 app.use('/api/auth', authRoutes);
@@ -248,6 +253,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/images', imageRoutes);
 
 // Rotas específicas
 app.get('/api/company-info', (req, res, next) => {

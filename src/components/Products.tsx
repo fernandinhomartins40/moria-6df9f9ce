@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { ProductImageGallery } from "./ui/ProductImageGallery";
 import { Star, Plus, Heart } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts.js";
@@ -13,6 +14,7 @@ interface Product {
   price: number;
   originalPrice?: number;
   image: string;
+  images?: string[];
   rating: number;
   inStock: boolean;
   discount?: number;
@@ -93,15 +95,28 @@ export function Products() {
           {filteredProducts.map((product) => (
             <Card key={product.id} className="product-hover overflow-hidden">
               <div className="relative">
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-48 object-cover"
-                />
-                
+                {/* Usar galeria se há múltiplas imagens, senão imagem simples */}
+                {product.images && product.images.length > 1 ? (
+                  <ProductImageGallery
+                    images={product.images}
+                    productName={product.name}
+                    aspectRatio="square"
+                    thumbnailSize="sm"
+                    enableZoom={false}
+                    enableFullscreen={true}
+                    className="h-48"
+                  />
+                ) : (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+
                 {/* Discount Badge */}
                 {product.discount && (
-                  <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold">
+                  <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold z-10">
                     -{product.discount}%
                   </Badge>
                 )}
@@ -110,21 +125,21 @@ export function Products() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white z-10"
                   onClick={() => toggleFavorite(product.id)}
                 >
-                  <Heart 
+                  <Heart
                     className={`h-4 w-4 ${
-                      favorites.includes(product.id) 
-                        ? 'text-red-500 fill-red-500' 
+                      favorites.includes(product.id)
+                        ? 'text-red-500 fill-red-500'
                         : 'text-gray-600'
-                    }`} 
+                    }`}
                   />
                 </Button>
 
                 {/* Stock Status */}
                 {!product.inStock && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
                     <span className="text-white font-bold">Esgotado</span>
                   </div>
                 )}

@@ -9,7 +9,8 @@ import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings } from 'lucide-react';
+import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images } from 'lucide-react';
+import { ImageUpload } from '../ui/ImageUpload';
 
 interface Product {
   id?: string;
@@ -82,6 +83,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     vehicle_compatibility: []
   });
 
+  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -148,6 +150,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       });
     }
     setErrors({});
+    setUploadedImages([]);
     setActiveTab('basic');
   }, [product, isOpen]);
 
@@ -202,7 +205,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     }
 
     try {
-      await onSave(formData);
+      // Processar imagens prontas para inclusão no produto
+      const imageUrls = uploadedImages
+        .filter(img => img.status === 'ready' && img.processedUrls)
+        .map(img => img.processedUrls.full);
+
+      // Usar a primeira imagem como image_url principal
+      const productData = {
+        ...formData,
+        images: imageUrls,
+        image_url: imageUrls[0] || formData.image_url || ''
+      };
+
+      await onSave(productData);
       onClose();
     } catch (error) {
       // Erro já tratado no hook
@@ -229,10 +244,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Básico
+            </TabsTrigger>
+            <TabsTrigger value="images" className="flex items-center gap-2">
+              <Images className="h-4 w-4" />
+              Imagens
             </TabsTrigger>
             <TabsTrigger value="pricing" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
@@ -317,6 +336,26 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               ) : (
                 <Badge variant="outline" className="text-gray-500">Inativo</Badge>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Aba Imagens */}
+          <TabsContent value="images" className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Galeria de Imagens</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Adicione até 10 imagens do produto. A primeira imagem será usada como principal.
+                </p>
+              </div>
+
+              <ImageUpload
+                onImagesChange={setUploadedImages}
+                maxImages={10}
+                aspectRatio={1} // Forçar proporção 1:1 para produtos
+                className="w-full"
+                disabled={loading}
+              />
             </div>
           </TabsContent>
 

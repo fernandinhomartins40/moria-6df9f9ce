@@ -54,9 +54,10 @@ export const useProducts = (initialFilters = {}) => {
           price: product.salePrice || product.price,
           originalPrice: product.promoPrice ? product.salePrice : null,
           image: product.images?.[0] || "/api/placeholder/300/300",
+          images: product.images && product.images.length > 0 ? product.images : [product.images?.[0] || "/api/placeholder/300/300"],
           rating: 4.5, // Valor padrão até implementarmos reviews
           inStock: product.stock > 0,
-          discount: product.promoPrice 
+          discount: product.promoPrice
             ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
             : null,
           description: product.description,
@@ -89,9 +90,10 @@ export const useProducts = (initialFilters = {}) => {
           price: product.salePrice || product.price,
           originalPrice: product.promoPrice ? product.salePrice : null,
           image: product.images?.[0] || "/api/placeholder/300/300",
+          images: product.images && product.images.length > 0 ? product.images : [product.images?.[0] || "/api/placeholder/300/300"],
           rating: 4.5,
           inStock: product.stock > 0,
-          discount: product.promoPrice 
+          discount: product.promoPrice
             ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
             : null,
           description: product.description,
