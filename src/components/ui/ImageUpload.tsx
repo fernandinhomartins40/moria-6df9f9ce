@@ -65,17 +65,8 @@ export function ImageUpload({
 
   // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    // Usar apiClient.request diretamente para uploads com FormData
-    const result = await apiClient.request('/images/upload', {
-      method: 'POST',
-      headers: {
-        // Não definir Content-Type para FormData - o browser define automaticamente
-      },
-      body: formData
-    });
+    // Usar o método uploadFile correto do apiClient
+    const result = await apiClient.uploadFile('images/upload', file);
 
     if (!result.success) {
       throw new Error(result.message || 'Erro no upload');

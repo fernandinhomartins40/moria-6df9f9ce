@@ -314,7 +314,7 @@ class ApiClient {
     }
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
 
     if (additionalData) {
       Object.keys(additionalData).forEach(key => {
