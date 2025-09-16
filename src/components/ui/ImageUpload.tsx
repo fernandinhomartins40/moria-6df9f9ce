@@ -316,6 +316,10 @@ export function ImageUpload({
       // Terceiro: aplicar crop e processar
       await processImageWithCrop(cropImage.id, uploadResult.data.tempPath, cropData);
 
+      // Só limpar e processar próxima após sucesso completo
+      setCropImage(null);
+      processNextPendingImage();
+
     } catch (error) {
       console.error('Erro no crop completo:', error);
       setImages(prev => {
@@ -331,12 +335,11 @@ export function ImageUpload({
 
         return updated;
       });
+
+      // Limpar e processar próxima mesmo em caso de erro
+      setCropImage(null);
+      processNextPendingImage();
     }
-
-    setCropImage(null);
-
-    // Processar próxima imagem pendente se houver
-    processNextPendingImage();
   };
 
   // Cancelar crop
