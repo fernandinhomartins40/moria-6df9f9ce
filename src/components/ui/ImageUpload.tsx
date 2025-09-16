@@ -90,7 +90,7 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
   // Expor funções para o componente pai
   useImperativeHandle(ref, () => ({
     processImagesForSaving
-  }), []);
+  }), [processImagesForSaving]);
 
   // Gerar prévia local da imagem cropada usando canvas
   const generateCroppedPreview = (imageElement: HTMLImageElement, cropData: CropData): Promise<string> => {
@@ -172,20 +172,24 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 
     if (validFiles.length === 0) return;
 
-    // Limitar quantidade
-    const availableSlots = maxImages - images.length;
-    const filesToProcess = validFiles.slice(0, availableSlots);
+    // Criar entradas para as imagens e limitar quantidade
+    const newImages: UploadedImage[] = [];
 
-    // Criar entradas para as imagens
-    const newImages: UploadedImage[] = filesToProcess.map(file => ({
-      id: `temp-${Date.now()}-${Math.random()}`,
-      file,
-      tempUrl: URL.createObjectURL(file),
-      status: 'uploading',
-      progress: 0
-    }));
+    setImages(prev => {
+      const availableSlots = maxImages - prev.length;
+      const filesToProcess = validFiles.slice(0, availableSlots);
 
-    setImages(prev => [...prev, ...newImages]);
+      const imagesToAdd = filesToProcess.map(file => ({
+        id: `temp-${Date.now()}-${Math.random()}`,
+        file,
+        tempUrl: URL.createObjectURL(file),
+        status: 'uploading' as const,
+        progress: 0
+      }));
+
+      newImages.push(...imagesToAdd);
+      return [...prev, ...imagesToAdd];
+    });
 
     // Processar cada arquivo - NOVO FLUXO CORRETO
     for (const newImage of newImages) {
@@ -221,7 +225,7 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
         ));
       }
     }
-  }, [images, maxImages, aspectRatio, disabled, onImagesChange]);
+  }, [maxImages, aspectRatio, disabled]);
 
   // Processar imagem diretamente (sem crop)
   const processImageDirect = async (imageId: string, tempPath: string) => {
