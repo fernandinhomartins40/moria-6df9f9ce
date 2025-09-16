@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,7 +10,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images } from 'lucide-react';
-import { ImageUpload } from '../ui/ImageUpload';
+import { ImageUpload, ImageUploadRef } from '../ui/ImageUpload';
 
 interface Product {
   id?: string;
@@ -97,6 +97,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const imageUploadRef = useRef<ImageUploadRef>(null);
   const [activeTab, setActiveTab] = useState('basic');
 
   // Funções auxiliares para conversão segura de números
@@ -240,19 +241,18 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     }
 
     try {
-      // Processar imagens prontas para inclusão no produto
-      console.log('🔍 DEBUG - uploadedImages no save:', uploadedImages);
+      // Processar imagens realmente no backend (crop + upload)
+      let processedImages: any[] = [];
 
-      const readyImages = uploadedImages.filter(img => img.status === 'ready' && img.processedUrls);
-      console.log('🔍 DEBUG - imagens prontas:', readyImages);
+      if (imageUploadRef.current) {
+        processedImages = await imageUploadRef.current.processImagesForSaving();
+      }
 
       // Preservar estrutura completa das URLs (thumbnail, medium, full)
-      const imageStructures = readyImages.map(img => img.processedUrls).filter(Boolean);
-      console.log('🔍 DEBUG - Estruturas completas:', imageStructures);
+      const imageStructures = processedImages.map(img => img.processedUrls).filter(Boolean);
 
       // Para compatibilidade, extrair thumbnails para image_url
       const thumbnailUrls = imageStructures.map(urls => urls?.thumbnail).filter(Boolean);
-      console.log('🔍 DEBUG - Thumbnails extraídos:', thumbnailUrls);
 
       // Usar a primeira imagem como image_url principal
       const productData = {
@@ -264,7 +264,6 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       await onSave(productData);
       onClose();
     } catch (error) {
-      // Erro já tratado no hook
       console.error('Erro ao salvar produto:', error);
     }
   };
@@ -394,8 +393,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
 
               <ImageUpload
+                ref={imageUploadRef}
                 onImagesChange={(images) => {
-                  console.log('🔍 DEBUG - ImageUpload mudança:', images);
                   setUploadedImages(images);
                 }}
                 maxImages={10}

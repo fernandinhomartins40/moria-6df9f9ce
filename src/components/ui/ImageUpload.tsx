@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Button } from './button';
 import { Card, CardContent } from './card';
 import { Badge } from './badge';
@@ -20,6 +20,8 @@ interface UploadedImage {
   id: string;
   file?: File;
   tempUrl?: string;
+  previewUrl?: string; // URL da prévia local após crop
+  cropData?: CropData; // Dados do crop para processar depois
   processedUrls?: {
     thumbnail: string;
     medium: string;
@@ -31,7 +33,7 @@ interface UploadedImage {
     format: string;
     size: number;
   };
-  status: 'uploading' | 'uploaded' | 'awaiting-crop' | 'processing' | 'ready' | 'error';
+  status: 'uploading' | 'uploaded' | 'awaiting-crop' | 'cropped' | 'processing' | 'ready' | 'error';
   progress: number;
   error?: string;
 }
@@ -52,14 +54,18 @@ interface ImageUploadProps {
   initialImages?: UploadedImage[];
 }
 
-export function ImageUpload({
+export interface ImageUploadRef {
+  processImagesForSaving: () => Promise<UploadedImage[]>;
+}
+
+export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
   onImagesChange,
   maxImages = 10,
   aspectRatio = null,
   className = '',
   disabled = false,
   initialImages = []
-}: ImageUploadProps) {
+}, ref) => {
   const [images, setImages] = useState<UploadedImage[]>(initialImages);
   const [dragOver, setDragOver] = useState(false);
   const [cropImage, setCropImage] = useState<UploadedImage | null>(null);
@@ -80,6 +86,49 @@ export function ImageUpload({
   useEffect(() => {
     onImagesChangeRef.current(images);
   }, [images]);
+
+  // Expor funções para o componente pai
+  useImperativeHandle(ref, () => ({
+    processImagesForSaving
+  }), []);
+
+  // Gerar prévia local da imagem cropada usando canvas
+  const generateCroppedPreview = (imageElement: HTMLImageElement, cropData: CropData): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Não foi possível criar contexto do canvas'));
+          return;
+        }
+
+        // Definir tamanho do canvas como o tamanho do crop
+        canvas.width = cropData.width;
+        canvas.height = cropData.height;
+
+        // Desenhar a porção cropada da imagem
+        ctx.drawImage(
+          imageElement,
+          cropData.x, cropData.y, cropData.width, cropData.height, // fonte
+          0, 0, cropData.width, cropData.height // destino
+        );
+
+        // Converter canvas para blob URL
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const previewUrl = URL.createObjectURL(blob);
+            resolve(previewUrl);
+          } else {
+            reject(new Error('Falha ao gerar blob do canvas'));
+          }
+        }, 'image/jpeg', 0.9);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
 
   // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
@@ -142,8 +191,6 @@ export function ImageUpload({
     for (const newImage of newImages) {
       // Se tem aspect ratio definido, abrir cropper IMEDIATAMENTE
       if (aspectRatio !== null) {
-        console.log('Abrindo cropper para imagem:', newImage.id, 'aspectRatio:', aspectRatio);
-
         // Marcar como esperando crop
         setImages(prev => prev.map(img =>
           img.id === newImage.id
@@ -156,50 +203,22 @@ export function ImageUpload({
         ));
 
         // Abrir cropper com a imagem local (blob URL) - APENAS UMA POR VEZ
-        console.log('Definindo cropImage:', newImage);
         setCropImage(newImage);
 
         // Parar o loop aqui - processar apenas uma imagem por vez
         break;
       } else {
-        // Sem crop - processar diretamente
-        try {
-          // Fazer upload
-          setImages(prev => prev.map(img =>
-            img.id === newImage.id
-              ? { ...img, progress: 25 }
-              : img
-          ));
-
-          const uploadResult = await uploadToAPI(newImage.file!);
-
-          setImages(prev => prev.map(img =>
-            img.id === newImage.id
-              ? {
-                  ...img,
-                  status: 'uploaded',
-                  progress: 50,
-                  tempUrl: uploadResult.data.tempPath,
-                  metadata: uploadResult.data.metadata
-                }
-              : img
-          ));
-
-          // Processar diretamente sem crop
-          await processImageDirect(newImage.id, uploadResult.data.tempPath);
-
-        } catch (error) {
-          console.error('Erro no upload:', error);
-          setImages(prev => prev.map(img =>
-            img.id === newImage.id
-              ? {
-                  ...img,
-                  status: 'error',
-                  error: error instanceof Error ? error.message : 'Erro no upload'
-                }
-              : img
-          ));
-        }
+        // Sem crop - marcar como pronto para usar tempUrl
+        setImages(prev => prev.map(img =>
+          img.id === newImage.id
+            ? {
+                ...img,
+                status: 'ready',
+                progress: 100,
+                previewUrl: img.tempUrl // Usar a própria imagem como prévia
+              }
+            : img
+        ));
       }
     }
   }, [images, maxImages, aspectRatio, disabled, onImagesChange]);
@@ -251,17 +270,13 @@ export function ImageUpload({
   // Processar imagem com crop
   const processImageWithCrop = async (imageId: string, tempPath: string, cropData: CropData) => {
     try {
-      console.log('🔄 Iniciando processamento com crop:', { imageId, tempPath, cropData });
-
       setImages(prev => prev.map(img =>
         img.id === imageId
           ? { ...img, status: 'processing', progress: 75 }
           : img
       ));
 
-      console.log('📤 Chamando processImageAPI...');
       const processResult = await processImageAPI(tempPath, cropData);
-      console.log('✅ processImageAPI sucesso:', processResult);
 
       setImages(prev => {
         const updated = prev.map(img =>
@@ -279,13 +294,6 @@ export function ImageUpload({
       });
 
     } catch (error) {
-      console.error('❌ Erro no processamento com crop:', error);
-      console.error('❌ Detalhes do erro:', {
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        error
-      });
-
       setImages(prev => {
         const updated = prev.map(img =>
           img.id === imageId
@@ -302,80 +310,116 @@ export function ImageUpload({
     }
   };
 
-  // Finalizar crop
+  // Finalizar crop - NOVO FLUXO: apenas gerar prévia local
   const handleCropComplete = async (cropData: CropData) => {
-    if (!cropImage || !cropImage.file) return;
+    if (!cropImage || !cropImage.tempUrl) {
+      return;
+    }
+
+    const currentCropImageId = cropImage.id;
 
     try {
-      // Primeiro: fazer upload da imagem original
-      setImages(prev => prev.map(img =>
-        img.id === cropImage.id
-          ? { ...img, status: 'uploading', progress: 25 }
-          : img
-      ));
+      // Carregar imagem para gerar prévia
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          // Gerar prévia local da imagem cropada
+          const previewUrl = await generateCroppedPreview(img, cropData);
 
-      const uploadResult = await uploadToAPI(cropImage.file);
+          // Marcar como cropada com prévia local
+          setImages(prev => prev.map(image =>
+            image.id === currentCropImageId
+              ? {
+                  ...image,
+                  status: 'cropped',
+                  progress: 100,
+                  previewUrl,
+                  cropData // Salvar dados do crop para processar depois
+                }
+              : image
+          ));
 
-      // Segundo: processar com crop usando o tempPath do servidor
-      setImages(prev => prev.map(img =>
-        img.id === cropImage.id
-          ? {
-              ...img,
-              status: 'uploaded',
-              progress: 50,
-              tempUrl: uploadResult.data.tempPath,
-              metadata: uploadResult.data.metadata
-            }
-          : img
-      ));
+          // Limpar cropper
+          setCropImage(null);
 
-      // Terceiro: aplicar crop e processar
-      await processImageWithCrop(cropImage.id, uploadResult.data.tempPath, cropData);
+          // Processar próxima imagem se houver
+          setTimeout(() => {
+            setImages(currentImages => {
+              const nextImage = currentImages.find(img =>
+                img.status === 'awaiting-crop' &&
+                img.id !== currentCropImageId
+              );
+              if (nextImage && aspectRatio !== null) {
+                setCropImage(nextImage);
+              }
+              return currentImages;
+            });
+          }, 100);
+        } catch (error) {
+          setImages(prev => prev.map(image =>
+            image.id === currentCropImageId
+              ? {
+                  ...image,
+                  status: 'error',
+                  error: 'Erro ao gerar prévia da imagem'
+                }
+              : image
+          ));
+          setCropImage(null);
+        }
+      };
 
-      // Só limpar e processar próxima após sucesso completo
-      setCropImage(null);
-      processNextPendingImage();
+      img.onerror = () => {
+        setImages(prev => prev.map(image =>
+          image.id === currentCropImageId
+            ? {
+                ...image,
+                status: 'error',
+                error: 'Erro ao carregar imagem para crop'
+              }
+            : image
+        ));
+        setCropImage(null);
+      };
+
+      img.src = cropImage.tempUrl;
 
     } catch (error) {
-      console.error('Erro no crop completo:', error);
-      setImages(prev => {
-        const updated = prev.map(img =>
-          img.id === cropImage.id
-            ? {
-                ...img,
-                status: 'error',
-                error: error instanceof Error ? error.message : 'Erro no processamento'
-              }
-            : img
-        );
-
-        return updated;
-      });
-
-      // Limpar e processar próxima mesmo em caso de erro
+      setImages(prev => prev.map(image =>
+        image.id === currentCropImageId
+          ? {
+              ...image,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Erro no crop'
+            }
+          : image
+      ));
       setCropImage(null);
-      processNextPendingImage();
     }
   };
 
   // Cancelar crop
   const handleCropCancel = () => {
+    const currentCropImageId = cropImage?.id;
+
     if (cropImage) {
       setImages(prev => prev.filter(img => img.id !== cropImage.id));
     }
     setCropImage(null);
 
-    // Processar próxima imagem pendente se houver
-    processNextPendingImage();
-  };
-
-  // Processar próxima imagem com status awaiting-crop
-  const processNextPendingImage = () => {
-    const nextImage = images.find(img => img.status === 'awaiting-crop' && img.id !== cropImage?.id);
-    if (nextImage && aspectRatio !== null) {
-      console.log('Processando próxima imagem pendente:', nextImage.id);
-      setCropImage(nextImage);
-    }
+    // Aguardar um tick do React antes de processar próxima
+    setTimeout(() => {
+      setImages(currentImages => {
+        const nextImage = currentImages.find(img =>
+          img.status === 'awaiting-crop' &&
+          img.id !== currentCropImageId
+        );
+        if (nextImage && aspectRatio !== null) {
+          setCropImage(nextImage);
+        }
+        return currentImages;
+      });
+    }, 100);
   };
 
   // Remover imagem
@@ -391,6 +435,63 @@ export function ImageUpload({
       tempUrl: image.tempUrl || (image.processedUrls?.full)
     };
     setCropImage(imageForCrop);
+  };
+
+  // Processar imagens realmente no backend (chamado quando salvar produto)
+  const processImagesForSaving = async (): Promise<UploadedImage[]> => {
+    const imagesToProcess = images.filter(img =>
+      (img.status === 'cropped' || img.status === 'ready') && img.file
+    );
+
+    const processedImages: UploadedImage[] = [];
+
+    for (const image of imagesToProcess) {
+      try {
+        // Marcar como processando
+        setImages(prev => prev.map(img =>
+          img.id === image.id
+            ? { ...img, status: 'processing', progress: 50 }
+            : img
+        ));
+
+        // Fazer upload da imagem original
+        const uploadResult = await uploadToAPI(image.file!);
+
+        // Processar com crop se tiver cropData, senão processar direto
+        const processResult = await processImageAPI(
+          uploadResult.data.tempPath,
+          image.cropData
+        );
+
+        // Atualizar com URLs processadas
+        const processedImage: UploadedImage = {
+          ...image,
+          status: 'ready',
+          progress: 100,
+          processedUrls: processResult.data.urls,
+          metadata: uploadResult.data.metadata
+        };
+
+        setImages(prev => prev.map(img =>
+          img.id === image.id ? processedImage : img
+        ));
+
+        processedImages.push(processedImage);
+
+      } catch (error) {
+        setImages(prev => prev.map(img =>
+          img.id === image.id
+            ? {
+                ...img,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento'
+              }
+            : img
+        ));
+      }
+    }
+
+    return processedImages;
   };
 
   // Drag & Drop handlers
@@ -468,12 +569,7 @@ export function ImageUpload({
   };
 
   // Se estamos no modo crop
-  console.log('Verificando cropImage:', cropImage);
   if (cropImage) {
-    console.log('Renderizando ImageCropper com:', {
-      imageUrl: cropImage.tempUrl,
-      aspectRatio
-    });
     return (
       <ImageCropper
         imageUrl={cropImage.tempUrl!}
@@ -549,7 +645,14 @@ export function ImageUpload({
                 <div className="relative aspect-square">
                   {/* Thumbnail */}
                   <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                    {image.processedUrls?.thumbnail ? (
+                    {/* Priorizar previewUrl (local crop), depois processedUrls (banco), depois tempUrl (original) */}
+                    {image.previewUrl ? (
+                      <img
+                        src={image.previewUrl}
+                        alt="Prévia cropada"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : image.processedUrls?.thumbnail ? (
                       <img
                         src={image.processedUrls.thumbnail}
                         alt="Produto"
@@ -608,4 +711,4 @@ export function ImageUpload({
       )}
     </div>
   );
-}
+});
