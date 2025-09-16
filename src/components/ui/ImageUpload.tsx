@@ -4,6 +4,7 @@ import { Card, CardContent } from './card';
 import { Badge } from './badge';
 import { Progress } from './progress';
 import { ImageCropper } from './ImageCropper';
+import { apiClient } from '../../services/api';
 import {
   Upload,
   Image as ImageIcon,
@@ -62,47 +63,42 @@ export function ImageUpload({
   const [cropImage, setCropImage] = useState<UploadedImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Upload para API
+  // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch('http://localhost:3001/api/images/upload', {
+    // Usar apiClient.request diretamente para uploads com FormData
+    const result = await apiClient.request('/images/upload', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('moria_auth_token')}`
+        // Não definir Content-Type para FormData - o browser define automaticamente
       },
       body: formData
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Erro no upload');
+    if (!result.success) {
+      throw new Error(result.message || 'Erro no upload');
     }
 
-    return response.json();
+    return result;
   };
 
-  // Processar imagem na API
+  // Processar imagem na API usando apiClient com sistema de refresh automático
   const processImageAPI = async (tempPath: string, cropData?: CropData): Promise<any> => {
     // Normalizar path para evitar problemas com barras invertidas do Windows
     const normalizedPath = tempPath.replace(/\\/g, '/');
 
-    const response = await fetch('http://localhost:3001/api/images/process', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('moria_auth_token')}`
-      },
-      body: JSON.stringify({ tempPath: normalizedPath, cropData })
+    const result = await apiClient.post('/images/process', {
+      tempPath: normalizedPath,
+      cropData
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Erro no processamento');
+    if (!result.success) {
+      throw new Error(result.message || 'Erro no processamento');
     }
 
-    return response.json();
+    return result;
   };
 
   // Adicionar imagens

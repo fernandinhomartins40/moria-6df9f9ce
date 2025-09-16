@@ -49,7 +49,7 @@ class Coupon extends BaseModel {
 
       // Verificar datas
       const now = new Date();
-      if (coupon.start_date > now) {
+      if (coupon.starts_at > now) {
         return {
           valid: false,
           reason: 'Cupom ainda não válido',
@@ -58,7 +58,7 @@ class Coupon extends BaseModel {
         };
       }
 
-      if (coupon.end_date && coupon.end_date < now) {
+      if (coupon.expires_at && coupon.expires_at < now) {
         return {
           valid: false,
           reason: 'Cupom expirado',
@@ -78,7 +78,7 @@ class Coupon extends BaseModel {
       }
 
       // Verificar limite de uso total
-      if (coupon.usage_limit && coupon.current_usage >= coupon.usage_limit) {
+      if (coupon.max_uses && coupon.used_count >= coupon.max_uses) {
         return {
           valid: false,
           reason: 'Limite de uso do cupom atingido',
@@ -152,7 +152,7 @@ class Coupon extends BaseModel {
       if (!coupon) return null;
 
       return await super.update(id, {
-        current_usage: coupon.current_usage + 1
+        used_count: coupon.used_count + 1
       });
     } catch (error) {
       console.error('Erro ao incrementar uso do cupom:', error);
@@ -167,12 +167,14 @@ class Coupon extends BaseModel {
 
       return await this.db(this.tableName)
         .where('is_active', true)
-        .where('start_date', '<=', now)
         .where(function() {
-          this.whereNull('end_date').orWhere('end_date', '>=', now);
+          this.whereNull('starts_at').orWhere('starts_at', '<=', now);
         })
         .where(function() {
-          this.whereNull('usage_limit').orWhereRaw('current_usage < usage_limit');
+          this.whereNull('expires_at').orWhere('expires_at', '>=', now);
+        })
+        .where(function() {
+          this.whereNull('max_uses').orWhereRaw('used_count < max_uses');
         });
     } catch (error) {
       console.error('Erro ao buscar cupons ativos:', error);

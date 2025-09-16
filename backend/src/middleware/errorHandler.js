@@ -38,22 +38,22 @@ class ErrorHandler {
     }
 
     if (err.code === 'SQLITE_CONSTRAINT') {
-      error = this.handleDuplicateFieldError(err);
+      error = ErrorHandler.handleDuplicateFieldError(err);
     }
 
     if (err.name === 'ValidationError') {
-      error = this.handleValidationError(err);
+      error = ErrorHandler.handleValidationError(err);
     }
 
     if (err.name === 'JsonWebTokenError') {
-      error = this.handleJWTError(err);
+      error = ErrorHandler.handleJWTError(err);
     }
 
     if (err.name === 'TokenExpiredError') {
-      error = this.handleJWTExpiredError(err);
+      error = ErrorHandler.handleJWTExpiredError(err);
     }
 
-    this.sendError(error, req, res);
+    ErrorHandler.sendError(error, req, res);
   }
 
   static handleCastError(err) {

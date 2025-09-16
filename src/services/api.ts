@@ -64,6 +64,9 @@ class ApiClient {
       '^/promotions/coupons/(?!active$|validate/)',
       '^/promotions/coupons$', // GET /promotions/coupons (admin)
       '^/promotions/coupons/[^/]+$', // operations on specific coupons (admin)
+
+      // IMAGENS: Todas as operações requerem auth
+      '^/images/'
     ];
 
     // Métodos que sempre requerem autenticação (exceto em rotas específicas públicas)
