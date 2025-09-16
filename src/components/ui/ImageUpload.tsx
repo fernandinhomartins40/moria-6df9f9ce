@@ -30,7 +30,7 @@ interface UploadedImage {
     format: string;
     size: number;
   };
-  status: 'uploading' | 'uploaded' | 'processing' | 'ready' | 'error';
+  status: 'uploading' | 'uploaded' | 'awaiting-crop' | 'processing' | 'ready' | 'error';
   progress: number;
   error?: string;
 }
@@ -130,52 +130,64 @@ export function ImageUpload({
 
     setImages(prev => [...prev, ...newImages]);
 
-    // Processar cada arquivo
+    // Processar cada arquivo - NOVO FLUXO CORRETO
     for (const newImage of newImages) {
-      try {
-        // Fazer upload primeiro para obter dados temporários
-        setImages(prev => prev.map(img =>
-          img.id === newImage.id
-            ? { ...img, progress: 25 }
-            : img
-        ));
-
-        const uploadResult = await uploadToAPI(newImage.file!);
-
+      // Se tem aspect ratio definido, abrir cropper IMEDIATAMENTE
+      if (aspectRatio !== null) {
+        // Marcar como esperando crop
         setImages(prev => prev.map(img =>
           img.id === newImage.id
             ? {
                 ...img,
-                status: 'uploaded',
-                progress: 50,
-                tempUrl: uploadResult.data.tempPath,
-                metadata: uploadResult.data.metadata
+                status: 'awaiting-crop',
+                progress: 30
               }
             : img
         ));
 
-        // Se tem aspect ratio definido, abrir cropper
-        if (aspectRatio !== null) {
-          // Abrir cropper se não há nenhum aberto
-          setCropImage(prev =>
-            prev ? prev : { ...newImage, tempUrl: uploadResult.data.tempPath, metadata: uploadResult.data.metadata }
-          );
-        } else {
+        // Abrir cropper com a imagem local (blob URL)
+        setCropImage(newImage);
+
+        // Não processar agora - vai processar apenas quando o usuário aplicar o crop
+      } else {
+        // Sem crop - processar diretamente
+        try {
+          // Fazer upload
+          setImages(prev => prev.map(img =>
+            img.id === newImage.id
+              ? { ...img, progress: 25 }
+              : img
+          ));
+
+          const uploadResult = await uploadToAPI(newImage.file!);
+
+          setImages(prev => prev.map(img =>
+            img.id === newImage.id
+              ? {
+                  ...img,
+                  status: 'uploaded',
+                  progress: 50,
+                  tempUrl: uploadResult.data.tempPath,
+                  metadata: uploadResult.data.metadata
+                }
+              : img
+          ));
+
           // Processar diretamente sem crop
           await processImageDirect(newImage.id, uploadResult.data.tempPath);
-        }
 
-      } catch (error) {
-        console.error('Erro no upload:', error);
-        setImages(prev => prev.map(img =>
-          img.id === newImage.id
-            ? {
-                ...img,
-                status: 'error',
-                error: error instanceof Error ? error.message : 'Erro no upload'
-              }
-            : img
-        ));
+        } catch (error) {
+          console.error('Erro no upload:', error);
+          setImages(prev => prev.map(img =>
+            img.id === newImage.id
+              ? {
+                  ...img,
+                  status: 'error',
+                  error: error instanceof Error ? error.message : 'Erro no upload'
+                }
+              : img
+          ));
+        }
       }
     }
 
@@ -257,10 +269,47 @@ export function ImageUpload({
 
   // Finalizar crop
   const handleCropComplete = async (cropData: CropData) => {
-    if (!cropImage) return;
+    if (!cropImage || !cropImage.file) return;
 
-    // Processar imagem com crop usando API real
-    await processImageWithCrop(cropImage.id, cropImage.tempUrl!, cropData);
+    try {
+      // Primeiro: fazer upload da imagem original
+      setImages(prev => prev.map(img =>
+        img.id === cropImage.id
+          ? { ...img, status: 'uploading', progress: 25 }
+          : img
+      ));
+
+      const uploadResult = await uploadToAPI(cropImage.file);
+
+      // Segundo: processar com crop usando o tempPath do servidor
+      setImages(prev => prev.map(img =>
+        img.id === cropImage.id
+          ? {
+              ...img,
+              status: 'uploaded',
+              progress: 50,
+              tempUrl: uploadResult.data.tempPath,
+              metadata: uploadResult.data.metadata
+            }
+          : img
+      ));
+
+      // Terceiro: aplicar crop e processar
+      await processImageWithCrop(cropImage.id, uploadResult.data.tempPath, cropData);
+
+    } catch (error) {
+      console.error('Erro no crop completo:', error);
+      setImages(prev => prev.map(img =>
+        img.id === cropImage.id
+          ? {
+              ...img,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Erro no processamento'
+            }
+          : img
+      ));
+    }
+
     setCropImage(null);
   };
 
@@ -333,6 +382,15 @@ export function ImageUpload({
             <Progress value={image.progress} className="w-16 mb-2" />
             <Badge variant="secondary" className="text-xs">
               {image.status === 'uploading' ? 'Enviando...' : 'Processando...'}
+            </Badge>
+          </div>
+        );
+      case 'awaiting-crop':
+        return (
+          <div className="absolute inset-0 bg-blue-500 bg-opacity-50 flex flex-col items-center justify-center">
+            <Progress value={image.progress} className="w-16 mb-2" />
+            <Badge variant="secondary" className="text-xs">
+              Aguardando crop...
             </Badge>
           </div>
         );
