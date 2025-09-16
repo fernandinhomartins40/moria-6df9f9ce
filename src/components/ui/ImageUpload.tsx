@@ -346,19 +346,16 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
           // Limpar cropper
           setCropImage(null);
 
-          // Processar próxima imagem se houver
+          // Processar próxima imagem se houver usando React.startTransition
           setTimeout(() => {
-            setImages(currentImages => {
-              const nextImage = currentImages.find(img =>
-                img.status === 'awaiting-crop' &&
-                img.id !== currentCropImageId
-              );
-              if (nextImage && aspectRatio !== null) {
-                setCropImage(nextImage);
-              }
-              return currentImages;
-            });
-          }, 100);
+            const nextImage = images.find(img =>
+              img.status === 'awaiting-crop' &&
+              img.id !== currentCropImageId
+            );
+            if (nextImage && aspectRatio !== null) {
+              setCropImage(nextImage);
+            }
+          }, 50);
         } catch (error) {
           setImages(prev => prev.map(image =>
             image.id === currentCropImageId
@@ -411,19 +408,16 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     }
     setCropImage(null);
 
-    // Aguardar um tick do React antes de processar próxima
+    // Processar próxima imagem se houver
     setTimeout(() => {
-      setImages(currentImages => {
-        const nextImage = currentImages.find(img =>
-          img.status === 'awaiting-crop' &&
-          img.id !== currentCropImageId
-        );
-        if (nextImage && aspectRatio !== null) {
-          setCropImage(nextImage);
-        }
-        return currentImages;
-      });
-    }, 100);
+      const nextImage = images.find(img =>
+        img.status === 'awaiting-crop' &&
+        img.id !== currentCropImageId
+      );
+      if (nextImage && aspectRatio !== null) {
+        setCropImage(nextImage);
+      }
+    }, 50);
   };
 
   // Remover imagem
