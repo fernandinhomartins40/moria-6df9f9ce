@@ -38,6 +38,18 @@ interface Product {
   updated_at?: string;
 }
 
+interface UploadedImage {
+  id: string;
+  status: 'uploading' | 'uploaded' | 'awaiting-crop' | 'processing' | 'ready' | 'error';
+  progress: number;
+  processedUrls?: {
+    thumbnail: string;
+    medium: string;
+    full: string;
+  };
+  error?: string;
+}
+
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,7 +95,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     vehicle_compatibility: []
   });
 
-  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -126,6 +138,27 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         specifications: product.specifications || {},
         vehicle_compatibility: product.vehicle_compatibility || []
       });
+
+      // Converter imagens existentes para o formato do ImageUpload
+      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        const existingImages = product.images
+          .filter(url => url && typeof url === 'string' && !url.includes('placeholder'))
+          .map((url, index) => ({
+            id: `existing-${Date.now()}-${index}`,
+            status: 'ready' as const,
+            progress: 100,
+            processedUrls: {
+              thumbnail: url.replace('/full/', '/thumbnails/'),
+              medium: url.replace('/full/', '/medium/'),
+              full: url
+            }
+          }));
+
+        console.log('🔍 DEBUG - Carregando imagens existentes:', existingImages);
+        setUploadedImages(existingImages);
+      } else {
+        setUploadedImages([]);
+      }
     } else {
       // Resetar form para novo produto
       setFormData({
@@ -148,9 +181,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         specifications: {},
         vehicle_compatibility: []
       });
+
+      // Limpar imagens apenas para novo produto
+      setUploadedImages([]);
     }
     setErrors({});
-    setUploadedImages([]);
     setActiveTab('basic');
   }, [product, isOpen]);
 
@@ -206,9 +241,13 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
     try {
       // Processar imagens prontas para inclusão no produto
-      const imageUrls = uploadedImages
-        .filter(img => img.status === 'ready' && img.processedUrls)
-        .map(img => img.processedUrls.full);
+      console.log('🔍 DEBUG - uploadedImages no save:', uploadedImages);
+
+      const readyImages = uploadedImages.filter(img => img.status === 'ready' && img.processedUrls);
+      console.log('🔍 DEBUG - imagens prontas:', readyImages);
+
+      const imageUrls = readyImages.map(img => img.processedUrls.full);
+      console.log('🔍 DEBUG - URLs extraídas:', imageUrls);
 
       // Usar a primeira imagem como image_url principal
       const productData = {
@@ -350,7 +389,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
 
               <ImageUpload
-                onImagesChange={setUploadedImages}
+                onImagesChange={(images) => {
+                  console.log('🔍 DEBUG - ImageUpload mudança:', images);
+                  setUploadedImages(images);
+                }}
                 maxImages={10}
                 aspectRatio={1} // Forçar proporção 1:1 para produtos
                 className="w-full"

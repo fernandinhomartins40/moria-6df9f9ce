@@ -199,28 +199,40 @@ export function ImageUpload({
 
       const processResult = await processImageAPI(tempPath);
 
-      setImages(prev => prev.map(img =>
-        img.id === imageId
-          ? {
-              ...img,
-              status: 'ready',
-              progress: 100,
-              processedUrls: processResult.data.urls
-            }
-          : img
-      ));
+      setImages(prev => {
+        const updated = prev.map(img =>
+          img.id === imageId
+            ? {
+                ...img,
+                status: 'ready',
+                progress: 100,
+                processedUrls: processResult.data.urls
+              }
+            : img
+        );
+
+        // Notificar mudanças após atualizar
+        onImagesChange(updated);
+        return updated;
+      });
 
     } catch (error) {
       console.error('Erro no processamento direto:', error);
-      setImages(prev => prev.map(img =>
-        img.id === imageId
-          ? {
-              ...img,
-              status: 'error',
-              error: error instanceof Error ? error.message : 'Erro no processamento'
-            }
-          : img
-      ));
+      setImages(prev => {
+        const updated = prev.map(img =>
+          img.id === imageId
+            ? {
+                ...img,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento'
+              }
+            : img
+        );
+
+        // Notificar mudanças mesmo em caso de erro
+        onImagesChange(updated);
+        return updated;
+      });
     }
   };
 
@@ -235,28 +247,40 @@ export function ImageUpload({
 
       const processResult = await processImageAPI(tempPath, cropData);
 
-      setImages(prev => prev.map(img =>
-        img.id === imageId
-          ? {
-              ...img,
-              status: 'ready',
-              progress: 100,
-              processedUrls: processResult.data.urls
-            }
-          : img
-      ));
+      setImages(prev => {
+        const updated = prev.map(img =>
+          img.id === imageId
+            ? {
+                ...img,
+                status: 'ready',
+                progress: 100,
+                processedUrls: processResult.data.urls
+              }
+            : img
+        );
+
+        // Notificar mudanças após atualizar
+        onImagesChange(updated);
+        return updated;
+      });
 
     } catch (error) {
       console.error('Erro no processamento com crop:', error);
-      setImages(prev => prev.map(img =>
-        img.id === imageId
-          ? {
-              ...img,
-              status: 'error',
-              error: error instanceof Error ? error.message : 'Erro no processamento'
-            }
-          : img
-      ));
+      setImages(prev => {
+        const updated = prev.map(img =>
+          img.id === imageId
+            ? {
+                ...img,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento'
+              }
+            : img
+        );
+
+        // Notificar mudanças mesmo em caso de erro
+        onImagesChange(updated);
+        return updated;
+      });
     }
   };
 
@@ -292,15 +316,21 @@ export function ImageUpload({
 
     } catch (error) {
       console.error('Erro no crop completo:', error);
-      setImages(prev => prev.map(img =>
-        img.id === cropImage.id
-          ? {
-              ...img,
-              status: 'error',
-              error: error instanceof Error ? error.message : 'Erro no processamento'
-            }
-          : img
-      ));
+      setImages(prev => {
+        const updated = prev.map(img =>
+          img.id === cropImage.id
+            ? {
+                ...img,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento'
+              }
+            : img
+        );
+
+        // Notificar mudanças mesmo em caso de erro
+        onImagesChange(updated);
+        return updated;
+      });
     }
 
     setCropImage(null);
@@ -318,6 +348,7 @@ export function ImageUpload({
   const removeImage = (imageId: string) => {
     setImages(prev => {
       const updated = prev.filter(img => img.id !== imageId);
+      // Notificar mudanças sempre
       onImagesChange(updated);
       return updated;
     });
