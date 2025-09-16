@@ -64,16 +64,22 @@ export function ImageUpload({
   const [dragOver, setDragOver] = useState(false);
   const [cropImage, setCropImage] = useState<UploadedImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const onImagesChangeRef = useRef(onImagesChange);
+
+  // Manter referência atualizada da função
+  useEffect(() => {
+    onImagesChangeRef.current = onImagesChange;
+  }, [onImagesChange]);
 
   // Sincronizar com imagens iniciais quando mudarem
   useEffect(() => {
     setImages(initialImages);
   }, [initialImages]);
 
-  // Notificar mudanças sempre que images mudar
+  // Notificar mudanças sempre que images mudar (usando ref para evitar loops)
   useEffect(() => {
-    onImagesChange(images);
-  }, [images, onImagesChange]);
+    onImagesChangeRef.current(images);
+  }, [images]);
 
   // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
