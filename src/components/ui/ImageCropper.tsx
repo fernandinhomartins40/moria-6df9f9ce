@@ -47,7 +47,12 @@ export function ImageCropper({
   // Carregar imagem
   useEffect(() => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+
+    // Só definir crossOrigin para URLs externas, não para blob URLs locais
+    if (!imageUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => {
       const container = containerRef.current;
       if (!container) return;
@@ -84,6 +89,13 @@ export function ImageCropper({
 
       setImageLoaded(true);
     };
+
+    img.onerror = () => {
+      console.error('Erro ao carregar imagem no cropper:', imageUrl);
+      // Ainda assim marca como carregada para mostrar uma mensagem de erro
+      setImageLoaded(true);
+    };
+
     img.src = imageUrl;
   }, [imageUrl, maxWidth, maxHeight, aspectRatio]);
 
@@ -236,7 +248,12 @@ export function ImageCropper({
 
     // Desenhar imagem
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+
+    // Só definir crossOrigin para URLs externas, não para blob URLs locais
+    if (!imageUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => {
       // Aplicar transformações
       ctx.save();
@@ -291,7 +308,12 @@ export function ImageCropper({
   const handleApplyCrop = () => {
     // Converter coordenadas para imagem original
     const img = imageRef.current || new Image();
-    img.crossOrigin = 'anonymous';
+
+    // Só definir crossOrigin para URLs externas, não para blob URLs locais
+    if (!imageUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => {
       const scaleX = img.naturalWidth / imageSize.width;
       const scaleY = img.naturalHeight / imageSize.height;
