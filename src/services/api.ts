@@ -47,6 +47,11 @@ class ApiClient {
       // Agendamento de serviços
       '^/services/[^/]+/book$',
 
+      // Upload de imagens (requer autenticação)
+      '^/images/upload$',
+      '^/images/process$',
+      '^/images/crop$',
+
       // Configurações administrativas (exceto públicas)
       '^/settings/(?!public$|company-info$|category/)',
       '^/settings$',
@@ -597,6 +602,48 @@ class ApiClient {
 
   async updateOrderStatus(orderId: string, status: string, adminNotes?: string) {
     return this.put(`/orders/${orderId}/status`, { status, admin_notes: adminNotes });
+  }
+
+  // Método de upload de arquivos
+  async uploadFile(endpoint: string, file: File, additionalData?: Record<string, any>): Promise<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    if (additionalData) {
+      Object.keys(additionalData).forEach(key => {
+        formData.append(key, String(additionalData[key]));
+      });
+    }
+
+    const url = `${this.baseURL}/${endpoint}`;
+
+    try {
+      const headers: Record<string, string> = {};
+
+      // Adicionar token de autenticação se necessário
+      if (this.requiresAuth(endpoint, 'POST')) {
+        const token = localStorage.getItem('moria_auth_token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
   }
 }
 
