@@ -109,7 +109,7 @@ class ApiClient {
 
       // Debug log para rastrear chamadas de API
       const hasToken = !!authToken;
-      const willSendToken = hasToken && requiresAuth;
+      const willSendToken = hasToken; // Agora sempre envia token quando disponível
 
       console.group(`🔗 API Call: ${method} ${endpoint}`);
       console.log(`📍 URL: ${url}`);
@@ -125,13 +125,13 @@ class ApiClient {
         ...options,
       };
 
-      // Adicionar token apenas para rotas que requerem autenticação
-      if (authToken && requiresAuth) {
+      // Adicionar token sempre que disponível (para identificação do usuário)
+      if (authToken) {
         config.headers = {
           ...config.headers,
           Authorization: `Bearer ${authToken}`,
         };
-        console.log(`🔑 Token adicionado ao header`);
+        console.log(`🔑 Token adicionado ao header (${requiresAuth ? 'obrigatório' : 'opcional'})`);
       }
 
       const response = await fetch(url, config);

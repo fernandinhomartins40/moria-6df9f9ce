@@ -174,13 +174,11 @@ function validateProductData(data, { isUpdate = false } = {}) {
     validator.string(cleanData.category, 'Categoria', { min: 2, max: 50 });
   }
 
-  // Preço obrigatório (flexível entre price e original_price)
-  const priceValue = data.price || data.original_price;
+  // Preço obrigatório
+  const priceValue = data.price;
   if (!isUpdate || priceValue !== undefined) {
     validator.price(priceValue, 'Preço', { required: !isUpdate });
     cleanData.price = parseFloat(priceValue) || 0;
-    // Manter compatibilidade com original_price
-    cleanData.original_price = cleanData.price;
   }
 
   // Campos opcionais de preço
@@ -189,14 +187,6 @@ function validateProductData(data, { isUpdate = false } = {}) {
     cleanData.sale_price = parseFloat(data.sale_price) || null;
   }
 
-  if (data.discount_price !== undefined) {
-    validator.price(data.discount_price, 'Preço de desconto', { required: false });
-    cleanData.discount_price = parseFloat(data.discount_price) || null;
-    // Se discount_price foi fornecido mas sale_price não, copiar
-    if (!cleanData.sale_price && cleanData.discount_price) {
-      cleanData.sale_price = cleanData.discount_price;
-    }
-  }
 
   if (data.promo_price !== undefined) {
     validator.price(data.promo_price, 'Preço promocional', { required: false });
@@ -237,10 +227,6 @@ function validateProductData(data, { isUpdate = false } = {}) {
   // Boolean
   if (data.is_active !== undefined) {
     cleanData.is_active = Boolean(data.is_active);
-  }
-
-  if (data.is_favorite !== undefined) {
-    cleanData.is_favorite = Boolean(data.is_favorite);
   }
 
   // Arrays (JSON)
