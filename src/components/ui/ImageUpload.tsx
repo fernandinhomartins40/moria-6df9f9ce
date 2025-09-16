@@ -554,6 +554,15 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
             <AlertCircle className="h-6 w-6 text-white" />
           </div>
         );
+      case 'cropped':
+        return (
+          <div className="absolute top-1 right-1">
+            <Badge variant="outline" className="text-xs bg-green-100 border-green-300 text-green-700">
+              <Check className="h-3 w-3 mr-1" />
+              Cropado
+            </Badge>
+          </div>
+        );
       case 'ready':
         return (
           <div className="absolute top-1 right-1">
