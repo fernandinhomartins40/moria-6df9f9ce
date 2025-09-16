@@ -16,7 +16,8 @@
       "Bash(sqlite3:*)",
       "Bash(node:*)",
       "Bash(curl:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nDEBUG: Adicionar logs para diagnosticar problema do cropper\n\n- Adicionar logs detalhados no ImageUpload para rastreamento do fluxo\n- Adicionar logs no ImageCropper para verificar carregamento da imagem\n- Melhorar robustez do container no ImageCropper com fallbacks\n- Logs ajudarão a identificar onde o cropper trava em \"Carregando...\"\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

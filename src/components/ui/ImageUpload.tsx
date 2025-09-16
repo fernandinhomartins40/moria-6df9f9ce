@@ -70,7 +70,7 @@ export function ImageUpload({
     const response = await fetch('http://localhost:3001/api/images/upload', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('moria_auth_token')}`
       },
       body: formData
     });
@@ -85,13 +85,16 @@ export function ImageUpload({
 
   // Processar imagem na API
   const processImageAPI = async (tempPath: string, cropData?: CropData): Promise<any> => {
+    // Normalizar path para evitar problemas com barras invertidas do Windows
+    const normalizedPath = tempPath.replace(/\\/g, '/');
+
     const response = await fetch('http://localhost:3001/api/images/process', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('moria_auth_token')}`
       },
-      body: JSON.stringify({ tempPath, cropData })
+      body: JSON.stringify({ tempPath: normalizedPath, cropData })
     });
 
     if (!response.ok) {

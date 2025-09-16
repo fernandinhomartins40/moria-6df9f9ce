@@ -114,7 +114,10 @@ class ImageController {
         });
       }
 
-      if (!fs.existsSync(tempPath)) {
+      // Normalizar path para funcionar tanto com barras normais quanto invertidas
+      const normalizedPath = path.normalize(tempPath.replace(/\//g, path.sep));
+
+      if (!fs.existsSync(normalizedPath)) {
         return res.status(400).json({
           success: false,
           message: 'Arquivo temporário não encontrado'
@@ -123,7 +126,7 @@ class ImageController {
 
       // Validar dados de crop se fornecidos
       if (cropData) {
-        const metadata = await imageProcessor.getImageMetadata(tempPath);
+        const metadata = await imageProcessor.getImageMetadata(normalizedPath);
         if (!imageProcessor.validateCropData(cropData, metadata)) {
           return res.status(400).json({
             success: false,
@@ -134,13 +137,13 @@ class ImageController {
 
       // Processar imagem
       const result = await imageProcessor.processImage(
-        tempPath,
+        normalizedPath,
         require('uuid').v4(),
         cropData
       );
 
       // Limpar arquivo temporário
-      imageProcessor.cleanupFile(tempPath);
+      imageProcessor.cleanupFile(normalizedPath);
 
       res.json({
         success: true,
