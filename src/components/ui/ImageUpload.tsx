@@ -71,16 +71,19 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
   const [cropImage, setCropImage] = useState<UploadedImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const onImagesChangeRef = useRef(onImagesChange);
+  const processingNextRef = useRef(false);
 
   // Manter referência atualizada da função
   useEffect(() => {
     onImagesChangeRef.current = onImagesChange;
   }, [onImagesChange]);
 
-  // Sincronizar com imagens iniciais quando mudarem
+  // Sincronizar com imagens iniciais quando mudarem (apenas uma vez na inicialização)
   useEffect(() => {
-    setImages(initialImages);
-  }, [initialImages]);
+    if (initialImages.length > 0 && images.length === 0) {
+      setImages(initialImages);
+    }
+  }, [initialImages, images.length]);
 
   // Notificar mudanças sempre que images mudar (usando ref para evitar loops)
   useEffect(() => {
@@ -143,6 +146,35 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
 
     return processedImages;
   }, [images]);
+
+  // Função centralizada para processar próxima imagem
+  const processNextImage = useCallback((excludeId?: string) => {
+    if (processingNextRef.current) {
+      return; // Já está processando, evitar duplicações
+    }
+
+    processingNextRef.current = true;
+
+    setTimeout(() => {
+      setImages(currentImages => {
+        const nextImage = currentImages.find(img =>
+          img.status === 'awaiting-crop' &&
+          img.id !== excludeId
+        );
+
+        if (nextImage && aspectRatio !== null) {
+          setTimeout(() => {
+            setCropImage(nextImage);
+            processingNextRef.current = false;
+          }, 10);
+        } else {
+          processingNextRef.current = false;
+        }
+
+        return currentImages;
+      });
+    }, 50);
+  }, [aspectRatio]);
 
   // Expor funções para o componente pai
   useImperativeHandle(ref, () => ({
@@ -403,16 +435,8 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
           // Limpar cropper
           setCropImage(null);
 
-          // Processar próxima imagem se houver usando React.startTransition
-          setTimeout(() => {
-            const nextImage = images.find(img =>
-              img.status === 'awaiting-crop' &&
-              img.id !== currentCropImageId
-            );
-            if (nextImage && aspectRatio !== null) {
-              setCropImage(nextImage);
-            }
-          }, 50);
+          // Processar próxima imagem
+          processNextImage(currentCropImageId);
         } catch (error) {
           setImages(prev => prev.map(image =>
             image.id === currentCropImageId
@@ -465,16 +489,8 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({
     }
     setCropImage(null);
 
-    // Processar próxima imagem se houver
-    setTimeout(() => {
-      const nextImage = images.find(img =>
-        img.status === 'awaiting-crop' &&
-        img.id !== currentCropImageId
-      );
-      if (nextImage && aspectRatio !== null) {
-        setCropImage(nextImage);
-      }
-    }, 50);
+    // Processar próxima imagem
+    processNextImage(currentCropImageId);
   };
 
   // Remover imagem
