@@ -14,7 +14,11 @@ interface Product {
   price: number;
   originalPrice?: number;
   image: string;
-  images?: string[];
+  images?: Array<{
+    thumbnail: string;
+    medium: string;
+    full: string;
+  }> | string[]; // Suportar tanto a nova estrutura quanto a antiga
   rating: number;
   inStock: boolean;
   discount?: number;
@@ -42,6 +46,38 @@ export function Products() {
     category: selectedCategory === "Todos" ? undefined : selectedCategory,
     active: true
   });
+
+  // Função helper para processar imagens
+  const getProductImages = (product: any) => {
+    if (!product.images || product.images.length === 0) {
+      return {
+        imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
+        primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
+      };
+    }
+
+    // Se é a nova estrutura (array de objetos com thumbnail, medium, full)
+    if (Array.isArray(product.images) && product.images[0] && typeof product.images[0] === 'object' && product.images[0].thumbnail) {
+      return {
+        imageUrls: product.images.map((img: any) => img.medium || img.thumbnail), // Usar medium para visualização
+        primaryImage: product.images[0]?.thumbnail || product.image || '/api/placeholder/400/400'
+      };
+    }
+
+    // Se é a estrutura antiga (array de strings)
+    if (Array.isArray(product.images) && typeof product.images[0] === 'string') {
+      return {
+        imageUrls: product.images,
+        primaryImage: product.images[0] || product.image || '/api/placeholder/400/400'
+      };
+    }
+
+    // Fallback
+    return {
+      imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
+      primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
+    };
+  };
 
   // Usar produtos da API (dados reais do SQLite)
   const filteredProducts = error ? [] : apiProducts;
@@ -92,27 +128,34 @@ export function Products() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="product-hover overflow-hidden">
-              <div className="relative">
-                {/* Usar galeria se há múltiplas imagens, senão imagem simples */}
-                {product.images && product.images.length > 1 ? (
-                  <ProductImageGallery
-                    images={product.images}
-                    productName={product.name}
-                    aspectRatio="square"
-                    thumbnailSize="sm"
-                    enableZoom={false}
-                    enableFullscreen={true}
-                    className="h-48"
-                  />
-                ) : (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
+          {filteredProducts.map((product) => {
+            const { imageUrls, primaryImage } = getProductImages(product);
+
+            return (
+              <Card key={product.id} className="product-hover overflow-hidden">
+                <div className="relative">
+                  {/* Usar galeria se há múltiplas imagens, senão imagem simples */}
+                  {imageUrls.length > 1 ? (
+                    <ProductImageGallery
+                      images={imageUrls}
+                      productName={product.name}
+                      aspectRatio="square"
+                      thumbnailSize="sm"
+                      enableZoom={false}
+                      enableFullscreen={true}
+                      className="h-48"
+                    />
+                  ) : (
+                    <img
+                      src={primaryImage}
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/api/placeholder/400/400';
+                      }}
+                    />
+                  )}
 
                 {/* Discount Badge */}
                 {product.discount && (
@@ -207,25 +250,8 @@ export function Products() {
                 </Button>
               </div>
             </Card>
-          ))}
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center mt-16 p-8 bg-gray-50 rounded-lg">
-          <h3 className="text-2xl font-bold mb-4">
-            Não encontrou o que procura?
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Temos mais de 10.000 peças em estoque. Entre em contato e encontraremos a peça ideal para seu veículo.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero" size="lg">
-              Consultar Disponibilidade
-            </Button>
-            <Button variant="outline" size="lg">
-              Falar com Especialista
-            </Button>
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -246,14 +246,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       const readyImages = uploadedImages.filter(img => img.status === 'ready' && img.processedUrls);
       console.log('🔍 DEBUG - imagens prontas:', readyImages);
 
-      const imageUrls = readyImages.map(img => img.processedUrls.full);
-      console.log('🔍 DEBUG - URLs extraídas:', imageUrls);
+      // Preservar estrutura completa das URLs (thumbnail, medium, full)
+      const imageStructures = readyImages.map(img => img.processedUrls).filter(Boolean);
+      console.log('🔍 DEBUG - Estruturas completas:', imageStructures);
+
+      // Para compatibilidade, extrair thumbnails para image_url
+      const thumbnailUrls = imageStructures.map(urls => urls?.thumbnail).filter(Boolean);
+      console.log('🔍 DEBUG - Thumbnails extraídos:', thumbnailUrls);
 
       // Usar a primeira imagem como image_url principal
       const productData = {
         ...formData,
-        images: imageUrls,
-        image_url: imageUrls[0] || formData.image_url || ''
+        images: imageStructures, // Salvar estrutura completa
+        image_url: thumbnailUrls[0] || formData.image_url || '' // Thumbnail principal para compatibilidade
       };
 
       await onSave(productData);
