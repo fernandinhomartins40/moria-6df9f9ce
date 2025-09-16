@@ -7,11 +7,19 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const env = require('../config/environment');
 
 class ImageProcessor {
   constructor() {
     this.uploadsDir = path.join(__dirname, '../../uploads');
     this.productsDir = path.join(this.uploadsDir, 'products');
+  }
+
+  // Construir URL absoluta para as imagens
+  buildAbsoluteUrl(relativePath) {
+    const host = env.get('HOST') === '0.0.0.0' ? 'localhost' : env.get('HOST');
+    const port = env.get('PORT');
+    return `http://${host}:${port}${relativePath}`;
   }
 
   // Processar imagem original para diferentes tamanhos
@@ -56,7 +64,8 @@ class ImageProcessor {
           .webp({ quality: 85 })
           .toFile(outputPath);
 
-        results[size.name] = `/uploads/products/${size.dir}/${outputBaseName}.webp`;
+        const relativePath = `/uploads/products/${size.dir}/${outputBaseName}.webp`;
+        results[size.name] = this.buildAbsoluteUrl(relativePath);
       }
 
       return results;
