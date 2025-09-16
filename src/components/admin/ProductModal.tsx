@@ -402,6 +402,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
                 aspectRatio={1} // Forçar proporção 1:1 para produtos
                 className="w-full"
                 disabled={loading}
+                initialImages={uploadedImages}
               />
             </div>
           </TabsContent>

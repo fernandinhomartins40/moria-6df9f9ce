@@ -21,7 +21,10 @@
       "Bash(findstr:*)",
       "Bash(http://localhost:3001/api/images/process )",
       "Bash(npm run build:*)",
-      "Bash(npx knex migrate:*)"
+      "Bash(npx knex migrate:*)",
+      "Bash(cd:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

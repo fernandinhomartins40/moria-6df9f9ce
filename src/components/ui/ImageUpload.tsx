@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from './button';
 import { Card, CardContent } from './card';
 import { Badge } from './badge';
@@ -49,6 +49,7 @@ interface ImageUploadProps {
   aspectRatio?: number | null;
   className?: string;
   disabled?: boolean;
+  initialImages?: UploadedImage[];
 }
 
 export function ImageUpload({
@@ -56,12 +57,18 @@ export function ImageUpload({
   maxImages = 10,
   aspectRatio = null,
   className = '',
-  disabled = false
+  disabled = false,
+  initialImages = []
 }: ImageUploadProps) {
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>(initialImages);
   const [dragOver, setDragOver] = useState(false);
   const [cropImage, setCropImage] = useState<UploadedImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizar com imagens iniciais quando mudarem
+  useEffect(() => {
+    setImages(initialImages);
+  }, [initialImages]);
 
   // Upload para API usando apiClient com sistema de refresh automático
   const uploadToAPI = async (file: File): Promise<any> => {
