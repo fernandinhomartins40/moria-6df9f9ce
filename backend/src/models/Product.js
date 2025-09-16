@@ -10,6 +10,108 @@ class Product extends BaseModel {
     super('products');
   }
 
+  // Override create para tratar campos JSON
+  async create(data) {
+    try {
+      const processedData = { ...data };
+
+      // Garantir que arrays sejam JSON stringified
+      if (processedData.images && Array.isArray(processedData.images)) {
+        processedData.images = JSON.stringify(processedData.images);
+      }
+      if (processedData.vehicle_compatibility && Array.isArray(processedData.vehicle_compatibility)) {
+        processedData.vehicle_compatibility = JSON.stringify(processedData.vehicle_compatibility);
+      }
+      if (processedData.specifications && typeof processedData.specifications === 'object') {
+        processedData.specifications = JSON.stringify(processedData.specifications);
+      }
+
+      return await super.create(processedData);
+    } catch (error) {
+      console.error('Erro ao criar produto:', error);
+      throw error;
+    }
+  }
+
+  // Override update para tratar campos JSON
+  async update(id, data) {
+    try {
+      const processedData = { ...data };
+
+      // Garantir que arrays sejam JSON stringified
+      if (processedData.images && Array.isArray(processedData.images)) {
+        processedData.images = JSON.stringify(processedData.images);
+      }
+      if (processedData.vehicle_compatibility && Array.isArray(processedData.vehicle_compatibility)) {
+        processedData.vehicle_compatibility = JSON.stringify(processedData.vehicle_compatibility);
+      }
+      if (processedData.specifications && typeof processedData.specifications === 'object') {
+        processedData.specifications = JSON.stringify(processedData.specifications);
+      }
+
+      return await super.update(id, processedData);
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      throw error;
+    }
+  }
+
+  // Override findById para tratar campos JSON
+  async findById(id) {
+    try {
+      const product = await super.findById(id);
+      if (product) {
+        return this.parseJsonFields(product);
+      }
+      return product;
+    } catch (error) {
+      console.error('Erro ao buscar produto por ID:', error);
+      throw error;
+    }
+  }
+
+  // Override findAll para tratar campos JSON
+  async findAll(filters = {}, options = {}) {
+    try {
+      const products = await super.findAll(filters, options);
+      return products.map(product => this.parseJsonFields(product));
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+      throw error;
+    }
+  }
+
+  // Helper para fazer parse dos campos JSON
+  parseJsonFields(product) {
+    try {
+      if (product.images && typeof product.images === 'string') {
+        product.images = JSON.parse(product.images);
+      }
+      if (product.vehicle_compatibility && typeof product.vehicle_compatibility === 'string') {
+        product.vehicle_compatibility = JSON.parse(product.vehicle_compatibility);
+      }
+      if (product.specifications && typeof product.specifications === 'string') {
+        product.specifications = JSON.parse(product.specifications);
+      }
+
+      // Garantir defaults
+      product.images = product.images || [];
+      product.vehicle_compatibility = product.vehicle_compatibility || [];
+      product.specifications = product.specifications || {};
+
+      return product;
+    } catch (error) {
+      console.error('Erro ao fazer parse dos campos JSON:', error);
+      // Retornar defaults em caso de erro
+      return {
+        ...product,
+        images: [],
+        vehicle_compatibility: [],
+        specifications: {}
+      };
+    }
+  }
+
   // Buscar produtos ativos
   async findActive() {
     return await this.findAll({ is_active: true });

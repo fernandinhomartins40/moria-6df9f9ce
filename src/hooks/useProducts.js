@@ -47,23 +47,30 @@ export const useProducts = (initialFilters = {}) => {
         }
         
         // Transformar dados do backend para formato do frontend
-        const transformedProducts = result.data.map(product => ({
-          id: product.id,
-          name: product.name,
-          category: product.category,
-          price: product.salePrice || product.price,
-          originalPrice: product.promoPrice ? product.salePrice : null,
-          image: product.images?.[0] || "/api/placeholder/300/300",
-          images: product.images && product.images.length > 0 ? product.images : [product.images?.[0] || "/api/placeholder/300/300"],
-          rating: 4.5, // Valor padrão até implementarmos reviews
-          inStock: product.stock > 0,
-          discount: product.promoPrice
-            ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
-            : null,
-          description: product.description,
-          stock: product.stock,
-          active: product.isActive
-        }));
+        const transformedProducts = result.data.map(product => {
+          // Garantir que images seja sempre um array válido
+          const images = Array.isArray(product.images) && product.images.length > 0
+            ? product.images
+            : ["/api/placeholder/300/300"];
+
+          return {
+            id: product.id,
+            name: product.name,
+            category: product.category,
+            price: product.sale_price || product.price,
+            originalPrice: product.promo_price ? product.sale_price : null,
+            image: images[0], // Primeira imagem como principal
+            images: images, // Array completo de imagens
+            rating: 4.5, // Valor padrão até implementarmos reviews
+            inStock: product.stock > 0,
+            discount: product.promo_price && product.sale_price
+              ? Math.round(((product.sale_price - product.promo_price) / product.sale_price) * 100)
+              : null,
+            description: product.description,
+            stock: product.stock,
+            active: product.is_active
+          };
+        });
         
         setProducts(transformedProducts);
       }
@@ -83,24 +90,28 @@ export const useProducts = (initialFilters = {}) => {
         
         // Transformar produto individual
         const product = result.data;
+        const images = Array.isArray(product.images) && product.images.length > 0
+          ? product.images
+          : ["/api/placeholder/300/300"];
+
         return {
           id: product.id,
           name: product.name,
           category: product.category,
-          price: product.salePrice || product.price,
-          originalPrice: product.promoPrice ? product.salePrice : null,
-          image: product.images?.[0] || "/api/placeholder/300/300",
-          images: product.images && product.images.length > 0 ? product.images : [product.images?.[0] || "/api/placeholder/300/300"],
+          price: product.sale_price || product.price,
+          originalPrice: product.promo_price ? product.sale_price : null,
+          image: images[0],
+          images: images,
           rating: 4.5,
           inStock: product.stock > 0,
-          discount: product.promoPrice
-            ? Math.round(((product.salePrice - product.promoPrice) / product.salePrice) * 100)
+          discount: product.promo_price && product.sale_price
+            ? Math.round(((product.sale_price - product.promo_price) / product.sale_price) * 100)
             : null,
           description: product.description,
           stock: product.stock,
-          active: product.isActive,
+          active: product.is_active,
           specifications: product.specifications || {},
-          vehicleCompatibility: product.vehicleCompatibility || []
+          vehicleCompatibility: product.vehicle_compatibility || []
         };
       }
     );
