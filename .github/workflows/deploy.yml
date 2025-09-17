@@ -1,6 +1,6 @@
 name: 🚀 Deploy Moria Pecas e Servicos - Full Stack
 
-# FORCE CACHE INVALIDATION - Fixed VITE_APP_NAME escaping - 2025-09-15T23:20:00Z
+# FORCE CACHE INVALIDATION - Moria Prisma + Docker Complete - 2025-09-17T18:00:00Z
 
 concurrency:
   group: moria-deploy-fullstack
@@ -15,9 +15,7 @@ env:
   VPS_HOST: '72.60.10.108'
   VPS_USER: 'root'
   APP_DIR: '/root/moria-pecas-servicos'
-  FRONTEND_PORT: '3030'
-  BACKEND_PORT: '3031'
-  NGINX_PORT: '3032'
+  APP_PORT: '3032'  # Porta única da aplicação (nginx proxy)
   COMPOSE_PROJECT: 'moria'
 
 jobs:
@@ -39,27 +37,25 @@ jobs:
 
     - name: 🔍 Pre-Deploy Validation
       run: |
-        echo "🔍 Validando estrutura do projeto PRISMA + DOCKER..."
+        echo "🔍 Validando estrutura do projeto MORIA FULL STACK..."
         echo "📋 Frontend:"
         ls -la frontend/package.json frontend/vite.config.js frontend/src/ || echo "⚠️ Arquivos frontend faltando"
-        echo "📋 Backend Prisma:"
+        echo "📋 Backend:"
         ls -la backend/package.json backend/server.js backend/Dockerfile || echo "⚠️ Arquivos backend faltando"
         ls -la backend/prisma/schema.prisma || echo "⚠️ Schema Prisma faltando"
-        echo "📋 Docker + nginx:"
-        ls -la docker-compose.yml Dockerfile.nginx nginx.conf || echo "⚠️ Arquivos Docker faltando"
-        echo "📋 Scripts:"
-        ls -la scripts/deploy.sh scripts/backup-prisma.sh || echo "⚠️ Scripts de automação faltando"
+        echo "📋 Docker:"
+        ls -la docker-compose.yml nginx.conf Dockerfile.nginx || echo "⚠️ Arquivos Docker faltando"
 
     - name: 📦 Prepare Full Stack Package
       run: |
-        echo "📦 Preparando pacote PRISMA + DOCKER..."
+        echo "📦 Preparando pacote MORIA FULL STACK..."
         echo "Commit: ${{ github.sha }}"
         echo "Branch: ${{ github.ref_name }}"
         echo "Backend: Node.js + Prisma + SQLite"
         echo "Frontend: React + Vite"
         echo "Infraestrutura: Docker + nginx proxy"
 
-        # Criar arquivo compacto com estrutura Prisma + Docker
+        # Criar arquivo compacto
         tar --warning=no-file-changed -czf deploy.tar.gz \
           --exclude='.git' \
           --exclude='**/node_modules' \
@@ -69,9 +65,10 @@ jobs:
           --exclude='*.log' \
           --exclude='coverage' \
           --exclude='.env.local' \
-          --exclude='backend/database.sqlite' \
+          --exclude='backend/data' \
           --exclude='backend/uploads' \
           --exclude='backend/logs' \
+          --exclude='nginx-logs' \
           --exclude='backups' \
           --exclude='docs' \
           . || true
@@ -97,7 +94,7 @@ jobs:
         sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << DEPLOY_SCRIPT
           set -e
 
-          echo '🚀 Iniciando deploy PRISMA + DOCKER - nginx + Node.js + React'
+          echo '🚀 Iniciando deploy MORIA FULL STACK - Node.js + React'
 
           # Configurar sistema
           echo '📦 Configurando VPS...'
@@ -113,23 +110,18 @@ jobs:
             docker compose -p moria down --volumes --remove-orphans 2>/dev/null || true
 
             # Parar containers específicos se ainda estiverem rodando
-            docker stop moria-backend moria-frontend moria-proxy 2>/dev/null || true
-            docker rm -f moria-backend moria-frontend moria-proxy 2>/dev/null || true
+            docker stop moria-backend moria-nginx moria-frontend 2>/dev/null || true
+            docker rm -f moria-backend moria-nginx moria-frontend 2>/dev/null || true
 
-            # Remover TODAS as imagens relacionadas ao projeto
+            # Remover APENAS as imagens do Moria (específicas)
             echo '🗑️ Removendo imagens antigas do Moria...'
-            docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "(moria|none)" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
+            docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "moria" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
 
-            # Limpeza agressiva de imagens órfãs
-            docker image prune -af 2>/dev/null || true
+            # Liberar porta da aplicação forçadamente
+            docker ps --filter "publish=${{ env.APP_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
 
-            # Liberar portas específicas forçadamente
-            docker ps --filter "publish=${{ env.BACKEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
-            docker ps --filter "publish=${{ env.FRONTEND_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
-            docker ps --filter "publish=${{ env.NGINX_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
-
-            # Limpeza completa do sistema
-            docker system prune -af --volumes >/dev/null 2>&1 || true
+            # Remover apenas volumes específicos do moria
+            docker volume ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker volume rm 2>/dev/null || true
 
             echo '✅ Stack anterior parada, imagens antigas removidas e portas liberadas'
           fi
@@ -159,52 +151,47 @@ jobs:
           tar -xzf /tmp/deploy.tar.gz && rm -f /tmp/deploy.tar.gz
 
           # Validar estrutura
-          echo '🔍 Validando estrutura PRISMA + DOCKER...'
-          ls -la docker-compose.yml nginx.conf Dockerfile.nginx || { echo '❌ Arquivos Docker essenciais faltando!'; exit 1; }
+          echo '🔍 Validando estrutura MORIA FULL STACK...'
+          ls -la docker-compose.yml nginx.conf Dockerfile.nginx || { echo '❌ Arquivos essenciais faltando!'; exit 1; }
           ls -la backend/Dockerfile backend/package.json backend/server.js || { echo '❌ Backend incompleto!'; exit 1; }
           ls -la backend/prisma/schema.prisma || { echo '❌ Schema Prisma faltando!'; exit 1; }
           ls -la frontend/package.json frontend/vite.config.js || { echo '❌ Frontend incompleto!'; exit 1; }
-          ls -la scripts/deploy.sh scripts/backup-prisma.sh || { echo '❌ Scripts de automação faltando!'; exit 1; }
 
-          # Configurar variáveis de produção para Prisma + Docker
-          echo '⚙️ Configurando ambiente de produção PRISMA + DOCKER...'
-          echo "VPS_HOST=${{ env.VPS_HOST }}" > .env
-          echo "NGINX_PORT=${{ env.NGINX_PORT }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          echo "JWT_SECRET=moria-production-jwt-${{ github.sha }}" >> .env
-          echo "DATABASE_URL=file:/app/data/moria.db" >> .env
-          echo "DIRECT_URL=file:/app/data/moria.db" >> .env
-          echo "CORS_ORIGIN=http://${{ env.VPS_HOST }},http://localhost:3000,http://localhost:5173" >> .env
-          echo "UPLOAD_MAX_SIZE=10485760" >> .env
-          echo "LOG_LEVEL=info" >> .env
-          echo "APP_NAME=Moria Pecas e Servicos" >> .env
-          echo "APP_VERSION=2.0.0" >> .env
+          # Configurar variáveis de produção
+          echo '⚙️ Configurando ambiente de produção...'
+          echo "VPS_HOST=${{ env.VPS_HOST }}" > .env.production
+          echo "APP_PORT=${{ env.APP_PORT }}" >> .env.production
+          echo "NGINX_PORT=${{ env.APP_PORT }}" >> .env.production
+          echo "JWT_SECRET=moria-production-jwt-${{ github.sha }}" >> .env.production
+          echo "NODE_ENV=production" >> .env.production
+          echo "DATABASE_URL=file:/app/data/moria.db" >> .env.production
+          echo "DIRECT_URL=file:/app/data/moria.db" >> .env.production
+          echo "CORS_ORIGIN=http://${{ env.VPS_HOST }}:${{ env.APP_PORT }},http://localhost:3000,http://localhost:5173" >> .env.production
+          echo "UPLOAD_MAX_SIZE=10485760" >> .env.production
+          echo "LOG_LEVEL=info" >> .env.production
+          echo "APP_NAME=Moria Pecas e Servicos" >> .env.production
+          echo "APP_VERSION=2.0.0" >> .env.production
 
-          # Deploy com Docker Compose + nginx proxy
-          echo '🐳 Executando deploy PRISMA + DOCKER + nginx...'
-          export NGINX_PORT=${{ env.NGINX_PORT }}
+          # Deploy com Docker Compose
+          echo '🐳 Executando deploy com Docker Compose...'
+          export NGINX_PORT=${{ env.APP_PORT }}
+          export BUILD_TIMESTAMP=\$(date +%s)
+          export JWT_SECRET=moria-production-jwt-${{ github.sha }}
 
-          # Verificar se porta nginx está livre
-          echo '🔍 Verificando porta nginx antes do deploy...'
-          if netstat -tuln | grep -q ":${{ env.NGINX_PORT }} "; then
-            echo "⚠️ Porta ${{ env.NGINX_PORT }} ainda ocupada, forçando liberação..."
-            fuser -k ${{ env.NGINX_PORT }}/tcp 2>/dev/null || true
+          # Verificar se porta está realmente livre
+          echo '🔍 Verificando porta antes do deploy...'
+          if netstat -tuln | grep -q ":${{ env.APP_PORT }} "; then
+            echo "⚠️ Porta ${{ env.APP_PORT }} ainda ocupada, forçando liberação..."
+            fuser -k ${{ env.APP_PORT }}/tcp 2>/dev/null || true
             sleep 2
           fi
 
           # Build e start dos serviços com invalidação forçada de cache
           echo '🏗️ Building imagens com invalidação total de cache...'
 
-          # Remover TODAS as imagens antigas do projeto (novamente por segurança)
-          echo '🧹 Limpeza final de imagens antes do build...'
-          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "(moria|<none>)" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
-
-          # Limpar completamente cache de build e buildkit
-          docker builder prune -af 2>/dev/null || true
-          docker buildx prune -af 2>/dev/null || true
-
-          # Forçar remoção de qualquer volume órfão
-          docker volume prune -af 2>/dev/null || true
+          # Remover APENAS imagens do moria (sem afetar outras aplicações)
+          echo '🧹 Limpeza final de imagens do Moria antes do build...'
+          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "moria" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
 
           # Build com cache totalmente limpo e timestamp único
           echo '🔨 Construindo imagens completamente novas...'
@@ -217,9 +204,9 @@ jobs:
           if ! docker compose -p ${{ env.COMPOSE_PROJECT }} up -d; then
             echo '⚠️ Falha no start normal, tentando restart forçado...'
 
-            # Restart mais agressivo
+            # Restart específico do moria apenas
             docker compose -p ${{ env.COMPOSE_PROJECT }} down --volumes --remove-orphans 2>/dev/null || true
-            docker system prune -af >/dev/null 2>&1 || true
+            echo '⚠️ Reiniciando apenas containers do Moria...'
 
             # Aguardar um pouco
             sleep 10
@@ -237,35 +224,35 @@ jobs:
           echo '🔍 Verificando serviços...'
           docker compose -p ${{ env.COMPOSE_PROJECT }} ps
 
-          # Testar nginx proxy
-          echo '🔍 Testando nginx proxy...'
+          # Testar aplicação (via nginx proxy)
+          echo '🔍 Testando aplicação...'
           for i in {1..10}; do
-            if curl -f -s http://localhost:${{ env.NGINX_PORT }}/health >/dev/null 2>&1; then
-              echo '✅ nginx health check passou!'
+            if curl -f -s http://localhost:${{ env.APP_PORT }}/health >/dev/null 2>&1; then
+              echo '✅ Nginx proxy health check passou!'
               break
             fi
-            echo "nginx - Tentativa \$i/10 - aguardando 5s..."
+            echo "Nginx proxy - Tentativa \$i/10 - aguardando 5s..."
             sleep 5
           done
 
-          # Testar API via nginx proxy
-          echo '🔍 Testando API via nginx proxy...'
+          # Testar API backend via proxy
+          echo '🔍 Testando API backend via proxy...'
           for i in {1..8}; do
-            if curl -f -s http://localhost:${{ env.NGINX_PORT }}/api/health >/dev/null 2>&1; then
-              echo '✅ API health check via nginx passou!'
+            if curl -f -s http://localhost:${{ env.APP_PORT }}/api/health >/dev/null 2>&1; then
+              echo '✅ Backend API health check passou!'
               break
             fi
-            echo "API via nginx - Tentativa \$i/8 - aguardando 5s..."
+            echo "Backend API - Tentativa \$i/8 - aguardando 5s..."
             sleep 5
           done
 
           # Verificação final
-          echo '🎯 Verificação final PRISMA + DOCKER...'
-          if curl -f -s http://localhost:${{ env.NGINX_PORT }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.NGINX_PORT }}/api/health >/dev/null 2>&1; then
-            echo '✅ DEPLOY PRISMA + DOCKER CONCLUÍDO COM SUCESSO!'
-            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}'
-            echo '🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api'
-            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api/health'
+          echo '🎯 Verificação final...'
+          if curl -f -s http://localhost:${{ env.APP_PORT }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.APP_PORT }}/api/health >/dev/null 2>&1; then
+            echo '✅ DEPLOY FULL STACK CONCLUÍDO COM SUCESSO!'
+            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}'
+            echo '🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/api'
+            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/health'
           else
             echo '❌ Falha na verificação final!'
             docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
@@ -273,25 +260,24 @@ jobs:
           fi
         DEPLOY_SCRIPT
 
-    - name: 🎉 Prisma + Docker Deploy Success
+    - name: 🎉 Full Stack Deploy Success
       run: |
-        echo "🎉 MORIA PEÇAS & SERVIÇOS PRISMA + DOCKER DEPLOYADO!"
-        echo "✅ nginx + Backend Prisma + Frontend React em produção"
+        echo "🎉 MORIA PEÇAS & SERVIÇOS FULL STACK DEPLOYADO!"
+        echo "✅ Backend Node.js + Prisma + Frontend React em produção"
         echo ""
-        echo "🔗 LINKS FUNCIONAIS:"
-        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}"
-        echo "🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api"
-        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api/health"
-        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/store-panel"
-        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/customer"
+        echo "🔗 LINKS FUNCIONAIS (ENTRADA ÚNICA):"
+        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}"
+        echo "🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/api"
+        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/health"
+        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/store-panel"
+        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/customer"
         echo ""
-        echo "✅ Stack Prisma + Docker:"
+        echo "✅ Stack Completa:"
         echo "  🎯 Backend: Node.js + Prisma + SQLite"
-        echo "  🎨 Frontend: React + Vite + TypeScript"
-        echo "  🐳 nginx: Proxy reverso + Rate limiting"
-        echo "  🐋 Deploy: Docker Compose orchestration"
+        echo "  🎨 Frontend: React + Vite"
+        echo "  🐳 Deploy: Docker Compose orchestration"
         echo "  📦 ORM: Prisma type-safe database"
         echo "  🛒 Carrinho com promoções do backend"
         echo "  🔐 Autenticação JWT segura"
         echo "  🗄️ Dados persistidos via Prisma"
-        echo "  🚀 Scripts: deploy.sh + backup-prisma.sh"
+        echo "  🚀 Scripts: deploy + backup automáticos"
