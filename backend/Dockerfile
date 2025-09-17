@@ -45,18 +45,19 @@ COPY . .
 # Gerar Prisma Client para produção
 RUN npx prisma generate
 
-# Remover dependências de desenvolvimento
-RUN npm prune --production
+# ❌ REMOVIDO: npm prune estava removendo dependências do Prisma
+# RUN npm prune --production
 
 # ========================================
 # STAGE: PRODUCTION
 # ========================================
 FROM node:18-alpine AS production
 
-# Instalar apenas dependências runtime necessárias
+# Instalar dependências runtime + curl para health checks
 RUN apk add --no-cache \
     sqlite \
     openssl \
+    curl \
     && rm -rf /var/cache/apk/*
 
 # Criar usuário não-root para segurança
@@ -87,9 +88,8 @@ USER nodejs
 # Expor porta
 EXPOSE 3001
 
-# Health check com mais tempo para inicialização
-HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=5 \
-    CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+# ❌ REMOVIDO: Health check movido para docker-compose para evitar conflitos
+# HEALTHCHECK definido apenas no docker-compose.yml
 
-# ✅ Script de inicialização com logs de debug
-CMD ["sh", "-c", "echo 'Iniciando Prisma generate...' && npx prisma generate && echo 'Fazendo DB push...' && npx prisma db push --accept-data-loss && echo 'Iniciando servidor...' && node server.js"]
+# ✅ Script de inicialização otimizado (sem duplo generate)
+CMD ["sh", "-c", "echo 'Iniciando DB push...' && npx prisma db push --accept-data-loss && echo 'Iniciando servidor...' && node server.js"]
