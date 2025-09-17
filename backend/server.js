@@ -10,7 +10,8 @@ const morgan = require('morgan');
 const compression = require('compression');
 const dotenv = require('dotenv');
 const path = require('path');
-const { testConnection, ensureDatabaseSetup, closeDatabase } = require('./src/database.js');
+// ✅ PRISMA: database.js removido - usando Prisma client
+const prisma = require('./src/services/prisma.js');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -295,10 +296,10 @@ const startServer = async () => {
       throw new Error(`Falha na validação: ${validationResult.error}`);
     }
 
-    // Verificar setup do banco
-    console.log('📊 Configurando estrutura do banco...');
-    await ensureDatabaseSetup();
-    console.log('✅ Estrutura do banco configurada');
+    // Verificar setup do banco Prisma
+    console.log('📊 Verificando conexão com banco Prisma...');
+    await prisma.$connect();
+    console.log('✅ Conexão com banco Prisma estabelecida');
 
     // Iniciar servidor
     const server = app.listen(PORT, HOST, () => {
@@ -346,8 +347,8 @@ const startServer = async () => {
           configWatcher.stopWatching();
         }
 
-        // Fechar conexão com banco
-        await closeDatabase();
+        // Fechar conexão com banco Prisma
+        await prisma.$disconnect();
 
         console.log('👋 Moria Backend encerrado com sucesso');
         process.exit(0);

@@ -70,13 +70,10 @@ class StartupValidator {
         console.log(`     📁 Diretório do banco criado: ${dbDir}`);
       }
 
-      // Tentar conectar com o banco (importação dinâmica para evitar circular dependency)
-      const { testConnection } = require('../database.js');
-      const connected = await testConnection();
-
-      if (!connected) {
-        throw new Error('Não foi possível conectar com o banco de dados');
-      }
+      // Tentar conectar com o banco Prisma
+      const prisma = require('../services/prisma.js');
+      await prisma.$connect();
+      console.log('     ✅ Conexão Prisma estabelecida');
 
       console.log('     ✓ Banco de dados acessível');
     } catch (error) {
@@ -231,9 +228,10 @@ class StartupValidator {
     const startTime = Date.now();
 
     try {
-      // Test database connection
-      const { testConnection } = require('../database.js');
-      const dbStatus = await testConnection();
+      // Test database connection with Prisma
+      const prisma = require('../services/prisma.js');
+      await prisma.$connect();
+      const dbStatus = true;
 
       // Test memory usage
       const memUsage = process.memoryUsage();
