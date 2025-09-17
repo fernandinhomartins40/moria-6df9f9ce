@@ -71,7 +71,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma/
 COPY --from=builder --chown=nodejs:nodejs /app/src ./src/
 COPY --from=builder --chown=nodejs:nodejs /app/server.js ./server.js
-COPY --from=builder --chown=nodejs:nodejs /app/knexfile.js ./knexfile.js
+# knexfile.js removido - usando apenas Prisma
 
 # Criar diretórios necessários
 RUN mkdir -p /app/data /app/uploads /app/logs && \
@@ -87,9 +87,9 @@ USER nodejs
 # Expor porta
 EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+# Health check com mais tempo para inicialização
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=5 \
     CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# ✅ Script de inicialização com Prisma
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]
+# ✅ Script de inicialização com logs de debug
+CMD ["sh", "-c", "echo 'Iniciando Prisma generate...' && npx prisma generate && echo 'Fazendo DB push...' && npx prisma db push --accept-data-loss && echo 'Iniciando servidor...' && node server.js"]
