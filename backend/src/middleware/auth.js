@@ -4,7 +4,7 @@
 // ========================================
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User.js');
+const prisma = require('../services/prisma.js');
 const env = require('../config/environment.js');
 
 // Cache para tokens inválidos/revogados (simple in-memory cache)
@@ -78,8 +78,10 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Buscar usuário no banco
-    const user = await User.findById(decoded.userId);
+    // Buscar usuário no banco com Prisma
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -87,7 +89,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    if (!user.is_active) {
+    if (!user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Usuário inativo'
@@ -155,9 +157,11 @@ const optionalAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, env.get('JWT_SECRET'));
-    const user = await User.findById(decoded.userId);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
 
-    req.user = user && user.is_active ? user : null;
+    req.user = user && user.isActive ? user : null;
     next();
   } catch (error) {
     req.user = null;
