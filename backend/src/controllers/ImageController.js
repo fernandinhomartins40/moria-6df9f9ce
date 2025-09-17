@@ -1,6 +1,6 @@
 // ========================================
 // IMAGE CONTROLLER - PRISMA VERSION
-// ✅ ELIMINA knex direct usage
+// ✅ Implementação 100% Prisma
 // ✅ Type safety 100% com Prisma
 // ✅ Relacionamentos automáticos para uploads/images
 // ========================================
