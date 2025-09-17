@@ -1,26 +1,27 @@
 {
   "name": "moria-backend",
   "version": "1.0.0",
-  "description": "Backend Node.js + SQLite3 para Moria Peças & Serviços",
+  "description": "Backend Node.js + Prisma + SQLite para Moria Peças & Serviços",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js",
-    "migrate": "knex migrate:latest",
-    "migrate:rollback": "knex migrate:rollback",
-    "seed": "knex seed:run",
-    "db:reset": "knex migrate:rollback:all && knex migrate:latest && knex seed:run"
+    "start": "npx prisma migrate deploy && npx prisma generate && node server.js",
+    "prisma:studio": "npx prisma studio",
+    "prisma:generate": "npx prisma generate",
+    "prisma:push": "npx prisma db push",
+    "prisma:reset": "npx prisma migrate reset --force"
   },
   "keywords": [
     "nodejs",
     "express",
     "sqlite3",
-    "knex",
+    "prisma",
     "api"
   ],
   "author": "Moria Peças & Serviços",
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "^6.16.2",
     "bcrypt": "^5.1.1",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -31,7 +32,6 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
-    "knex": "^3.1.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "rate-limit-redis": "^4.2.2",
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.16.5",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "prisma": "^6.16.2"
   }
 }

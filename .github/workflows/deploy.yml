@@ -39,34 +39,41 @@ jobs:
 
     - name: 🔍 Pre-Deploy Validation
       run: |
-        echo "🔍 Validando estrutura do projeto FULL STACK..."
+        echo "🔍 Validando estrutura do projeto PRISMA + DOCKER..."
         echo "📋 Frontend:"
-        ls -la package.json vite.config.ts Dockerfile .env.example || echo "⚠️ Arquivos frontend faltando"
-        ls -la src/services/api.ts || echo "⚠️ API client faltando"
-        echo "📋 Backend:"
+        ls -la frontend/package.json frontend/vite.config.js frontend/src/ || echo "⚠️ Arquivos frontend faltando"
+        echo "📋 Backend Prisma:"
         ls -la backend/package.json backend/server.js backend/Dockerfile || echo "⚠️ Arquivos backend faltando"
-        echo "📋 Docker:"
-        ls -la docker-compose.yml nginx/ || echo "⚠️ Arquivos Docker faltando"
+        ls -la backend/prisma/schema.prisma || echo "⚠️ Schema Prisma faltando"
+        echo "📋 Docker + nginx:"
+        ls -la docker-compose.yml Dockerfile.nginx nginx.conf || echo "⚠️ Arquivos Docker faltando"
+        echo "📋 Scripts:"
+        ls -la scripts/deploy.sh scripts/backup-prisma.sh || echo "⚠️ Scripts de automação faltando"
 
     - name: 📦 Prepare Full Stack Package
       run: |
-        echo "📦 Preparando pacote FULL STACK..."
+        echo "📦 Preparando pacote PRISMA + DOCKER..."
         echo "Commit: ${{ github.sha }}"
         echo "Branch: ${{ github.ref_name }}"
-        echo "Backend: Node.js + SQLite3"
+        echo "Backend: Node.js + Prisma + SQLite"
         echo "Frontend: React + Vite"
+        echo "Infraestrutura: Docker + nginx proxy"
 
-        # Criar arquivo compacto incluindo backend
+        # Criar arquivo compacto com estrutura Prisma + Docker
         tar --warning=no-file-changed -czf deploy.tar.gz \
           --exclude='.git' \
           --exclude='**/node_modules' \
-          --exclude='dist' \
+          --exclude='frontend/dist' \
+          --exclude='backend/dist' \
           --exclude='build' \
           --exclude='*.log' \
           --exclude='coverage' \
           --exclude='.env.local' \
-          --exclude='backend/database' \
-          --exclude='backup_before_supabase' \
+          --exclude='backend/database.sqlite' \
+          --exclude='backend/uploads' \
+          --exclude='backend/logs' \
+          --exclude='backups' \
+          --exclude='docs' \
           . || true
 
         echo "📊 Tamanho do pacote FULL STACK:"
@@ -90,7 +97,7 @@ jobs:
         sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << DEPLOY_SCRIPT
           set -e
 
-          echo '🚀 Iniciando deploy FULL STACK - Node.js + React'
+          echo '🚀 Iniciando deploy PRISMA + DOCKER - nginx + Node.js + React'
 
           # Configurar sistema
           echo '📦 Configurando VPS...'
@@ -152,39 +159,40 @@ jobs:
           tar -xzf /tmp/deploy.tar.gz && rm -f /tmp/deploy.tar.gz
 
           # Validar estrutura
-          echo '🔍 Validando estrutura FULL STACK...'
-          ls -la docker-compose.yml backend/Dockerfile || { echo '❌ Arquivos essenciais faltando!'; exit 1; }
-          ls -la backend/package.json backend/server.js || { echo '❌ Backend incompleto!'; exit 1; }
-          ls -la package.json src/services/api.ts || { echo '❌ Frontend incompleto!'; exit 1; }
+          echo '🔍 Validando estrutura PRISMA + DOCKER...'
+          ls -la docker-compose.yml nginx.conf Dockerfile.nginx || { echo '❌ Arquivos Docker essenciais faltando!'; exit 1; }
+          ls -la backend/Dockerfile backend/package.json backend/server.js || { echo '❌ Backend incompleto!'; exit 1; }
+          ls -la backend/prisma/schema.prisma || { echo '❌ Schema Prisma faltando!'; exit 1; }
+          ls -la frontend/package.json frontend/vite.config.js || { echo '❌ Frontend incompleto!'; exit 1; }
+          ls -la scripts/deploy.sh scripts/backup-prisma.sh || { echo '❌ Scripts de automação faltando!'; exit 1; }
 
-          # Configurar variáveis de produção
-          echo '⚙️ Configurando ambiente de produção...'
-          echo \"VPS_HOST=${{ env.VPS_HOST }}\" > .env.production
-          echo \"FRONTEND_PORT=${{ env.FRONTEND_PORT }}\" >> .env.production
-          echo \"BACKEND_PORT=${{ env.BACKEND_PORT }}\" >> .env.production
-          echo \"NGINX_PORT=${{ env.NGINX_PORT }}\" >> .env.production
-          echo \"JWT_SECRET=moria-production-jwt-${{ github.sha }}\" >> .env.production
-          echo \"NODE_ENV=production\" >> .env.production
-          echo \"VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api\" >> .env.production
-          echo \"VITE_APP_NAME='Moria Peças & Serviços'\" >> .env.production
-          echo \"CORS_ORIGIN=http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }},http://localhost:3000,http://localhost:5173,http://localhost:8080\" >> .env.production
+          # Configurar variáveis de produção para Prisma + Docker
+          echo '⚙️ Configurando ambiente de produção PRISMA + DOCKER...'
+          cat > .env << EOF
+VPS_HOST=${{ env.VPS_HOST }}
+NGINX_PORT=${{ env.NGINX_PORT:-80 }}
+NODE_ENV=production
+JWT_SECRET=moria-production-jwt-${{ github.sha }}
+DATABASE_URL=file:/app/data/moria.db
+DIRECT_URL=file:/app/data/moria.db
+CORS_ORIGIN=http://${{ env.VPS_HOST }},http://localhost:3000,http://localhost:5173
+UPLOAD_MAX_SIZE=10485760
+LOG_LEVEL=info
+APP_NAME=Moria Peças & Serviços
+APP_VERSION=2.0.0
+EOF
 
-          # Deploy com Docker Compose
-          echo '🐳 Executando deploy com Docker Compose...'
-          export BACKEND_PORT=${{ env.BACKEND_PORT }}
-          export FRONTEND_PORT=${{ env.FRONTEND_PORT }}
-          export NGINX_PORT=${{ env.NGINX_PORT }}
-          export VITE_API_BASE_URL=http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api
+          # Deploy com Docker Compose + nginx proxy
+          echo '🐳 Executando deploy PRISMA + DOCKER + nginx...'
+          export NGINX_PORT=${{ env.NGINX_PORT:-80 }}
 
-          # Verificar se portas estão realmente livres
-          echo '🔍 Verificando portas antes do deploy...'
-          for port in ${{ env.BACKEND_PORT }} ${{ env.FRONTEND_PORT }} ${{ env.NGINX_PORT }}; do
-            if netstat -tuln | grep -q ":$port "; then
-              echo "⚠️ Porta $port ainda ocupada, forçando liberação..."
-              fuser -k ${port}/tcp 2>/dev/null || true
-              sleep 2
-            fi
-          done
+          # Verificar se porta nginx está livre
+          echo '🔍 Verificando porta nginx antes do deploy...'
+          if netstat -tuln | grep -q ":${{ env.NGINX_PORT:-80 }} "; then
+            echo "⚠️ Porta ${{ env.NGINX_PORT:-80 }} ainda ocupada, forçando liberação..."
+            fuser -k ${{ env.NGINX_PORT:-80 }}/tcp 2>/dev/null || true
+            sleep 2
+          fi
 
           # Build e start dos serviços com invalidação forçada de cache
           echo '🏗️ Building imagens com invalidação total de cache...'
@@ -231,35 +239,35 @@ jobs:
           echo '🔍 Verificando serviços...'
           docker compose -p ${{ env.COMPOSE_PROJECT }} ps
 
-          # Testar backend
-          echo '🔍 Testando backend...'
+          # Testar nginx proxy
+          echo '🔍 Testando nginx proxy...'
           for i in {1..10}; do
-            if curl -f -s http://localhost:${{ env.BACKEND_PORT }}/api/health >/dev/null 2>&1; then
-              echo '✅ Backend health check passou!'
+            if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/health >/dev/null 2>&1; then
+              echo '✅ nginx health check passou!'
               break
             fi
-            echo "Backend - Tentativa \$i/10 - aguardando 5s..."
+            echo "nginx - Tentativa \$i/10 - aguardando 5s..."
             sleep 5
           done
 
-          # Testar frontend
-          echo '🔍 Testando frontend...'
+          # Testar API via nginx proxy
+          echo '🔍 Testando API via nginx proxy...'
           for i in {1..8}; do
-            if curl -f -s http://localhost:${{ env.FRONTEND_PORT }}/health >/dev/null 2>&1; then
-              echo '✅ Frontend health check passou!'
+            if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/api/health >/dev/null 2>&1; then
+              echo '✅ API health check via nginx passou!'
               break
             fi
-            echo "Frontend - Tentativa \$i/8 - aguardando 5s..."
+            echo "API via nginx - Tentativa \$i/8 - aguardando 5s..."
             sleep 5
           done
 
           # Verificação final
-          echo '🎯 Verificação final...'
-          if curl -f -s http://localhost:${{ env.BACKEND_PORT }}/api/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.FRONTEND_PORT }}/ >/dev/null 2>&1; then
-            echo '✅ DEPLOY FULL STACK CONCLUÍDO COM SUCESSO!'
-            echo '🌐 Frontend: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}'
-            echo '🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api'
-            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api/health'
+          echo '🎯 Verificação final PRISMA + DOCKER...'
+          if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/api/health >/dev/null 2>&1; then
+            echo '✅ DEPLOY PRISMA + DOCKER CONCLUÍDO COM SUCESSO!'
+            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}'
+            echo '🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api'
+            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api/health'
           else
             echo '❌ Falha na verificação final!'
             docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
@@ -267,23 +275,25 @@ jobs:
           fi
         DEPLOY_SCRIPT
 
-    - name: 🎉 Full Stack Deploy Success
+    - name: 🎉 Prisma + Docker Deploy Success
       run: |
-        echo "🎉 MORIA PEÇAS & SERVIÇOS FULL STACK DEPLOYADO!"
-        echo "✅ Backend Node.js + Frontend React em produção"
+        echo "🎉 MORIA PEÇAS & SERVIÇOS PRISMA + DOCKER DEPLOYADO!"
+        echo "✅ nginx + Backend Prisma + Frontend React em produção"
         echo ""
         echo "🔗 LINKS FUNCIONAIS:"
-        echo "🌐 Frontend: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}"
-        echo "🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api"
-        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.BACKEND_PORT }}/api/health"
-        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}/store-panel"
-        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.FRONTEND_PORT }}/customer"
+        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}"
+        echo "🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api"
+        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api/health"
+        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/store-panel"
+        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/customer"
         echo ""
-        echo "✅ Stack Completa:"
-        echo "  🎯 Backend: Node.js + Express + SQLite3 + JWT"
+        echo "✅ Stack Prisma + Docker:"
+        echo "  🎯 Backend: Node.js + Prisma + SQLite"
         echo "  🎨 Frontend: React + Vite + TypeScript"
-        echo "  🐳 Deploy: Docker Compose"
-        echo "  📦 Produtos e serviços da API própria"
+        echo "  🐳 nginx: Proxy reverso + Rate limiting"
+        echo "  🐋 Deploy: Docker Compose orchestration"
+        echo "  📦 ORM: Prisma type-safe database"
         echo "  🛒 Carrinho com promoções do backend"
         echo "  🔐 Autenticação JWT segura"
-        echo "  🗄️ Dados persistidos em SQLite3"
+        echo "  🗄️ Dados persistidos via Prisma"
+        echo "  🚀 Scripts: deploy.sh + backup-prisma.sh"

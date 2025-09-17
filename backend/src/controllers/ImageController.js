@@ -1,327 +1,413 @@
 // ========================================
-// CONTROLADOR DE IMAGENS - MORIA BACKEND
-// Upload, crop, compressão e gerenciamento
+// IMAGE CONTROLLER - PRISMA VERSION
+// ✅ ELIMINA knex direct usage
+// ✅ Type safety 100% com Prisma
+// ✅ Relacionamentos automáticos para uploads/images
 // ========================================
 
+const prisma = require('../services/prisma.js');
 const imageProcessor = require('../utils/imageProcessor');
-const knex = require('../database');
+const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
 const fs = require('fs');
 const path = require('path');
 
-class ImageController {
-  // Upload único de imagem
-  async uploadSingle(req, res) {
-    try {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nenhuma imagem foi enviada'
-        });
-      }
-
-      // Obter metadados da imagem
-      const metadata = await imageProcessor.getImageMetadata(req.file.path);
-      if (!metadata) {
-        imageProcessor.cleanupFile(req.file.path);
-        return res.status(400).json({
-          success: false,
-          message: 'Arquivo de imagem inválido'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: {
-          tempPath: req.file.path,
-          originalName: req.file.originalname,
-          size: req.file.size,
-          metadata: metadata
-        },
-        message: 'Upload realizado com sucesso'
-      });
-
-    } catch (error) {
-      console.error('Erro no upload:', error);
-      if (req.file) {
-        imageProcessor.cleanupFile(req.file.path);
-      }
-
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno no servidor'
-      });
-    }
+// Upload único de imagem
+const uploadSingle = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError('Nenhuma imagem foi enviada', 400);
   }
 
-  // Upload múltiplo de imagens
-  async uploadMultiple(req, res) {
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nenhuma imagem foi enviada'
-        });
+  try {
+    // Obter metadados da imagem
+    const metadata = await imageProcessor.getImageMetadata(req.file.path);
+    if (!metadata) {
+      imageProcessor.cleanupFile(req.file.path);
+      throw new AppError('Arquivo de imagem inválido', 400);
+    }
+
+    // ✅ Registrar upload no banco com Prisma
+    const upload = await prisma.upload.create({
+      data: {
+        originalName: req.file.originalname,
+        fileName: path.basename(req.file.path),
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path,
+        type: 'IMAGE',
+        status: 'PROCESSING',
+        metadata: JSON.stringify(metadata)
       }
+    });
 
-      const results = [];
+    res.json({
+      success: true,
+      data: {
+        upload,
+        tempPath: req.file.path,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        metadata
+      },
+      message: 'Upload realizado com sucesso'
+    });
 
-      for (const file of req.files) {
-        const metadata = await imageProcessor.getImageMetadata(file.path);
-        if (metadata) {
-          results.push({
-            tempPath: file.path,
+  } catch (error) {
+    if (req.file) {
+      imageProcessor.cleanupFile(req.file.path);
+    }
+    throw error;
+  }
+});
+
+// Upload múltiplo de imagens
+const uploadMultiple = asyncHandler(async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    throw new AppError('Nenhuma imagem foi enviada', 400);
+  }
+
+  const results = [];
+  const uploadPromises = [];
+
+  try {
+    for (const file of req.files) {
+      const metadata = await imageProcessor.getImageMetadata(file.path);
+
+      if (metadata) {
+        // ✅ Criar registro de upload no banco
+        const uploadPromise = prisma.upload.create({
+          data: {
             originalName: file.originalname,
+            fileName: path.basename(file.path),
+            mimeType: file.mimetype,
             size: file.size,
-            metadata: metadata
-          });
-        } else {
-          imageProcessor.cleanupFile(file.path);
-        }
-      }
-
-      res.json({
-        success: true,
-        data: results,
-        message: `${results.length} imagens enviadas com sucesso`
-      });
-
-    } catch (error) {
-      console.error('Erro no upload múltiplo:', error);
-
-      // Limpar todos os arquivos em caso de erro
-      if (req.files) {
-        req.files.forEach(file => {
-          imageProcessor.cleanupFile(file.path);
+            path: file.path,
+            type: 'IMAGE',
+            status: 'PROCESSING',
+            metadata: JSON.stringify(metadata)
+          }
         });
-      }
 
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno no servidor'
-      });
-    }
-  }
+        uploadPromises.push(uploadPromise);
 
-  // Processar e salvar imagem (com ou sem crop)
-  async processImage(req, res) {
-    try {
-      const { tempPath, cropData } = req.body;
-
-      if (!tempPath) {
-        return res.status(400).json({
-          success: false,
-          message: 'Caminho da imagem temporária é obrigatório'
-        });
-      }
-
-      // Normalizar path para funcionar tanto com barras normais quanto invertidas
-      const normalizedPath = path.normalize(tempPath.replace(/\//g, path.sep));
-
-      if (!fs.existsSync(normalizedPath)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Arquivo temporário não encontrado'
-        });
-      }
-
-      // Validar dados de crop se fornecidos
-      if (cropData) {
-        const metadata = await imageProcessor.getImageMetadata(normalizedPath);
-        if (!imageProcessor.validateCropData(cropData, metadata)) {
-          return res.status(400).json({
-            success: false,
-            message: 'Dados de crop inválidos'
-          });
-        }
-      }
-
-      // Processar imagem
-      const result = await imageProcessor.processImage(
-        normalizedPath,
-        require('uuid').v4(),
-        cropData
-      );
-
-      // Limpar arquivo temporário
-      imageProcessor.cleanupFile(normalizedPath);
-
-      res.json({
-        success: true,
-        data: {
-          urls: result
-        },
-        message: 'Imagem processada com sucesso'
-      });
-
-    } catch (error) {
-      console.error('Erro ao processar imagem:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Erro interno no servidor'
-      });
-    }
-  }
-
-  // Fazer crop de imagem existente
-  async cropExistingImage(req, res) {
-    try {
-      const { baseName, cropData } = req.body;
-
-      if (!baseName || !cropData) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome base da imagem e dados de crop são obrigatórios'
-        });
-      }
-
-      // Buscar imagem original (full size)
-      const originalPath = path.join(
-        __dirname,
-        '../../uploads/products/full',
-        `${baseName}.webp`
-      );
-
-      if (!fs.existsSync(originalPath)) {
-        return res.status(404).json({
-          success: false,
-          message: 'Imagem original não encontrada'
-        });
-      }
-
-      // Validar dados de crop
-      const metadata = await imageProcessor.getImageMetadata(originalPath);
-      if (!imageProcessor.validateCropData(cropData, metadata)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dados de crop inválidos'
-        });
-      }
-
-      // Gerar novo nome base para a versão cropada
-      const newBaseName = require('uuid').v4();
-
-      // Fazer crop
-      const result = await imageProcessor.cropImage(
-        originalPath,
-        cropData,
-        newBaseName
-      );
-
-      res.json({
-        success: true,
-        data: {
-          baseName: newBaseName,
-          urls: result
-        },
-        message: 'Crop realizado com sucesso'
-      });
-
-    } catch (error) {
-      console.error('Erro ao fazer crop:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Erro interno no servidor'
-      });
-    }
-  }
-
-  // Deletar imagem
-  async deleteImage(req, res) {
-    try {
-      const { baseName } = req.params;
-
-      if (!baseName) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome base da imagem é obrigatório'
-        });
-      }
-
-      const deleted = await imageProcessor.deleteImage(baseName);
-
-      if (deleted) {
-        res.json({
-          success: true,
-          message: 'Imagem deletada com sucesso'
+        results.push({
+          tempPath: file.path,
+          originalName: file.originalname,
+          size: file.size,
+          metadata
         });
       } else {
-        res.status(404).json({
-          success: false,
-          message: 'Imagem não encontrada'
-        });
+        imageProcessor.cleanupFile(file.path);
       }
+    }
 
-    } catch (error) {
-      console.error('Erro ao deletar imagem:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno no servidor'
+    // Executar todos os uploads em paralelo
+    const uploads = await Promise.all(uploadPromises);
+
+    res.json({
+      success: true,
+      data: {
+        uploads,
+        files: results
+      },
+      message: `${results.length} imagens enviadas com sucesso`
+    });
+
+  } catch (error) {
+    // Limpar todos os arquivos em caso de erro
+    if (req.files) {
+      req.files.forEach(file => {
+        imageProcessor.cleanupFile(file.path);
       });
     }
+    throw error;
+  }
+});
+
+// Processar imagem (crop, resize, compress)
+const processImage = asyncHandler(async (req, res) => {
+  const { uploadId } = req.params;
+  const {
+    crop,
+    sizes = ['thumbnail', 'medium', 'large'],
+    quality = 85,
+    format = 'webp'
+  } = req.body;
+
+  // ✅ Buscar upload com Prisma
+  const upload = await prisma.upload.findUnique({
+    where: { id: parseInt(uploadId) }
+  });
+
+  if (!upload) {
+    throw new AppError('Upload não encontrado', 404);
   }
 
-  // Listar imagens de um produto
-  async getProductImages(req, res) {
-    try {
-      const { productId } = req.params;
+  if (upload.status === 'COMPLETED') {
+    throw new AppError('Imagem já foi processada', 400);
+  }
 
-      if (!productId) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID do produto é obrigatório'
-        });
-      }
+  try {
+    // ✅ Atualizar status para processando
+    await prisma.upload.update({
+      where: { id: upload.id },
+      data: { status: 'PROCESSING' }
+    });
 
-      // Buscar produto no banco
-      const product = await knex('products')
-        .where('id', productId)
-        .first();
+    // Processar imagem
+    const processedImages = await imageProcessor.processImage(upload.path, {
+      crop,
+      sizes,
+      quality,
+      format
+    });
 
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: 'Produto não encontrado'
-        });
-      }
-
-      // Retornar imagens
-      const images = Array.isArray(product.images) ? product.images : [];
-
-      res.json({
-        success: true,
+    // ✅ Criar registros de imagem processada no banco
+    const imagePromises = processedImages.map(processed =>
+      prisma.image.create({
         data: {
-          images: images,
-          total: images.length
+          uploadId: upload.id,
+          fileName: processed.fileName,
+          path: processed.path,
+          size: processed.size.toUpperCase(),
+          width: processed.width,
+          height: processed.height,
+          fileSize: processed.fileSize,
+          mimeType: processed.mimeType,
+          url: processed.url
         }
-      });
+      })
+    );
 
-    } catch (error) {
-      console.error('Erro ao buscar imagens:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno no servidor'
-      });
+    const images = await Promise.all(imagePromises);
+
+    // ✅ Atualizar upload como concluído
+    const updatedUpload = await prisma.upload.update({
+      where: { id: upload.id },
+      data: {
+        status: 'COMPLETED',
+        processedAt: new Date()
+      },
+      include: {
+        images: true
+      }
+    });
+
+    // Limpar arquivo temporário
+    imageProcessor.cleanupFile(upload.path);
+
+    res.json({
+      success: true,
+      data: {
+        upload: updatedUpload,
+        images
+      },
+      message: 'Imagem processada com sucesso'
+    });
+
+  } catch (error) {
+    // ✅ Marcar upload como erro
+    await prisma.upload.update({
+      where: { id: upload.id },
+      data: {
+        status: 'ERROR',
+        error: error.message
+      }
+    });
+
+    throw new AppError('Erro ao processar imagem: ' + error.message, 500);
+  }
+});
+
+// Listar uploads
+const getUploads = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    type,
+    startDate,
+    endDate
+  } = req.query;
+
+  const where = {
+    ...(status && { status: status.toUpperCase() }),
+    ...(type && { type: type.toUpperCase() }),
+    ...(startDate && endDate && {
+      createdAt: {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
+    })
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.upload.findMany({
+      where,
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        images: true,
+        _count: {
+          select: { images: true }
+        }
+      }
+    }),
+    prisma.upload.count({ where })
+  ]);
+
+  res.json({
+    success: true,
+    data,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / parseInt(limit))
     }
+  });
+});
+
+// Obter imagens por upload
+const getImagesByUpload = asyncHandler(async (req, res) => {
+  const { uploadId } = req.params;
+
+  const images = await prisma.image.findMany({
+    where: { uploadId: parseInt(uploadId) },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  res.json({
+    success: true,
+    data: images
+  });
+});
+
+// Deletar upload e imagens associadas
+const deleteUpload = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // ✅ Buscar upload com imagens
+  const upload = await prisma.upload.findUnique({
+    where: { id: parseInt(id) },
+    include: { images: true }
+  });
+
+  if (!upload) {
+    throw new AppError('Upload não encontrado', 404);
   }
 
-  // Limpeza de arquivos temporários
-  async cleanupTemp(req, res) {
-    try {
-      await imageProcessor.cleanupTempFiles();
-
-      res.json({
-        success: true,
-        message: 'Limpeza de arquivos temporários concluída'
-      });
-
-    } catch (error) {
-      console.error('Erro na limpeza:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro na limpeza de arquivos'
-      });
+  try {
+    // Deletar arquivos físicos
+    if (fs.existsSync(upload.path)) {
+      fs.unlinkSync(upload.path);
     }
-  }
-}
 
-module.exports = new ImageController();
+    upload.images.forEach(image => {
+      if (fs.existsSync(image.path)) {
+        fs.unlinkSync(image.path);
+      }
+    });
+
+    // ✅ Deletar registros do banco (cascade automático)
+    await prisma.upload.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({
+      success: true,
+      message: 'Upload e imagens deletados com sucesso'
+    });
+
+  } catch (error) {
+    throw new AppError('Erro ao deletar upload: ' + error.message, 500);
+  }
+});
+
+// Obter estatísticas de uploads
+const getUploadStats = asyncHandler(async (req, res) => {
+  const [
+    totalUploads,
+    completedUploads,
+    processingUploads,
+    errorUploads,
+    totalImages,
+    totalSize
+  ] = await Promise.all([
+    prisma.upload.count(),
+    prisma.upload.count({ where: { status: 'COMPLETED' } }),
+    prisma.upload.count({ where: { status: 'PROCESSING' } }),
+    prisma.upload.count({ where: { status: 'ERROR' } }),
+    prisma.image.count(),
+    prisma.upload.aggregate({ _sum: { size: true } })
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      uploads: {
+        total: totalUploads,
+        completed: completedUploads,
+        processing: processingUploads,
+        error: errorUploads
+      },
+      images: {
+        total: totalImages
+      },
+      storage: {
+        totalSizeBytes: totalSize._sum.size || 0,
+        totalSizeMB: Math.round((totalSize._sum.size || 0) / 1024 / 1024 * 100) / 100
+      }
+    }
+  });
+});
+
+// Associar imagens a produtos
+const linkImagesToProduct = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { imageIds, primary = false } = req.body;
+
+  if (!imageIds || imageIds.length === 0) {
+    throw new AppError('IDs das imagens são obrigatórios', 400);
+  }
+
+  // ✅ Verificar se produto existe
+  const product = await prisma.product.findUnique({
+    where: { id: parseInt(productId) }
+  });
+
+  if (!product) {
+    throw new AppError('Produto não encontrado', 404);
+  }
+
+  // ✅ Criar associações product-image
+  const associations = imageIds.map((imageId, index) =>
+    prisma.productImage.create({
+      data: {
+        productId: parseInt(productId),
+        imageId: parseInt(imageId),
+        isPrimary: primary && index === 0,
+        order: index + 1
+      }
+    })
+  );
+
+  const results = await Promise.all(associations);
+
+  res.json({
+    success: true,
+    data: results,
+    message: 'Imagens associadas ao produto com sucesso'
+  });
+});
+
+module.exports = {
+  uploadSingle,
+  uploadMultiple,
+  processImage,
+  getUploads,
+  getImagesByUpload,
+  deleteUpload,
+  getUploadStats,
+  linkImagesToProduct
+};

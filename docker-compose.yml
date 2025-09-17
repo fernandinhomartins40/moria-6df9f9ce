@@ -1,142 +1,251 @@
-# ============================================
-# Docker Compose - Moria Peças & Serviços
-# Frontend React + Backend Node.js + Nginx
-# ============================================
+# ========================================
+# DOCKER COMPOSE - MORIA PRISMA + NGINX
+# ✅ Backend Prisma otimizado
+# ✅ Frontend nginx proxy reverso
+# ✅ Volumes persistentes
+# ✅ Health checks automáticos
+# ✅ Rate limiting integrado
+# ========================================
 
-version: '3.8'
+# version: '3.8' # Removido - obsoleto no Docker Compose v2
 
 services:
-  # Backend API Node.js
+  # ========================================
+  # NGINX PROXY REVERSO + FRONTEND
+  # ========================================
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: moria-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - moria-network
+    volumes:
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+    environment:
+      - NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
+      - NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-1024}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.moria.rule=Host(`localhost`)"
+
+  # ========================================
+  # BACKEND PRISMA API
+  # ========================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      args:
-        - BUILD_TIMESTAMP=${BUILD_TIMESTAMP:-}
+      target: production
     container_name: moria-backend
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-3031}:3001"
+    networks:
+      - moria-network
     environment:
+      # ✅ Prisma Configuration
       - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=file:/app/data/moria.db
+      - DIRECT_URL=file:/app/data/moria.db
+
+      # ✅ Application
       - PORT=3001
       - HOST=0.0.0.0
+      - API_PREFIX=${API_PREFIX:-/api}
+
+      # ✅ Security
       - JWT_SECRET=${JWT_SECRET:-moria-super-secret-jwt-key-change-in-production}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
-      - REFRESH_TOKEN_EXPIRES_IN=${REFRESH_TOKEN_EXPIRES_IN:-7d}
-      - DATABASE_URL=/app/database/database.sqlite
-      - VPS_HOST=${VPS_HOST:-72.60.10.108}
-      - FRONTEND_PORT=${FRONTEND_PORT:-3030}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://72.60.10.108:3030,http://localhost:3000,http://localhost:5173,http://localhost:8080}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+
+      # ✅ CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost,http://localhost:3000,http://localhost:5173}
       - CORS_CREDENTIALS=${CORS_CREDENTIALS:-true}
-      # Logging (Fase 3)
-      - LOG_LEVEL=${LOG_LEVEL:-warn}
-      - LOG_FILE=${LOG_FILE:-true}
-      - ENABLE_REQUEST_LOGGING=${ENABLE_REQUEST_LOGGING:-false}
-      # Rate Limiting (Fase 4)
+
+      # ✅ Rate Limiting
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
       - ENABLE_RATE_LIMITING=${ENABLE_RATE_LIMITING:-true}
-      # Features
-      - ENABLE_CORS=${ENABLE_CORS:-true}
-      - ENABLE_COMPRESSION=${ENABLE_COMPRESSION:-true}
-      # Security
-      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secure-session-secret-here-minimum-32-characters}
-      # Uploads
-      - UPLOAD_MAX_SIZE=${UPLOAD_MAX_SIZE:-5242880}
+
+      # ✅ Upload Configuration
+      - UPLOAD_MAX_SIZE=${UPLOAD_MAX_SIZE:-10485760}
       - UPLOAD_ALLOWED_TYPES=${UPLOAD_ALLOWED_TYPES:-image/jpeg,image/png,image/webp,image/gif}
-      # API Configuration
-      - API_PREFIX=${API_PREFIX:-/api}
-      - API_VERSION=${API_VERSION:-v1}
-      # Application Metadata
-      - APP_NAME=${APP_NAME:-Moria Backend}
-      - APP_VERSION=${APP_VERSION:-1.0.0}
-      - APP_DESCRIPTION=${APP_DESCRIPTION:-Sistema de gestão automotiva}
-      # Redis (opcional para rate limiting distribuído)
+      - UPLOAD_DIR=/app/uploads
+
+      # ✅ Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FILE=${LOG_FILE:-true}
+      - ENABLE_REQUEST_LOGGING=${ENABLE_REQUEST_LOGGING:-false}
+
+      # ✅ Application Metadata
+      - APP_NAME=${APP_NAME:-Moria Peças & Serviços}
+      - APP_VERSION=${APP_VERSION:-2.0.0}
+      - APP_DESCRIPTION=${APP_DESCRIPTION:-Sistema de gestão automotiva com Prisma}
+
+      # ✅ Email (future)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+
+      # ✅ Redis (opcional)
       - REDIS_URL=${REDIS_URL:-}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
     volumes:
-      - backend_data:/app/database
-    networks:
-      - moria-network
+      # ✅ Dados persistentes do Prisma
+      - moria_data:/app/data
+      - moria_uploads:/app/uploads
+      - moria_logs:/app/logs
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
-  # Frontend React + Nginx
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILD_TIMESTAMP=${BUILD_TIMESTAMP:-}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://72.60.10.108:3031/api}
-        - VITE_APP_NAME=${VITE_APP_NAME:-Moria Peças & Serviços}
-    container_name: moria-frontend
+    labels:
+      - "app=moria-backend"
+      - "tier=api"
+      - "technology=prisma"
+
+  # ========================================
+  # REDIS (OPCIONAL - para cache/sessions)
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: moria-redis
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-3030}:80"
-    depends_on:
-      - backend
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-moria-redis-pass}
     networks:
       - moria-network
+    volumes:
+      - moria_redis:/data
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-moria-redis-pass}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Proxy Reverso Nginx (Opcional - para produção)
-  nginx-proxy:
-    image: nginx:alpine
-    container_name: moria-proxy
-    restart: unless-stopped
-    ports:
-      - "${NGINX_PORT:-80}:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - moria-network
     profiles:
+      - cache
       - production
 
-volumes:
-  backend_data:
-    driver: local
-    name: moria_backend_data
+  # ========================================
+  # MONITORING (OPCIONAL - para produção)
+  # ========================================
+  watchtower:
+    image: containrrr/watchtower
+    container_name: moria-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    profiles:
+      - monitoring
+      - production
 
+# ========================================
+# VOLUMES PERSISTENTES
+# ========================================
+volumes:
+  # Dados do banco Prisma (SQLite)
+  moria_data:
+    driver: local
+    name: moria_data
+
+  # Uploads de imagens
+  moria_uploads:
+    driver: local
+    name: moria_uploads
+
+  # Logs da aplicação
+  moria_logs:
+    driver: local
+    name: moria_logs
+
+  # Cache do nginx
+  nginx_cache:
+    driver: local
+    name: moria_nginx_cache
+
+  # Logs do nginx
+  nginx_logs:
+    driver: local
+    name: moria_nginx_logs
+
+  # Dados do Redis (se habilitado)
+  moria_redis:
+    driver: local
+    name: moria_redis_data
+
+# ========================================
+# NETWORKS
+# ========================================
 networks:
   moria-network:
     driver: bridge
     name: moria_network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
-# ============================================
-# COMANDOS ÚTEIS:
+# ========================================
+# COMANDOS ÚTEIS PARA PRISMA
+# ========================================
 #
-# Desenvolvimento:
+# 🚀 DESENVOLVIMENTO:
 # docker-compose up --build
+# docker-compose up --build backend
 #
-# Produção:
+# 🏭 PRODUÇÃO:
 # docker-compose --profile production up --build -d
 #
-# Rebuild específico:
-# docker-compose up --build backend
-# docker-compose up --build frontend
+# 🔧 PRISMA COMMANDS:
+# docker-compose exec backend npx prisma studio
+# docker-compose exec backend npx prisma db push
+# docker-compose exec backend npx prisma generate
+# docker-compose exec backend npx prisma migrate status
 #
-# Logs:
+# 📊 LOGS:
 # docker-compose logs -f backend
-# docker-compose logs -f frontend
+# docker-compose logs -f nginx
 #
-# Backup do banco:
-# docker-compose exec backend cp /app/database/database.sqlite /tmp/
-# docker cp moria-backend:/tmp/database.sqlite ./backup/
-# ============================================
+# 💾 BACKUP PRISMA:
+# docker-compose exec backend sqlite3 /app/data/moria.db ".backup /tmp/backup.db"
+# docker cp moria-backend:/tmp/backup.db ./backups/
+#
+# 🔄 REDIS (com profile cache):
+# docker-compose --profile cache up -d redis
+#
+# 📈 MONITORING (com profile monitoring):
+# docker-compose --profile monitoring up -d watchtower
+#
+# 🧪 HEALTH CHECKS:
+# docker-compose exec backend wget -qO- http://localhost:3001/api/health
+# docker-compose exec nginx wget -qO- http://localhost/health
+#
+# 🗑️ CLEANUP:
+# docker-compose down -v
+# docker system prune -a
+#
+# ========================================

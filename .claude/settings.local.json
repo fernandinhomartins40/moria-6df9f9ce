@@ -24,7 +24,22 @@
       "Bash(npx knex migrate:*)",
       "Bash(cd:*)",
       "Bash(netstat:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(dir:*)",
+      "Bash(tasklist)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma init:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma:*)",
+      "Bash(docker-compose config:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker system prune:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

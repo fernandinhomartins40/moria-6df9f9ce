@@ -1,56 +1,88 @@
 // ========================================
-// AUTH CONTROLLER - MORIA BACKEND
-// Controlador de autenticação
+// AUTH CONTROLLER - PRISMA VERSION
+// ✅ ELIMINA User model dependência
+// ✅ ELIMINA sistema de validação customizado
+// ✅ Type safety 100% com Prisma
+// ✅ Queries diretas e otimizadas
 // ========================================
 
-const User = require('../models/User.js');
+const prisma = require('../services/prisma.js');
+const bcrypt = require('bcrypt');
 const { generateToken, generateRefreshToken } = require('../middleware/auth.js');
 const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
-const { validateUserData } = require('../utils/validators.js');
-const env = require('../config/environment.js');
 
 // Registrar novo usuário
 const register = asyncHandler(async (req, res) => {
-  // Validar dados de entrada
-  const validation = validateUserData(req.body);
+  const {
+    name,
+    email,
+    password,
+    phone,
+    cpf,
+    birthDate
+  } = req.body;
 
-  if (!validation.isValid) {
-    return res.status(400).json({
-      success: false,
-      message: 'Dados de entrada inválidos',
-      errors: validation.errors
-    });
+  // ✅ Validação básica (Prisma fará validação de schema)
+  if (!name || name.trim().length < 2) {
+    throw new AppError('Nome deve ter pelo menos 2 caracteres', 400);
   }
 
-  const userData = validation.data;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new AppError('Email inválido', 400);
+  }
 
-  // Verificar se usuário já existe
-  const existingUser = await User.findByEmail(userData.email);
+  if (!password || password.length < 6) {
+    throw new AppError('Senha deve ter pelo menos 6 caracteres', 400);
+  }
+
+  const emailLower = email.trim().toLowerCase();
+
+  // ✅ Verificar se usuário já existe
+  const existingUser = await prisma.user.findUnique({
+    where: { email: emailLower }
+  });
+
   if (existingUser) {
     throw new AppError('Email já cadastrado no sistema', 409);
   }
 
-  // Completar dados do usuário
-  const completeUserData = {
-    ...userData,
-    role: 'customer', // Padrão
-    is_active: true
-  };
+  // ✅ Hash da senha
+  const passwordHash = await bcrypt.hash(password, 12);
 
-  const newUser = await User.create(completeUserData);
+  // ✅ Criar usuário com Prisma
+  const newUser = await prisma.user.create({
+    data: {
+      name: name.trim(),
+      email: emailLower,
+      passwordHash,
+      phone: phone?.trim() || null,
+      cpf: cpf?.trim() || null,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      role: 'CUSTOMER',
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      birthDate: true,
+      role: true,
+      isActive: true,
+      createdAt: true
+    }
+  });
 
   // Gerar tokens
   const token = generateToken(newUser.id);
   const refreshToken = generateRefreshToken(newUser.id);
 
-  // Remover senha da resposta
-  const { password: _, ...userResponse } = newUser;
-
   res.status(201).json({
     success: true,
     message: 'Usuário cadastrado com sucesso',
     data: {
-      user: userResponse,
+      user: newUser,
       token,
       refreshToken
     }
@@ -61,46 +93,48 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Validação simples para login
+  // Validação básica
   if (!email || !email.trim()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email é obrigatório'
-    });
+    throw new AppError('Email é obrigatório', 400);
   }
 
   if (!password) {
-    return res.status(400).json({
-      success: false,
-      message: 'Senha é obrigatória'
-    });
+    throw new AppError('Senha é obrigatória', 400);
   }
 
-  // Buscar usuário por email
-  const user = await User.findByEmail(email.trim());
+  const emailLower = email.trim().toLowerCase();
+
+  // ✅ Buscar usuário com Prisma (incluindo password_hash)
+  const user = await prisma.user.findUnique({
+    where: { email: emailLower }
+  });
+
   if (!user) {
     throw new AppError('Email ou senha incorretos', 401);
   }
 
-  if (!user.is_active) {
+  if (!user.isActive) {
     throw new AppError('Conta inativa. Entre em contato com o suporte.', 401);
   }
 
-  // Verificar senha
-  const isValidPassword = await User.verifyPassword(password, user.password_hash);
+  // ✅ Verificar senha
+  const isValidPassword = await bcrypt.compare(password, user.passwordHash);
   if (!isValidPassword) {
     throw new AppError('Email ou senha incorretos', 401);
   }
+
+  // ✅ Atualizar último login
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() }
+  });
 
   // Gerar tokens
   const token = generateToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
 
-  // Atualizar último login
-  await User.updateLastLogin(user.id);
-
-  // Remover senha da resposta
-  const { password: _, ...userResponse } = user;
+  // Remover password_hash da resposta
+  const { passwordHash, ...userResponse } = user;
 
   res.json({
     success: true,
@@ -113,103 +147,114 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// Obter perfil do usuário logado
+// Obter perfil do usuário
 const getProfile = asyncHandler(async (req, res) => {
-  // req.user já está disponível pelo middleware authenticateToken
-  const { password, ...userResponse } = req.user;
+  const userId = req.user.id;
+
+  // ✅ Buscar usuário com relacionamentos automáticos
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      birthDate: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      lastLoginAt: true,
+      totalOrders: true,
+      totalSpent: true,
+      addresses: true,
+      _count: {
+        select: {
+          orders: true,
+          favorites: true
+        }
+      }
+    }
+  });
+
+  if (!user) {
+    throw new AppError('Usuário não encontrado', 404);
+  }
 
   res.json({
     success: true,
-    data: {
-      user: userResponse
-    }
+    data: user
   });
 });
 
-// Atualizar perfil do usuário
+// Atualizar perfil
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const { name, phone, cpf, birthDate } = req.body;
 
-  // Validar dados de entrada para atualização
-  const validation = validateUserData(req.body, { isUpdate: true });
+  // ✅ Validação básica
+  const updateData = {};
+  if (name && name.trim().length >= 2) updateData.name = name.trim();
+  if (phone) updateData.phone = phone.trim() || null;
+  if (cpf) updateData.cpf = cpf.trim() || null;
+  if (birthDate) updateData.birthDate = new Date(birthDate);
 
-  if (!validation.isValid) {
-    return res.status(400).json({
-      success: false,
-      message: 'Dados de entrada inválidos',
-      errors: validation.errors
-    });
-  }
-
-  const updateData = validation.data;
-
-  // Se está tentando alterar email, verificar duplicação
-  if (updateData.email && updateData.email !== req.user.email) {
-    const existingUser = await User.findByEmail(updateData.email);
-    if (existingUser) {
-      throw new AppError('Email já está em uso por outro usuário', 409);
+  // ✅ Update com Prisma
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      birthDate: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true
     }
-  }
-
-  // Não permitir alteração de role via este endpoint
-  delete updateData.role;
-  delete updateData.is_active;
-
-  // Atualizar usuário
-  const updatedUser = await User.update(userId, updateData);
-
-  if (!updatedUser) {
-    throw new AppError('Erro ao atualizar perfil', 500);
-  }
-
-  // Remover senha da resposta
-  const { password, ...userResponse } = updatedUser;
+  });
 
   res.json({
     success: true,
     message: 'Perfil atualizado com sucesso',
-    data: {
-      user: userResponse
-    }
+    data: updatedUser
   });
 });
 
 // Alterar senha
 const changePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
   const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
 
-  // Validação simples dos campos
-  if (!currentPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'Senha atual é obrigatória'
-    });
-  }
-
-  if (!newPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'Nova senha é obrigatória'
-    });
+  if (!currentPassword || !newPassword) {
+    throw new AppError('Senha atual e nova senha são obrigatórias', 400);
   }
 
   if (newPassword.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: 'Nova senha deve ter pelo menos 6 caracteres'
-    });
+    throw new AppError('Nova senha deve ter pelo menos 6 caracteres', 400);
   }
+
+  // ✅ Buscar usuário atual
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
 
   // Verificar senha atual
-  const user = await User.findById(userId, true); // incluir password_hash
-  const isValidPassword = await User.verifyPassword(currentPassword, user.password_hash);
-  if (!isValidPassword) {
-    throw new AppError('Senha atual incorreta', 400);
+  const isValidCurrentPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isValidCurrentPassword) {
+    throw new AppError('Senha atual incorreta', 401);
   }
 
-  // Atualizar senha
-  await User.update(userId, { password: newPassword });
+  // ✅ Hash da nova senha e atualizar
+  const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: newPasswordHash }
+  });
 
   res.json({
     success: true,
@@ -222,21 +267,21 @@ const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken: token } = req.body;
 
   if (!token) {
-    throw new AppError('Refresh token requerido', 400);
+    throw new AppError('Refresh token é obrigatório', 400);
   }
 
   try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, env.get('JWT_SECRET'));
+    // Verificar e decodificar token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded.type !== 'refresh') {
+    // ✅ Verificar se usuário ainda existe e está ativo
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, isActive: true }
+    });
+
+    if (!user || !user.isActive) {
       throw new AppError('Token inválido', 401);
-    }
-
-    // Verificar se usuário ainda existe e está ativo
-    const user = await User.findById(decoded.userId);
-    if (!user || !user.is_active) {
-      throw new AppError('Usuário não encontrado ou inativo', 401);
     }
 
     // Gerar novos tokens
@@ -245,98 +290,98 @@ const refreshToken = asyncHandler(async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Token renovado com sucesso',
       data: {
         token: newToken,
         refreshToken: newRefreshToken
       }
     });
   } catch (error) {
-    throw new AppError('Refresh token inválido ou expirado', 401);
+    throw new AppError('Token inválido', 401);
   }
 });
 
-// Logout (opcional - apenas resposta de sucesso)
+// Logout (invalidar token)
 const logout = asyncHandler(async (req, res) => {
+  // Com JWT stateless, o logout é feito no frontend
+  // Aqui podemos adicionar lógica de blacklist se necessário
+
   res.json({
     success: true,
     message: 'Logout realizado com sucesso'
   });
 });
 
-// Listar usuários (admin apenas)
-const listUsers = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search, role, is_active } = req.query;
+// ✅ Métodos administrativos
 
-  const filters = {};
-  if (search) {
-    // Buscar por nome ou email
-    filters.search = search;
-  }
-  if (role) {
-    filters.role = role;
-  }
-  if (is_active !== undefined) {
-    filters.is_active = is_active === 'true';
-  }
+// Listar usuários (admin)
+const getUsers = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, role, isActive, search } = req.query;
 
-  const result = await User.findWithPagination(filters, parseInt(page), parseInt(limit));
+  const where = {
+    ...(role && { role: role.toUpperCase() }),
+    ...(isActive !== undefined && { isActive: isActive === 'true' }),
+    ...(search && {
+      OR: [
+        { name: { contains: search } },
+        { email: { contains: search } }
+      ]
+    })
+  };
 
-  // Remover senhas das respostas
-  result.data = result.data.map(user => {
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
-  });
+  const [data, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        lastLoginAt: true,
+        totalOrders: true,
+        totalSpent: true,
+        _count: {
+          select: { orders: true }
+        }
+      }
+    }),
+    prisma.user.count({ where })
+  ]);
 
   res.json({
     success: true,
-    data: result.data,
-    pagination: result.pagination
+    data,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / parseInt(limit))
+    }
   });
 });
 
-// Atualizar usuário (admin)
-const updateUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  // Validar dados de entrada para atualização
-  const validation = validateUserData(req.body, { isUpdate: true });
-
-  if (!validation.isValid) {
-    return res.status(400).json({
-      success: false,
-      message: 'Dados de entrada inválidos',
-      errors: validation.errors
-    });
-  }
-
-  const updateData = validation.data;
-
-  // Verificar se usuário existe
-  const user = await User.findById(id);
-  if (!user) {
-    throw new AppError('Usuário não encontrado', 404);
-  }
-
-  // Verificar duplicação de email
-  if (updateData.email && updateData.email !== user.email) {
-    const existingUser = await User.findByEmail(updateData.email);
-    if (existingUser) {
-      throw new AppError('Email já está em uso por outro usuário', 409);
-    }
-  }
-
-  // Atualizar usuário
-  const updatedUser = await User.update(id, updateData);
-
-  // Remover senha da resposta
-  const { password, ...userResponse } = updatedUser;
+// Obter estatísticas de usuários (admin)
+const getUserStats = asyncHandler(async (req, res) => {
+  const [total, active, customers, admins] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { isActive: true } }),
+    prisma.user.count({ where: { role: 'CUSTOMER' } }),
+    prisma.user.count({ where: { role: 'ADMIN' } })
+  ]);
 
   res.json({
     success: true,
-    message: 'Usuário atualizado com sucesso',
     data: {
-      user: userResponse
+      total,
+      active,
+      customers,
+      admins,
+      inactive: total - active
     }
   });
 });
@@ -349,6 +394,6 @@ module.exports = {
   changePassword,
   refreshToken,
   logout,
-  listUsers,
-  updateUser
+  getUsers,
+  getUserStats
 };
