@@ -1,4 +1,4 @@
-name: 🚀 Deploy Moria Peças & Serviços - Full Stack
+name: 🚀 Deploy Moria Pecas e Servicos - Full Stack
 
 # FORCE CACHE INVALIDATION - Fixed VITE_APP_NAME escaping - 2025-09-15T23:20:00Z
 
@@ -170,7 +170,7 @@ jobs:
           echo '⚙️ Configurando ambiente de produção PRISMA + DOCKER...'
           cat > .env << EOF
 VPS_HOST=${{ env.VPS_HOST }}
-NGINX_PORT=${{ env.NGINX_PORT:-80 }}
+NGINX_PORT=${{ env.NGINX_PORT }}
 NODE_ENV=production
 JWT_SECRET=moria-production-jwt-${{ github.sha }}
 DATABASE_URL=file:/app/data/moria.db
@@ -178,19 +178,19 @@ DIRECT_URL=file:/app/data/moria.db
 CORS_ORIGIN=http://${{ env.VPS_HOST }},http://localhost:3000,http://localhost:5173
 UPLOAD_MAX_SIZE=10485760
 LOG_LEVEL=info
-APP_NAME=Moria Peças & Serviços
+APP_NAME="Moria Pecas e Servicos"
 APP_VERSION=2.0.0
 EOF
 
           # Deploy com Docker Compose + nginx proxy
           echo '🐳 Executando deploy PRISMA + DOCKER + nginx...'
-          export NGINX_PORT=${{ env.NGINX_PORT:-80 }}
+          export NGINX_PORT=${{ env.NGINX_PORT }}
 
           # Verificar se porta nginx está livre
           echo '🔍 Verificando porta nginx antes do deploy...'
-          if netstat -tuln | grep -q ":${{ env.NGINX_PORT:-80 }} "; then
-            echo "⚠️ Porta ${{ env.NGINX_PORT:-80 }} ainda ocupada, forçando liberação..."
-            fuser -k ${{ env.NGINX_PORT:-80 }}/tcp 2>/dev/null || true
+          if netstat -tuln | grep -q ":${{ env.NGINX_PORT }} "; then
+            echo "⚠️ Porta ${{ env.NGINX_PORT }} ainda ocupada, forçando liberação..."
+            fuser -k ${{ env.NGINX_PORT }}/tcp 2>/dev/null || true
             sleep 2
           fi
 
@@ -242,7 +242,7 @@ EOF
           # Testar nginx proxy
           echo '🔍 Testando nginx proxy...'
           for i in {1..10}; do
-            if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/health >/dev/null 2>&1; then
+            if curl -f -s http://localhost:${{ env.NGINX_PORT }}/health >/dev/null 2>&1; then
               echo '✅ nginx health check passou!'
               break
             fi
@@ -253,7 +253,7 @@ EOF
           # Testar API via nginx proxy
           echo '🔍 Testando API via nginx proxy...'
           for i in {1..8}; do
-            if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/api/health >/dev/null 2>&1; then
+            if curl -f -s http://localhost:${{ env.NGINX_PORT }}/api/health >/dev/null 2>&1; then
               echo '✅ API health check via nginx passou!'
               break
             fi
@@ -263,11 +263,11 @@ EOF
 
           # Verificação final
           echo '🎯 Verificação final PRISMA + DOCKER...'
-          if curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.NGINX_PORT:-80 }}/api/health >/dev/null 2>&1; then
+          if curl -f -s http://localhost:${{ env.NGINX_PORT }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.NGINX_PORT }}/api/health >/dev/null 2>&1; then
             echo '✅ DEPLOY PRISMA + DOCKER CONCLUÍDO COM SUCESSO!'
-            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}'
-            echo '🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api'
-            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api/health'
+            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}'
+            echo '🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api'
+            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api/health'
           else
             echo '❌ Falha na verificação final!'
             docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
@@ -281,11 +281,11 @@ EOF
         echo "✅ nginx + Backend Prisma + Frontend React em produção"
         echo ""
         echo "🔗 LINKS FUNCIONAIS:"
-        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}"
-        echo "🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api"
-        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/api/health"
-        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/store-panel"
-        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT:-80 }}/customer"
+        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}"
+        echo "🔌 API: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api"
+        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/api/health"
+        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/store-panel"
+        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.NGINX_PORT }}/customer"
         echo ""
         echo "✅ Stack Prisma + Docker:"
         echo "  🎯 Backend: Node.js + Prisma + SQLite"
