@@ -168,19 +168,17 @@ jobs:
 
           # Configurar variáveis de produção para Prisma + Docker
           echo '⚙️ Configurando ambiente de produção PRISMA + DOCKER...'
-          cat > .env << EOF
-VPS_HOST=${{ env.VPS_HOST }}
-NGINX_PORT=${{ env.NGINX_PORT }}
-NODE_ENV=production
-JWT_SECRET=moria-production-jwt-${{ github.sha }}
-DATABASE_URL=file:/app/data/moria.db
-DIRECT_URL=file:/app/data/moria.db
-CORS_ORIGIN=http://${{ env.VPS_HOST }},http://localhost:3000,http://localhost:5173
-UPLOAD_MAX_SIZE=10485760
-LOG_LEVEL=info
-APP_NAME="Moria Pecas e Servicos"
-APP_VERSION=2.0.0
-EOF
+          echo "VPS_HOST=${{ env.VPS_HOST }}" > .env
+          echo "NGINX_PORT=${{ env.NGINX_PORT }}" >> .env
+          echo "NODE_ENV=production" >> .env
+          echo "JWT_SECRET=moria-production-jwt-${{ github.sha }}" >> .env
+          echo "DATABASE_URL=file:/app/data/moria.db" >> .env
+          echo "DIRECT_URL=file:/app/data/moria.db" >> .env
+          echo "CORS_ORIGIN=http://${{ env.VPS_HOST }},http://localhost:3000,http://localhost:5173" >> .env
+          echo "UPLOAD_MAX_SIZE=10485760" >> .env
+          echo "LOG_LEVEL=info" >> .env
+          echo "APP_NAME=Moria Pecas e Servicos" >> .env
+          echo "APP_VERSION=2.0.0" >> .env
 
           # Deploy com Docker Compose + nginx proxy
           echo '🐳 Executando deploy PRISMA + DOCKER + nginx...'
