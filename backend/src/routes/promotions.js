@@ -34,15 +34,15 @@ router.get('/coupons/validate/:code',
   PromotionController.validateCoupon
 );
 
-// Listar cupons ativos (públicos)
-router.get('/coupons/active',
-  PromotionController.getActiveCoupons
-);
+// TODO: Implementar getActiveCoupons no PromotionController
+// router.get('/coupons/active',
+//   PromotionController.getActiveCoupons
+// );
 
-// Listar todos os cupons (públicos) - diferente da rota admin
-router.get('/coupons/',
-  PromotionController.getActiveCoupons
-);
+// TODO: Implementar getActiveCoupons no PromotionController
+// router.get('/coupons/',
+//   PromotionController.getActiveCoupons
+// );
 
 // Listar promoções (rota pública para parâmetros active=true)
 router.get('/',
@@ -82,24 +82,24 @@ router.get('/admin/coupons/',
   PromotionController.getCoupons
 );
 
-// Obter cupom por ID (admin)
-router.get('/admin/coupons/:id',
-  PromotionController.getCouponById
-);
+// TODO: Implementar getCouponById no PromotionController
+// router.get('/admin/coupons/:id',
+//   PromotionController.getCouponById
+// );
 
 // Criar cupom (admin)
 router.post('/admin/coupons/',
   PromotionController.createCoupon
 );
 
-// Atualizar cupom (admin)
-router.put('/admin/coupons/:id',
-  PromotionController.updateCoupon
-);
+// TODO: Implementar updateCoupon no PromotionController
+// router.put('/admin/coupons/:id',
+//   PromotionController.updateCoupon
+// );
 
-// Deletar cupom (admin)
-router.delete('/admin/coupons/:id',
-  PromotionController.deleteCoupon
-);
+// TODO: Implementar deleteCoupon no PromotionController
+// router.delete('/admin/coupons/:id',
+//   PromotionController.deleteCoupon
+// );
 
 module.exports = router;

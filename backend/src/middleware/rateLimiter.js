@@ -5,8 +5,6 @@
 
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
-const RedisStore = require('rate-limit-redis');
-const Redis = require('ioredis');
 const logger = require('../utils/logger');
 const env = require('../config/environment');
 
@@ -15,38 +13,7 @@ const { ipKeyGenerator } = require('express-rate-limit');
 
 class RateLimiter {
   constructor() {
-    this.redis = this.initRedis();
-    this.store = this.redis ? new RedisStore({ client: this.redis }) : undefined;
-  }
-
-  initRedis() {
-    const redisUrl = env.get('REDIS_URL');
-    if (!redisUrl) {
-      logger.warn('Redis não configurado, usando rate limiting em memória');
-      return null;
-    }
-
-    try {
-      const redis = new Redis(redisUrl, {
-        password: env.get('REDIS_PASSWORD'),
-        retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true
-      });
-
-      redis.on('error', (err) => {
-        logger.error('Redis Rate Limiter Error', { error: err.message });
-      });
-
-      redis.on('connect', () => {
-        logger.info('Redis Rate Limiter Connected');
-      });
-
-      return redis;
-    } catch (error) {
-      logger.error('Failed to connect to Redis for rate limiting', { error: error.message });
-      return null;
-    }
+    logger.info('Rate Limiting ativo em memória');
   }
 
   createLimiter(options = {}) {
@@ -60,13 +27,18 @@ class RateLimiter {
       },
       standardHeaders: true,
       legacyHeaders: false,
-      store: this.store,
-      onLimitReached: (req, res, options) => {
+      handler: (req, res, next) => {
         logger.warn('Rate Limit Exceeded', {
           ip: req.ip,
           userAgent: req.headers['user-agent'],
           url: req.originalUrl,
           userId: req.user?.id
+        });
+
+        res.status(429).json({
+          success: false,
+          error: 'Muitas requisições, tente novamente mais tarde',
+          retryAfter: Math.ceil(options.windowMs / 1000)
         });
       }
     };
@@ -122,9 +94,8 @@ class RateLimiter {
     return slowDown({
       windowMs: 1 * 60 * 1000, // 1 minuto
       delayAfter: 10, // após 10 requisições
-      delayMs: 500, // delay inicial de 500ms
-      maxDelayMs: 20000, // máximo 20s
-      store: this.store
+      delayMs: () => 500, // delay inicial de 500ms
+      maxDelayMs: 20000 // máximo 20s
     });
   }
 

@@ -39,7 +39,13 @@
       "Bash(docker-compose:*)",
       "Bash(chmod:*)",
       "Bash(bash:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(pip install:*)",
+      "Bash(git commit:*)",
+      "Bash(./debug-deploy.sh:*)",
+      "Bash(npm ci:*)",
+      "Bash(PORT=3002 node server.js)",
+      "Bash(PORT=8080 node server.js)"
     ],
     "deny": [],
     "ask": []

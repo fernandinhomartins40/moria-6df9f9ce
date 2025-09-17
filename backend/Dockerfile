@@ -91,5 +91,19 @@ EXPOSE 3001
 # ❌ REMOVIDO: Health check movido para docker-compose para evitar conflitos
 # HEALTHCHECK definido apenas no docker-compose.yml
 
-# ✅ Script de inicialização otimizado (sem duplo generate)
-CMD ["sh", "-c", "echo 'Iniciando DB push...' && npx prisma db push --accept-data-loss && echo 'Iniciando servidor...' && node server.js"]
+# ✅ Script de inicialização com DEBUG COMPLETO
+CMD ["sh", "-c", "\
+echo '🔍 === DEBUG CONTAINER STARTUP ===' && \
+echo '📋 Verificando arquivos...' && \
+ls -la /app/ && \
+echo '📋 Verificando node modules...' && \
+ls -la /app/node_modules/ | head -10 && \
+echo '📋 Verificando prisma...' && \
+ls -la /app/prisma/ && \
+echo '📋 Tentando prisma db push...' && \
+npx prisma db push --accept-data-loss && \
+echo '📋 Tentando iniciar servidor...' && \
+echo '📋 Variáveis de ambiente:' && \
+echo PORT=$PORT && echo HOST=$HOST && echo NODE_ENV=$NODE_ENV && \
+echo '🚀 Iniciando node server.js...' && \
+node server.js"]

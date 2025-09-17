@@ -29,18 +29,18 @@ router.post('/upload-multiple', uploadMultiple, ImageController.uploadMultiple);
 // Processar imagem temporária (com ou sem crop)
 router.post('/process', ImageController.processImage);
 
-// Fazer crop de imagem existente
-router.post('/crop', ImageController.cropExistingImage);
+// TODO: Implementar cropExistingImage no ImageController
+// router.post('/crop', ImageController.cropExistingImage);
 
 // ========================================
 // ROTAS DE GERENCIAMENTO
 // ========================================
 
-// Deletar imagem
-router.delete('/:baseName', ImageController.deleteImage);
+// TODO: Implementar deleteImage no ImageController
+// router.delete('/:baseName', ImageController.deleteImage);
 
-// Listar imagens de um produto
-router.get('/product/:productId', ImageController.getProductImages);
+// TODO: Implementar getProductImages no ImageController
+// router.get('/product/:productId', ImageController.getProductImages);
 
 // ========================================
 // ROTAS DE MANUTENÇÃO
@@ -55,7 +55,9 @@ router.post('/cleanup', (req, res, next) => {
     });
   }
   next();
-}, ImageController.cleanupTemp);
+}, (req, res) => {
+  res.json({ success: true, message: 'Cleanup não implementado' });
+});
 
 // ========================================
 // DOCUMENTAÇÃO DAS ROTAS

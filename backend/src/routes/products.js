@@ -29,14 +29,11 @@ router.get('/categories',
   ProductController.getCategories
 );
 
-router.get('/search',
-  rateLimiter.search(),
-  ProductController.searchProducts
-);
+// TODO: Implementar searchProducts no ProductController
+// router.get('/search', rateLimiter.search(), ProductController.searchProducts);
 
-router.get('/category/:category',
-  ProductController.getProductsByCategory
-);
+// TODO: Implementar getProductsByCategory no ProductController
+// router.get('/category/:category', ProductController.getProductsByCategory);
 
 // Rotas de favoritos - DEVEM vir antes da rota /:id
 router.get('/favorites',
@@ -77,9 +74,10 @@ router.get('/admin/stats',
   ProductController.getProductStats
 );
 
-router.put('/:id/stock',
-  ProductController.updateStock
-);
+// TODO: Implementar updateStock no ProductController
+// router.put('/:id/stock',
+//   ProductController.updateStock
+// );
 
 // Rotas de favoritos (que requerem autenticação)
 router.post('/:id/favorite',

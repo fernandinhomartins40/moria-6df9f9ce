@@ -22,17 +22,19 @@ router.get('/popular',
 );
 
 router.get('/categories',
-  ServiceController.getServiceCategories
+  ServiceController.getCategories
 );
 
-router.get('/search',
-  rateLimiter.search(),
-  ServiceController.searchServices
-);
+// TODO: Implementar searchServices no ServiceController
+// router.get('/search',
+//   rateLimiter.search(),
+//   ServiceController.searchServices
+// );
 
-router.get('/category/:category',
-  ServiceController.getServicesByCategory
-);
+// TODO: Implementar getServicesByCategory no ServiceController
+// router.get('/category/:category',
+//   ServiceController.getServicesByCategory
+// );
 
 router.get('/:id',
   optionalAuth,
