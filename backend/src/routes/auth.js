@@ -52,11 +52,10 @@ router.use(requireAdmin); // Todas as rotas abaixo requerem admin
 router.use(rateLimiter.admin()); // Rate limiting para administradores
 
 router.get('/users',
-  AuthController.listUsers
+  AuthController.getUsers
 );
 
-router.put('/users/:id',
-  AuthController.updateUser
-);
+// TODO: Implementar updateUser no AuthController
+// router.put('/users/:id', AuthController.updateUser);
 
 module.exports = router;
