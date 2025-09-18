@@ -1,0 +1,473 @@
+import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '../services/api.ts';
+import { useNotification } from '../contexts/NotificationContext';
+import { showToast } from '../components/ui/toast-custom';
+import { useAdminAuth } from './useAdminAuth';
+
+/**
+ * Hook para gerenciamento de produtos no painel admin
+ * Integra com API SQLite backend e verificações de autenticação
+ */
+export const useAdminProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Verificações de autenticação
+  const adminAuth = useAdminAuth();
+
+  // Tentar usar contexto de notificação, usar toast como fallback
+  let addNotification = null;
+  try {
+    ({ addNotification } = useNotification());
+  } catch (e) {
+    // Contexto não disponível
+  }
+
+  const notify = useCallback((notification) => {
+    if (addNotification) {
+      addNotification(notification);
+    } else {
+      showToast(notification);
+    }
+  }, [addNotification]);
+
+  // Carregar produtos da API (rota pública, mas mostrar dados extras se for admin)
+  const fetchProducts = useCallback(async (filters = {}) => {
+    // Aguardar autenticação completar antes de decidir como buscar
+    if (adminAuth.isLoading) {
+      console.log('⏳ Aguardando autenticação completar...');
+      return [];
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Se for admin, usar autenticação para ver dados extras (produtos inativos, etc)
+      const useAuth = adminAuth.canAccessAdminFeatures;
+
+      console.log(`🔍 Carregando produtos ${useAuth ? '(admin)' : '(público)'}...`);
+
+      // Usar autenticação apenas se for admin
+      const response = await apiClient.getProducts(filters, useAuth);
+
+      if (response && response.success && Array.isArray(response.data)) {
+        console.log(`✅ Produtos carregados: ${response.data.length} itens`);
+        setProducts(response.data);
+        return response.data;
+      } else {
+        throw new Error('Formato de resposta inválido');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao carregar produtos';
+      console.error('❌ Erro ao carregar produtos:', err);
+      setError(errorMessage);
+
+      notify({
+        type: 'error',
+        title: 'Erro ao carregar produtos',
+        message: errorMessage
+      });
+
+      // Fallback para array vazio em caso de erro
+      setProducts([]);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures, notify]);
+
+  // Criar novo produto com verificação de autenticação
+  const createProduct = useCallback(async (productData) => {
+    if (!adminAuth.requiresAdminAccess('Criar produto')) {
+      return null;
+    }
+
+    try {
+      setCreateLoading(true);
+      setError(null);
+
+      // Validação básica
+      if (!productData.name || !productData.category || !productData.price) {
+        throw new Error('Nome, categoria e preço são obrigatórios');
+      }
+
+      console.log('➕ Criando novo produto...');
+
+      // Função auxiliar para conversão segura de números
+      const safeParseFloat = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      const safeParseInt = (value, defaultValue = 0) => {
+        if (value === null || value === undefined || value === '') return defaultValue;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? defaultValue : parsed;
+      };
+
+      // Preparar dados para API (converter camelCase para snake_case)
+      const apiData = {
+        name: productData.name,
+        description: productData.description || '',
+        category: productData.category,
+        subcategory: productData.subcategory || '',
+        price: parseFloat(productData.price), // Este campo é obrigatório, então manter parseFloat
+        stock: safeParseInt(productData.stock, 0),
+        min_stock: safeParseInt(productData.minStock, 5),
+        sku: productData.sku || '',
+        supplier: productData.supplier || '',
+        images: productData.images || [],
+        is_active: productData.isActive !== undefined ? productData.isActive : true,
+        specifications: productData.specifications || {},
+        vehicle_compatibility: productData.vehicleCompatibility || []
+      };
+
+      // Adicionar campos opcionais apenas se forem válidos
+      if (productData.salePrice !== undefined && productData.salePrice !== null) {
+        const salePrice = safeParseFloat(productData.salePrice);
+        if (salePrice !== null && salePrice > 0) apiData.sale_price = salePrice;
+      }
+
+      if (productData.promoPrice !== undefined && productData.promoPrice !== null) {
+        const promoPrice = safeParseFloat(productData.promoPrice);
+        if (promoPrice !== null && promoPrice > 0) apiData.promo_price = promoPrice;
+      }
+
+      if (productData.costPrice !== undefined && productData.costPrice !== null) {
+        const costPrice = safeParseFloat(productData.costPrice);
+        if (costPrice !== null && costPrice > 0) apiData.cost_price = costPrice;
+      }
+
+      const response = await apiClient.createProduct(apiData);
+
+      if (response && response.success) {
+        // Adicionar produto à lista local
+        const newProduct = response.data;
+        setProducts(prev => [newProduct, ...prev]);
+
+        console.log(`✅ Produto criado: ${newProduct.name}`);
+
+        notify({
+          type: 'success',
+          title: 'Produto criado',
+          message: `${newProduct.name} foi criado com sucesso`
+        });
+
+        return newProduct;
+      } else {
+        throw new Error(response?.error || 'Erro ao criar produto');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao criar produto';
+      console.error('❌ Erro ao criar produto:', err);
+
+      // Log detalhado do erro de validação se disponível
+      if (err.response?.data?.errors) {
+        console.error('📋 Detalhes do erro de validação:', err.response.data.errors);
+        console.error('📤 Dados que causaram erro:', apiData);
+      }
+
+      setError(errorMessage);
+
+      // Mostrar detalhes específicos se for erro de validação
+      let detailMessage = errorMessage;
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorDetails = err.response.data.errors
+          .map(error => `${error.field}: ${error.message}`)
+          .join(', ');
+        detailMessage = `${errorMessage} (${errorDetails})`;
+      }
+
+      notify({
+        type: 'error',
+        title: 'Erro ao criar produto',
+        message: detailMessage
+      });
+
+      throw err;
+    } finally {
+      setCreateLoading(false);
+    }
+  }, [adminAuth, notify]);
+
+  // Atualizar produto com verificação de autenticação
+  const updateProduct = useCallback(async (productId, productData) => {
+    if (!adminAuth.requiresAdminAccess('Atualizar produto')) {
+      return null;
+    }
+
+    try {
+      setUpdateLoading(true);
+      setError(null);
+
+      console.log(`📝 Atualizando produto ${productId}...`);
+      console.log('📋 Dados recebidos:', productData);
+
+      // Preparar dados para API (converter camelCase para snake_case)
+      const apiData = {};
+
+      // Função auxiliar para conversão segura de números
+      const safeParseFloat = (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      const safeParseInt = (value, defaultValue = 0) => {
+        if (value === null || value === undefined || value === '') return defaultValue;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? defaultValue : parsed;
+      };
+
+      // Converter apenas os campos que estão presentes E são válidos
+      if (productData.name !== undefined) apiData.name = productData.name;
+      if (productData.description !== undefined) apiData.description = productData.description;
+      if (productData.category !== undefined) apiData.category = productData.category;
+      if (productData.subcategory !== undefined) apiData.subcategory = productData.subcategory;
+
+      // Preços: só incluir se tiver valor válido
+      if (productData.price !== undefined) {
+        const price = safeParseFloat(productData.price);
+        if (price !== null && price > 0) apiData.price = price;
+      }
+      if (productData.salePrice !== undefined && productData.salePrice !== null) {
+        const salePrice = safeParseFloat(productData.salePrice);
+        if (salePrice !== null && salePrice > 0) apiData.sale_price = salePrice;
+      }
+      if (productData.promoPrice !== undefined && productData.promoPrice !== null) {
+        const promoPrice = safeParseFloat(productData.promoPrice);
+        if (promoPrice !== null && promoPrice > 0) apiData.promo_price = promoPrice;
+      }
+      if (productData.costPrice !== undefined && productData.costPrice !== null) {
+        const costPrice = safeParseFloat(productData.costPrice);
+        if (costPrice !== null && costPrice > 0) apiData.cost_price = costPrice;
+      }
+
+      if (productData.stock !== undefined) apiData.stock = safeParseInt(productData.stock, 0);
+      if (productData.minStock !== undefined) apiData.min_stock = safeParseInt(productData.minStock, 5);
+      if (productData.sku !== undefined) apiData.sku = productData.sku || '';
+      if (productData.supplier !== undefined) apiData.supplier = productData.supplier || '';
+      if (productData.images !== undefined) apiData.images = productData.images || [];
+      if (productData.isActive !== undefined) apiData.is_active = productData.isActive;
+      if (productData.specifications !== undefined) apiData.specifications = productData.specifications || {};
+      if (productData.vehicleCompatibility !== undefined) apiData.vehicle_compatibility = productData.vehicleCompatibility || [];
+
+      console.log('📤 Dados enviados para API:', apiData);
+
+      const response = await apiClient.updateProduct(productId, apiData);
+
+      if (response && response.success) {
+        const updatedProduct = response.data;
+
+        // Atualizar produto na lista local
+        setProducts(prev =>
+          prev.map(p => p.id === productId ? updatedProduct : p)
+        );
+
+        console.log(`✅ Produto atualizado: ${updatedProduct.name}`);
+
+        notify({
+          type: 'success',
+          title: 'Produto atualizado',
+          message: `${updatedProduct.name} foi atualizado com sucesso`
+        });
+
+        return updatedProduct;
+      } else {
+        throw new Error(response?.error || 'Erro ao atualizar produto');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao atualizar produto';
+      console.error('❌ Erro ao atualizar produto:', err);
+
+      // Log detalhado do erro de validação se disponível
+      if (err.response?.data?.errors) {
+        console.error('📋 Detalhes do erro de validação:', err.response.data.errors);
+        console.error('📤 Dados que causaram erro:', apiData);
+      }
+
+      setError(errorMessage);
+
+      // Mostrar detalhes específicos se for erro de validação
+      let detailMessage = errorMessage;
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorDetails = err.response.data.errors
+          .map(error => `${error.field}: ${error.message}`)
+          .join(', ');
+        detailMessage = `${errorMessage} (${errorDetails})`;
+      }
+
+      notify({
+        type: 'error',
+        title: 'Erro ao atualizar produto',
+        message: detailMessage
+      });
+
+      throw err;
+    } finally {
+      setUpdateLoading(false);
+    }
+  }, [adminAuth, notify]);
+
+  // Deletar produto com verificação de autenticação
+  const deleteProduct = useCallback(async (productId) => {
+    if (!adminAuth.requiresAdminAccess('Excluir produto')) {
+      return false;
+    }
+
+    try {
+      setDeleteLoading(true);
+      setError(null);
+
+      console.log(`🗑️ Excluindo produto ${productId}...`);
+
+      const response = await apiClient.deleteProduct(productId);
+
+      if (response && response.success) {
+        // Remover produto da lista local
+        setProducts(prev => prev.filter(p => p.id !== productId));
+
+        console.log(`✅ Produto excluído: ${productId}`);
+
+        notify({
+          type: 'success',
+          title: 'Produto excluído',
+          message: 'Produto foi excluído com sucesso'
+        });
+
+        return true;
+      } else {
+        throw new Error(response?.error || 'Erro ao excluir produto');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao excluir produto';
+      console.error('❌ Erro ao excluir produto:', err);
+      setError(errorMessage);
+
+      notify({
+        type: 'error',
+        title: 'Erro ao excluir produto',
+        message: errorMessage
+      });
+
+      throw err;
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [adminAuth, notify]);
+
+  // Toggle status do produto (ativar/desativar)
+  const toggleProductStatus = useCallback(async (productId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        throw new Error('Produto não encontrado');
+      }
+      
+      await updateProduct(productId, { isActive: newStatus });
+      
+      notify({
+        type: 'success',
+        title: `Produto ${newStatus ? 'ativado' : 'desativado'}`,
+        message: `${product.name} foi ${newStatus ? 'ativado' : 'desativado'} com sucesso`
+      });
+      
+      return newStatus;
+    } catch (err) {
+      // Erro já tratado no updateProduct
+      throw err;
+    }
+  }, [products, updateProduct, notify]);
+
+  // Buscar produto específico
+  const getProduct = useCallback(async (productId) => {
+    try {
+      const response = await apiClient.getProduct(productId);
+      
+      if (response && response.success) {
+        return response.data;
+      } else {
+        throw new Error(response?.error || 'Produto não encontrado');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Erro ao buscar produto';
+      setError(errorMessage);
+      
+      notify({
+        type: 'error',
+        title: 'Erro ao buscar produto',
+        message: errorMessage
+      });
+      
+      throw err;
+    }
+  }, [notify]);
+
+  // Carregar produtos na inicialização, mas apenas se o usuário for admin
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // Aguardar autenticação completar
+      if (adminAuth.isLoading) {
+        console.log('⏳ Aguardando autenticação completar...');
+        return;
+      }
+
+      // Carregar produtos sempre (admin vê mais dados, usuários veem só produtos ativos)
+      console.log(`🔓 Carregando produtos para ${adminAuth.canAccessAdminFeatures ? 'admin' : 'usuário normal'}...`);
+      await fetchProducts();
+    };
+
+    loadInitialData();
+  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures]);
+
+  // Limpar erro
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return {
+    // Estado
+    products,
+    loading,
+    error,
+    createLoading,
+    updateLoading,
+    deleteLoading,
+
+    // Estados de autenticação
+    isAuthenticated: adminAuth.isAuthenticated,
+    isAdmin: adminAuth.isAdmin,
+    canAccessAdminFeatures: adminAuth.canAccessAdminFeatures,
+    authLoading: adminAuth.isLoading,
+
+    // Ações
+    fetchProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    toggleProductStatus,
+    getProduct,
+    clearError,
+
+    // Utilitários
+    refetch: fetchProducts,
+    isEmpty: !loading && products.length === 0 && !adminAuth.isLoading,
+    hasError: !!error,
+    isReady: !adminAuth.isLoading && adminAuth.canAccessAdminFeatures,
+
+    // Mensagens de status para debug
+    authStatus: adminAuth.canAccessAdminFeatures
+      ? 'Autorizado'
+      : adminAuth.isLoading
+        ? 'Verificando...'
+        : 'Não autorizado'
+  };
+};
