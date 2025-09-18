@@ -13,11 +13,17 @@ WORKDIR /app/frontend
 
 # Copiar package files do frontend
 COPY frontend/package*.json ./
-RUN npm install --frozen-lockfile
+
+# Limpar cache npm e instalar dependências
+RUN npm cache clean --force && \
+    npm ci --include=dev --audit=false
 
 # Copiar código fonte e fazer build
 COPY frontend/ ./
-RUN npm run build
+
+# Verificar se vite.config.ts existe e fazer build
+RUN ls -la vite.config* && \
+    npm run build
 
 # ========================================
 # NGINX PRODUCTION STAGE

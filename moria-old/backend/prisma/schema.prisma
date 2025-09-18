@@ -1,0 +1,520 @@
+// ========================================
+// PRISMA SCHEMA - MORIA BACKEND
+// Schema completo baseado nas migrations Knex.js existentes
+// Elimina 14 migrations manuais em um único arquivo
+// ========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ============================================
+model User {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  name            String
+  phone           String?
+  cpf             String?   @unique
+  birthDate       DateTime? @map("birth_date")
+  role            UserRole  @default(CUSTOMER)
+  totalOrders     Int       @default(0) @map("total_orders")
+  totalSpent      Float     @default(0.00) @map("total_spent")
+  isActive        Boolean   @default(true) @map("is_active")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  addresses       Address[]
+  orders          Order[]
+  favorites       Favorite[]
+  uploads         Upload[]
+
+  // Índices
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Address {
+  id           Int         @id @default(autoincrement())
+  userId       Int         @map("user_id")
+  type         AddressType @default(HOME)
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String      @map("zip_code")
+  isDefault    Boolean     @default(false) @map("is_default")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Índices
+  @@index([userId])
+  @@index([isDefault])
+  @@index([zipCode])
+  @@map("addresses")
+}
+
+// ============================================
+// PRODUTOS E CATÁLOGO
+// ============================================
+model Product {
+  id                   Int      @id @default(autoincrement())
+  name                 String
+  description          String?
+  category             String
+  subcategory          String?
+  price                Float
+  salePrice            Float?   @map("sale_price")
+  promoPrice           Float?   @map("promo_price")
+  costPrice            Float?   @map("cost_price")
+
+  // JSON fields - Elimina conversões manuais do Knex
+  images               String   @default("[]")
+  specifications       String   @default("{}")
+  vehicleCompatibility String   @default("[]") @map("vehicle_compatibility")
+
+  stock                Int      @default(0)
+  minStock             Int      @default(0) @map("min_stock")
+  sku                  String?  @unique
+  supplier             String?
+  isActive             Boolean  @default(true) @map("is_active")
+  rating               Float    @default(0)
+  ratingCount          Int      @default(0) @map("rating_count")
+  viewsCount           Int      @default(0) @map("views_count")
+  salesCount           Int      @default(0) @map("sales_count")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  orderItems           OrderItem[]
+  favorites            Favorite[]
+  productImages        ProductImage[]
+
+  // Índices automáticos
+  @@index([category])
+  @@index([subcategory])
+  @@index([isActive])
+  @@index([price])
+  @@index([stock])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([supplier])
+  @@index([name])
+  @@map("products")
+}
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  category      String
+  basePrice     Float    @map("base_price")
+  estimatedTime String?  @map("estimated_time")
+  specifications String  @default("{}") // JSON automático
+  isActive      Boolean  @default(true) @map("is_active")
+  rating        Float    @default(0)
+  ratingCount   Int      @default(0) @map("rating_count")
+  bookingsCount Int      @default(0) @map("bookings_count")
+  requiredItems String   @default("[]") @map("required_items") // JSON automático
+  instructions  String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  orderItems    OrderItem[]
+
+  // Índices
+  @@index([category])
+  @@index([isActive])
+  @@index([basePrice])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([name])
+  @@map("services")
+}
+
+// ============================================
+// PEDIDOS E VENDAS
+// ============================================
+model Order {
+  id                Int           @id @default(autoincrement())
+  orderNumber       String        @unique @map("order_number")
+  userId            Int?          @map("user_id")
+  customerName      String        @map("customer_name")
+  customerEmail     String        @map("customer_email")
+  customerPhone     String        @map("customer_phone")
+
+  // JSON automático - Elimina conversões manuais
+  customerAddress   String        @map("customer_address")
+  appliedPromotions String        @default("[]") @map("applied_promotions")
+
+  subtotal          Float
+  discountAmount    Float         @default(0) @map("discount_amount")
+  shippingCost      Float         @default(0) @map("shipping_cost")
+  totalAmount       Float         @map("total_amount")
+  status            OrderStatus   @default(PENDING)
+  paymentMethod     PaymentMethod @map("payment_method")
+  paymentStatus     PaymentStatus @default(PENDING) @map("payment_status")
+  notes             String?
+  adminNotes        String?       @map("admin_notes")
+  couponCode        String?       @map("coupon_code")
+  couponDiscount    Float         @default(0) @map("coupon_discount")
+  confirmedAt       DateTime?     @map("confirmed_at")
+  shippedAt         DateTime?     @map("shipped_at")
+  deliveredAt       DateTime?     @map("delivered_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  // Relacionamentos automáticos - Elimina joins manuais
+  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+
+  // Índices
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([orderNumber])
+  @@index([customerEmail])
+  @@index([createdAt])
+  @@index([couponCode])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                  Int      @id @default(autoincrement())
+  orderId             Int      @map("order_id")
+  type                ItemType
+  itemId              Int      @map("item_id")
+  itemName            String   @map("item_name")
+  itemDescription     String?  @map("item_description")
+  quantity            Int
+  unitPrice           Float    @map("unit_price")
+  totalPrice          Float    @map("total_price")
+  originalUnitPrice   Float    @map("original_unit_price")
+
+  // JSON automático
+  appliedPromotions   String   @default("[]") @map("applied_promotions")
+  itemSpecifications  String   @default("{}") @map("item_specifications")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos automáticos
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product             Product? @relation(fields: [itemId], references: [id])
+  service             Service? @relation(fields: [itemId], references: [id])
+
+  // Índices
+  @@index([orderId])
+  @@index([type])
+  @@index([itemId])
+  @@index([type, itemId])
+  @@map("order_items")
+}
+
+// ============================================
+// PROMOÇÕES E CUPONS
+// ============================================
+model Promotion {
+  id                    Int             @id @default(autoincrement())
+  title                 String
+  description           String?
+  type                  PromotionType
+  conditions            String          @default("{}") // JSON automático
+  discountType          DiscountType    @map("discount_type")
+  discountValue         Float           @map("discount_value")
+  maxDiscount           Float?          @map("max_discount")
+  category              String?
+  minAmount             Float?          @map("min_amount")
+  maxUsesPerCustomer    Int?            @map("max_uses_per_customer")
+  totalUses             Int             @default(0) @map("total_uses")
+  maxTotalUses          Int?            @map("max_total_uses")
+  startDate             DateTime        @map("start_date")
+  endDate               DateTime        @map("end_date")
+  isActive              Boolean         @default(true) @map("is_active")
+  priority              Int             @default(0)
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+
+  // Índices
+  @@index([type])
+  @@index([category])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([priority])
+  @@index([isActive, startDate, endDate])
+  @@map("promotions")
+}
+
+model Coupon {
+  id                   Int          @id @default(autoincrement())
+  code                 String       @unique
+  description          String?
+  discountType         DiscountType @map("discount_type")
+  discountValue        Float        @map("discount_value")
+  minAmount            Float?       @map("min_amount")
+  maxDiscount          Float?       @map("max_discount")
+  maxUses              Int?         @map("max_uses")
+  maxUsesPerUser       Int          @default(1) @map("max_uses_per_user")
+  usedCount            Int          @default(0) @map("used_count")
+  startsAt             DateTime?    @map("starts_at")
+  expiresAt            DateTime?    @map("expires_at")
+  isActive             Boolean      @default(true) @map("is_active")
+  firstPurchaseOnly    Boolean      @default(false) @map("first_purchase_only")
+
+  // JSON automático
+  applicableCategories String       @default("[]") @map("applicable_categories")
+  applicableProducts   String       @default("[]") @map("applicable_products")
+
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  // Índices
+  @@index([code])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@index([startsAt])
+  @@index([isActive, startsAt, expiresAt])
+  @@map("coupons")
+}
+
+// ============================================
+// FAVORITOS
+// ============================================
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  productId Int      @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Constraints e índices
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("favorites")
+}
+
+// ============================================
+// CONFIGURAÇÕES DO SISTEMA
+// ============================================
+model Setting {
+  id          Int         @id @default(autoincrement())
+  key         String      @unique
+  value       String?
+  description String?
+  category    String      @default("general")
+  type        SettingType @default(STRING)
+  isPublic    Boolean     @default(false) @map("is_public")
+  isEditable  Boolean     @default(true) @map("is_editable")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // Índices
+  @@index([key])
+  @@index([category])
+  @@index([isPublic])
+  @@map("settings")
+}
+
+// ============================================
+// SISTEMA DE UPLOADS E IMAGENS
+// ============================================
+model Upload {
+  id           Int         @id @default(autoincrement())
+  uuid         String      @unique
+  originalName String      @map("original_name")
+  filename     String
+  path         String
+  mimeType     String      @map("mime_type")
+  extension    String
+  size         Int
+  width        Int?
+  height       Int?
+  status       UploadStatus @default(PENDING)
+  type         UploadType   @default(OTHER)
+  entityType   String?     @map("entity_type")
+  entityId     Int?        @map("entity_id")
+  userId       Int?        @map("user_id")
+  metadata     String      @default("{}") // JSON automático
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  images       Image[]
+
+  // Índices
+  @@index([uuid])
+  @@index([status])
+  @@index([type])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([mimeType])
+  @@map("uploads")
+}
+
+model Image {
+  id           Int         @id @default(autoincrement())
+  uuid         String
+  uploadId     Int         @map("upload_id")
+  size         ImageSize
+  path         String
+  url          String
+  width        Int
+  height       Int
+  fileSize     Int         @map("file_size")
+  format       String
+  quality      Int?
+  cropData     String?     @map("crop_data") // JSON automático
+  isProcessed  Boolean     @default(false) @map("is_processed")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  upload       Upload      @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  productImages ProductImage[]
+
+  // Constraints e índices
+  @@unique([uploadId, size])
+  @@index([uuid])
+  @@index([uploadId])
+  @@index([size])
+  @@index([isProcessed])
+  @@index([createdAt])
+  @@map("images")
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  imageId   Int      @map("image_id")
+  sortOrder Int      @default(0) @map("sort_order")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  // Constraints e índices
+  @@unique([productId, imageId])
+  @@index([productId])
+  @@index([imageId])
+  @@index([sortOrder])
+  @@index([isPrimary])
+  @@index([isActive])
+  @@map("product_images")
+}
+
+// ============================================
+// ENUMS TYPE-SAFE (Elimina validações manuais)
+// ============================================
+enum UserRole {
+  CUSTOMER  @map("customer")
+  ADMIN     @map("admin")
+}
+
+enum AddressType {
+  HOME      @map("home")
+  WORK      @map("work")
+  OTHER     @map("other")
+}
+
+enum OrderStatus {
+  PENDING   @map("pending")
+  CONFIRMED @map("confirmed")
+  PREPARING @map("preparing")
+  SHIPPED   @map("shipped")
+  DELIVERED @map("delivered")
+  CANCELLED @map("cancelled")
+}
+
+enum PaymentMethod {
+  CASH          @map("cash")
+  PIX           @map("pix")
+  CREDIT_CARD   @map("credit_card")
+  DEBIT_CARD    @map("debit_card")
+  BANK_TRANSFER @map("bank_transfer")
+}
+
+enum PaymentStatus {
+  PENDING  @map("pending")
+  PAID     @map("paid")
+  FAILED   @map("failed")
+  REFUNDED @map("refunded")
+}
+
+enum ItemType {
+  PRODUCT @map("product")
+  SERVICE @map("service")
+}
+
+enum PromotionType {
+  PRODUCT  @map("product")
+  CATEGORY @map("category")
+  GENERAL  @map("general")
+}
+
+enum DiscountType {
+  PERCENTAGE    @map("percentage")
+  FIXED         @map("fixed")
+  FREE_SHIPPING @map("free_shipping")
+}
+
+enum SettingType {
+  STRING  @map("string")
+  NUMBER  @map("number")
+  BOOLEAN @map("boolean")
+  JSON    @map("json")
+  TEXT    @map("text")
+}
+
+enum UploadStatus {
+  PENDING    @map("pending")
+  PROCESSING @map("processing")
+  COMPLETED  @map("completed")
+  FAILED     @map("failed")
+  DELETED    @map("deleted")
+}
+
+enum UploadType {
+  IMAGE     @map("image")
+  DOCUMENT  @map("document")
+  VIDEO     @map("video")
+  AUDIO     @map("audio")
+  OTHER     @map("other")
+}
+
+enum ImageSize {
+  THUMBNAIL @map("thumbnail")
+  MEDIUM    @map("medium")
+  FULL      @map("full")
+  ORIGINAL  @map("original")
+}

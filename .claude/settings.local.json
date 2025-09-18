@@ -45,7 +45,10 @@
       "Bash(./debug-deploy.sh:*)",
       "Bash(npm ci:*)",
       "Bash(PORT=3002 node server.js)",
-      "Bash(PORT=8080 node server.js)"
+      "Bash(PORT=8080 node server.js)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": [],
     "ask": []

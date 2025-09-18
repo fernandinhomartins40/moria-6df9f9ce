@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Base colors - Moria brand palette */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    /* Cards and surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --card-dark: 0 0% 10%;
+    --card-dark-foreground: 0 0% 98%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    /* Moria Brand Colors */
+    --moria-black: 0 0% 10%;
+    --moria-orange: 16 100% 60%;
+    --moria-orange-hover: 16 100% 55%;
+    
+    /* Premium Gold Gradient System */
+    --gold-start: 51 100% 50%;     /* #FFD700 */
+    --gold-mid: 39 100% 50%;       /* #FFA500 */
+    --gold-end: 45 76% 38%;        /* #B8860B */
+    --gold-accent: 51 78% 42%;     /* #D4AF37 */
+    
+    /* Primary - Orange */
+    --primary: 16 100% 60%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 16 100% 55%;
+
+    /* Secondary - Premium Gold */
+    --secondary: 51 78% 42%;
+    --secondary-foreground: 0 0% 10%;
+    --secondary-hover: 51 78% 38%;
+
+    /* Muted colors */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent - Gold */
+    --accent: 51 78% 42%;
+    --accent-foreground: 0 0% 10%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders and inputs */
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 16 100% 60%;
+
+    /* Premium gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(var(--gold-start)) 0%, hsl(var(--gold-mid)) 50%, hsl(var(--gold-end)) 100%);
+    --gradient-orange: linear-gradient(135deg, hsl(var(--moria-orange)) 0%, hsl(var(--moria-orange-hover)) 100%);
+    --gradient-marquee: linear-gradient(90deg, hsl(var(--moria-orange)) 0%, hsl(var(--gold-mid)) 100%);
+    
+    /* Shadows for metallic effect */
+    --shadow-gold: 0 4px 20px hsl(var(--gold-accent) / 0.3);
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--moria-black) / 0.4);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* Premium gradients */
+  .gradient-gold {
+    background: var(--gradient-gold);
+  }
+  
+  .gradient-orange {
+    background: var(--gradient-orange);
+  }
+  
+  .gradient-marquee {
+    background: var(--gradient-marquee);
+  }
+  
+  /* Metallic effect for gold elements */
+  .gold-metallic {
+    background: var(--gradient-gold);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px hsla(var(--gold-accent) / 0.3));
+  }
+  
+  .gold-metallic-bg {
+    background: var(--gradient-gold);
+    box-shadow: var(--shadow-gold);
+  }
+  
+  /* Marquee animation */
+  .marquee {
+    animation: marquee 20s linear infinite;
+  }
+  
+  @keyframes marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  /* Product card hover */
+  .product-hover {
+    transition: var(--transition-smooth);
+  }
+  
+  .product-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-elegant);
+  }
+}

@@ -31,9 +31,18 @@ export default defineConfig(({ mode }) => ({
           }
           return `assets/[name].[hash][extname]`;
         },
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query'],
+          utils: ['clsx', 'class-variance-authority', 'tailwind-merge']
+        }
       },
     },
     // Limpar dist antes de cada build
     emptyOutDir: true,
+    // Aumentar limite para evitar warnings
+    chunkSizeWarningLimit: 1000,
   },
 }));

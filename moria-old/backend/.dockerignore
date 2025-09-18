@@ -1,0 +1,121 @@
+# ========================================
+# DOCKERIGNORE BACKEND - MORIA PRISMA API
+#  Otimização específica para backend
+#  Exclusão de arquivos desnecessários
+#  Manter apenas código e dependências
+# ========================================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Build outputs e cache
+dist/
+build/
+.cache/
+.nyc_output/
+coverage/
+
+# Logs da aplicação
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# IDE e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Environment files (serão injetados via docker-compose)
+.env*
+
+# Testing
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+coverage/
+
+# Documentation
+docs/
+*.md
+README*
+
+# Scripts de desenvolvimento
+scripts/
+*.sh
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# Prisma - manter apenas o necessário
+# (schema.prisma e migrations são necessários)
+prisma/migrations/
+# Excluir seed se não for necessário no container
+prisma/seed*
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Linting e formatting
+.eslintrc*
+.prettierrc*
+.stylelintrc*
+
+# Temporary folders
+tmp/
+temp/
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Uploads locais (serão gerenciados via volume)
+uploads/
+
+# Database local (será gerenciado via volume)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Frontend (não é necessário no backend)
+../frontend/

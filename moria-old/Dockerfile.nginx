@@ -1,0 +1,64 @@
+# ========================================
+# DOCKERFILE NGINX - MORIA FRONTEND
+# ✅ Proxy reverso otimizado
+# ✅ Rate limiting integrado
+# ✅ Cache automático para assets
+# ✅ Security headers
+# ========================================
+
+FROM node:18-alpine AS builder
+
+# Instalar dependências para build do frontend
+WORKDIR /app/frontend
+
+# Copiar package files do frontend
+COPY frontend/package*.json ./
+RUN npm install --frozen-lockfile
+
+# Copiar código fonte e fazer build
+COPY frontend/ ./
+RUN npm run build
+
+# ========================================
+# NGINX PRODUCTION STAGE
+# ========================================
+FROM nginx:1.25-alpine
+
+# Instalar wget para health checks
+RUN apk add --no-cache wget
+
+# Remover configuração nginx padrão
+RUN rm /etc/nginx/conf.d/default.conf
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiar build do frontend
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+# Copiar configuração nginx customizada
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Criar diretórios para cache e logs
+RUN mkdir -p /var/cache/nginx/client_temp \
+    /var/cache/nginx/proxy_temp \
+    /var/cache/nginx/fastcgi_temp \
+    /var/cache/nginx/uwsgi_temp \
+    /var/cache/nginx/scgi_temp \
+    /var/log/nginx
+
+# Configurar permissões para usuário nginx
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx /usr/share/nginx/html
+
+# Labels para identificação
+LABEL maintainer="Moria Peças & Serviços"
+LABEL version="1.0.0"
+LABEL description="NGINX Proxy Reverso + Frontend React"
+
+# Expor portas
+EXPOSE 80 443
+
+# Health check para nginx
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/api/health || exit 1
+
+# Comando para iniciar nginx
+CMD ["nginx", "-g", "daemon off;"]
