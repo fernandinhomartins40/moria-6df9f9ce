@@ -20,10 +20,12 @@ RUN npm ci --include=dev
 # Copiar código fonte
 COPY frontend/ ./
 
-# Build para produção
+# Limpar cache do Vite e fazer build
 ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
-RUN npm run build
+RUN rm -rf .vite && \
+    rm -rf dist && \
+    npm run build
 
 # ========================================
 # NGINX PRODUCTION STAGE
