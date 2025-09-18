@@ -6,43 +6,14 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../services/prisma.js');
 const env = require('../config/environment.js');
+const { error, info } = require('../utils/logger');
 
 // Cache para tokens inválidos/revogados (simple in-memory cache)
 const revokedTokens = new Set();
 
-// Rate limiting simples por IP
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutos
-const RATE_LIMIT_MAX_ATTEMPTS = 100; // 100 tentativas por janela
-
-// Middleware de rate limiting
+// Middleware de rate limiting (simplificado)
 const rateLimit = (req, res, next) => {
-  const clientIP = req.ip || req.connection.remoteAddress;
-  const now = Date.now();
-
-  if (!rateLimitMap.has(clientIP)) {
-    rateLimitMap.set(clientIP, { count: 1, windowStart: now });
-    return next();
-  }
-
-  const rateLimitData = rateLimitMap.get(clientIP);
-
-  // Reset da janela se passou o tempo
-  if (now - rateLimitData.windowStart > RATE_LIMIT_WINDOW) {
-    rateLimitMap.set(clientIP, { count: 1, windowStart: now });
-    return next();
-  }
-
-  // Verificar se excedeu o limite
-  if (rateLimitData.count >= RATE_LIMIT_MAX_ATTEMPTS) {
-    return res.status(429).json({
-      success: false,
-      message: 'Muitas tentativas. Tente novamente em 15 minutos.'
-    });
-  }
-
-  // Incrementar contador
-  rateLimitData.count++;
+  // Rate limiting será tratado por middleware externo (proxy/Redis)
   next();
 };
 
@@ -104,7 +75,7 @@ const authenticateToken = async (req, res, next) => {
     const errorType = error.name;
     const clientIP = req.ip || req.connection.remoteAddress;
 
-    console.error(`Erro na autenticação [${clientIP}]:`, error.message);
+    error(`Erro na autenticação [${clientIP}]:`, { error: error.message });
 
     if (errorType === 'JsonWebTokenError') {
       return res.status(401).json({
@@ -204,13 +175,13 @@ const revokeToken = (token) => {
     toRemove.forEach(t => revokedTokens.delete(t));
   }
 
-  console.log(`Token revogado. Total de tokens revogados: ${revokedTokens.size}`);
+  info(`Token revogado. Total de tokens revogados: ${revokedTokens.size}`);
 };
 
 // Função para limpar rate limit de um IP específico (admin)
 const clearRateLimit = (ip) => {
   rateLimitMap.delete(ip);
-  console.log(`Rate limit limpo para IP: ${ip}`);
+  info(`Rate limit limpo para IP: ${ip}`);
 };
 
 module.exports = {

@@ -1,126 +1,69 @@
 // ========================================
-// MIDDLEWARE DE TRATAMENTO DE ERROS CENTRALIZADO - MORIA BACKEND
-// Sistema profissional de error handling - Fase 4
+// MIDDLEWARE DE TRATAMENTO DE ERROS SIMPLIFICADO - MORIA BACKEND
+// Sistema profissional de error handling com @hapi/boom
 // ========================================
 
-const logger = require('../utils/logger');
+const Boom = require('@hapi/boom');
+const { error: logError } = require('../utils/logger');
 const env = require('../config/environment');
 
-class AppError extends Error {
-  constructor(message, statusCode, isOperational = true) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    this.timestamp = new Date().toISOString();
+// Middleware para tratamento de erros
+const errorHandler = (err, req, res, next) => {
+  // Log do erro
+  logError('Error Handler', {
+    error: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip || req.connection?.remoteAddress,
+    userId: req.user?.id
+  });
 
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-class ErrorHandler {
-  static handle(err, req, res, next) {
-    let error = { ...err };
-    error.message = err.message;
-
-    // Log do erro
-    logger.error('Error Handler', {
-      error: error.message,
-      stack: error.stack,
-      url: req.originalUrl,
-      method: req.method,
-      ip: logger.getClientIP(req),
-      userId: req.user?.id
+  // Se já é um erro Boom, usar diretamente
+  if (Boom.isBoom(err)) {
+    return res.status(err.output.statusCode).json({
+      success: false,
+      error: err.output.payload.message,
+      timestamp: new Date().toISOString(),
+      path: req.originalUrl
     });
-
-    // Cast de erros específicos
-    if (err.name === 'CastError') {
-      error = this.handleCastError(err);
-    }
-
-    if (err.code === 'SQLITE_CONSTRAINT') {
-      error = ErrorHandler.handleDuplicateFieldError(err);
-    }
-
-    if (err.name === 'ValidationError') {
-      error = ErrorHandler.handleValidationError(err);
-    }
-
-    if (err.name === 'JsonWebTokenError') {
-      error = ErrorHandler.handleJWTError(err);
-    }
-
-    if (err.name === 'TokenExpiredError') {
-      error = ErrorHandler.handleJWTExpiredError(err);
-    }
-
-    ErrorHandler.sendError(error, req, res);
   }
 
-  static handleCastError(err) {
-    const message = `Recurso não encontrado com ID: ${err.value}`;
-    return new AppError(message, 400);
-  }
-
-  static handleDuplicateFieldError(err) {
-    const message = 'Dados duplicados encontrados';
-    return new AppError(message, 400);
-  }
-
-  static handleValidationError(err) {
+  // Mapear erros comuns para Boom
+  let boomError;
+  
+  if (err.name === 'JsonWebTokenError') {
+    boomError = Boom.unauthorized('Token inválido');
+  } else if (err.name === 'TokenExpiredError') {
+    boomError = Boom.unauthorized('Token expirado');
+  } else if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(val => val.message);
-    const message = `Dados inválidos: ${errors.join('. ')}`;
-    return new AppError(message, 400);
+    boomError = Boom.badRequest(`Dados inválidos: ${errors.join('. ')}`);
+  } else if (err.code === 'SQLITE_CONSTRAINT') {
+    boomError = Boom.badRequest('Dados duplicados encontrados');
+  } else if (err.name === 'CastError') {
+    boomError = Boom.badRequest(`Recurso não encontrado com ID: ${err.value}`);
+  } else {
+    // Erros genéricos
+    boomError = Boom.badImplementation(err.message);
   }
 
-  static handleJWTError(err) {
-    return new AppError('Token inválido', 401);
-  }
-
-  static handleJWTExpiredError(err) {
-    return new AppError('Token expirado', 401);
-  }
-
-  static sendError(err, req, res) {
-    // Operational errors: enviar detalhes para cliente
-    if (err.isOperational) {
-      res.status(err.statusCode || 500).json({
-        success: false,
-        error: err.message,
-        timestamp: err.timestamp || new Date().toISOString(),
-        path: req.originalUrl
-      });
-    } else {
-      // Programming errors: não vazar detalhes
-      logger.error('Programming Error', {
-        error: err.message,
-        stack: err.stack,
-        url: req.originalUrl
-      });
-
-      res.status(500).json({
-        success: false,
-        error: env.isProduction()
-          ? 'Algo deu errado!'
-          : err.message,
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl
-      });
-    }
-  }
-
-  // Helper para async handlers
-  static asyncHandler(fn) {
-    return (req, res, next) => {
-      Promise.resolve(fn(req, res, next)).catch(next);
-    };
-  }
-}
+  // Enviar resposta de erro
+  res.status(boomError.output.statusCode).json({
+    success: false,
+    error: boomError.output.payload.message,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl
+  });
+};
 
 // Middleware para capturar rotas não encontradas
 const notFoundHandler = (req, res) => {
-  res.status(404).json({
+  const notFoundError = Boom.notFound(`Rota ${req.method} ${req.originalUrl} não encontrada`);
+  
+  res.status(notFoundError.output.statusCode).json({
     success: false,
-    message: `Rota ${req.method} ${req.originalUrl} não encontrada`,
+    message: notFoundError.output.payload.message,
     availableRoutes: {
       auth: [
         'POST /api/auth/register',
@@ -154,9 +97,16 @@ const notFoundHandler = (req, res) => {
   });
 };
 
+// Helper para async handlers
+const asyncHandler = (fn) => {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
 // Tratamento de uncaught exceptions
 process.on('uncaughtException', (err) => {
-  logger.error('UNCAUGHT EXCEPTION! Shutting down...', {
+  logError('UNCAUGHT EXCEPTION! Shutting down...', {
     error: err.message,
     stack: err.stack
   });
@@ -165,7 +115,7 @@ process.on('uncaughtException', (err) => {
 
 // Tratamento de unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  logger.error('UNHANDLED REJECTION! Shutting down...', {
+  logError('UNHANDLED REJECTION! Shutting down...', {
     error: err.message,
     stack: err.stack
   });
@@ -173,9 +123,7 @@ process.on('unhandledRejection', (err) => {
 });
 
 module.exports = {
-  AppError,
-  ErrorHandler,
-  errorHandler: ErrorHandler.handle,
+  errorHandler,
   notFoundHandler,
-  asyncHandler: ErrorHandler.asyncHandler
+  asyncHandler
 };

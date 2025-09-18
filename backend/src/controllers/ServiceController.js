@@ -7,7 +7,9 @@
 // ========================================
 
 const prisma = require('../services/prisma.js');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
+const { createServiceSchema, updateServiceSchema } = require('../utils/validators.js');
 
 // Listar serviços
 const getServices = asyncHandler(async (req, res) => {
@@ -82,13 +84,13 @@ const getServiceById = asyncHandler(async (req, res) => {
   });
 
   if (!service) {
-    throw new AppError('Serviço não encontrado', 404);
+    throw Boom.notFound('Serviço não encontrado');
   }
 
   // Verificar acesso para usuários não-admin
   if (!req.user || req.user.role !== 'ADMIN') {
     if (!service.isActive) {
-      throw new AppError('Serviço não encontrado', 404);
+      throw Boom.notFound('Serviço não encontrado');
     }
   }
 
@@ -100,6 +102,9 @@ const getServiceById = asyncHandler(async (req, res) => {
 
 // Criar serviço (admin)
 const createService = asyncHandler(async (req, res) => {
+  // ✅ Validar dados de entrada com Zod
+  const validatedData = createServiceSchema.parse(req.body);
+  
   const {
     name,
     description,
@@ -109,15 +114,15 @@ const createService = asyncHandler(async (req, res) => {
     specifications = {},
     requiredItems = [],
     isActive = true
-  } = req.body;
+  } = validatedData;
 
   // ✅ Validação básica (Prisma fará validação de schema)
   if (!name || name.trim().length < 2) {
-    throw new AppError('Nome deve ter pelo menos 2 caracteres', 400);
+    throw Boom.badRequest('Nome deve ter pelo menos 2 caracteres');
   }
 
   if (!basePrice || basePrice <= 0) {
-    throw new AppError('Preço base deve ser maior que zero', 400);
+    throw Boom.badRequest('Preço base deve ser maior que zero');
   }
 
   // ✅ Criar serviço com JSON automático
@@ -145,7 +150,8 @@ const createService = asyncHandler(async (req, res) => {
 // Atualizar serviço (admin)
 const updateService = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updateData = req.body;
+  // ✅ Validar dados de entrada com Zod
+  const updateData = updateServiceSchema.parse(req.body);
 
   // Verificar se serviço existe
   const existingService = await prisma.service.findUnique({
@@ -153,7 +159,7 @@ const updateService = asyncHandler(async (req, res) => {
   });
 
   if (!existingService) {
-    throw new AppError('Serviço não encontrado', 404);
+    throw Boom.notFound('Serviço não encontrado');
   }
 
   // ✅ Processar campos JSON se fornecidos

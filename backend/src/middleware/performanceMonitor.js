@@ -3,7 +3,7 @@
 // Monitoramento de performance de requisições
 // ========================================
 
-const logger = require('../utils/logger');
+const { logPerformance, debug } = require('../utils/logger');
 
 function performanceMonitor(req, res, next) {
   const startTime = Date.now();
@@ -29,11 +29,11 @@ function performanceMonitor(req, res, next) {
 
     // Log se performance for degradada
     if (metrics.responseTime > 1000) {
-      logger.logPerformance('slow_request', metrics.responseTime, metrics);
+      logPerformance('slow_request', metrics.responseTime, metrics);
     }
 
     // Log métricas em debug
-    logger.debug('Request Metrics', metrics);
+    debug('Request Metrics', metrics);
   });
 
   next();

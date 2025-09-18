@@ -1,7 +1,9 @@
 // ========================================
-// API CLIENT PARA BACKEND NODE.JS
-// API Client para backend Node.js + SQLite3
+// API CLIENT OTIMIZADO COM AXIOS INTERCEPTORS - MORIA FRONTEND
+// Cliente API otimizado com interceptors do Axios para tratamento automático de tokens
 // ========================================
+
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // Configuração da API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
@@ -19,42 +21,114 @@ interface ApiError {
 }
 
 class ApiClient {
+  private axiosInstance: AxiosInstance;
   private baseURL: string;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
+    
+    // Criar instância do Axios
+    this.axiosInstance = axios.create({
+      baseURL: this.baseURL,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Configurar interceptors
+    this.setupInterceptors();
+  }
+
+  // Configurar interceptors do Axios
+  private setupInterceptors(): void {
+    // Request interceptor - adicionar token de autenticação
+    this.axiosInstance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => {
+        const token = localStorage.getItem('moria_auth_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor - tratar erros de autenticação
+    this.axiosInstance.interceptors.response.use(
+      (response: AxiosResponse) => {
+        return response;
+      },
+      async (error) => {
+        const originalRequest = error.config;
+
+        // Se erro de autenticação (401) e não é tentativa de refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            // Tentar renovar token
+            const refreshToken = localStorage.getItem('moria_refresh_token');
+            if (refreshToken) {
+              const response = await axios.post(`${this.baseURL}/auth/refresh`, { refreshToken });
+              
+              if (response.data.success && response.data.data?.token) {
+                // Salvar novos tokens
+                localStorage.setItem('moria_auth_token', response.data.data.token);
+                if (response.data.data.refreshToken) {
+                  localStorage.setItem('moria_refresh_token', response.data.data.refreshToken);
+                }
+
+                // Tentar novamente a requisição original
+                originalRequest.headers.Authorization = `Bearer ${response.data.data.token}`;
+                return this.axiosInstance(originalRequest);
+              }
+            }
+          } catch (refreshError) {
+            // Se falhar ao renovar, limpar tokens e redirecionar para login
+            localStorage.removeItem('moria_auth_token');
+            localStorage.removeItem('moria_refresh_token');
+            console.log('Sessão expirada. Faça login novamente.');
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
   }
 
   private requiresAuth(endpoint: string, method: string = 'GET'): boolean {
     // Rotas que REQUEREM autenticação
     const authRequiredRoutes = [
       // Autenticação
-      '^/auth/profile$',
-      '^/auth/change-password$',
-      '^/auth/logout$',
+      '^/auth/profile,
+      '^/auth/change-password,
+      '^/auth/logout,
       '^/auth/users',
 
       // IMPORTANTE: Rotas administrativas que sempre requerem auth + admin role
-      '^/orders$', // GET /orders (listar todos os pedidos - apenas admin)
-      '^/orders/[^/]+$', // GET /orders/:id (ver detalhes - admin ou próprio usuário)
+      '^/orders, // GET /orders (listar todos os pedidos - apenas admin)
+      '^/orders/[^/]+, // GET /orders/:id (ver detalhes - admin ou próprio usuário)
 
       // Pedidos do usuário
       '^/orders/my-orders',
-      '^/orders/[^/]+/cancel$',
-      '^/orders/[^/]+/reorder$',
-      '^/orders/[^/]+/status$',
+      '^/orders/[^/]+/cancel,
+      '^/orders/[^/]+/reorder,
+      '^/orders/[^/]+/status,
 
       // Agendamento de serviços
-      '^/services/[^/]+/book$',
+      '^/services/[^/]+/book,
 
       // Upload de imagens (requer autenticação)
-      '^/images/upload$',
-      '^/images/process$',
-      '^/images/crop$',
+      '^/images/upload,
+      '^/images/process,
+      '^/images/crop,
 
       // Configurações administrativas (exceto públicas)
       '^/settings/(?!public$|company-info$|category/)',
-      '^/settings$',
+      '^/settings, // GET /settings (admin - todas as configurações)
 
       // PRODUTOS: Apenas rotas administrativas requerem auth
       '^/products/admin/',
@@ -64,11 +138,11 @@ class ApiClient {
 
       // PROMOÇÕES: Rotas administrativas requerem auth
       '^/promotions/(?!active$|product/|category/|coupons/active$|coupons/validate/)',
-      '^/promotions$', // GET /promotions (admin - listar todas)
-      '^/promotions/[^/]+$', // GET/PUT/DELETE /promotions/:id (admin)
+      '^/promotions, // GET /promotions (admin - listar todas)
+      '^/promotions/[^/]+, // GET/PUT/DELETE /promotions/:id (admin)
       '^/promotions/coupons/(?!active$|validate/)',
-      '^/promotions/coupons$', // GET /promotions/coupons (admin)
-      '^/promotions/coupons/[^/]+$', // operations on specific coupons (admin)
+      '^/promotions/coupons, // GET /promotions/coupons (admin)
+      '^/promotions/coupons/[^/]+, // operations on specific coupons (admin)
 
       // IMAGENS: Todas as operações requerem auth
       '^/images/'
@@ -80,10 +154,10 @@ class ApiClient {
     // Se o método requer autenticação e não é uma rota pública específica
     if (authRequiredMethods.includes(method.toUpperCase())) {
       const publicPostRoutes = [
-        '^/auth/login$',
-        '^/auth/register$',
-        '^/auth/refresh$',
-        '^/orders$', // Criar pedido como guest (POST /orders)
+        '^/auth/login,
+        '^/auth/register,
+        '^/auth/refresh,
+        '^/orders, // Criar pedido como guest (POST /orders)
       ];
 
       const isPublicPost = publicPostRoutes.some(pattern => {
@@ -102,200 +176,42 @@ class ApiClient {
     });
   }
 
-  private refreshAttempts: Map<string, number> = new Map();
-  private readonly MAX_REFRESH_ATTEMPTS = 1;
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T> | ApiError> {
+  // Métodos CRUD genéricos
+  private async request<T>(config: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
     try {
-      const url = `${this.baseURL}${endpoint}`;
-      const method = (options.method || 'GET').toString();
-      const authToken = localStorage.getItem('moria_auth_token');
-      const requiresAuth = this.requiresAuth(endpoint, method);
-
-      // Debug log para rastrear chamadas de API
-      const hasToken = !!authToken;
-      const willSendToken = hasToken; // Agora sempre envia token quando disponível
-
-      console.group(`🔗 API Call: ${method} ${endpoint}`);
-      console.log(`📍 URL: ${url}`);
-      console.log(`🔐 Requer auth: ${requiresAuth ? '✅' : '❌'}`);
-      console.log(`🎫 Token disponível: ${hasToken ? '✅' : '❌'}`);
-      console.log(`📤 Enviando token: ${willSendToken ? '✅' : '❌'}`);
-
-      const config: RequestInit = {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      };
-
-      // Adicionar token sempre que disponível (para identificação do usuário)
-      if (authToken) {
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${authToken}`,
-        };
-        console.log(`🔑 Token adicionado ao header (${requiresAuth ? 'obrigatório' : 'opcional'})`);
-      }
-
-      const response = await fetch(url, config);
-
-      // Log da resposta
-      console.log(`📥 Status: ${response.status} ${response.statusText}`);
-
-      // Verificar se a resposta é JSON
-      const contentType = response.headers.get('content-type');
-      const isJson = contentType && contentType.includes('application/json');
-
-      let data;
-      try {
-        data = isJson ? await response.json() : { message: await response.text() };
-      } catch (parseError) {
-        console.error('❌ Erro ao fazer parse da resposta:', parseError);
-        data = { message: 'Erro ao processar resposta do servidor' };
-      }
-
-      if (!response.ok) {
-        // Prevenir loops infinitos de refresh
-        const refreshKey = `${endpoint}-${method}`;
-        const currentAttempts = this.refreshAttempts.get(refreshKey) || 0;
-
-        // Se token expirou e ainda não tentamos fazer refresh muitas vezes
-        if (response.status === 401 && authToken && endpoint !== '/auth/refresh' &&
-            requiresAuth && currentAttempts < this.MAX_REFRESH_ATTEMPTS) {
-
-          console.warn(`🔄 Token expirado para ${endpoint}. Tentativa ${currentAttempts + 1}/${this.MAX_REFRESH_ATTEMPTS}`);
-          this.refreshAttempts.set(refreshKey, currentAttempts + 1);
-
-          const refreshResult = await this.refreshToken();
-          if (refreshResult.success) {
-            // Tentar novamente com o novo token
-            console.log(`✅ Token renovado com sucesso. Tentando ${endpoint} novamente...`);
-            const result = await this.request(endpoint, options);
-            // Limpar contador de tentativas em caso de sucesso
-            this.refreshAttempts.delete(refreshKey);
-            return result;
-          } else {
-            // Se não conseguiu renovar, remover token
-            console.error(`❌ Falha ao renovar token para ${endpoint}`);
-            localStorage.removeItem('moria_auth_token');
-            localStorage.removeItem('moria_refresh_token');
-            this.refreshAttempts.delete(refreshKey);
-          }
-        }
-
-        // Limpar contador após exceder tentativas
-        if (currentAttempts >= this.MAX_REFRESH_ATTEMPTS) {
-          this.refreshAttempts.delete(refreshKey);
-          console.warn(`⚠️ Máximo de tentativas de refresh excedido para ${endpoint}`);
-        }
-
-        // Se é erro 401 em uma rota que deveria ser pública, tentar sem token
-        if (response.status === 401 && !requiresAuth) {
-          console.warn(`🔄 Erro 401 em rota pública: ${endpoint}. Tentando novamente sem token...`);
-
-          try {
-            // Tentar novamente sem Authorization header
-            const retryConfig = { ...config };
-            if (retryConfig.headers && typeof retryConfig.headers === 'object') {
-              const headers = { ...retryConfig.headers };
-              delete headers['Authorization'];
-              retryConfig.headers = headers;
-            }
-
-            const retryResponse = await fetch(url, retryConfig);
-            const retryContentType = retryResponse.headers.get('content-type');
-            const retryIsJson = retryContentType && retryContentType.includes('application/json');
-
-            let retryData;
-            try {
-              retryData = retryIsJson ? await retryResponse.json() : { message: await retryResponse.text() };
-            } catch (retryParseError) {
-              console.error('❌ Erro ao fazer parse da resposta retry:', retryParseError);
-              retryData = { message: 'Erro ao processar resposta do servidor' };
-            }
-
-            if (retryResponse.ok) {
-              console.log(`✅ Sucesso ao tentar novamente sem token: ${endpoint}`);
-              console.groupEnd();
-              return { success: true, ...retryData };
-            }
-          } catch (retryError) {
-            console.error(`❌ Falha ao tentar novamente sem token: ${endpoint}`, retryError);
-          }
-        }
-
-        console.log(`❌ Erro: ${data?.message || response.statusText}`);
-        console.groupEnd();
-        throw new Error(data?.message || `Erro ${response.status}: ${response.statusText}`);
-      }
-
-      console.log(`✅ Sucesso`);
-      console.groupEnd();
-
+      const response = await this.axiosInstance(config);
       return {
-        data: data?.data || data,
-        success: data?.success !== false,
-        message: data?.message,
+        data: response.data?.data || response.data,
+        success: response.data?.success !== false,
+        message: response.data?.message,
       };
-    } catch (error) {
-      console.log(`💥 Exceção: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-      console.groupEnd();
-
-      console.error('API Error:', error);
+    } catch (error: any) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        message: error.response?.data?.message || error.message || 'Erro desconhecido',
         error,
       };
     }
   }
 
-  // Métodos CRUD genéricos
-  async get<T>(endpoint: string, includeAuth: boolean = false): Promise<ApiResponse<T> | ApiError> {
-    const options: RequestInit = { method: 'GET' };
-
-    // Forçar autenticação se solicitado
-    if (includeAuth) {
-      const authToken = localStorage.getItem('moria_auth_token');
-      if (authToken) {
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${authToken}`,
-        };
-      }
-    }
-
-    return this.request<T>(endpoint, options);
+  async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>({ method: 'GET', url: endpoint, ...config });
   }
 
-  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T> | ApiError> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>({ method: 'POST', url: endpoint, data, ...config });
   }
 
-  async put<T>(endpoint: string, data: any): Promise<ApiResponse<T> | ApiError> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>({ method: 'PUT', url: endpoint, data, ...config });
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T> | ApiError> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>({ method: 'DELETE', url: endpoint, ...config });
   }
 
-  async patch<T>(endpoint: string, data: any): Promise<ApiResponse<T> | ApiError> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+  async patch<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T> | ApiError> {
+    return this.request<T>({ method: 'PATCH', url: endpoint, data, ...config });
   }
 
   // Utilitário para filtrar parâmetros undefined/null/empty
@@ -318,11 +234,11 @@ class ApiClient {
   // Métodos específicos para produtos
   async getProducts(filters?: any, includeUserData: boolean = false) {
     const queryString = this.buildQueryParams(filters);
-    return this.get(`/products${queryString}`, includeUserData);
+    return this.get(`/products${queryString}`, includeUserData ? { headers: { Authorization: `Bearer ${localStorage.getItem('moria_auth_token')}` } } : {});
   }
 
   async getProduct(id: string, includeUserData: boolean = false) {
-    return this.get(`/products/${id}`, includeUserData);
+    return this.get(`/products/${id}`, includeUserData ? { headers: { Authorization: `Bearer ${localStorage.getItem('moria_auth_token')}` } } : {});
   }
 
   async createProduct(productData: any) {
@@ -344,11 +260,11 @@ class ApiClient {
   // Métodos específicos para serviços
   async getServices(filters?: any, includeUserData: boolean = false) {
     const queryString = this.buildQueryParams(filters);
-    return this.get(`/services${queryString}`, includeUserData);
+    return this.get(`/services${queryString}`, includeUserData ? { headers: { Authorization: `Bearer ${localStorage.getItem('moria_auth_token')}` } } : {});
   }
 
   async getService(id: string, includeUserData: boolean = false) {
-    return this.get(`/services/${id}`, includeUserData);
+    return this.get(`/services/${id}`, includeUserData ? { headers: { Authorization: `Bearer ${localStorage.getItem('moria_auth_token')}` } } : {});
   }
 
   async createService(serviceData: any) {
@@ -370,7 +286,7 @@ class ApiClient {
   }
 
   async getOrder(id: string, includeUserData: boolean = false) {
-    return this.get(`/orders/${id}`, includeUserData);
+    return this.get(`/orders/${id}`, includeUserData ? { headers: { Authorization: `Bearer ${localStorage.getItem('moria_auth_token')}` } } : {});
   }
 
   async createOrder(orderData: any) {
@@ -615,32 +531,15 @@ class ApiClient {
       });
     }
 
-    const url = `${this.baseURL}/${endpoint}`;
-
     try {
-      const headers: Record<string, string> = {};
-
-      // Adicionar token de autenticação se necessário
-      if (this.requiresAuth(endpoint, 'POST')) {
-        const token = localStorage.getItem('moria_auth_token');
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: formData
+      const response = await this.axiosInstance.post(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Upload error:', error);
       throw error;
     }

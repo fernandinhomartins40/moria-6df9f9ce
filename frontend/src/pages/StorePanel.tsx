@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Sidebar } from "../components/admin/Sidebar";
-import { AdminContent } from "../components/admin/AdminContent";
-import { ProtectedRoute } from "../components/ProtectedRoute";
+import { AdminContentOptimized } from "../components/admin/AdminContentOptimized";
+import { ProtectedRouteOptimized } from "../components/ProtectedRouteOptimized";
 import "../styles/lojista.css";
 
 export default function StorePanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <ProtectedRoute requireAdmin={true}>
+    <ProtectedRouteOptimized requireAdmin={true}>
       <div className="lojista-layout">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -24,10 +24,10 @@ export default function StorePanel() {
             </div>
           </div>
 
-          <AdminContent activeTab={activeTab} />
+          <AdminContentOptimized activeTab={activeTab} />
         </main>
       </div>
-    </ProtectedRoute>
+    </ProtectedRouteOptimized>
   );
 }
 

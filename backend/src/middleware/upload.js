@@ -1,36 +1,27 @@
 // ========================================
-// MIDDLEWARE DE UPLOAD - MORIA BACKEND
-// Sistema completo de upload e processamento de imagens
+// MIDDLEWARE DE UPLOAD SIMPLIFICADO - MORIA BACKEND
+// Sistema básico de upload de imagens
 // ========================================
 
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Import dinâmico do uuid para compatibilidade com ES Modules
-let uuidv4;
-
-// Configurar storage para arquivos temporários
+// Configurar storage para arquivos
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const tempDir = path.join(__dirname, '../../uploads/temp');
-
+    const uploadDir = path.join(__dirname, '../../uploads');
+    
     // Criar diretório se não existir
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-
-    cb(null, tempDir);
-  },
-  filename: async function (req, file, cb) {
-    // Garantir que uuid foi carregado
-    if (!uuidv4) {
-      const { v4 } = await import('uuid');
-      uuidv4 = v4;
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
     
-    // Gerar nome único com timestamp e UUID
-    const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Gerar nome único com timestamp
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   }
 });
@@ -52,8 +43,8 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
-    files: 10 // Máximo 10 arquivos por vez
+    fileSize: 5 * 1024 * 1024, // 5MB max
+    files: 1 // Máximo 1 arquivo por vez
   },
   fileFilter: fileFilter
 });
@@ -61,61 +52,28 @@ const upload = multer({
 // Middleware para upload único
 const uploadSingle = upload.single('image');
 
-// Middleware para upload múltiplo
-const uploadMultiple = upload.array('images', 10);
-
 // Middleware com tratamento de erro
-const handleUpload = (uploadType) => {
-  return (req, res, next) => {
-    uploadType(req, res, (err) => {
-      if (err) {
-        if (err instanceof multer.MulterError) {
-          if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({
-              success: false,
-              message: 'Arquivo muito grande. Tamanho máximo: 10MB'
-            });
-          }
-          if (err.code === 'LIMIT_FILE_COUNT') {
-            return res.status(400).json({
-              success: false,
-              message: 'Muitos arquivos. Máximo: 10 imagens'
-            });
-          }
+const handleUpload = (req, res, next) => {
+  uploadSingle(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: 'Arquivo muito grande. Tamanho máximo: 5MB'
+          });
         }
-
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'Erro no upload do arquivo'
-        });
       }
-      next();
-    });
-  };
-};
-
-// Criar diretórios necessários
-const ensureDirectories = () => {
-  const dirs = [
-    'uploads/temp',
-    'uploads/products/thumbnails',
-    'uploads/products/medium',
-    'uploads/products/full'
-  ];
-
-  dirs.forEach(dir => {
-    const fullPath = path.join(__dirname, '../../', dir);
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(fullPath, { recursive: true });
+      
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro no upload do arquivo'
+      });
     }
+    next();
   });
 };
 
-// Inicializar diretórios na importação
-ensureDirectories();
-
 module.exports = {
-  uploadSingle: handleUpload(uploadSingle),
-  uploadMultiple: handleUpload(uploadMultiple),
-  ensureDirectories
+  uploadSingle: handleUpload
 };

@@ -8,7 +8,9 @@
 // ========================================
 
 const prisma = require('../services/prisma.js');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
+const { createOrderSchema } = require('../utils/validators.js');
 
 // Helper para gerar número de pedido único
 const generateOrderNumber = () => {
@@ -100,7 +102,7 @@ const getOrderById = asyncHandler(async (req, res) => {
   });
 
   if (!order) {
-    throw new AppError('Pedido não encontrado', 404);
+    throw Boom.notFound('Pedido não encontrado');
   }
 
   // Verificar acesso
@@ -116,6 +118,9 @@ const getOrderById = asyncHandler(async (req, res) => {
 
 // Criar pedido com transação automática do Prisma
 const createOrder = asyncHandler(async (req, res) => {
+  // ✅ Validar dados de entrada com Zod
+  const validatedData = createOrderSchema.parse(req.body);
+  
   const {
     customerName,
     customerEmail,
@@ -126,11 +131,11 @@ const createOrder = asyncHandler(async (req, res) => {
     notes,
     couponCode,
     items
-  } = req.body;
+  } = validatedData;
 
   // Validar se há itens
   if (!items || items.length === 0) {
-    throw new AppError('Pedido deve conter pelo menos um item', 400);
+    throw Boom.badRequest('Pedido deve conter pelo menos um item');
   }
 
   // Validar e calcular totais
@@ -148,17 +153,17 @@ const createOrder = asyncHandler(async (req, res) => {
           where: { id: item.itemId }
         });
         if (!itemData || !itemData.isActive) {
-          throw new AppError(`Produto ${item.itemName} não está disponível`, 400);
+          throw Boom.badRequest(`Produto ${item.itemName} não está disponível`);
         }
       } else if (item.type === 'service') {
         itemData = await prisma.service.findUnique({
           where: { id: item.itemId }
         });
         if (!itemData || !itemData.isActive) {
-          throw new AppError(`Serviço ${item.itemName} não está disponível`, 400);
+          throw Boom.badRequest(`Serviço ${item.itemName} não está disponível`);
         }
       } else {
-        throw new AppError('Tipo de item inválido', 400);
+        throw Boom.badRequest('Tipo de item inválido');
       }
 
       // Verificar preço
@@ -167,7 +172,7 @@ const createOrder = asyncHandler(async (req, res) => {
         : itemData.basePrice;
 
       if (Math.abs(item.unitPrice - expectedPrice) > 0.01) {
-        throw new AppError(`Preço do item ${item.itemName} foi alterado`, 400);
+        throw Boom.badRequest(`Preço do item ${item.itemName} foi alterado`);
       }
 
       const itemTotal = item.quantity * item.unitPrice;
@@ -299,12 +304,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   });
 
   if (!order) {
-    throw new AppError('Pedido não encontrado', 404);
+    throw Boom.notFound('Pedido não encontrado');
   }
 
   const newStatus = status.toUpperCase();
   if (!validTransitions[order.status].includes(newStatus)) {
-    throw new AppError(`Não é possível alterar status de ${order.status} para ${newStatus}`, 400);
+    throw Boom.badRequest(`Não é possível alterar status de ${order.status} para ${newStatus}`);
   }
 
   // ✅ Update simples com timestamps automáticos
@@ -353,17 +358,17 @@ const cancelOrder = asyncHandler(async (req, res) => {
   });
 
   if (!order) {
-    throw new AppError('Pedido não encontrado', 404);
+    throw Boom.notFound('Pedido não encontrado');
   }
 
   // Verificar acesso
   if (req.user.role !== 'ADMIN' && order.userId !== req.user.id) {
-    throw new AppError('Acesso negado', 403);
+    throw Boom.forbidden('Acesso negado');
   }
 
   // Só pode cancelar pedidos pending ou confirmed
   if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
-    throw new AppError('Pedido não pode ser cancelado neste status', 400);
+    throw Boom.badRequest('Pedido não pode ser cancelado neste status');
   }
 
   // ✅ Estornar estoque automaticamente se necessário
@@ -519,12 +524,12 @@ const reorder = asyncHandler(async (req, res) => {
   });
 
   if (!originalOrder) {
-    throw new AppError('Pedido não encontrado', 404);
+    throw Boom.notFound('Pedido não encontrado');
   }
 
   // Verificar acesso
   if (req.user.role !== 'ADMIN' && originalOrder.userId !== req.user.id) {
-    throw new AppError('Acesso negado', 403);
+    throw Boom.forbidden('Acesso negado');
   }
 
   // ✅ Validar disponibilidade em paralelo
@@ -535,7 +540,7 @@ const reorder = asyncHandler(async (req, res) => {
           where: { id: item.productId }
         });
         if (!product || !product.isActive) {
-          throw new AppError(`Produto ${item.itemName} não está mais disponível`, 400);
+          throw Boom.badRequest(`Produto ${item.itemName} não está mais disponível`);
         }
         return {
           ...item,
@@ -546,7 +551,7 @@ const reorder = asyncHandler(async (req, res) => {
           where: { id: item.serviceId }
         });
         if (!service || !service.isActive) {
-          throw new AppError(`Serviço ${item.itemName} não está mais disponível`, 400);
+          throw Boom.badRequest(`Serviço ${item.itemName} não está mais disponível`);
         }
         return {
           ...item,

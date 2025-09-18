@@ -6,10 +6,11 @@
 const env = require('../config/environment.js');
 const fs = require('fs').promises;
 const path = require('path');
+const { info, error, warn } = require('./logger');
 
 class StartupValidator {
   static async validateAll() {
-    console.log('🔍 Validando configurações de inicialização...');
+    info('🔍 Validando configurações de inicialização...');
 
     try {
       await this.validateEnvironment();
@@ -18,16 +19,16 @@ class StartupValidator {
       this.validateNetwork();
       this.validateSecurity();
 
-      console.log('✅ Todas as configurações de inicialização são válidas');
+      info('✅ Todas as configurações de inicialização são válidas');
       return { isValid: true };
-    } catch (error) {
-      console.error('❌ Falha na validação de inicialização:', error.message);
-      return { isValid: false, error: error.message };
+    } catch (err) {
+      error('❌ Falha na validação de inicialização:', { error: err.message });
+      return { isValid: false, error: err.message };
     }
   }
 
   static async validateEnvironment() {
-    console.log('   🔧 Validando ambiente...');
+    info('   🔧 Validando ambiente...');
 
     // Validar Node.js version
     const nodeVersion = process.version;
@@ -51,11 +52,11 @@ class StartupValidator {
       throw new Error(`Environment Manager: ${configValidation.errors.join(', ')}`);
     }
 
-    console.log('     ✓ Ambiente válido');
+    info('     ✓ Ambiente válido');
   }
 
   static async validateDatabase() {
-    console.log('   🗄️ Validando banco de dados...');
+    info('   🗄️ Validando banco de dados...');
 
     try {
       const dbPath = env.get('DATABASE_URL').replace('file:', '');
@@ -67,22 +68,22 @@ class StartupValidator {
       } catch (error) {
         // Criar diretório se não existir
         await fs.mkdir(dbDir, { recursive: true });
-        console.log(`     📁 Diretório do banco criado: ${dbDir}`);
+        info(`     📁 Diretório do banco criado: ${dbDir}`);
       }
 
       // Tentar conectar com o banco Prisma
       const prisma = require('../services/prisma.js');
       await prisma.$connect();
-      console.log('     ✅ Conexão Prisma estabelecida');
+      info('     ✅ Conexão Prisma estabelecida');
 
-      console.log('     ✓ Banco de dados acessível');
-    } catch (error) {
-      throw new Error(`Validação do banco falhou: ${error.message}`);
+      info('     ✓ Banco de dados acessível');
+    } catch (err) {
+      throw new Error(`Validação do banco falhou: ${err.message}`);
     }
   }
 
   static async validateDirectories() {
-    console.log('   📁 Validando diretórios...');
+    info('   📁 Validando diretórios...');
 
     const requiredDirs = [
       'logs',
@@ -99,7 +100,7 @@ class StartupValidator {
       } catch (error) {
         // Criar diretório se não existir
         await fs.mkdir(dirPath, { recursive: true });
-        console.log(`     📁 Diretório criado: ${dir}`);
+        info(`     📁 Diretório criado: ${dir}`);
       }
     }
 
@@ -112,11 +113,11 @@ class StartupValidator {
       throw new Error('Sem permissões de escrita no diretório de trabalho');
     }
 
-    console.log('     ✓ Diretórios válidos');
+    info('     ✓ Diretórios válidos');
   }
 
   static validateNetwork() {
-    console.log('   🌐 Validando configurações de rede...');
+    info('   🌐 Validando configurações de rede...');
 
     const port = env.get('PORT');
     const host = env.get('HOST');
@@ -128,7 +129,7 @@ class StartupValidator {
 
     // Verificar se a porta não está sendo usada (check simples)
     if (port < 1024 && process.getuid && process.getuid() !== 0) {
-      console.warn(`     ⚠️ Porta ${port} pode requerer privilégios administrativos`);
+      warn(`     ⚠️ Porta ${port} pode requerer privilégios administrativos`);
     }
 
     // Validar host
@@ -156,11 +157,11 @@ class StartupValidator {
       }
     }
 
-    console.log('     ✓ Configurações de rede válidas');
+    info('     ✓ Configurações de rede válidas');
   }
 
   static validateSecurity() {
-    console.log('   🔐 Validando configurações de segurança...');
+    info('   🔐 Validando configurações de segurança...');
 
     // Validar JWT Secret
     const jwtSecret = env.get('JWT_SECRET');
@@ -177,27 +178,27 @@ class StartupValidator {
       // Validar se CORS não está muito permissivo
       const corsOrigin = env.get('CORS_ORIGIN');
       if (corsOrigin === '*') {
-        console.warn('     ⚠️ CORS configurado como "*" em produção pode ser inseguro');
+        warn('     ⚠️ CORS configurado como "*" em produção pode ser inseguro');
       }
 
       // Verificar HTTPS
       if (!corsOrigin.startsWith('https://')) {
-        console.warn('     ⚠️ CORS Origin não está usando HTTPS em produção');
+        warn('     ⚠️ CORS Origin não está usando HTTPS em produção');
       }
     }
 
     // Validar configurações de upload
     const maxSize = env.get('UPLOAD_MAX_SIZE');
     if (maxSize > 50 * 1024 * 1024) { // 50MB
-      console.warn('     ⚠️ Tamanho máximo de upload muito alto (>50MB)');
+      warn('     ⚠️ Tamanho máximo de upload muito alto (>50MB)');
     }
 
-    console.log('     ✓ Configurações de segurança válidas');
+    info('     ✓ Configurações de segurança válidas');
   }
 
   // Validações de performance
   static validatePerformance() {
-    console.log('   ⚡ Validando configurações de performance...');
+    info('   ⚡ Validando configurações de performance...');
 
     // Verificar memória disponível
     const totalMemory = require('os').totalmem();
@@ -205,22 +206,22 @@ class StartupValidator {
     const memoryUsagePercent = ((totalMemory - freeMemory) / totalMemory) * 100;
 
     if (memoryUsagePercent > 90) {
-      console.warn(`     ⚠️ Uso de memória alto: ${memoryUsagePercent.toFixed(1)}%`);
+      warn(`     ⚠️ Uso de memória alto: ${memoryUsagePercent.toFixed(1)}%`);
     }
 
     // Verificar CPU cores
     const cpuCores = require('os').cpus().length;
     if (cpuCores < 2) {
-      console.warn('     ⚠️ Sistema com poucos cores de CPU pode afetar performance');
+      warn('     ⚠️ Sistema com poucos cores de CPU pode afetar performance');
     }
 
     // Verificar limites do sistema
     const maxConnections = env.get('RATE_LIMIT_MAX_REQUESTS');
     if (maxConnections > 10000) {
-      console.warn('     ⚠️ Limite de conexões muito alto pode sobrecarregar o sistema');
+      warn('     ⚠️ Limite de conexões muito alto pode sobrecarregar o sistema');
     }
 
-    console.log('     ✓ Configurações de performance verificadas');
+    info('     ✓ Configurações de performance verificadas');
   }
 
   // Health check pós-inicialização

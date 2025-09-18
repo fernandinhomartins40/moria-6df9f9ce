@@ -7,7 +7,8 @@
 // ========================================
 
 const prisma = require('../services/prisma.js');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
 
 // ============ PROMOÇÕES ============
 
@@ -125,7 +126,7 @@ const getPromotionById = asyncHandler(async (req, res) => {
   });
 
   if (!promotion) {
-    throw new AppError('Promoção não encontrada', 404);
+    throw Boom.notFound('Promoção não encontrada');
   }
 
   res.json({
@@ -155,15 +156,15 @@ const createPromotion = asyncHandler(async (req, res) => {
 
   // ✅ Validação básica
   if (!name || name.trim().length < 2) {
-    throw new AppError('Nome deve ter pelo menos 2 caracteres', 400);
+    throw Boom.badRequest('Nome deve ter pelo menos 2 caracteres');
   }
 
   if (!discountValue || discountValue <= 0) {
-    throw new AppError('Valor do desconto deve ser maior que zero', 400);
+    throw Boom.badRequest('Valor do desconto deve ser maior que zero');
   }
 
   if (new Date(startDate) >= new Date(endDate)) {
-    throw new AppError('Data de início deve ser anterior à data de fim', 400);
+    throw Boom.badRequest('Data de início deve ser anterior à data de fim');
   }
 
   // ✅ Criar promoção com JSON automático
@@ -204,7 +205,7 @@ const updatePromotion = asyncHandler(async (req, res) => {
   });
 
   if (!existingPromotion) {
-    throw new AppError('Promoção não encontrada', 404);
+    throw Boom.notFound('Promoção não encontrada');
   }
 
   // ✅ Processar campos JSON se fornecidos
@@ -258,24 +259,24 @@ const validateCoupon = asyncHandler(async (req, res) => {
   });
 
   if (!coupon) {
-    throw new AppError('Cupom não encontrado', 404);
+    throw Boom.notFound('Cupom não encontrado');
   }
 
   if (!coupon.isActive) {
-    throw new AppError('Cupom inativo', 400);
+    throw Boom.badRequest('Cupom inativo');
   }
 
   const now = new Date();
   if (coupon.expiresAt && now > coupon.expiresAt) {
-    throw new AppError('Cupom expirado', 400);
+    throw Boom.badRequest('Cupom expirado');
   }
 
   if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
-    throw new AppError('Cupom esgotado', 400);
+    throw Boom.badRequest('Cupom esgotado');
   }
 
   if (coupon.minOrderValue && orderValue < coupon.minOrderValue) {
-    throw new AppError(`Valor mínimo do pedido: R$ ${coupon.minOrderValue}`, 400);
+    throw Boom.badRequest(`Valor mínimo do pedido: R$ ${coupon.minOrderValue}`);
   }
 
   // Calcular desconto
@@ -345,7 +346,7 @@ const createCoupon = asyncHandler(async (req, res) => {
 
   // ✅ Validação básica
   if (!code || code.trim().length < 3) {
-    throw new AppError('Código deve ter pelo menos 3 caracteres', 400);
+    throw Boom.badRequest('Código deve ter pelo menos 3 caracteres');
   }
 
   const codeUpper = code.trim().toUpperCase();
@@ -356,7 +357,7 @@ const createCoupon = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
-    throw new AppError('Código de cupom já existe', 409);
+    throw Boom.conflict('Código de cupom já existe');
   }
 
   const newCoupon = await prisma.coupon.create({

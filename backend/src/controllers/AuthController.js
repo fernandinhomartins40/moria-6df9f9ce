@@ -9,10 +9,15 @@
 const prisma = require('../services/prisma.js');
 const bcrypt = require('bcrypt');
 const { generateToken, generateRefreshToken } = require('../middleware/auth.js');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
+const { registerUserSchema, loginUserSchema } = require('../utils/validators.js');
 
 // Registrar novo usuário
 const register = asyncHandler(async (req, res) => {
+  // ✅ Validar dados de entrada com Zod
+  const validatedData = registerUserSchema.parse(req.body);
+  
   const {
     name,
     email,
@@ -20,19 +25,19 @@ const register = asyncHandler(async (req, res) => {
     phone,
     cpf,
     birthDate
-  } = req.body;
+  } = validatedData;
 
   // ✅ Validação básica (Prisma fará validação de schema)
   if (!name || name.trim().length < 2) {
-    throw new AppError('Nome deve ter pelo menos 2 caracteres', 400);
+    throw Boom.badRequest('Nome deve ter pelo menos 2 caracteres');
   }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new AppError('Email inválido', 400);
+    throw Boom.badRequest('Email inválido');
   }
 
   if (!password || password.length < 6) {
-    throw new AppError('Senha deve ter pelo menos 6 caracteres', 400);
+    throw Boom.badRequest('Senha deve ter pelo menos 6 caracteres');
   }
 
   const emailLower = email.trim().toLowerCase();
@@ -43,7 +48,7 @@ const register = asyncHandler(async (req, res) => {
   });
 
   if (existingUser) {
-    throw new AppError('Email já cadastrado no sistema', 409);
+    throw Boom.conflict('Email já cadastrado no sistema');
   }
 
   // ✅ Hash da senha
@@ -91,15 +96,18 @@ const register = asyncHandler(async (req, res) => {
 
 // Login do usuário
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  // ✅ Validar dados de entrada com Zod
+  const validatedData = loginUserSchema.parse(req.body);
+  
+  const { email, password } = validatedData;
 
   // Validação básica
   if (!email || !email.trim()) {
-    throw new AppError('Email é obrigatório', 400);
+    throw Boom.badRequest('Email é obrigatório');
   }
 
   if (!password) {
-    throw new AppError('Senha é obrigatória', 400);
+    throw Boom.badRequest('Senha é obrigatória');
   }
 
   const emailLower = email.trim().toLowerCase();
@@ -110,17 +118,17 @@ const login = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new AppError('Email ou senha incorretos', 401);
+    throw Boom.unauthorized('Email ou senha incorretos');
   }
 
   if (!user.isActive) {
-    throw new AppError('Conta inativa. Entre em contato com o suporte.', 401);
+    throw Boom.unauthorized('Conta inativa. Entre em contato com o suporte.');
   }
 
   // ✅ Verificar senha
   const isValidPassword = await bcrypt.compare(password, user.passwordHash);
   if (!isValidPassword) {
-    throw new AppError('Email ou senha incorretos', 401);
+    throw Boom.unauthorized('Email ou senha incorretos');
   }
 
   // ✅ Atualizar último login
@@ -178,7 +186,7 @@ const getProfile = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new AppError('Usuário não encontrado', 404);
+    throw Boom.notFound('Usuário não encontrado');
   }
 
   res.json({
@@ -230,11 +238,11 @@ const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
-    throw new AppError('Senha atual e nova senha são obrigatórias', 400);
+    throw Boom.badRequest('Senha atual e nova senha são obrigatórias');
   }
 
   if (newPassword.length < 6) {
-    throw new AppError('Nova senha deve ter pelo menos 6 caracteres', 400);
+    throw Boom.badRequest('Nova senha deve ter pelo menos 6 caracteres');
   }
 
   // ✅ Buscar usuário atual
@@ -245,7 +253,7 @@ const changePassword = asyncHandler(async (req, res) => {
   // Verificar senha atual
   const isValidCurrentPassword = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!isValidCurrentPassword) {
-    throw new AppError('Senha atual incorreta', 401);
+    throw Boom.unauthorized('Senha atual incorreta');
   }
 
   // ✅ Hash da nova senha e atualizar
@@ -267,7 +275,7 @@ const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken: token } = req.body;
 
   if (!token) {
-    throw new AppError('Refresh token é obrigatório', 400);
+    throw Boom.badRequest('Refresh token é obrigatório');
   }
 
   try {
@@ -281,7 +289,7 @@ const refreshToken = asyncHandler(async (req, res) => {
     });
 
     if (!user || !user.isActive) {
-      throw new AppError('Token inválido', 401);
+      throw Boom.unauthorized('Token inválido');
     }
 
     // Gerar novos tokens
@@ -296,7 +304,7 @@ const refreshToken = asyncHandler(async (req, res) => {
       }
     });
   } catch (error) {
-    throw new AppError('Token inválido', 401);
+    throw Boom.unauthorized('Token inválido');
   }
 });
 

@@ -8,7 +8,9 @@
 // ========================================
 
 const prisma = require('../services/prisma.js');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
+const { createProductSchema, updateProductSchema } = require('../utils/validators.js');
 
 // Listar produtos
 const getProducts = asyncHandler(async (req, res) => {
@@ -100,13 +102,13 @@ const getProductById = asyncHandler(async (req, res) => {
   });
 
   if (!product) {
-    throw new AppError('Produto não encontrado', 404);
+    throw Boom.notFound('Produto não encontrado');
   }
 
   // Verificar acesso para usuários não-admin
   if (!req.user || req.user.role !== 'ADMIN') {
     if (!product.isActive) {
-      throw new AppError('Produto não encontrado', 404);
+      throw Boom.notFound('Produto não encontrado');
     }
   }
 
@@ -118,7 +120,9 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // Criar produto (admin)
 const createProduct = asyncHandler(async (req, res) => {
-  // ✅ Prisma faz validação automática baseada no schema
+  // ✅ Validar dados de entrada com Zod
+  const validatedData = createProductSchema.parse(req.body);
+  
   const {
     name,
     description,
@@ -136,7 +140,7 @@ const createProduct = asyncHandler(async (req, res) => {
     specifications = {},
     vehicleCompatibility = [],
     isActive = true
-  } = req.body;
+  } = validatedData;
 
   // Verificar SKU único se fornecido
   if (sku) {
@@ -144,7 +148,7 @@ const createProduct = asyncHandler(async (req, res) => {
       where: { sku }
     });
     if (existingProduct) {
-      throw new AppError('SKU já existe no sistema', 409);
+      throw Boom.conflict('SKU já existe no sistema');
     }
   }
 
@@ -185,7 +189,8 @@ const createProduct = asyncHandler(async (req, res) => {
 // Atualizar produto (admin)
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updateData = req.body;
+  // ✅ Validar dados de entrada com Zod
+  const updateData = updateProductSchema.parse(req.body);
 
   // Verificar se produto existe
   const existingProduct = await prisma.product.findUnique({
@@ -193,7 +198,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   });
 
   if (!existingProduct) {
-    throw new AppError('Produto não encontrado', 404);
+    throw Boom.notFound('Produto não encontrado');
   }
 
   // Verificar SKU único se está sendo alterado
@@ -202,7 +207,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       where: { sku: updateData.sku }
     });
     if (duplicateSku) {
-      throw new AppError('SKU já existe no sistema', 409);
+      throw Boom.conflict('SKU já existe no sistema');
     }
   }
 

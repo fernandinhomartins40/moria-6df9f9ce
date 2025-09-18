@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const ImageController = require('../controllers/ImageController');
-const { uploadSingle, uploadMultiple } = require('../middleware/upload');
+const { uploadSingle } = require('../middleware/upload');
 const { authenticateToken } = require('../middleware/auth');
 
 // Middleware de autenticação para todas as rotas
@@ -19,8 +19,8 @@ router.use(authenticateToken);
 // Upload de imagem única
 router.post('/upload', uploadSingle, ImageController.uploadSingle);
 
-// Upload de múltiplas imagens
-router.post('/upload-multiple', uploadMultiple, ImageController.uploadMultiple);
+// Upload de múltiplas imagens (desativado - usar upload único)
+// router.post('/upload-multiple', uploadMultiple, ImageController.uploadMultiple);
 
 // ========================================
 // ROTAS DE PROCESSAMENTO

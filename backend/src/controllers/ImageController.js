@@ -7,14 +7,15 @@
 
 const prisma = require('../services/prisma.js');
 const imageProcessor = require('../utils/imageProcessor');
-const { asyncHandler, AppError } = require('../middleware/errorHandler.js');
+const { asyncHandler } = require('../middleware/errorHandler.js');
+const Boom = require('@hapi/boom');
 const fs = require('fs');
 const path = require('path');
 
 // Upload único de imagem
 const uploadSingle = asyncHandler(async (req, res) => {
   if (!req.file) {
-    throw new AppError('Nenhuma imagem foi enviada', 400);
+    throw Boom.badRequest('Nenhuma imagem foi enviada');
   }
 
   try {
@@ -62,7 +63,7 @@ const uploadSingle = asyncHandler(async (req, res) => {
 // Upload múltiplo de imagens
 const uploadMultiple = asyncHandler(async (req, res) => {
   if (!req.files || req.files.length === 0) {
-    throw new AppError('Nenhuma imagem foi enviada', 400);
+    throw Boom.badRequest('Nenhuma imagem foi enviada');
   }
 
   const results = [];
@@ -139,11 +140,11 @@ const processImage = asyncHandler(async (req, res) => {
   });
 
   if (!upload) {
-    throw new AppError('Upload não encontrado', 404);
+    throw Boom.notFound('Upload não encontrado');
   }
 
   if (upload.status === 'COMPLETED') {
-    throw new AppError('Imagem já foi processada', 400);
+    throw Boom.badRequest('Imagem já foi processada');
   }
 
   try {
@@ -294,7 +295,7 @@ const deleteUpload = asyncHandler(async (req, res) => {
   });
 
   if (!upload) {
-    throw new AppError('Upload não encontrado', 404);
+    throw Boom.notFound('Upload não encontrado');
   }
 
   try {
@@ -368,7 +369,7 @@ const linkImagesToProduct = asyncHandler(async (req, res) => {
   const { imageIds, primary = false } = req.body;
 
   if (!imageIds || imageIds.length === 0) {
-    throw new AppError('IDs das imagens são obrigatórios', 400);
+    throw Boom.badRequest('IDs das imagens são obrigatórios');
   }
 
   // ✅ Verificar se produto existe
@@ -377,7 +378,7 @@ const linkImagesToProduct = asyncHandler(async (req, res) => {
   });
 
   if (!product) {
-    throw new AppError('Produto não encontrado', 404);
+    throw Boom.notFound('Produto não encontrado');
   }
 
   // ✅ Criar associações product-image

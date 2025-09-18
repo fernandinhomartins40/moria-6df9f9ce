@@ -1,187 +1,112 @@
 // ========================================
-// WINSTON LOGGER - MORIA BACKEND
-// Sistema de logging profissional estruturado
+// PINO LOGGER - MORIA BACKEND
+// Sistema de logging profissional simplificado
 // ========================================
 
-const winston = require('winston');
-const DailyRotateFile = require('winston-daily-rotate-file');
+const pino = require('pino');
+const pinoHttp = require('pino-http');
 const env = require('../config/environment');
-const LogSanitizer = require('./logSanitizer');
 
-class Logger {
-  constructor() {
-    this.logger = this.createLogger();
-  }
-
-  createLogger() {
-    const formats = [];
-
-    // Timestamp
-    formats.push(winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
-    }));
-
-    // Errors com stack trace
-    formats.push(winston.format.errors({ stack: true }));
-
-    // Metadata adicional
-    formats.push(winston.format.metadata({
-      fillExcept: ['message', 'level', 'timestamp']
-    }));
-
-    // Formato para desenvolvimento
-    if (env.isDevelopment()) {
-      formats.push(winston.format.colorize());
-      formats.push(winston.format.printf(({ timestamp, level, message, metadata }) => {
-        let log = `${timestamp} [${level}]: ${message}`;
-
-        if (Object.keys(metadata).length > 0) {
-          log += ` ${JSON.stringify(metadata, null, 2)}`;
-        }
-
-        return log;
-      }));
-    } else {
-      // Formato JSON para produção
-      formats.push(winston.format.json());
+// Configuração do logger principal
+const logger = pino({
+  level: env.get('LOG_LEVEL'),
+  transport: env.isDevelopment() ? {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname'
     }
-
-    const transports = [];
-
-    // Console sempre ativo
-    transports.push(new winston.transports.Console({
-      level: env.get('LOG_LEVEL'),
-      handleExceptions: true,
-      handleRejections: true
-    }));
-
-    // Arquivos apenas se habilitado
-    if (env.get('LOG_FILE')) {
-      // Log geral com rotação diária
-      transports.push(new DailyRotateFile({
-        filename: 'logs/app-%DATE%.log',
-        datePattern: 'YYYY-MM-DD',
-        maxSize: '20m',
-        maxFiles: '14d',
-        level: 'info'
-      }));
-
-      // Log de erros separado
-      transports.push(new DailyRotateFile({
-        filename: 'logs/error-%DATE%.log',
-        datePattern: 'YYYY-MM-DD',
-        maxSize: '20m',
-        maxFiles: '30d',
-        level: 'error'
-      }));
-
-      // Log de acesso HTTP
-      transports.push(new DailyRotateFile({
-        filename: 'logs/access-%DATE%.log',
-        datePattern: 'YYYY-MM-DD',
-        maxSize: '50m',
-        maxFiles: '14d',
-        level: 'http'
-      }));
-    }
-
-    return winston.createLogger({
-      level: env.get('LOG_LEVEL'),
-      format: winston.format.combine(...formats),
-      transports,
-      exitOnError: false
-    });
+  } : undefined,
+  formatters: {
+    level: (label) => ({ level: label }),
   }
+});
 
-  // Métodos de conveniência
-  debug(message, meta = {}) {
-    this.logger.debug(message, LogSanitizer.sanitize(meta));
+// Middleware para logging HTTP
+const httpLogger = pinoHttp({
+  logger,
+  serializers: {
+    req: (req) => ({
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      remoteAddress: req.connection?.remoteAddress || req.socket?.remoteAddress,
+      userAgent: req.headers['user-agent']
+    }),
+    res: (res) => ({
+      statusCode: res.statusCode,
+      headers: res.getHeaders?.()
+    })
   }
+});
 
-  info(message, meta = {}) {
-    this.logger.info(message, LogSanitizer.sanitize(meta));
-  }
+// Funções de conveniência
+const debug = (message, meta = {}) => logger.debug(meta, message);
+const info = (message, meta = {}) => logger.info(meta, message);
+const warn = (message, meta = {}) => logger.warn(meta, message);
+const error = (message, meta = {}) => logger.error(meta, message);
 
-  warn(message, meta = {}) {
-    this.logger.warn(message, LogSanitizer.sanitize(meta));
-  }
+// Log de requisições HTTP
+const logRequest = (req, res, responseTime) => {
+  info('HTTP Request', {
+    method: req.method,
+    url: req.originalUrl,
+    statusCode: res.statusCode,
+    responseTime: `${responseTime}ms`,
+    ip: req.ip || req.connection?.remoteAddress,
+    userAgent: req.headers['user-agent'],
+    contentLength: res.get('content-length'),
+    userId: req.user?.id
+  });
+};
 
-  error(message, meta = {}) {
-    this.logger.error(message, LogSanitizer.sanitize(meta));
-  }
+// Log de operações de banco
+const logDatabase = (operation, table, data = {}) => {
+  debug('Database Operation', {
+    operation,
+    table,
+    ...data
+  });
+};
 
-  http(message, meta = {}) {
-    this.logger.http(message, LogSanitizer.sanitize(meta));
-  }
+// Log de autenticação
+const logAuth = (action, userId, details = {}) => {
+  info('Authentication', {
+    action,
+    userId,
+    ...details
+  });
+};
 
-  // Log de requisições HTTP
-  logRequest(req, res, responseTime) {
-    const { method, originalUrl, ip, headers } = req;
-    const { statusCode } = res;
+// Log de erros de validação
+const logValidation = (errors, context = {}) => {
+  warn('Validation Failed', {
+    errors,
+    context
+  });
+};
 
-    this.http('HTTP Request', {
-      method,
-      url: originalUrl,
-      statusCode,
-      responseTime: `${responseTime}ms`,
-      ip: this.getClientIP(req),
-      userAgent: headers['user-agent'],
-      contentLength: res.get('content-length'),
-      userId: req.user?.id
-    });
-  }
+// Log de performance
+const logPerformance = (operation, duration, details = {}) => {
+  const level = duration > 1000 ? 'warn' : 'debug';
+  logger[level]('Performance', {
+    operation,
+    duration: `${duration}ms`,
+    ...details
+  });
+};
 
-  // Log de operações de banco
-  logDatabase(operation, table, data = {}) {
-    this.debug('Database Operation', {
-      operation,
-      table,
-      ...data
-    });
-  }
-
-  // Log de autenticação
-  logAuth(action, userId, details = {}) {
-    this.info('Authentication', {
-      action,
-      userId,
-      ...details
-    });
-  }
-
-  // Log de erros de validação
-  logValidation(errors, context = {}) {
-    this.warn('Validation Failed', {
-      errors,
-      context
-    });
-  }
-
-  // Log de performance
-  logPerformance(operation, duration, details = {}) {
-    const level = duration > 1000 ? 'warn' : 'debug';
-    this.logger.log(level, 'Performance', {
-      operation,
-      duration: `${duration}ms`,
-      ...details
-    });
-  }
-
-  getClientIP(req) {
-    return req.headers['x-forwarded-for'] ||
-           req.connection.remoteAddress ||
-           req.socket.remoteAddress ||
-           (req.connection.socket ? req.connection.socket.remoteAddress : null);
-  }
-
-  // Stream para Morgan (log de acesso HTTP)
-  getHttpStream() {
-    return {
-      write: (message) => {
-        this.http(message.trim());
-      }
-    };
-  }
-}
-
-module.exports = new Logger();
+module.exports = {
+  logger,
+  httpLogger,
+  debug,
+  info,
+  warn,
+  error,
+  logRequest,
+  logDatabase,
+  logAuth,
+  logValidation,
+  logPerformance
+};

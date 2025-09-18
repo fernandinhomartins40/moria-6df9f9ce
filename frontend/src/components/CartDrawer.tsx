@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { CheckoutDrawer } from "./CheckoutDrawer";
+import { CheckoutDrawerOptimized } from "./checkout/CheckoutDrawerOptimized";
 import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package, Tag, TrendingDown } from "lucide-react";
 
 export function CartDrawer() {
@@ -297,10 +297,7 @@ export function CartDrawer() {
         </div>
       </SheetContent>
       
-      <CheckoutDrawer 
-        open={showCheckout} 
-        onOpenChange={setShowCheckout}
-      />
+      <CheckoutDrawerOptimized />
     </Sheet>
   );
 }

@@ -16,7 +16,15 @@ import { NotificationContainer } from "./components/NotificationContainer";
 import { ToastContainer } from "./components/ui/toast-custom";
 import { ApiStatus } from "./components/ApiStatus";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutos
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

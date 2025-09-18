@@ -1,116 +1,73 @@
-/**
- * Hook para verificação de autenticação e permissões administrativas
- * Previne chamadas desnecessárias à API quando usuário não tem permissão
- */
+// ========================================
+// HOOK DE AUTENTICAÇÃO ADMINISTRATIVA - MORIA FRONTEND
+// Hook otimizado para gerenciamento de autenticação administrativa
+// ========================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/services/api';
 
-interface AdminAuthState {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
+interface AdminAuthHook {
   isLoading: boolean;
   canAccessAdminFeatures: boolean;
-  user: any | null;
+  isAdmin: boolean;
+  userRole: string | null;
+  checkPermissions: () => Promise<void>;
+  refreshPermissions: () => Promise<void>;
 }
 
-export const useAdminAuth = () => {
-  const { customer, loading: authLoading } = useAuth();
-  const [authState, setAuthState] = useState<AdminAuthState>({
-    isAuthenticated: false,
-    isAdmin: false,
-    isLoading: true,
-    canAccessAdminFeatures: false,
-    user: null
+export const useAdminAuth = (): AdminAuthHook => {
+  const queryClient = useQueryClient();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Query para verificar permissões administrativas
+  const { data: permissionsData, isLoading, refetch } = useQuery({
+    queryKey: ['admin-permissions'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.getProfile();
+        if (response?.success && response.data) {
+          return {
+            role: response.data.role,
+            isAdmin: response.data.role === 'admin'
+          };
+        }
+        return { role: null, isAdmin: false };
+      } catch (error) {
+        console.error('Erro ao verificar permissões administrativas:', error);
+        return { role: null, isAdmin: false };
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    retry: 1,
   });
 
+  // Efeito para atualizar estados locais quando os dados mudarem
   useEffect(() => {
-    const checkAuthState = () => {
-      const token = localStorage.getItem('moria_auth_token');
-      const isAuthenticated = !!token && !!customer;
-      const isAdmin = customer?.role === 'admin';
-      const canAccessAdminFeatures = isAuthenticated && isAdmin;
-
-      setAuthState({
-        isAuthenticated,
-        isAdmin,
-        isLoading: authLoading,
-        canAccessAdminFeatures,
-        user: customer
-      });
-
-      // Log estado de autenticação para debug
-      console.group('🔐 Admin Auth State');
-      console.log('Token disponível:', !!token);
-      console.log('Customer:', customer);
-      console.log('É admin:', isAdmin);
-      console.log('Pode acessar admin:', canAccessAdminFeatures);
-      console.groupEnd();
-    };
-
-    checkAuthState();
-  }, [customer, authLoading]);
-
-  // Função para verificar se pode fazer uma chamada administrativa
-  const canMakeAdminCall = useCallback((endpoint: string): boolean => {
-    const { canAccessAdminFeatures, isLoading } = authState;
-
-    if (isLoading) {
-      console.warn(`⏳ Auth ainda carregando, adiando chamada para ${endpoint}`);
-      return false;
+    if (permissionsData) {
+      setIsAdmin(permissionsData.isAdmin);
+      setUserRole(permissionsData.role);
     }
+  }, [permissionsData]);
 
-    if (!canAccessAdminFeatures) {
-      console.warn(`🚫 Acesso negado para ${endpoint}: usuário não é admin`);
-      return false;
-    }
+  // Função para verificar permissões
+  const checkPermissions = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-    console.log(`✅ Autorizado para ${endpoint}`);
-    return true;
-  }, [authState]);
-
-  // Função para aguardar autenticação completar
-  const waitForAuth = useCallback((): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (!authState.isLoading) {
-        resolve(authState.canAccessAdminFeatures);
-        return;
-      }
-
-      // Aguardar autenticação completar
-      const checkInterval = setInterval(() => {
-        if (!authState.isLoading) {
-          clearInterval(checkInterval);
-          resolve(authState.canAccessAdminFeatures);
-        }
-      }, 100);
-
-      // Timeout após 5 segundos
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        resolve(false);
-      }, 5000);
-    });
-  }, [authState]);
+  // Função para atualizar permissões
+  const refreshPermissions = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
+    await refetch();
+  }, [queryClient, refetch]);
 
   return {
-    ...authState,
-    canMakeAdminCall,
-    waitForAuth,
-
-    // Helpers específicos
-    requiresAdminAccess: (action: string = 'esta ação') => {
-      if (!authState.canAccessAdminFeatures) {
-        console.error(`❌ ${action} requer acesso de administrador`);
-        return false;
-      }
-      return true;
-    },
-
-    // Estado específico para diferentes recursos
-    canManageProducts: authState.canAccessAdminFeatures,
-    canManageOrders: authState.canAccessAdminFeatures,
-    canManageUsers: authState.canAccessAdminFeatures,
-    canViewReports: authState.canAccessAdminFeatures,
+    isLoading,
+    canAccessAdminFeatures: isAdmin,
+    isAdmin,
+    userRole,
+    checkPermissions,
+    refreshPermissions
   };
 };

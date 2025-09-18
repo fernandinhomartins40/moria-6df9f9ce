@@ -26,14 +26,12 @@ const StartupValidator = require('./src/utils/startupValidator.js');
 const configWatcher = require('./src/utils/configWatcher.js');
 
 // Importar sistema de logging estruturado
-const logger = require('./src/utils/logger.js');
-const requestLogger = require('./src/middleware/requestLogger.js');
+const { logger, httpLogger } = require('./src/utils/logger.js');
 const errorLogger = require('./src/middleware/errorLogger.js');
 const performanceMonitor = require('./src/middleware/performanceMonitor.js');
 
 // Importar middlewares da Fase 4
 const rateLimiter = require('./src/middleware/rateLimiter.js');
-const DataTransformer = require('./src/middleware/dataTransform.js');
 
 const app = express();
 const PORT = env.get('PORT');
@@ -108,26 +106,7 @@ app.use(express.urlencoded({
 
 // Logging de requisições (se habilitado)
 if (env.get('ENABLE_REQUEST_LOGGING')) {
-  let morganFormat = env.isDevelopment() ? 'dev' : 'combined';
-  const morganOptions = {};
-
-  // Skip logging in test environment
-  if (env.isTest()) {
-    morganOptions.skip = () => true;
-  }
-
-  // Custom token for response time in production
-  if (env.isProduction()) {
-    morgan.token('real-ip', (req) => {
-      return req.headers['x-forwarded-for'] ||
-             req.headers['x-real-ip'] ||
-             req.connection.remoteAddress ||
-             req.ip;
-    });
-    morganFormat = ':real-ip - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" - :response-time ms';
-  }
-
-  app.use(morgan(morganFormat, morganOptions));
+  app.use(httpLogger);
 }
 
 // ========================================
@@ -138,7 +117,7 @@ if (env.get('ENABLE_REQUEST_LOGGING')) {
 app.use(performanceMonitor);
 
 // Request logging estruturado (compatível com Morgan)
-app.use(requestLogger);
+// Substituído pelo Pino HTTP logger
 
 // ========================================
 // RATE LIMITING E PROTEÇÕES - FASE 4
