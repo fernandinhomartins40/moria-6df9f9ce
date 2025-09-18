@@ -48,7 +48,8 @@
       "Bash(PORT=8080 node server.js)",
       "Bash(cp:*)",
       "Bash(rm:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(NODE_ENV=production npm run build)"
     ],
     "deny": [],
     "ask": []

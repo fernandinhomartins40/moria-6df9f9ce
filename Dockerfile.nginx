@@ -14,16 +14,15 @@ WORKDIR /app/frontend
 # Copiar package files do frontend
 COPY frontend/package*.json ./
 
-# Limpar cache npm e instalar dependências
-RUN npm cache clean --force && \
-    npm ci --include=dev --audit=false
+# Instalar dependências com configuração para produção
+RUN npm ci --only=production --ignore-scripts && \
+    npm ci --include=dev --ignore-scripts
 
 # Copiar código fonte e fazer build
 COPY frontend/ ./
 
-# Verificar se vite.config.ts existe e fazer build
-RUN ls -la vite.config* && \
-    npm run build
+# Fazer build para produção
+RUN NODE_ENV=production npm run build
 
 # ========================================
 # NGINX PRODUCTION STAGE
