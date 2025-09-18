@@ -4,13 +4,17 @@ import path from "path";
 
 // Importação condicional do lovable-tagger para evitar problemas em Docker/Produção
 let componentTagger: any = null;
-try {
-  if (process.env.NODE_ENV !== 'production') {
-    ({ componentTagger } = require("lovable-tagger"));
+const isProduction = process.env.NODE_ENV === 'production';
+const isDocker = process.env.DOCKER_BUILD === 'true' || process.cwd().includes('/app/');
+
+if (!isProduction && !isDocker) {
+  try {
+    const lovableTagger = require("lovable-tagger");
+    componentTagger = lovableTagger.componentTagger;
+  } catch (error) {
+    // lovable-tagger não disponível - ignorar silenciosamente
+    componentTagger = null;
   }
-} catch (error) {
-  // lovable-tagger não disponível (ambiente Docker/CI/Produção)
-  console.warn('lovable-tagger não disponível:', error.message);
 }
 
 // https://vitejs.dev/config/

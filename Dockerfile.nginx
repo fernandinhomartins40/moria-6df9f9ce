@@ -14,15 +14,23 @@ WORKDIR /app/frontend
 # Copiar package files do frontend
 COPY frontend/package*.json ./
 
-# Instalar dependências com configuração para produção
-RUN npm ci --only=production --ignore-scripts && \
-    npm ci --include=dev --ignore-scripts
+# Instalar dependências completas para build
+RUN npm ci --include=dev
 
-# Copiar código fonte e fazer build
+# Copiar código fonte
 COPY frontend/ ./
 
-# Fazer build para produção
-RUN NODE_ENV=production npm run build
+# Definir variáveis de ambiente para build
+ENV NODE_ENV=production
+ENV DOCKER_BUILD=true
+
+# Fazer build com debug e fallback
+RUN echo "Building with NODE_ENV=$NODE_ENV DOCKER_BUILD=$DOCKER_BUILD" && \
+    ls -la vite.config* && \
+    npm run build -- --mode production || \
+    (echo "Build failed, trying without lovable-tagger..." && \
+     npm uninstall lovable-tagger && \
+     npm run build -- --mode production)
 
 # ========================================
 # NGINX PRODUCTION STAGE
