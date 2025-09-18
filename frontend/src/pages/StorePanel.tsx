@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sidebar } from "../components/admin/Sidebar";
-import { AdminContentOptimized } from "../components/admin/AdminContentOptimized";
+import { AdminContent } from "../components/admin/AdminContentOptimized";
 import { ProtectedRouteOptimized } from "../components/ProtectedRouteOptimized";
 import "../styles/lojista.css";
 
@@ -24,7 +24,7 @@ export default function StorePanel() {
             </div>
           </div>
 
-          <AdminContentOptimized activeTab={activeTab} />
+          <AdminContent activeTab={activeTab} />
         </main>
       </div>
     </ProtectedRouteOptimized>

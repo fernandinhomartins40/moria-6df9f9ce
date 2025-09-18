@@ -103,32 +103,32 @@ class ApiClient {
     // Rotas que REQUEREM autenticação
     const authRequiredRoutes = [
       // Autenticação
-      '^/auth/profile,
-      '^/auth/change-password,
-      '^/auth/logout,
+      '^/auth/profile$',
+      '^/auth/change-password$',
+      '^/auth/logout$',
       '^/auth/users',
 
       // IMPORTANTE: Rotas administrativas que sempre requerem auth + admin role
-      '^/orders, // GET /orders (listar todos os pedidos - apenas admin)
-      '^/orders/[^/]+, // GET /orders/:id (ver detalhes - admin ou próprio usuário)
+      '^/orders$', // GET /orders (listar todos os pedidos - apenas admin)
+      '^/orders/[^/]+$', // GET /orders/:id (ver detalhes - admin ou próprio usuário)
 
       // Pedidos do usuário
-      '^/orders/my-orders',
-      '^/orders/[^/]+/cancel,
-      '^/orders/[^/]+/reorder,
-      '^/orders/[^/]+/status,
+      '^/orders/my-orders$',
+      '^/orders/[^/]+/cancel$',
+      '^/orders/[^/]+/reorder$',
+      '^/orders/[^/]+/status$',
 
       // Agendamento de serviços
-      '^/services/[^/]+/book,
+      '^/services/[^/]+/book$',
 
       // Upload de imagens (requer autenticação)
-      '^/images/upload,
-      '^/images/process,
-      '^/images/crop,
+      '^/images/upload$',
+      '^/images/process$',
+      '^/images/crop$',
 
       // Configurações administrativas (exceto públicas)
       '^/settings/(?!public$|company-info$|category/)',
-      '^/settings, // GET /settings (admin - todas as configurações)
+      '^/settings$', // GET /settings (admin - todas as configurações)
 
       // PRODUTOS: Apenas rotas administrativas requerem auth
       '^/products/admin/',
@@ -138,11 +138,11 @@ class ApiClient {
 
       // PROMOÇÕES: Rotas administrativas requerem auth
       '^/promotions/(?!active$|product/|category/|coupons/active$|coupons/validate/)',
-      '^/promotions, // GET /promotions (admin - listar todas)
-      '^/promotions/[^/]+, // GET/PUT/DELETE /promotions/:id (admin)
+      '^/promotions$', // GET /promotions (admin - listar todas)
+      '^/promotions/[^/]+$', // GET/PUT/DELETE /promotions/:id (admin)
       '^/promotions/coupons/(?!active$|validate/)',
-      '^/promotions/coupons, // GET /promotions/coupons (admin)
-      '^/promotions/coupons/[^/]+, // operations on specific coupons (admin)
+      '^/promotions/coupons$', // GET /promotions/coupons (admin)
+      '^/promotions/coupons/[^/]+$', // operations on specific coupons (admin)
 
       // IMAGENS: Todas as operações requerem auth
       '^/images/'
@@ -154,10 +154,10 @@ class ApiClient {
     // Se o método requer autenticação e não é uma rota pública específica
     if (authRequiredMethods.includes(method.toUpperCase())) {
       const publicPostRoutes = [
-        '^/auth/login,
-        '^/auth/register,
-        '^/auth/refresh,
-        '^/orders, // Criar pedido como guest (POST /orders)
+        '^/auth/login$',
+        '^/auth/register$',
+        '^/auth/refresh$',
+        '^/orders$', // Criar pedido como guest (POST /orders)
       ];
 
       const isPublicPost = publicPostRoutes.some(pattern => {
