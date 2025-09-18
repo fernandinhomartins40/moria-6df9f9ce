@@ -84,7 +84,7 @@ export default function About() {
           
           {/* Hero Section */}
           <section className="relative py-20 bg-gradient-to-br from-moria-black to-gray-900 text-white overflow-hidden">
-            <div className="absolute inset-0 bg-[url('/api/placeholder/1920/800')] bg-cover bg-center opacity-20"></div>
+            <div className="absolute inset-0 bg-gray-200 bg-cover bg-center opacity-20"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="max-w-4xl mx-auto text-center">
                 <Badge className="mb-6 bg-moria-orange text-white px-4 py-2 text-lg">

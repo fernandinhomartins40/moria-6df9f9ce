@@ -97,7 +97,7 @@ export function ProductImageGallery({
                 onClick={() => enableZoom && setIsZoomed(!isZoomed)}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = '/api/placeholder/400/400';
+                  target.src = '/placeholder-image.jpg';
                 }}
               />
 
@@ -178,7 +178,7 @@ export function ProductImageGallery({
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = '/api/placeholder/100/100';
+                    target.src = '/placeholder-image.jpg';
                   }}
                 />
               </button>
@@ -230,7 +230,7 @@ export function ProductImageGallery({
                 className="w-full h-auto max-h-[70vh] object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = '/api/placeholder/800/600';
+                  target.src = '/placeholder-image.jpg';
                 }}
               />
 
@@ -286,7 +286,7 @@ export function ProductImageGallery({
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = '/api/placeholder/60/60';
+                          target.src = '/placeholder-image.jpg';
                         }}
                       />
                     </button>

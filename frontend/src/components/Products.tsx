@@ -51,8 +51,8 @@ export function Products() {
   const getProductImages = (product: any) => {
     if (!product.images || product.images.length === 0) {
       return {
-        imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
-        primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
+        imageUrls: [product.image || product.image_url || '/placeholder-image.jpg'],
+        primaryImage: product.image || product.image_url || '/placeholder-image.jpg'
       };
     }
 
@@ -60,7 +60,7 @@ export function Products() {
     if (Array.isArray(product.images) && product.images[0] && typeof product.images[0] === 'object' && product.images[0].thumbnail) {
       return {
         imageUrls: product.images.map((img: any) => img.medium || img.thumbnail), // Usar medium para visualização
-        primaryImage: product.images[0]?.thumbnail || product.image || '/api/placeholder/400/400'
+        primaryImage: product.images[0]?.thumbnail || product.image || '/placeholder-image.jpg'
       };
     }
 
@@ -68,14 +68,13 @@ export function Products() {
     if (Array.isArray(product.images) && typeof product.images[0] === 'string') {
       return {
         imageUrls: product.images,
-        primaryImage: product.images[0] || product.image || '/api/placeholder/400/400'
+        primaryImage: product.images[0] || product.image || '/placeholder-image.jpg'
       };
     }
 
-    // Fallback
     return {
-      imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
-      primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
+      imageUrls: [product.image || product.image_url || '/placeholder-image.jpg'],
+      primaryImage: product.image || product.image_url || '/placeholder-image.jpg'
     };
   };
 
@@ -152,7 +151,7 @@ export function Products() {
                       className="w-full h-48 object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = '/api/placeholder/400/400';
+                        target.src = '/placeholder-image.jpg';
                       }}
                     />
                   )}
