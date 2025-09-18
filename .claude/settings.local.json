@@ -50,7 +50,8 @@
       "Bash(rm:*)",
       "Bash(npm audit:*)",
       "Bash(NODE_ENV=production npm run build)",
-      "Bash(DOCKER_BUILD=true NODE_ENV=production npm run build -- --mode production)"
+      "Bash(DOCKER_BUILD=true NODE_ENV=production npm run build -- --mode production)",
+      "Bash(DOCKER_BUILD=true NODE_ENV=production npm run build)"
     ],
     "deny": [],
     "ask": []

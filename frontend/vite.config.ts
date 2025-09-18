@@ -2,19 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-// Importação condicional do lovable-tagger para evitar problemas em Docker/Produção
+// Importação segura do lovable-tagger
 let componentTagger: any = null;
-const isProduction = process.env.NODE_ENV === 'production';
-const isDocker = process.env.DOCKER_BUILD === 'true' || process.cwd().includes('/app/');
 
-if (!isProduction && !isDocker) {
-  try {
-    const lovableTagger = require("lovable-tagger");
-    componentTagger = lovableTagger.componentTagger;
-  } catch (error) {
-    // lovable-tagger não disponível - ignorar silenciosamente
-    componentTagger = null;
-  }
+try {
+  const { componentTagger: tagger } = require("lovable-tagger");
+  componentTagger = tagger;
+} catch (error) {
+  // lovable-tagger não disponível - continuar sem ele
+  componentTagger = null;
 }
 
 // https://vitejs.dev/config/
