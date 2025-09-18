@@ -75,8 +75,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/server.js ./server.js
 # knexfile.js removido - usando apenas Prisma
 
 # Criar diretórios necessários
-RUN mkdir -p /app/data /app/uploads /app/logs && \
-    chown -R nodejs:nodejs /app/data /app/uploads /app/logs
+RUN mkdir -p /app/data /app/uploads /app/logs /app/temp /app/backups && \
+    chown -R nodejs:nodejs /app/data /app/uploads /app/logs /app/temp /app/backups
 
 # Configurar variáveis de ambiente
 ENV NODE_ENV=production

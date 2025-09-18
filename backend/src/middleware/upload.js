@@ -6,7 +6,9 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+
+// Import dinâmico do uuid para compatibilidade com ES Modules
+let uuidv4;
 
 // Configurar storage para arquivos temporários
 const storage = multer.diskStorage({
@@ -20,7 +22,13 @@ const storage = multer.diskStorage({
 
     cb(null, tempDir);
   },
-  filename: function (req, file, cb) {
+  filename: async function (req, file, cb) {
+    // Garantir que uuid foi carregado
+    if (!uuidv4) {
+      const { v4 } = await import('uuid');
+      uuidv4 = v4;
+    }
+    
     // Gerar nome único com timestamp e UUID
     const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);

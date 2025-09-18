@@ -6,8 +6,15 @@
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const env = require('../config/environment');
+
+// Import dinâmico do uuid para compatibilidade com ES Modules
+let uuidv4;
+
+(async () => {
+  const { v4 } = await import('uuid');
+  uuidv4 = v4;
+})();
 
 class ImageProcessor {
   constructor() {
@@ -92,6 +99,12 @@ class ImageProcessor {
   // Processar upload inicial
   async processUpload(tempFilePath) {
     try {
+      // Garantir que uuid foi carregado
+      if (!uuidv4) {
+        const { v4 } = await import('uuid');
+        uuidv4 = v4;
+      }
+      
       const baseName = uuidv4();
       const results = await this.processImage(tempFilePath, baseName);
 
