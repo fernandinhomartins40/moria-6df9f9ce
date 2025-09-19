@@ -1,33 +1,30 @@
 import { useState } from "react";
 import { Sidebar } from "../components/admin/Sidebar";
 import { AdminContent } from "../components/admin/AdminContent";
-import { ProtectedRoute } from "../components/ProtectedRoute";
 import "../styles/lojista.css";
 
 export default function StorePanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <ProtectedRoute requireAdmin={true}>
-      <div className="lojista-layout">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <main className="lojista-content lojista-fade-in">
-          <div className="lojista-header">
-            <div>
-              <h1 className="lojista-title">
-                {getPageTitle(activeTab)}
-              </h1>
-              <p className="lojista-subtitle">
-                {getPageDescription(activeTab)}
-              </p>
-            </div>
+    <div className="lojista-layout">
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <main className="lojista-content lojista-fade-in">
+        <div className="lojista-header">
+          <div>
+            <h1 className="lojista-title">
+              {getPageTitle(activeTab)}
+            </h1>
+            <p className="lojista-subtitle">
+              {getPageDescription(activeTab)}
+            </p>
           </div>
-
-          <AdminContent activeTab={activeTab} />
-        </main>
-      </div>
-    </ProtectedRoute>
+        </div>
+        
+        <AdminContent activeTab={activeTab} />
+      </main>
+    </div>
   );
 }
 

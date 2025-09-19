@@ -1,9 +1,7 @@
-name: 🚀 Deploy Moria Pecas e Servicos - Full Stack
-
-# FORCE CACHE INVALIDATION - Moria Prisma + Docker Complete - 2025-09-17T18:00:00Z
+name: 🔧 Deploy Moria Peças e Serviços - REBUILD COMPLETO
 
 concurrency:
-  group: moria-deploy-fullstack
+  group: moria-deploy
   cancel-in-progress: true
 
 on:
@@ -12,310 +10,181 @@ on:
   workflow_dispatch:
 
 env:
-  VPS_HOST: '72.60.10.108'
+  VPS_HOST: '31.97.85.98'
   VPS_USER: 'root'
   APP_DIR: '/root/moria-pecas-servicos'
-  APP_PORT: '3030'  # Padronizando para porta 3030
-  COMPOSE_PROJECT: 'moria'
+  PORT: '3018'
+  IMAGE_NAME: 'moria-pecas-servicos'
+  CONTAINER_NAME: 'moria-app'
 
 jobs:
   deploy:
-    name: 🚀 Deploy Full Stack para VPS
+    name: 🚀 Deploy COMPLETO para VPS
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
+    
     steps:
     - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: 🔑 Setup SSH Tools
+    - name: 🔑 Instalar SSH Tools
       run: |
         echo "🔑 Instalando ferramentas SSH..."
         sudo apt-get update -q
         sudo apt-get install -y sshpass
         echo "✅ Ferramentas SSH instaladas"
 
-    - name: 🔍 Pre-Deploy Validation
+    - name: 🚀 Deploy COMPLETO - SEM CACHE
       run: |
-        echo "🔍 Validando estrutura do projeto MORIA FULL STACK..."
-        echo "📋 Frontend:"
-        ls -la frontend/package.json frontend/vite.config.js frontend/src/ || echo "⚠️ Arquivos frontend faltando"
-        echo "📋 Backend:"
-        ls -la backend/package.json backend/server.js backend/Dockerfile || echo "⚠️ Arquivos backend faltando"
-        ls -la backend/prisma/schema.prisma || echo "⚠️ Schema Prisma faltando"
-        echo "📋 Docker:"
-        ls -la docker-compose.yml nginx.conf Dockerfile.nginx || echo "⚠️ Arquivos Docker faltando"
-        
-        # Validar arquivos de configuração
-        echo "📋 Validando arquivos de configuração..."
-        if [ ! -f "docker-compose.yml" ]; then
-          echo "❌ docker-compose.yml não encontrado!"
-          exit 1
-        fi
-        
-        if [ ! -f "nginx.conf" ]; then
-          echo "❌ nginx.conf não encontrado!"
-          exit 1
-        fi
-        
-        if [ ! -f "backend/prisma/schema.prisma" ]; then
-          echo "❌ backend/prisma/schema.prisma não encontrado!"
-          exit 1
-        fi
-        
-        if [ ! -f "frontend/package.json" ]; then
-          echo "❌ frontend/package.json não encontrado!"
-          exit 1
-        fi
-        
-        if [ ! -f "backend/package.json" ]; then
-          echo "❌ backend/package.json não encontrado!"
-          exit 1
-        fi
-        
-        echo "✅ Todos os arquivos essenciais encontrados!"
-
-    - name: 📦 Prepare Full Stack Package
-      run: |
-        echo "📦 Preparando pacote MORIA FULL STACK..."
+        echo "🔧 Iniciando deploy COMPLETO do Moria Peças e Serviços..."
         echo "Commit: ${{ github.sha }}"
         echo "Branch: ${{ github.ref_name }}"
-        echo "Backend: Node.js + Prisma + SQLite"
-        echo "Frontend: React + Vite"
-        echo "Infraestrutura: Docker + nginx proxy"
-
-        # Criar arquivo compacto
+        echo "⚠️  REBUILD COMPLETO - TODOS OS ARQUIVOS SERÃO SUBSTITUÍDOS"
+        
+        # Verificar arquivos essenciais antes do deploy
+        echo "🔍 Verificando arquivos essenciais..."
+        echo "📋 Arquivos de configuração TypeScript:"
+        ls -la tsconfig*.json || echo "⚠️ Arquivos tsconfig não encontrados"
+        echo "📋 Arquivos principais do projeto:"
+        ls -la package.json vite.config.ts Dockerfile nginx.conf || echo "⚠️ Arquivos principais faltando"
+        echo "📋 AdminQuotes e AdminSidebar:"
+        ls -la src/pages/admin/AdminQuotes.tsx src/components/admin/AdminSidebar.tsx src/App.tsx || echo "⚠️ Componentes principais faltando"
+        
+        # Criar arquivo com código
+        echo "📦 Preparando código..."
         tar --warning=no-file-changed -czf deploy.tar.gz \
           --exclude='.git' \
-          --exclude='**/node_modules' \
-          --exclude='frontend/dist' \
-          --exclude='backend/dist' \
+          --exclude='node_modules' \
+          --exclude='dist' \
           --exclude='build' \
           --exclude='*.log' \
           --exclude='coverage' \
           --exclude='.env.local' \
-          --exclude='backend/data' \
-          --exclude='backend/uploads' \
-          --exclude='backend/logs' \
-          --exclude='nginx-logs' \
-          --exclude='backups' \
-          --exclude='docs' \
+          --exclude='test-backend.md' \
           . || true
-
-        echo "📊 Tamanho do pacote FULL STACK:"
-        ls -lh deploy.tar.gz
-
-    - name: 📤 Upload to VPS
-      run: |
-        echo "📤 Enviando FULL STACK para VPS..."
+        
+        # Enviar para VPS
+        echo "📤 Enviando para VPS..."
         sshpass -p '${{ secrets.VPS_PASSWORD }}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy.tar.gz ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
-
-    - name: 🚀 Deploy Full Stack on VPS
-      run: |
-        echo "🏗️ Executando deploy FULL STACK na VPS..."
+        
+        # Deploy COMPLETO na VPS
+        echo "🏗️ Executando deploy COMPLETO na VPS..."
         echo "📋 Informações do deploy:"
         echo "  📦 Commit: ${{ github.sha }}"
         echo "  🌿 Branch: ${{ github.ref_name }}"
         echo "  👤 Actor: ${{ github.actor }}"
-        echo "  🕐 Timestamp: $(date -u)"
-        echo "  🎯 Stack: Node.js Backend + React Frontend"
-
-        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=10 ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << DEPLOY_SCRIPT
+        echo "  🕐 Timestamp: $(date)"
+        
+        sshpass -p '${{ secrets.VPS_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
           set -e
-
-          echo '🚀 Iniciando deploy MORIA FULL STACK - Node.js + React'
-
-          # Configurar sistema
-          echo '📦 Configurando VPS...'
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get install -y curl wget gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
-
-          # Parar stack anterior (se existir)
-          echo '⏹️ Parando stack anterior...'
-          if command -v docker &> /dev/null; then
-            # Parar todos os containers do projeto Moria
-            docker compose -p ${{ env.COMPOSE_PROJECT }} down --volumes --remove-orphans 2>/dev/null || true
-            docker compose -p moria down --volumes --remove-orphans 2>/dev/null || true
-
-            # Parar containers específicos se ainda estiverem rodando
-            docker stop moria-backend moria-nginx moria-frontend 2>/dev/null || true
-            docker rm -f moria-backend moria-nginx moria-frontend 2>/dev/null || true
-
-            # Remover APENAS as imagens do Moria (específicas)
-            echo '🗑️ Removendo imagens antigas do Moria...'
-            docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "moria" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
-
-            # Liberar porta da aplicação forçadamente
-            docker ps --filter "publish=${{ env.APP_PORT }}" --format "table {{.ID}}" | tail -n +2 | xargs -r docker stop 2>/dev/null || true
-
-            # Remover apenas volumes específicos do moria
-            docker volume ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker volume rm 2>/dev/null || true
-            
-            # Remover networks antigas do moria
-            echo '🧹 Removendo networks antigas do Moria...'
-            docker network ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker network rm 2>/dev/null || true
-
-            # Remover volumes órfãos do moria
-            echo '🧹 Removendo volumes órfãos do Moria...'
-            docker volume ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker volume rm 2>/dev/null || true
-
-            echo '✅ Stack anterior parada, imagens antigas removidas e portas liberadas'
-          fi
-
-          # Instalar/Atualizar Docker
-          echo '🐳 Configurando Docker + Compose...'
-          if ! command -v docker &> /dev/null; then
-            # Instalar Docker
-            apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-            echo "deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt-get update -y
-            apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-            systemctl start docker && systemctl enable docker
-          fi
-          docker --version && docker compose version
-
-          # Backup e preparação
-          if [ -d '${{ env.APP_DIR }}' ]; then
-            echo '💾 Fazendo backup...'
-            mv '${{ env.APP_DIR }}' '${{ env.APP_DIR }}.backup.\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true
-          fi
-
+          
+          echo '🗑️  REMOVENDO TUDO - REBUILD COMPLETO'
+          
+          # Parar e remover container
+          echo '⏹️  Parando container anterior...'
+          docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rmi ${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
+          
+          # REMOVER COMPLETAMENTE o diretório anterior
+          echo '🗑️  Removendo diretório anterior COMPLETAMENTE...'
+          rm -rf ${{ env.APP_DIR }}
+          
+          # Criar diretório limpo
+          echo '📁 Criando diretório limpo...'
+          mkdir -p ${{ env.APP_DIR }}
+          
           # Extrair código
-          echo '📁 Extraindo FULL STACK...'
-          mkdir -p ${{ env.APP_DIR }} && cd ${{ env.APP_DIR }}
-          tar -xzf /tmp/deploy.tar.gz && rm -f /tmp/deploy.tar.gz
-
-          # Validar estrutura
-          echo '🔍 Validando estrutura MORIA FULL STACK...'
-          ls -la docker-compose.yml nginx.conf Dockerfile.nginx || { echo '❌ Arquivos essenciais faltando!'; exit 1; }
-          ls -la backend/Dockerfile backend/package.json backend/server.js || { echo '❌ Backend incompleto!'; exit 1; }
-          ls -la backend/prisma/schema.prisma || { echo '❌ Schema Prisma faltando!'; exit 1; }
-          ls -la frontend/package.json frontend/vite.config.js || { echo '❌ Frontend incompleto!'; exit 1; }
-
-          # Configurar variáveis de produção
-          echo '⚙️ Configurando ambiente de produção...'
-          echo "VPS_HOST=${{ env.VPS_HOST }}" > .env.production
-          echo "APP_PORT=${{ env.APP_PORT }}" >> .env.production
-          echo "NGINX_PORT=${{ env.APP_PORT }}" >> .env.production
-          echo "FRONTEND_PORT=${{ env.APP_PORT }}" >> .env.production
-          echo "BACKEND_PORT=3001" >> .env.production
-          echo "JWT_SECRET=moria-production-jwt-${{ github.sha }}" >> .env.production
-          echo "NODE_ENV=production" >> .env.production
-          echo "DATABASE_URL=file:/app/data/moria.db" >> .env.production
-          echo "DIRECT_URL=file:/app/data/moria.db" >> .env.production
-          echo "CORS_ORIGIN=http://${{ env.VPS_HOST }}:${{ env.APP_PORT }},http://localhost:3000,http://localhost:5173" >> .env.production
-          echo "UPLOAD_MAX_SIZE=10485760" >> .env.production
-          echo "LOG_LEVEL=info" >> .env.production
-          echo "APP_NAME=Moria Pecas e Servicos" >> .env.production
-          echo "APP_VERSION=2.0.0" >> .env.production
-
-          # Deploy com Docker Compose
-          echo '🐳 Executando deploy com Docker Compose...'
-          export NGINX_PORT=${{ env.APP_PORT }}
-          export BUILD_TIMESTAMP=\$(date +%s)
-          export JWT_SECRET=moria-production-jwt-${{ github.sha }}
-
-          # Verificar se porta está realmente livre
-          echo '🔍 Verificando porta antes do deploy...'
-          if netstat -tuln | grep -q ":${{ env.APP_PORT }} "; then
-            echo "⚠️ Porta ${{ env.APP_PORT }} ainda ocupada, forçando liberação..."
-            fuser -k ${{ env.APP_PORT }}/tcp 2>/dev/null || true
-            sleep 5  # Aumentando o tempo de espera
-          fi
-
-          # Build e start dos serviços com invalidação forçada de cache
-          echo '🏗️ Building imagens com invalidação total de cache...'
-
-          # Remover APENAS imagens do moria (sem afetar outras aplicações)\n          echo '🧹 Limpeza final de imagens do Moria antes do build...'\n          docker images --format \"table {{.Repository}}:{{.Tag}}\t{{.ID}}\" | grep -E \"moria\" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true\n          \n          # Remover networks antigas do moria\n          echo '🧹 Removendo networks antigas do Moria...'\n          docker network ls --format \"table {{.Name}}\" | grep -E \"moria\" | xargs -r docker network rm 2>/dev/null || true\n\n          # Remover volumes órfãos do moria\n          echo '🧹 Removendo volumes órfãos do Moria...'\n          docker volume ls --format \"table {{.Name}}\" | grep -E \"moria\" | xargs -r docker volume rm 2>/dev/null || true
-
-          # Build com cache totalmente limpo e timestamp único
-          echo '🔨 Construindo imagens completamente novas...'
-          BUILD_TIMESTAMP=\$(date +%s)
-          DOCKER_BUILDKIT=1 docker compose -p ${{ env.COMPOSE_PROJECT }} build --no-cache --pull --build-arg BUILD_TIMESTAMP=\$BUILD_TIMESTAMP
-
-          echo '🚀 Iniciando containers...'
-
-          # Tentar start normal primeiro
-          if ! docker compose -p ${{ env.COMPOSE_PROJECT }} up -d; then
-            echo '⚠️ Falha no start normal, tentando restart forçado...'
-
-            # Restart específico do moria apenas
-            docker compose -p ${{ env.COMPOSE_PROJECT }} down --volumes --remove-orphans 2>/dev/null || true
-            echo '⚠️ Reiniciando apenas containers do Moria...'
-
-            # Aguardar um pouco
-            sleep 10
-
-            # Tentar novamente
-            echo '🔄 Tentativa 2: Iniciando containers...'
-            docker compose -p ${{ env.COMPOSE_PROJECT }} up -d
-          fi
-
-          # Aguardar inicialização
-          echo '⏳ Aguardando stack inicializar (60s)...'
-          sleep 60  # Aumentando o tempo de espera para 60 segundos
-
-          # Verificar serviços
-          echo '🔍 Verificando serviços...'
-          docker compose -p ${{ env.COMPOSE_PROJECT }} ps
-
-          # Testar aplicação (via nginx proxy)
-          echo '🔍 Testando aplicação...'
-          for i in {1..15}; do
-            if curl -f -s http://localhost:${{ env.APP_PORT }}/health >/dev/null 2>&1; then
-              echo '✅ Nginx proxy health check passou!'
-              break
-            fi
-            echo "Nginx proxy - Tentativa \$i/15 - aguardando 5s..."
-            sleep 5
-          done
-
-          # Testar API backend via proxy
-          echo '🔍 Testando API backend via proxy...'
-          for i in {1..12}; do
-            if curl -f -s http://localhost:${{ env.APP_PORT }}/api/health >/dev/null 2>&1; then
-              echo '✅ Backend API health check passou!'
-              break
-            fi
-            echo "Backend API - Tentativa \$i/12 - aguardando 5s..."
-            sleep 5
-          done
-
-          # Verificação final
-          echo '🎯 Verificação final...'
-          if curl -f -s http://localhost:${{ env.APP_PORT }}/health >/dev/null 2>&1 && curl -f -s http://localhost:${{ env.APP_PORT }}/api/health >/dev/null 2>&1; then
-            echo '✅ DEPLOY FULL STACK CONCLUÍDO COM SUCESSO!'
-            echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}'
-            echo '🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/api'
-            echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/health'
+          echo '📦 Extraindo código COMPLETO...'
+          cd ${{ env.APP_DIR }}
+          tar -xzf /tmp/deploy.tar.gz
+          rm -f /tmp/deploy.tar.gz
+          
+          # Verificar arquivos críticos após extração
+          echo '🔍 Verificando arquivos críticos após extração...'
+          echo '📋 Configurações TypeScript:'
+          ls -la tsconfig*.json || echo '❌ ERRO: Arquivos tsconfig não encontrados!'
+          echo '📋 Componentes principais:'
+          ls -la src/pages/admin/AdminQuotes.tsx src/components/admin/AdminSidebar.tsx src/App.tsx || echo '❌ ERRO: Componentes principais faltando!'
+          echo '📋 Arquivos de build:'
+          ls -la package.json vite.config.ts Dockerfile nginx.conf || echo '❌ ERRO: Arquivos de build faltando!'
+          
+          # Garantir que não há cache
+          echo '🧹 Limpando qualquer cache...'
+          rm -rf node_modules dist build .next .vite || true
+          
+          # Limpar cache do Docker System
+          echo '🧹 Limpando cache do Docker...'
+          docker system prune -f || true
+          docker builder prune -f || true
+          
+          echo '🏗️  BUILD COMPLETO da imagem Docker...'
+          docker build --no-cache --pull -t ${{ env.IMAGE_NAME }}:latest .
+          
+          echo '🚀 Iniciando aplicação...'
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.PORT }}:80 \
+            --restart unless-stopped \
+            -e NODE_ENV=production \
+            -e APP_NAME='Moria Peças e Serviços' \
+            -e CLIENT_NAME='Moria - Peças e Serviços Automotivos' \
+            ${{ env.IMAGE_NAME }}:latest
+          
+          echo '⏳ Aguardando inicialização (30s)...'
+          sleep 30
+          
+          echo '🔍 Verificando container...'
+          if docker ps | grep -q ${{ env.CONTAINER_NAME }}; then
+            echo '✅ Container rodando!'
+            docker ps | grep ${{ env.CONTAINER_NAME }}
           else
-            echo '❌ Falha na verificação final!'
-            echo '🔍 Exibindo logs detalhados...'
-            docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 50
+            echo '❌ Container falhou!'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 20
             exit 1
           fi
-        DEPLOY_SCRIPT
+          
+          echo '🔍 Testando aplicação...'
+          for i in {1..5}; do
+            if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
+              echo '✅ Aplicação funcionando!'
+              break
+            fi
+            echo \"Tentativa \$i/5 - aguardando 10s...\"
+            sleep 10
+          done
+          
+          # Verificação final
+          if curl -f -s http://localhost:${{ env.PORT }}/ >/dev/null 2>&1; then
+            echo '✅ Deploy COMPLETO concluído com sucesso!'
+            echo '📋 Verificando arquivos atualizados...'
+            echo '📁 Arquivos principais:'
+            ls -la ${{ env.APP_DIR }}/src/pages/admin/ | grep -E '(AdminQuotes|AdminOrders)' || echo 'Arquivos não encontrados'
+            echo '📅 Última modificação do build:'
+            docker exec ${{ env.CONTAINER_NAME }} ls -la /usr/share/nginx/html/assets/ | head -5
+            echo '🔍 Testando páginas críticas:'
+            curl -s -o /dev/null -w 'Admin Dashboard: %{http_code} ' http://localhost:${{ env.PORT }}/admin && echo ''
+            curl -s -o /dev/null -w 'Admin Quotes: %{http_code} ' http://localhost:${{ env.PORT }}/admin/quotes && echo '✅'
+          else
+            echo '❌ Aplicação não respondeu após 5 tentativas'
+            docker logs ${{ env.CONTAINER_NAME }} --tail 10
+            exit 1
+          fi
+          
+          echo '✅ DEPLOY COMPLETO CONCLUÍDO!'
+          echo '🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.PORT }}'
+          echo '📊 Admin Dashboard: http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin'
+          echo '📋 Admin Orçamentos: http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin/quotes'
+          echo '📦 Admin Pedidos: http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin/orders'
+        "
 
-    - name: 🎉 Full Stack Deploy Success
+    - name: 🎉 Sucesso
       run: |
-        echo "🎉 MORIA PEÇAS & SERVIÇOS FULL STACK DEPLOYADO!"
-        echo "✅ Backend Node.js + Prisma + Frontend React em produção"
+        echo "🔧 MORIA PEÇAS E SERVIÇOS DEPLOYADO COM SUCESSO!"
+        echo "🔥 REBUILD COMPLETO EXECUTADO - TODOS OS ARQUIVOS ATUALIZADOS"
         echo ""
-        echo "🔗 LINKS FUNCIONAIS (ENTRADA ÚNICA):"
-        echo "🌐 Aplicação: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}"
-        echo "🔌 Backend API: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/api"
-        echo "🩺 Health Check: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/health"
-        echo "🏪 Painel Lojista: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/store-panel"
-        echo "👤 Painel Cliente: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/customer"
-        echo ""
-        echo "✅ Stack Completa:"
-        echo "  🎯 Backend: Node.js + Prisma + SQLite"
-        echo "  🎨 Frontend: React + Vite"
-        echo "  🐳 Deploy: Docker Compose orchestration"
-        echo "  📦 ORM: Prisma type-safe database"
-        echo "  🛒 Carrinho com promoções do backend"
-        echo "  🔐 Autenticação JWT segura"
-        echo "  🗄️ Dados persistidos via Prisma"
-        echo "  🚀 Scripts: deploy + backup automáticos"
+        echo "🔗 LINKS:"
+        echo "🌐 App: http://${{ env.VPS_HOST }}:${{ env.PORT }}"
+        echo "🔧 Peças: http://${{ env.VPS_HOST }}:${{ env.PORT }}/pecas"
+        echo "🛠️ Serviços: http://${{ env.VPS_HOST }}:${{ env.PORT }}/servicos"
+        echo "📊 Admin: http://${{ env.VPS_HOST }}:${{ env.PORT }}/admin"

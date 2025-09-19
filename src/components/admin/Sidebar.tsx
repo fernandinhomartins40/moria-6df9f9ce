@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
+import { 
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
-import { useAuth } from "../../contexts/AuthContext";
 
 interface SidebarProps {
   activeTab: string;
@@ -40,7 +39,6 @@ const menuItems = [
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { logout, customer } = useAuth();
 
   return (
     <div className={cn(
@@ -53,9 +51,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           <div className={cn("flex items-center space-x-3", isCollapsed && "justify-center")}>
             {!isCollapsed ? (
               <>
-                <img
-                  src="/logo_moria.png"
-                  alt="Moria"
+                <img 
+                  src="/logo_moria.png" 
+                  alt="Moria" 
                   className="h-8 w-auto"
                 />
                 <div>
@@ -64,14 +62,14 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 </div>
               </>
             ) : (
-              <img
-                src="/logo_moria.png"
-                alt="Moria"
+              <img 
+                src="/logo_moria.png" 
+                alt="Moria" 
                 className="h-8 w-auto"
               />
             )}
           </div>
-
+          
           <Button
             variant="ghost"
             size="icon"
@@ -81,21 +79,6 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
           </Button>
         </div>
-
-        {/* User Info */}
-        {!isCollapsed && customer && (
-          <div className="mt-3 p-2 bg-gray-800 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-moria-orange rounded-full flex items-center justify-center">
-                <Users className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{customer.name}</p>
-                <p className="text-xs text-gray-400 truncate">{customer.role === 'admin' ? 'Administrador' : 'Usuário'}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Navigation */}
@@ -150,17 +133,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             "w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-red-400",
             isCollapsed && "justify-center px-2"
           )}
-          onClick={async () => {
-            try {
-              await logout();
-              window.location.href = '/';
-            } catch (error) {
-              console.error('Erro no logout:', error);
-              // Forçar logout mesmo com erro
-              localStorage.removeItem('moria_auth_token');
-              localStorage.removeItem('moria_refresh_token');
-              window.location.href = '/';
-            }
+          onClick={() => {
+            // Implementar logout se necessário
+            window.location.href = '/';
           }}
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />

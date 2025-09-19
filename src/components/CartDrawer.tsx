@@ -6,10 +6,10 @@ import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
 import { CheckoutDrawer } from "./CheckoutDrawer";
-import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package, Tag, TrendingDown } from "lucide-react";
+import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package } from "lucide-react";
 
 export function CartDrawer() {
-  const { items, isOpen, totalItems, totalPrice, originalTotalPrice, totalSavings, appliedPromotions, closeCart, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, isOpen, totalItems, totalPrice, closeCart, removeItem, updateQuantity, clearCart } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
 
   const formatPrice = (price: number) => {
@@ -129,26 +129,11 @@ export function CartDrawer() {
                             </div>
                             
                             <div className="flex items-center justify-between mt-3">
-                              <div className="space-y-1">
+                              <div className="text-lg font-bold">
                                 {isService ? (
-                                  <div className="text-lg font-bold text-orange-600">Orçamento</div>
+                                  <span className="text-orange-600">Orçamento</span>
                                 ) : (
-                                  <div className="space-y-1">
-                                    <div className="text-lg font-bold text-moria-orange">
-                                      {formatPrice(item.price)}
-                                    </div>
-                                    {item.appliedPromotion && (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-500 line-through">
-                                          {formatPrice(item.originalPrice)}
-                                        </span>
-                                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                          <Tag className="h-3 w-3 mr-1" />
-                                          {item.appliedPromotion.name}
-                                        </Badge>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <span className="text-moria-orange">{formatPrice(item.price)}</span>
                                 )}
                               </div>
                               
@@ -205,36 +190,7 @@ export function CartDrawer() {
                       )}
                     </div>
                     
-                    {/* Promoções aplicadas */}
-                    {appliedPromotions.length > 0 && (
-                      <>
-                        <Separator />
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-green-700 flex items-center gap-1">
-                            <TrendingDown className="h-3 w-3" />
-                            Promoções Aplicadas
-                          </p>
-                          {appliedPromotions.map(promotion => (
-                            <div key={promotion.id} className="flex justify-between items-center text-xs">
-                              <span className="text-green-600">{promotion.name}</span>
-                              <span className="text-green-600 font-medium">
-                                -{formatPrice(totalSavings)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    
-                    {totalSavings > 0 && <Separator />}
-                    
-                    {/* Subtotal original (se há desconto) */}
-                    {totalSavings > 0 && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Subtotal</span>
-                        <span className="text-gray-500 line-through">{formatPrice(originalTotalPrice)}</span>
-                      </div>
-                    )}
+                    {hasProducts && hasServices && <Separator />}
                     
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold">
@@ -244,14 +200,6 @@ export function CartDrawer() {
                         {hasProducts ? formatPrice(totalPrice) : `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`}
                       </span>
                     </div>
-                    
-                    {/* Economia total */}
-                    {totalSavings > 0 && (
-                      <div className="flex justify-between items-center bg-green-50 px-2 py-1 rounded text-sm">
-                        <span className="text-green-700 font-medium">Você economizou:</span>
-                        <span className="text-green-700 font-bold">{formatPrice(totalSavings)}</span>
-                      </div>
-                    )}
                     
                     {hasServices && hasProducts && (
                       <p className="text-xs text-muted-foreground">

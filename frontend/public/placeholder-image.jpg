@@ -1,6 +1,0 @@
-<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="400" fill="#f3f4f6"/>
-  <text x="200" y="200" font-family="Arial" font-size="20" fill="#9ca3af" text-anchor="middle">Imagem Indisponível</text>
-  <rect x="100" y="100" width="200" height="150" fill="#e5e7eb" stroke="#d1d5db" stroke-width="2"/>
-  <circle cx="200" cy="150" r="30" fill="#d1d5db"/>
-</svg>

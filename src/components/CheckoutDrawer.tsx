@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
-import { useAuth } from "../hooks/useAuth";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
-import { apiClient } from "../services/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import type { CheckoutFormData, OrderFormData, CartItem } from "@/types";
 import { 
   User, 
   Phone, 
@@ -18,9 +15,7 @@ import {
   Loader2,
   CheckCircle,
   Package,
-  Wrench,
-  MapPin,
-  Mail
+  Wrench
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,42 +24,14 @@ interface CheckoutDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-interface CheckoutFormState {
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  address: {
-    street: string;
-    number: string;
-    complement?: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  notes: string;
+interface CheckoutForm {
+  name: string;
+  whatsapp: string;
 }
 
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
-  
-  const [form, setForm] = useState<CheckoutFormState>({
-    customerName: user?.name || "",
-    customerEmail: user?.email || "",
-    customerPhone: user?.phone || "",
-    address: {
-      street: "",
-      number: "",
-      complement: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-      zipCode: ""
-    },
-    notes: ""
-  });
-  
+  const [form, setForm] = useState<CheckoutForm>({ name: "", whatsapp: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -104,9 +71,11 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       createdAt: new Date().toISOString()
     };
 
-    // TODO: Salvar usuário na API quando implementarmos autenticação
-    console.log('👤 Usuário provisório criado:', user.name, user.email);
-    
+    // Salva no localStorage (simula backend)
+    const users = JSON.parse(localStorage.getItem('provisional_users') || '[]');
+    users.push(user);
+    localStorage.setItem('provisional_users', JSON.stringify(users));
+
     return user;
   };
 
@@ -139,28 +108,10 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         source: 'website'
       };
 
-      try {
-        // Salvar pedido na API
-        const response = await apiClient.createOrder({
-          customerName: order.customerName,
-          customerEmail: order.customerEmail,
-          customerPhone: order.customerWhatsApp,
-          customerAddress: order.customerAddress,
-          notes: order.notes,
-          items: order.items.map(item => ({
-            type: 'product',
-            itemId: item.id,
-            itemName: item.name,
-            quantity: item.quantity,
-            unitPrice: item.price
-          }))
-        });
-        console.log('📦 Pedido salvo na API:', response);
-        results.order = order;
-      } catch (error) {
-        console.error('❌ Erro ao salvar pedido na API:', error);
-        results.order = order; // Manter localmente se falhar
-      }
+      const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
+      orders.push(order);
+      localStorage.setItem('store_orders', JSON.stringify(orders));
+      results.order = order;
     }
 
     // Criar orçamento apenas se houver serviços
@@ -183,8 +134,9 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         source: 'website'
       };
 
-      // TODO: Implementar orçamentos na API quando necessário
-      console.log('📋 Orçamento criado (temporário):', quote);
+      const quotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
+      quotes.push(quote);
+      localStorage.setItem('store_quotes', JSON.stringify(quotes));
       results.quote = quote;
     }
 

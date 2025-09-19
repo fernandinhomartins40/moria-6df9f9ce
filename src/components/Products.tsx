@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ProductImageGallery } from "./ui/ProductImageGallery";
 import { Star, Plus, Heart } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
-import { useProducts } from "../hooks/useProducts.js";
 
 interface Product {
   id: number;
@@ -14,11 +12,6 @@ interface Product {
   price: number;
   originalPrice?: number;
   image: string;
-  images?: Array<{
-    thumbnail: string;
-    medium: string;
-    full: string;
-  }> | string[]; // Suportar tanto a nova estrutura quanto a antiga
   rating: number;
   inStock: boolean;
   discount?: number;
@@ -34,53 +27,79 @@ const categories = [
   "Óleos",
 ];
 
-// Dados mock removidos - agora usa dados reais do SQLite via useProducts hook
+const products: Product[] = [
+  {
+    id: 1,
+    name: "Pastilha de Freio Cerâmica",
+    category: "Freios",
+    price: 89.90,
+    originalPrice: 120.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.8,
+    inStock: true,
+    discount: 25
+  },
+  {
+    id: 2,
+    name: "Filtro de Ar Esportivo",
+    category: "Filtros",
+    price: 156.90,
+    originalPrice: 220.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.9,
+    inStock: true,
+    discount: 30
+  },
+  {
+    id: 3,
+    name: "Óleo Motor 5W30 Sintético",
+    category: "Óleos",
+    price: 45.90,
+    image: "/api/placeholder/300/300",
+    rating: 4.7,
+    inStock: true
+  },
+  {
+    id: 4,
+    name: "Amortecedor Dianteiro",
+    category: "Suspensão",
+    price: 234.90,
+    originalPrice: 280.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.6,
+    inStock: true,
+    discount: 16
+  },
+  {
+    id: 5,
+    name: "Bateria 60Ah",
+    category: "Elétrica",
+    price: 189.90,
+    originalPrice: 250.00,
+    image: "/api/placeholder/300/300",
+    rating: 4.8,
+    inStock: true,
+    discount: 24
+  },
+  {
+    id: 6,
+    name: "Kit Velas de Ignição",
+    category: "Motor",
+    price: 67.90,
+    image: "/api/placeholder/300/300",
+    rating: 4.9,
+    inStock: false
+  }
+];
 
 export function Products() {
   const { addItem, openCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [favorites, setFavorites] = useState<number[]>([]);
-  
-  // Usar dados reais da API do SQLite
-  const { products: apiProducts, loading, error, updateFilters } = useProducts({
-    category: selectedCategory === "Todos" ? undefined : selectedCategory,
-    active: true
-  });
 
-  // Função helper para processar imagens
-  const getProductImages = (product: any) => {
-    if (!product.images || product.images.length === 0) {
-      return {
-        imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
-        primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
-      };
-    }
-
-    // Se é a nova estrutura (array de objetos com thumbnail, medium, full)
-    if (Array.isArray(product.images) && product.images[0] && typeof product.images[0] === 'object' && product.images[0].thumbnail) {
-      return {
-        imageUrls: product.images.map((img: any) => img.medium || img.thumbnail), // Usar medium para visualização
-        primaryImage: product.images[0]?.thumbnail || product.image || '/api/placeholder/400/400'
-      };
-    }
-
-    // Se é a estrutura antiga (array de strings)
-    if (Array.isArray(product.images) && typeof product.images[0] === 'string') {
-      return {
-        imageUrls: product.images,
-        primaryImage: product.images[0] || product.image || '/api/placeholder/400/400'
-      };
-    }
-
-    // Fallback
-    return {
-      imageUrls: [product.image || product.image_url || '/api/placeholder/400/400'],
-      primaryImage: product.image || product.image_url || '/api/placeholder/400/400'
-    };
-  };
-
-  // Usar produtos da API (dados reais do SQLite)
-  const filteredProducts = error ? [] : apiProducts;
+  const filteredProducts = selectedCategory === "Todos" 
+    ? products 
+    : products.filter(product => product.category === selectedCategory);
 
   const toggleFavorite = (productId: number) => {
     setFavorites(prev => 
@@ -88,14 +107,6 @@ export function Products() {
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
-  };
-
-  // Atualizar filtros da API quando categoria muda
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    updateFilters({
-      category: category === "Todos" ? undefined : category
-    });
   };
 
 
@@ -118,7 +129,7 @@ export function Products() {
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => handleCategoryChange(category)}
+              onClick={() => setSelectedCategory(category)}
               className="mb-2"
             >
               {category}
@@ -128,38 +139,18 @@ export function Products() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => {
-            const { imageUrls, primaryImage } = getProductImages(product);
-
-            return (
-              <Card key={product.id} className="product-hover overflow-hidden">
-                <div className="relative">
-                  {/* Usar galeria se há múltiplas imagens, senão imagem simples */}
-                  {imageUrls.length > 1 ? (
-                    <ProductImageGallery
-                      images={imageUrls}
-                      productName={product.name}
-                      aspectRatio="square"
-                      thumbnailSize="sm"
-                      enableZoom={false}
-                      enableFullscreen={true}
-                      className="h-48"
-                    />
-                  ) : (
-                    <img
-                      src={primaryImage}
-                      alt={product.name}
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/api/placeholder/400/400';
-                      }}
-                    />
-                  )}
-
+          {filteredProducts.map((product) => (
+            <Card key={product.id} className="product-hover overflow-hidden">
+              <div className="relative">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="w-full h-48 object-cover"
+                />
+                
                 {/* Discount Badge */}
                 {product.discount && (
-                  <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold z-10">
+                  <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold">
                     -{product.discount}%
                   </Badge>
                 )}
@@ -168,21 +159,21 @@ export function Products() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 right-2 bg-white/80 hover:bg-white z-10"
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                   onClick={() => toggleFavorite(product.id)}
                 >
-                  <Heart
+                  <Heart 
                     className={`h-4 w-4 ${
-                      favorites.includes(product.id)
-                        ? 'text-red-500 fill-red-500'
+                      favorites.includes(product.id) 
+                        ? 'text-red-500 fill-red-500' 
                         : 'text-gray-600'
-                    }`}
+                    }`} 
                   />
                 </Button>
 
                 {/* Stock Status */}
                 {!product.inStock && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <span className="text-white font-bold">Esgotado</span>
                   </div>
                 )}
@@ -250,8 +241,25 @@ export function Products() {
                 </Button>
               </div>
             </Card>
-            );
-          })}
+          ))}
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center mt-16 p-8 bg-gray-50 rounded-lg">
+          <h3 className="text-2xl font-bold mb-4">
+            Não encontrou o que procura?
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Temos mais de 10.000 peças em estoque. Entre em contato e encontraremos a peça ideal para seu veículo.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="hero" size="lg">
+              Consultar Disponibilidade
+            </Button>
+            <Button variant="outline" size="lg">
+              Falar com Especialista
+            </Button>
+          </div>
         </div>
       </div>
     </section>

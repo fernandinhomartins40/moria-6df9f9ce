@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import {
-  Package,
-  Wrench,
-  User,
-  Phone,
-  Calendar,
+import { 
+  Package, 
+  Wrench, 
+  User, 
+  Phone, 
+  Calendar, 
   DollarSign,
   ShoppingBag,
   MessageCircle,
@@ -37,12 +37,6 @@ import {
   BarChart3,
   FileText
 } from "lucide-react";
-import { AdminServicesSection } from './AdminServicesSection';
-import { AdminCouponsSection } from './AdminCouponsSection';
-import { AdminPromotionsSection } from './AdminPromotionsSection';
-import { AdminProductsSection } from './AdminProductsSection';
-import { apiClient } from '../../services/api';
-import { useAdminAuth } from '../../hooks/useAdminAuth';
 
 interface StoreOrder {
   id: string;
@@ -122,162 +116,252 @@ interface AdminContentProps {
 }
 
 export function AdminContent({ activeTab }: AdminContentProps) {
-  // Hook de autenticação administrativa
-  const adminAuth = useAdminAuth();
-
-
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
-  const [settings, setSettings] = useState<any>({});
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
-
-  // Carregar dados apenas se o usuário for admin
   useEffect(() => {
-    const initializeAdminData = async () => {
-      // Aguardar autenticação completar
-      if (adminAuth.isLoading) {
-        console.log('⏳ Aguardando verificação de permissões administrativas...');
-        return;
-      }
-
-      // Verificar se usuário tem permissão de admin
-      if (!adminAuth.canAccessAdminFeatures) {
-        console.warn('🚫 Usuário não tem permissões administrativas');
-        // Limpar dados sensíveis
-        setOrders([]);
-        setQuotes([]);
-        setProducts([]);
-        setUsers([]);
-        return;
-      }
-
-      console.log('🔓 Usuário autorizado, carregando dados administrativos...');
-      await loadData();
-    };
-
-    initializeAdminData();
-  }, [adminAuth.isLoading, adminAuth.canAccessAdminFeatures]);
+    loadData();
+  }, []);
 
   useEffect(() => {
     filterOrders();
     filterQuotes();
-  }, [orders, quotes, searchTerm, statusFilter]);
+    filterServices();
+    filterCoupons();
+    filterProducts();
+  }, [orders, quotes, services, coupons, products, searchTerm, statusFilter]);
 
   const loadData = async () => {
-    // Verificar se o usuário tem permissão antes de carregar dados
-    if (!adminAuth.canAccessAdminFeatures) {
-      console.warn('🚫 LoadData: Usuário não autorizado para dados administrativos');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      console.log('🔄 Carregando dados administrativos REAIS do API...');
-
-      // Carregar dados REAIS do API em paralelo com autenticação forçada
-      const [
-        productsResponse,
-        ordersResponse,
-        promotionsResponse
-      ] = await Promise.all([
-        apiClient.getProducts({ is_active: 'all' }, true), // Todos os produtos (admin)
-        apiClient.getOrders(), // Todos os pedidos (admin)
-        apiClient.getPromotions() // Todas as promoções (admin)
-      ]);
-
-      console.log('📦 Produtos do API:', productsResponse?.data?.length || 0);
-      console.log('📝 Pedidos do API:', ordersResponse?.data?.length || 0);
-
-      // Verificar se as respostas são válidas
-      if (productsResponse?.success) {
-        setProducts(productsResponse.data || []);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
+      const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
+      const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
+      const storeCoupons = JSON.parse(localStorage.getItem('store_coupons') || '[]');
+      const storeProducts = JSON.parse(localStorage.getItem('store_products') || '[]');
+      const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
+      
+      // Se não há serviços, criar alguns exemplos
+      if (storeServices.length === 0) {
+        const defaultServices: Service[] = [
+          {
+            id: 'srv-001',
+            name: 'Troca de Óleo',
+            description: 'Troca completa de óleo do motor com filtro',
+            category: 'Manutenção',
+            estimatedTime: '30 minutos',
+            basePrice: 120.00,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'srv-002',
+            name: 'Alinhamento e Balanceamento',
+            description: 'Alinhamento e balanceamento das 4 rodas',
+            category: 'Suspensão',
+            estimatedTime: '45 minutos',
+            basePrice: 80.00,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'srv-003',
+            name: 'Revisão Completa',
+            description: 'Revisão geral do veículo com check-up completo',
+            category: 'Revisão',
+            estimatedTime: '2 horas',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_services', JSON.stringify(defaultServices));
+        setServices(defaultServices);
       } else {
-        console.warn('⚠️ Erro ao carregar produtos:', productsResponse?.message);
-        setProducts([]);
+        setServices(storeServices);
       }
-
-
-      if (ordersResponse?.success) {
-        setOrders(ordersResponse.data || []);
+      
+      // Se não há cupons, criar alguns exemplos
+      if (storeCoupons.length === 0) {
+        const defaultCoupons: Coupon[] = [
+          {
+            id: 'coupon-001',
+            code: 'PRIMEIRA20',
+            description: '20% de desconto na primeira compra',
+            discountType: 'percentage',
+            discountValue: 20,
+            minValue: 100,
+            maxDiscount: 50,
+            expiresAt: '2024-12-31',
+            usageLimit: 100,
+            usedCount: 25,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'coupon-002',
+            code: 'FRETE10',
+            description: 'Frete grátis em compras acima de R$ 150',
+            discountType: 'free_shipping',
+            discountValue: 0,
+            minValue: 150,
+            expiresAt: '2024-12-31',
+            usedCount: 12,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'coupon-003',
+            code: 'COMBO15',
+            description: '15% de desconto em combos',
+            discountType: 'percentage',
+            discountValue: 15,
+            minValue: 200,
+            maxDiscount: 30,
+            expiresAt: '2024-11-30',
+            usageLimit: 50,
+            usedCount: 45,
+            isActive: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_coupons', JSON.stringify(defaultCoupons));
+        setCoupons(defaultCoupons);
       } else {
-        console.warn('⚠️ Erro ao carregar pedidos:', ordersResponse?.message);
-        setOrders([]);
+        setCoupons(storeCoupons);
       }
-
-      // TODO: Implementar quotes e users no API futuramente
-      setQuotes([]); // Orçamentos serão implementados no API
-      setUsers([]); // Usuários serão migrados para auth.users
-
-      console.log('✅ Dados administrativos carregados com sucesso!');
-
-      // Carregar configurações também
-      await loadSettings();
+      
+      // Se não há produtos, criar alguns exemplos
+      if (storeProducts.length === 0) {
+        const defaultProducts: Product[] = [
+          {
+            id: 'prod-001',
+            name: 'Filtro de Óleo Mann W75/3',
+            description: 'Filtro de óleo de alta qualidade para motores 1.0, 1.4 e 1.6',
+            category: 'Filtros',
+            subcategory: 'Filtro de Óleo',
+            sku: 'FLT-W753',
+            supplier: 'Mann Filter',
+            costPrice: 15.90,
+            salePrice: 25.90,
+            promoPrice: 22.90,
+            stock: 45,
+            minStock: 10,
+            images: [],
+            specifications: {
+              'Aplicação': 'VW Fox, Gol, Voyage / Fiat Uno, Palio',
+              'Material': 'Papel filtrante especial',
+              'Garantia': '12 meses'
+            },
+            vehicleCompatibility: ['VW Fox', 'VW Gol', 'VW Voyage', 'Fiat Uno', 'Fiat Palio'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-002',
+            name: 'Pastilha de Freio Dianteira Cobreq',
+            description: 'Pastilha de freio dianteira com cerâmica para maior durabilidade',
+            category: 'Freios',
+            subcategory: 'Pastilhas',
+            sku: 'FRE-N1049',
+            supplier: 'Cobreq',
+            costPrice: 89.90,
+            salePrice: 139.90,
+            stock: 12,
+            minStock: 5,
+            images: [],
+            specifications: {
+              'Posição': 'Dianteira',
+              'Material': 'Cerâmica',
+              'Garantia': '20.000 km'
+            },
+            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Toyota Corolla'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-003',
+            name: 'Amortecedor Traseiro Monroe',
+            description: 'Amortecedor traseiro Monroe Gas-Matic para maior conforto',
+            category: 'Suspensão',
+            subcategory: 'Amortecedores',
+            sku: 'SUS-G8203',
+            supplier: 'Monroe',
+            costPrice: 125.00,
+            salePrice: 189.90,
+            stock: 8,
+            minStock: 3,
+            images: [],
+            specifications: {
+              'Posição': 'Traseiro',
+              'Tecnologia': 'Gas-Matic',
+              'Garantia': '2 anos'
+            },
+            vehicleCompatibility: ['VW Gol G5/G6', 'VW Voyage', 'VW Fox'],
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'prod-004',
+            name: 'Vela de Ignição NGK',
+            description: 'Vela de ignição NGK com eletrodo de irídio',
+            category: 'Motor',
+            subcategory: 'Velas',
+            sku: 'MOT-BKR6E',
+            supplier: 'NGK',
+            costPrice: 18.50,
+            salePrice: 32.90,
+            stock: 3,
+            minStock: 8,
+            images: [],
+            specifications: {
+              'Tipo': 'Irídio',
+              'Abertura': '0.8mm',
+              'Garantia': '30.000 km'
+            },
+            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Honda City'],
+            isActive: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem('store_products', JSON.stringify(defaultProducts));
+        setProducts(defaultProducts);
+      } else {
+        setProducts(storeProducts);
+      }
+      
+      setOrders(storeOrders);
+      setQuotes(storeQuotes);
+      setUsers(provisionalUsers);
     } catch (error) {
-      console.error('❌ Erro ao carregar dados administrativos:', error);
-
-      // Em caso de erro, definir arrays vazios
-      setProducts([]);
-      setOrders([]);
-      setQuotes([]);
-      setUsers([]);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const loadSettings = async () => {
-    try {
-      setIsLoadingSettings(true);
-      const response = await apiClient.getSettings();
-      if (response?.success && response.data) {
-        const settingsMap = response.data.reduce((acc: any, setting: any) => {
-          acc[setting.key] = setting.value;
-          return acc;
-        }, {});
-        setSettings(settingsMap);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
-    } finally {
-      setIsLoadingSettings(false);
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      setIsSaving(true);
-      
-      // Salvar todas as configurações atualizadas
-      const updates = Object.entries(settings).map(([key, value]) =>
-        apiClient.updateSetting(key, String(value))
-      );
-      
-      await Promise.all(updates);
-      console.log('✅ Configurações salvas com sucesso!');
-      
-      // Recarregar dados
-      await loadSettings();
-      await loadData();
-    } catch (error) {
-      console.error('❌ Erro ao salvar configurações:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const updateSetting = (key: string, value: string) => {
-    setSettings((prev: any) => ({ ...prev, [key]: value }));
-  };
-
 
   const filterOrders = () => {
     let filtered = orders;
@@ -317,8 +401,75 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     setFilteredQuotes(filtered);
   };
 
+  const filterServices = () => {
+    let filtered = services;
 
+    if (searchTerm) {
+      filtered = filtered.filter(service =>
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
+    if (statusFilter === "active") {
+      filtered = filtered.filter(service => service.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(service => !service.isActive);
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredServices(filtered);
+  };
+
+  const filterCoupons = () => {
+    let filtered = coupons;
+
+    if (searchTerm) {
+      filtered = filtered.filter(coupon =>
+        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(coupon => coupon.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(coupon => !coupon.isActive);
+    } else if (statusFilter === "expired") {
+      filtered = filtered.filter(coupon => new Date(coupon.expiresAt) < new Date());
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredCoupons(filtered);
+  };
+
+  const filterProducts = () => {
+    let filtered = products;
+
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(product => product.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter(product => !product.isActive);
+    } else if (statusFilter === "low_stock") {
+      filtered = filtered.filter(product => product.stock <= product.minStock);
+    } else if (statusFilter === "out_of_stock") {
+      filtered = filtered.filter(product => product.stock === 0);
+    }
+
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setFilteredProducts(filtered);
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -345,13 +496,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const stats = {
     totalOrders: orders.length,
     totalQuotes: quotes.length,
-    totalServices: 0, // Gerenciado por AdminServicesSection
-    totalCoupons: 0, // Gerenciado por AdminCouponsSection
+    totalServices: services.length,
+    totalCoupons: coupons.length,
     totalProducts: products.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
     pendingQuotes: quotes.filter(q => q.status === 'pending').length,
-    activeServices: 0, // Gerenciado por AdminServicesSection
-    activeCoupons: 0, // Gerenciado por AdminCouponsSection
+    activeServices: services.filter(s => s.isActive).length,
+    activeCoupons: coupons.filter(c => c.isActive && new Date(c.expiresAt) > new Date()).length,
     activeProducts: products.filter(p => p.isActive).length,
     lowStockProducts: products.filter(p => p.stock <= p.minStock).length,
     outOfStockProducts: products.filter(p => p.stock === 0).length,
@@ -530,9 +681,22 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Atividades baseadas nos dados disponíveis */}
+              {/* Atividades simuladas baseadas nos dados existentes */}
               {[
-                // Serviços e cupons agora são gerenciados pelas seções individuais
+                ...services.slice(0, 2).map(service => ({
+                  type: 'service',
+                  icon: Wrench,
+                  color: 'text-orange-600',
+                  title: `Serviço "${service.name}" ${service.isActive ? 'ativado' : 'criado'}`,
+                  time: service.updatedAt
+                })),
+                ...coupons.slice(0, 2).map(coupon => ({
+                  type: 'coupon',
+                  icon: Gift,
+                  color: 'text-green-600',
+                  title: `Cupom "${coupon.code}" ${coupon.isActive ? 'ativado' : 'criado'}`,
+                  time: coupon.updatedAt
+                })),
                 ...orders.slice(0, 2).map(order => ({
                   type: 'order',
                   icon: ShoppingBag,
@@ -691,44 +855,376 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   );
 
   const renderServices = () => {
-    return (
-      <div className="space-y-6">
-        <AdminServicesSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      </div>
-    );
-  };
+    const toggleServiceStatus = (serviceId: string) => {
+      const updatedServices = services.map(service =>
+        service.id === serviceId
+          ? { ...service, isActive: !service.isActive, updatedAt: new Date().toISOString() }
+          : service
+      );
+      setServices(updatedServices);
+      localStorage.setItem('store_services', JSON.stringify(updatedServices));
+    };
 
-  const renderProducts = () => {
+    const addNewService = () => {
+      const newService: Service = {
+        id: `srv-${Date.now()}`,
+        name: 'Novo Serviço',
+        description: 'Descrição do novo serviço',
+        category: 'Geral',
+        estimatedTime: '1 hora',
+        basePrice: 0,
+        isActive: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedServices = [newService, ...services];
+      setServices(updatedServices);
+      localStorage.setItem('store_services', JSON.stringify(updatedServices));
+    };
+
     return (
-      <div className="space-y-6">
-        <AdminProductsSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Serviços</CardTitle>
+              <CardDescription>Cadastre e gerencie os serviços oferecidos</CardDescription>
+            </div>
+            <Button onClick={addNewService} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Serviço
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome, descrição ou categoria..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-96">
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">Nenhum serviço encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredServices.map((service) => (
+                  <div key={service.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Wrench className="h-5 w-5 text-orange-500" />
+                        <div>
+                          <p className="font-bold">{service.name}</p>
+                          <p className="text-sm text-gray-500">{service.category}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          className={service.isActive 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-gray-100 text-gray-800"
+                          } 
+                          variant="secondary"
+                        >
+                          {service.isActive ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleServiceStatus(service.id)}
+                        >
+                          {service.isActive ? 'Desativar' : 'Ativar'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-3">{service.description}</p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">Tempo: {service.estimatedTime}</span>
+                      </div>
+                      {service.basePrice && service.basePrice > 0 ? (
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">Preço: {formatPrice(service.basePrice)}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-orange-600">Sob orçamento</span>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">
+                          Criado: {new Date(service.createdAt).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          const updatedServices = services.filter(s => s.id !== service.id);
+                          setServices(updatedServices);
+                          localStorage.setItem('store_services', JSON.stringify(updatedServices));
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
     );
   };
 
   const renderCoupons = () => {
+    const toggleCouponStatus = (couponId: string) => {
+      const updatedCoupons = coupons.map(coupon =>
+        coupon.id === couponId
+          ? { ...coupon, isActive: !coupon.isActive, updatedAt: new Date().toISOString() }
+          : coupon
+      );
+      setCoupons(updatedCoupons);
+      localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+    };
+
+    const addNewCoupon = () => {
+      const newCoupon: Coupon = {
+        id: `coupon-${Date.now()}`,
+        code: 'NOVO10',
+        description: 'Novo cupom de desconto',
+        discountType: 'percentage',
+        discountValue: 10,
+        minValue: 50,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias
+        usedCount: 0,
+        isActive: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedCoupons = [newCoupon, ...coupons];
+      setCoupons(updatedCoupons);
+      localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+    };
+
+    const getDiscountText = (coupon: Coupon) => {
+      if (coupon.discountType === 'percentage') {
+        return `${coupon.discountValue}% de desconto`;
+      } else if (coupon.discountType === 'fixed') {
+        return `${formatPrice(coupon.discountValue)} de desconto`;
+      } else {
+        return 'Frete grátis';
+      }
+    };
+
+    const isExpired = (expiresAt: string) => {
+      return new Date(expiresAt) < new Date();
+    };
+
+    const getUsageText = (coupon: Coupon) => {
+      if (coupon.usageLimit) {
+        return `${coupon.usedCount}/${coupon.usageLimit} usos`;
+      }
+      return `${coupon.usedCount} usos`;
+    };
+
     return (
-      <div className="space-y-6">
-        <AdminCouponsSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Cupons</CardTitle>
+              <CardDescription>Crie e gerencie cupons de desconto para os clientes</CardDescription>
+            </div>
+            <Button onClick={addNewCoupon} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Cupom
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por código ou descrição..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+                <SelectItem value="expired">Expirados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-96">
+            {filteredCoupons.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Gift className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">Nenhum cupom encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredCoupons.map((coupon) => {
+                  const expired = isExpired(coupon.expiresAt);
+                  
+                  return (
+                    <div key={coupon.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <Gift className="h-5 w-5 text-green-500" />
+                          <div>
+                            <p className="font-bold text-lg">{coupon.code}</p>
+                            <p className="text-sm text-gray-600">{coupon.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            className={
+                              expired 
+                                ? "bg-red-100 text-red-800"
+                                : coupon.isActive 
+                                  ? "bg-green-100 text-green-800" 
+                                  : "bg-gray-100 text-gray-800"
+                            } 
+                            variant="secondary"
+                          >
+                            {expired ? 'Expirado' : coupon.isActive ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          {!expired && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCouponStatus(coupon.id)}
+                            >
+                              {coupon.isActive ? 'Desativar' : 'Ativar'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{getDiscountText(coupon)}</span>
+                        </div>
+                        {coupon.minValue && (
+                          <div className="flex items-center space-x-2">
+                            <ShoppingCart className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm">Min: {formatPrice(coupon.minValue)}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">Expira: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{getUsageText(coupon)}</span>
+                        </div>
+                        {coupon.maxDiscount && (
+                          <span className="text-sm text-gray-500">
+                            Desconto máximo: {formatPrice(coupon.maxDiscount)}
+                          </span>
+                        )}
+                      </div>
+
+                      <Separator className="mb-4" />
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const updatedCoupons = coupons.filter(c => c.id !== coupon.id);
+                            setCoupons(updatedCoupons);
+                            localStorage.setItem('store_coupons', JSON.stringify(updatedCoupons));
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                          disabled={expired}
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const link = `${window.location.origin}/customer`;
+                            navigator.clipboard.writeText(`Cupom: ${coupon.code} - ${coupon.description}. Acesse: ${link}`);
+                            // Aqui você poderia adicionar uma notificação de sucesso
+                          }}
+                          title="Copiar link para compartilhar"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
     );
   };
-
 
   const renderOrders = () => (
     <Card>
@@ -935,51 +1431,235 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
+  const renderProducts = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gerenciar Produtos</CardTitle>
+              <CardDescription>Controle seu estoque e catálogo de peças automotivas</CardDescription>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={loadData}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-moria-orange hover:bg-moria-orange/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Produto
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome, SKU, categoria, fornecedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+                <SelectItem value="low_stock">Estoque Baixo</SelectItem>
+                <SelectItem value="out_of_stock">Sem Estoque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Package className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-lg font-medium mb-2">Nenhum produto encontrado</p>
+              <p>Adicione produtos ao seu catálogo ou ajuste os filtros.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProducts.map((product) => {
+                const isLowStock = product.stock <= product.minStock;
+                const isOutOfStock = product.stock === 0;
+                const hasPromo = product.promoPrice && product.promoPrice < product.salePrice;
+                
+                return (
+                  <div key={product.id} className="border rounded-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-moria-orange text-white rounded-lg p-3">
+                          <Box className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{product.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {product.category}
+                            </Badge>
+                            {product.subcategory && (
+                              <Badge variant="outline">{product.subcategory}</Badge>
+                            )}
+                            {!product.isActive && (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                Inativo
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={isOutOfStock ? 'bg-red-100 text-red-800' : isLowStock ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>
+                            {isOutOfStock ? 'Sem Estoque' : isLowStock ? 'Estoque Baixo' : 'Em Estoque'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                        <p className="text-sm text-gray-600">Fornecedor: {product.supplier}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Preços</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Custo: <span className="font-medium">{formatPrice(product.costPrice)}</span></p>
+                          <p>Venda: <span className="font-medium">{formatPrice(product.salePrice)}</span></p>
+                          {hasPromo && (
+                            <p className="text-green-600">Promoção: <span className="font-medium">{formatPrice(product.promoPrice!)}</span></p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Package className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Estoque</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Atual: <span className={`font-medium ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-yellow-600' : 'text-green-600'}`}>{product.stock} un.</span></p>
+                          <p>Mínimo: <span className="font-medium">{product.minStock} un.</span></p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Truck className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Compatibilidade</span>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-gray-600">{product.vehicleCompatibility.slice(0, 2).join(', ')}</p>
+                          {product.vehicleCompatibility.length > 2 && (
+                            <p className="text-xs text-gray-500">+{product.vehicleCompatibility.length - 2} mais</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Data</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Criado: {new Date(product.createdAt).toLocaleDateString('pt-BR')}</p>
+                          <p>Editado: {new Date(product.updatedAt).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        <p>Margem: <span className="font-medium">{((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(1)}%</span></p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={product.isActive ? "secondary" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const updatedProducts = products.map(p =>
+                              p.id === product.id ? { ...p, isActive: !p.isActive, updatedAt: new Date().toISOString() } : p
+                            );
+                            setProducts(updatedProducts);
+                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          }}
+                        >
+                          {product.isActive ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Ativo
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              Inativo
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const updatedProducts = products.filter(p => p.id !== product.id);
+                            setProducts(updatedProducts);
+                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const renderReports = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    // Dados REAIS baseados nos pedidos do API
-    const salesByMonth = Array.from({ length: 12 }, (_, i) => {
-      const monthOrders = orders.filter(order => {
-        const orderDate = new Date(order.createdAt);
-        return orderDate.getMonth() === i && orderDate.getFullYear() === currentYear;
-      });
-      
-      return {
-        month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
-        revenue: monthOrders.reduce((sum, order) => sum + order.total, 0),
-        orders: monthOrders.length
-      };
-    });
+    // Dados simulados para gráficos baseados nos dados reais
+    const salesByMonth = Array.from({ length: 12 }, (_, i) => ({
+      month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
+      revenue: Math.max(0, stats.totalRevenue / 12 + (Math.random() - 0.5) * 1000),
+      orders: Math.max(0, Math.floor(stats.totalOrders / 12 + (Math.random() - 0.5) * 5))
+    }));
 
-    // Calcular categorias baseadas nos produtos REAIS do API
-    const categoryStats = products.reduce((acc, product) => {
-      const category = product.category || 'Outros';
-      if (!acc[category]) {
-        acc[category] = { count: 0, revenue: 0 };
-      }
-      acc[category].count += 1;
-      // Estimar receita baseada nos pedidos que contêm este produto
-      const productOrders = orders.filter(order => 
-        order.items.some(item => item.id === product.id)
-      );
-      acc[category].revenue += productOrders.reduce((sum, order) => {
-        const productItem = order.items.find(item => item.id === product.id);
-        return sum + (productItem ? productItem.quantity * productItem.price : 0);
-      }, 0);
-      return acc;
-    }, {} as Record<string, { count: number; revenue: number }>);
-
-    const topCategories = Object.entries(categoryStats)
-      .map(([name, data]) => ({
-        name,
-        value: data.count,
-        revenue: formatPrice(data.revenue)
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+    const topCategories = [
+      { name: 'Filtros', value: 35, revenue: formatPrice(stats.totalRevenue * 0.35) },
+      { name: 'Freios', value: 25, revenue: formatPrice(stats.totalRevenue * 0.25) },
+      { name: 'Suspensão', value: 20, revenue: formatPrice(stats.totalRevenue * 0.20) },
+      { name: 'Motor', value: 15, revenue: formatPrice(stats.totalRevenue * 0.15) },
+      { name: 'Outros', value: 5, revenue: formatPrice(stats.totalRevenue * 0.05) }
+    ];
 
     return (
       <div className="space-y-6">
@@ -989,9 +1669,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                  <p className="text-sm font-medium text-gray-600">Receita do Mês</p>
                   <p className="text-2xl font-bold text-green-600">{formatPrice(stats.totalRevenue)}</p>
-                  <p className="text-xs text-gray-500">Base: {orders.length} pedidos reais</p>
+                  <p className="text-xs text-gray-500">+12.5% vs mês anterior</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
               </div>
@@ -1002,9 +1682,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Pedidos</p>
+                  <p className="text-sm font-medium text-gray-600">Pedidos do Mês</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
-                  <p className="text-xs text-gray-500">{stats.pendingOrders} pendentes</p>
+                  <p className="text-xs text-gray-500">+8.2% vs mês anterior</p>
                 </div>
                 <ShoppingCart className="h-8 w-8 text-blue-600" />
               </div>
@@ -1017,7 +1697,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
                   <p className="text-2xl font-bold text-purple-600">{formatPrice(stats.averageTicket)}</p>
-                  <p className="text-xs text-gray-500">Valor médio por pedido</p>
+                  <p className="text-xs text-gray-500">+3.1% vs mês anterior</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
               </div>
@@ -1028,9 +1708,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Produtos Ativos</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.activeProducts}</p>
-                  <p className="text-xs text-gray-500">de {stats.totalProducts} produtos</p>
+                  <p className="text-sm font-medium text-gray-600">Taxa Conversão</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.conversionRate.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-500">+5.7% vs mês anterior</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-orange-600" />
               </div>
@@ -1193,29 +1873,294 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   };
 
   const renderPromotions = () => {
+    // Dados simulados de promoções baseados no conceito de campanhas de marketing
+    const promotions = [
+      {
+        id: 'promo-001',
+        name: 'Black Friday Automotiva',
+        description: 'Descontos especiais em peças selecionadas',
+        type: 'discount',
+        value: 25,
+        isActive: true,
+        startDate: '2024-11-20',
+        endDate: '2024-11-30',
+        targetProducts: ['Filtros', 'Pastilhas de Freio'],
+        minValue: 100,
+        usageCount: 45,
+        maxUsage: 100,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'promo-002', 
+        name: 'Combo Revisão Completa',
+        description: 'Kit completo para revisão com desconto progressivo',
+        type: 'bundle',
+        value: 15,
+        isActive: true,
+        startDate: '2024-11-01',
+        endDate: '2024-12-31',
+        targetProducts: ['Filtros', 'Óleo Motor', 'Velas'],
+        minValue: 200,
+        usageCount: 12,
+        maxUsage: 50,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'promo-003',
+        name: 'Frete Grátis Dezembro',
+        description: 'Frete gratuito para pedidos acima de R$ 150',
+        type: 'shipping',
+        value: 0,
+        isActive: false,
+        startDate: '2024-12-01',
+        endDate: '2024-12-31',
+        targetProducts: [],
+        minValue: 150,
+        usageCount: 0,
+        maxUsage: 200,
+        createdAt: new Date().toISOString(),
+      }
+    ];
+
     return (
       <div className="space-y-6">
-        <AdminPromotionsSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Gerenciar Promoções</CardTitle>
+                <CardDescription>Configure campanhas de marketing e ofertas especiais</CardDescription>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadData}
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="bg-moria-orange hover:bg-moria-orange/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Promoção
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar promoções..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="active">Ativas</SelectItem>
+                  <SelectItem value="inactive">Inativas</SelectItem>
+                  <SelectItem value="expired">Expiradas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-4">
+              {promotions.map((promotion) => {
+                const isExpired = new Date(promotion.endDate) < new Date();
+                const isUpcoming = new Date(promotion.startDate) > new Date();
+                const usage = (promotion.usageCount / promotion.maxUsage) * 100;
+                
+                const getPromotionTypeIcon = () => {
+                  switch (promotion.type) {
+                    case 'discount': return <TrendingUp className="h-6 w-6" />;
+                    case 'bundle': return <Package className="h-6 w-6" />;
+                    case 'shipping': return <Truck className="h-6 w-6" />;
+                    default: return <Gift className="h-6 w-6" />;
+                  }
+                };
+
+                const getPromotionTypeLabel = () => {
+                  switch (promotion.type) {
+                    case 'discount': return 'Desconto';
+                    case 'bundle': return 'Combo';
+                    case 'shipping': return 'Frete';
+                    default: return 'Promoção';
+                  }
+                };
+
+                return (
+                  <div key={promotion.id} className="border rounded-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-moria-orange text-white rounded-lg p-3">
+                          {getPromotionTypeIcon()}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{promotion.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{promotion.description}</p>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                              {getPromotionTypeLabel()}
+                            </Badge>
+                            {isExpired ? (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                Expirada
+                              </Badge>
+                            ) : isUpcoming ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                Programada
+                              </Badge>
+                            ) : promotion.isActive ? (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                Ativa
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                                Inativa
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {promotion.type === 'discount' && (
+                          <p className="text-2xl font-bold text-green-600">{promotion.value}%</p>
+                        )}
+                        {promotion.type === 'shipping' && (
+                          <p className="text-lg font-bold text-blue-600">Frete Grátis</p>
+                        )}
+                        <p className="text-sm text-gray-600">Min: {formatPrice(promotion.minValue)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Período</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Início: {new Date(promotion.startDate).toLocaleDateString('pt-BR')}</p>
+                          <p>Fim: {new Date(promotion.endDate).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Uso</span>
+                        </div>
+                        <div className="text-sm">
+                          <p>{promotion.usageCount} / {promotion.maxUsage}</p>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div 
+                              className="bg-moria-orange h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(usage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Tag className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Produtos</span>
+                        </div>
+                        <div className="text-sm">
+                          {promotion.targetProducts.length > 0 ? (
+                            <p className="text-gray-600">{promotion.targetProducts.join(', ')}</p>
+                          ) : (
+                            <p className="text-gray-500">Todos os produtos</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <BarChart3 className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Performance</span>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-green-600 font-medium">{usage.toFixed(1)}% usado</p>
+                          <p className="text-gray-500">{promotion.maxUsage - promotion.usageCount} restantes</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="mb-4" />
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        <p>Criado: {new Date(promotion.createdAt).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={promotion.isActive ? "secondary" : "outline"}
+                          size="sm"
+                          disabled={isExpired}
+                          onClick={() => {
+                            // Simulação de ativação/desativação
+                            console.log(`Toggling promotion ${promotion.id}`);
+                          }}
+                        >
+                          {promotion.isActive ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Ativa
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-4 w-4 mr-1" />
+                              Inativa
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Excluir
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const link = `${window.location.origin}/customer`;
+                            const message = `🎯 Promoção especial: ${promotion.name}! ${promotion.description}. Acesse: ${link}`;
+                            navigator.clipboard.writeText(message);
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   };
 
-
   const renderSettings = () => {
-
-    if (isLoadingSettings) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-moria-orange"></div>
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-6">
         <Card>
@@ -1231,38 +2176,23 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Nome da Loja</label>
-                  <Input 
-                    value={settings.store_name || ''} 
-                    onChange={(e) => updateSetting('store_name', e.target.value)}
-                  />
+                  <Input defaultValue="Moria Peças & Serviços" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">CNPJ</label>
-                  <Input 
-                    value={settings.store_cnpj || ''} 
-                    onChange={(e) => updateSetting('store_cnpj', e.target.value)}
-                  />
+                  <Input defaultValue="12.345.678/0001-90" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Telefone</label>
-                  <Input 
-                    value={settings.store_phone || ''} 
-                    onChange={(e) => updateSetting('store_phone', e.target.value)}
-                  />
+                  <Input defaultValue="(11) 99999-9999" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">E-mail</label>
-                  <Input 
-                    value={settings.store_email || ''} 
-                    onChange={(e) => updateSetting('store_email', e.target.value)}
-                  />
+                  <Input defaultValue="contato@moriapecas.com" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Endereço</label>
-                  <Input 
-                    value={settings.store_address || ''} 
-                    onChange={(e) => updateSetting('store_address', e.target.value)}
-                  />
+                  <Input defaultValue="Av. das Oficinas, 123 - Centro - São Paulo, SP" />
                 </div>
               </div>
             </div>
@@ -1273,35 +2203,19 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Margem de Lucro Padrão (%)</label>
-                  <Input 
-                    type="number" 
-                    value={settings.default_profit_margin || ''} 
-                    onChange={(e) => updateSetting('default_profit_margin', e.target.value)}
-                  />
+                  <Input type="number" defaultValue="35" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Valor Mínimo para Frete Grátis</label>
-                  <Input 
-                    type="number" 
-                    value={settings.free_shipping_minimum || ''} 
-                    onChange={(e) => updateSetting('free_shipping_minimum', e.target.value)}
-                  />
+                  <Input type="number" defaultValue="150" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Taxa de Entrega (R$)</label>
-                  <Input 
-                    type="number" 
-                    value={settings.delivery_fee || ''} 
-                    onChange={(e) => updateSetting('delivery_fee', e.target.value)}
-                  />
+                  <Input type="number" defaultValue="15.90" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tempo de Entrega (dias)</label>
-                  <Input 
-                    type="number" 
-                    value={settings.delivery_time || ''} 
-                    onChange={(e) => updateSetting('delivery_time', e.target.value)}
-                  />
+                  <Input type="number" defaultValue="3" />
                 </div>
               </div>
             </div>
@@ -1315,23 +2229,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Novos Pedidos</p>
                     <p className="text-sm text-gray-600">Receber notificação quando houver novos pedidos</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={settings.notifications_new_orders === 'true' ? "bg-green-100 text-green-800" : ""}
-                    onClick={() => updateSetting('notifications_new_orders', settings.notifications_new_orders === 'true' ? 'false' : 'true')}
-                  >
-                    {settings.notifications_new_orders === 'true' ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Ativo
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-4 w-4 mr-1" />
-                        Inativo
-                      </>
-                    )}
+                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Ativo
                   </Button>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1339,23 +2239,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Estoque Baixo</p>
                     <p className="text-sm text-gray-600">Alerta quando produtos estão com estoque baixo</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className={settings.notifications_low_stock === 'true' ? "bg-green-100 text-green-800" : ""}
-                    onClick={() => updateSetting('notifications_low_stock', settings.notifications_low_stock === 'true' ? 'false' : 'true')}
-                  >
-                    {settings.notifications_low_stock === 'true' ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Ativo
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-4 w-4 mr-1" />
-                        Inativo
-                      </>
-                    )}
+                  <Button variant="outline" size="sm" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Ativo
                   </Button>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1363,47 +2249,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <p className="font-medium">Relatórios Semanais</p>
                     <p className="text-sm text-gray-600">Receber relatório semanal de vendas por e-mail</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className={settings.notifications_weekly_reports === 'true' ? "bg-green-100 text-green-800" : ""}
-                    onClick={() => updateSetting('notifications_weekly_reports', settings.notifications_weekly_reports === 'true' ? 'false' : 'true')}
-                  >
-                    {settings.notifications_weekly_reports === 'true' ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Ativo
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-4 w-4 mr-1" />
-                        Inativo
-                      </>
-                    )}
+                  <Button variant="outline" size="sm">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Inativo
                   </Button>
                 </div>
               </div>
-            </div>
-
-            {/* Botão Salvar */}
-            <div className="flex justify-end pt-4 border-t">
-              <Button 
-                onClick={handleSaveSettings} 
-                disabled={isSaving}
-                className="bg-moria-orange hover:bg-moria-orange/80"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Salvar Configurações
-                  </>
-                )}
-              </Button>
             </div>
 
             {/* Integrações */}
@@ -1555,70 +2406,28 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
-  // Função helper para renderização segura com error boundary
-  const safeRender = (renderFunction: () => React.ReactNode, tabName: string) => {
-    try {
-      return renderFunction();
-    } catch (error) {
-      console.error(`Erro ao renderizar ${tabName}:`, error);
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Erro ao carregar {tabName}
-            </CardTitle>
-            <CardDescription>
-              Ocorreu um erro ao carregar esta seção. Tente recarregar a página.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => window.location.reload()} 
-              variant="outline"
-              className="mt-4"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Recarregar Página
-            </Button>
-          </CardContent>
-        </Card>
-      );
-    }
-  };
-
-  // Renderizar conteúdo principal com modal de produtos
-  const renderMainContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return safeRender(renderDashboard, 'Dashboard');
-      case 'orders':
-        return safeRender(renderOrders, 'Pedidos');
-      case 'quotes':
-        return safeRender(renderQuotes, 'Orçamentos');
-      case 'customers':
-        return safeRender(renderCustomers, 'Clientes');
-      case 'products':
-        return safeRender(renderProducts, 'Produtos');
-      case 'services':
-        return safeRender(renderServices, 'Serviços');
-      case 'coupons':
-        return safeRender(renderCoupons, 'Cupons');
-      case 'promotions':
-        return safeRender(renderPromotions, 'Promoções');
-      case 'reports':
-        return safeRender(renderReports, 'Relatórios');
-      case 'settings':
-        return safeRender(renderSettings, 'Configurações');
-      default:
-        return safeRender(renderDashboard, 'Dashboard');
-    }
-  };
-
-  return (
-    <>
-      {renderMainContent()}
-
-    </>
-  );
+  switch (activeTab) {
+    case 'dashboard':
+      return renderDashboard();
+    case 'orders':
+      return renderOrders();
+    case 'quotes':
+      return renderQuotes();
+    case 'customers':
+      return renderCustomers();
+    case 'products':
+      return renderProducts();
+    case 'services':
+      return renderServices();
+    case 'coupons':
+      return renderCoupons();
+    case 'promotions':
+      return renderPromotions();
+    case 'reports':
+      return renderReports();
+    case 'settings':
+      return renderSettings();
+    default:
+      return renderDashboard();
+  }
 }
