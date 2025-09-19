@@ -1,4 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  authService,
+  addressService,
+  orderService,
+  favoriteService,
+  handleApiError
+} from "@/api";
 
 export interface Customer {
   id: string;
@@ -57,20 +64,20 @@ interface AuthContextType {
   customer: Customer | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (data: RegisterData) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateProfile: (data: Partial<Customer>) => Promise<boolean>;
-  addAddress: (address: Omit<Address, 'id'>) => Promise<boolean>;
-  updateAddress: (id: string, address: Partial<Address>) => Promise<boolean>;
-  deleteAddress: (id: string) => Promise<boolean>;
-  getOrders: () => Promise<Order[]>;
-  getFavorites: () => Promise<number[]>;
-  addToFavorites: (productId: number) => Promise<boolean>;
-  removeFromFavorites: (productId: number) => Promise<boolean>;
+  updateProfile: (data: Partial<Customer>) => Promise<{ success: boolean; error?: string }>;
+  addAddress: (address: Omit<Address, 'id'>) => Promise<{ success: boolean; error?: string }>;
+  updateAddress: (id: string, address: Partial<Address>) => Promise<{ success: boolean; error?: string }>;
+  deleteAddress: (id: string) => Promise<{ success: boolean; error?: string }>;
+  getOrders: () => Promise<{ success: boolean; data?: Order[]; error?: string }>;
+  getFavorites: () => Promise<{ success: boolean; data?: number[]; error?: string }>;
+  addToFavorites: (productId: number) => Promise<{ success: boolean; error?: string }>;
+  removeFromFavorites: (productId: number) => Promise<{ success: boolean; error?: string }>;
 }
 
-interface RegisterData {
+export interface RegisterData {
   name: string;
   email: string;
   phone: string;
@@ -80,64 +87,6 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock data for development
-const mockCustomer: Customer = {
-  id: "1",
-  name: "João Silva",
-  email: "joao@email.com",
-  phone: "(11) 99999-9999",
-  cpf: "123.456.789-00",
-  birthDate: "1990-05-15",
-  createdAt: "2024-01-15",
-  totalOrders: 5,
-  totalSpent: 2450.00,
-  addresses: [
-    {
-      id: "1",
-      type: "home",
-      street: "Rua das Flores",
-      number: "123",
-      complement: "Apto 45",
-      neighborhood: "Centro",
-      city: "São Paulo",
-      state: "SP",
-      zipCode: "01234-567",
-      isDefault: true
-    }
-  ]
-};
-
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    customerId: "1",
-    items: [
-      { id: 1, name: "Filtro de Óleo Bosch", price: 35.90, quantity: 1 },
-      { id: 2, name: "Pastilha de Freio Dianteira", price: 89.90, quantity: 2 }
-    ],
-    total: 215.70,
-    status: "delivered",
-    createdAt: "2024-08-01",
-    address: mockCustomer.addresses[0],
-    paymentMethod: "Cartão de Crédito",
-    trackingCode: "BR123456789"
-  },
-  {
-    id: "2",
-    customerId: "1",
-    items: [
-      { id: 3, name: "Óleo Motor Castrol 5W30", price: 45.90, quantity: 4 }
-    ],
-    total: 183.60,
-    status: "shipped",
-    createdAt: "2024-08-05",
-    address: mockCustomer.addresses[0],
-    paymentMethod: "PIX",
-    trackingCode: "BR987654321",
-    estimatedDelivery: "2024-08-10"
-  }
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     customer: null,
@@ -145,76 +94,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
 
-  const [favorites, setFavorites] = useState<number[]>([1, 3, 5]);
+  const [favorites, setFavorites] = useState<number[]>([]);
 
   useEffect(() => {
-    // Simulate loading check for existing session
-    const timer = setTimeout(() => {
-      const savedAuth = localStorage.getItem('moria_auth');
-      if (savedAuth) {
-        setState({
-          customer: mockCustomer,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
+    // Check for existing session
+    const initializeAuth = async () => {
+      try {
+        const token = authService.getAuthToken();
+        if (token) {
+          // Try to get user profile
+          const customer = await authService.getProfile();
+          setState({
+            customer,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } else {
+          setState(prev => ({ ...prev, isLoading: false }));
+        }
+      } catch (error) {
+        // If token is invalid, remove it
+        authService.removeAuthToken();
         setState(prev => ({ ...prev, isLoading: false }));
       }
-    }, 1000);
+    };
 
-    return () => clearTimeout(timer);
+    initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    if (email === "joao@email.com" && password === "123456") {
-      localStorage.setItem('moria_auth', JSON.stringify({ email, timestamp: Date.now() }));
+    try {
+      const response = await authService.login({ email, password });
+      authService.setAuthToken(response.token);
+      
       setState({
-        customer: mockCustomer,
+        customer: response.customer,
         isAuthenticated: true,
         isLoading: false,
       });
-      return true;
+      
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      setState(prev => ({ ...prev, isLoading: false }));
+      return { success: false, error: apiError.message };
     }
-    
-    setState(prev => ({ ...prev, isLoading: false }));
-    return false;
   };
 
-  const register = async (data: RegisterData): Promise<boolean> => {
+  const register = async (data: RegisterData) => {
     setState(prev => ({ ...prev, isLoading: true }));
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newCustomer: Customer = {
-      id: Date.now().toString(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      cpf: data.cpf,
-      addresses: [],
-      createdAt: new Date().toISOString(),
-      totalOrders: 0,
-      totalSpent: 0,
-    };
-
-    localStorage.setItem('moria_auth', JSON.stringify({ email: data.email, timestamp: Date.now() }));
-    setState({
-      customer: newCustomer,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-    
-    return true;
+    try {
+      const response = await authService.register(data);
+      authService.setAuthToken(response.token);
+      
+      setState({
+        customer: response.customer,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      setState(prev => ({ ...prev, isLoading: false }));
+      return { success: false, error: apiError.message };
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('moria_auth');
+    authService.logout();
     setState({
       customer: null,
       isAuthenticated: false,
@@ -222,94 +173,133 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateProfile = async (data: Partial<Customer>): Promise<boolean> => {
-    if (!state.customer) return false;
+  const updateProfile = async (data: Partial<Customer>) => {
+    if (!state.customer) return { success: false, error: "Usuário não autenticado" };
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setState(prev => ({
-      ...prev,
-      customer: prev.customer ? { ...prev.customer, ...data } : null,
-    }));
-    
-    return true;
+    try {
+      const updatedCustomer = await authService.updateProfile(data);
+      setState(prev => ({
+        ...prev,
+        customer: updatedCustomer,
+      }));
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const addAddress = async (address: Omit<Address, 'id'>): Promise<boolean> => {
-    if (!state.customer) return false;
+  const addAddress = async (address: Omit<Address, 'id'>) => {
+    if (!state.customer) return { success: false, error: "Usuário não autenticado" };
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newAddress: Address = {
-      ...address,
-      id: Date.now().toString(),
-    };
-    
-    setState(prev => ({
-      ...prev,
-      customer: prev.customer ? {
-        ...prev.customer,
-        addresses: [...prev.customer.addresses, newAddress]
-      } : null,
-    }));
-    
-    return true;
+    try {
+      // In a real implementation, this would call the addressService
+      // For now, we'll simulate it
+      const newAddress: Address = {
+        ...address,
+        id: Date.now().toString(),
+      };
+      
+      setState(prev => ({
+        ...prev,
+        customer: prev.customer ? {
+          ...prev.customer,
+          addresses: [...prev.customer.addresses, newAddress]
+        } : null,
+      }));
+      
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const updateAddress = async (id: string, addressData: Partial<Address>): Promise<boolean> => {
-    if (!state.customer) return false;
+  const updateAddress = async (id: string, addressData: Partial<Address>) => {
+    if (!state.customer) return { success: false, error: "Usuário não autenticado" };
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setState(prev => ({
-      ...prev,
-      customer: prev.customer ? {
-        ...prev.customer,
-        addresses: prev.customer.addresses.map(addr => 
-          addr.id === id ? { ...addr, ...addressData } : addr
-        )
-      } : null,
-    }));
-    
-    return true;
+    try {
+      // In a real implementation, this would call the addressService
+      // For now, we'll simulate it
+      setState(prev => ({
+        ...prev,
+        customer: prev.customer ? {
+          ...prev.customer,
+          addresses: prev.customer.addresses.map(addr => 
+            addr.id === id ? { ...addr, ...addressData } : addr
+          )
+        } : null,
+      }));
+      
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const deleteAddress = async (id: string): Promise<boolean> => {
-    if (!state.customer) return false;
+  const deleteAddress = async (id: string) => {
+    if (!state.customer) return { success: false, error: "Usuário não autenticado" };
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setState(prev => ({
-      ...prev,
-      customer: prev.customer ? {
-        ...prev.customer,
-        addresses: prev.customer.addresses.filter(addr => addr.id !== id)
-      } : null,
-    }));
-    
-    return true;
+    try {
+      // In a real implementation, this would call the addressService
+      // For now, we'll simulate it
+      setState(prev => ({
+        ...prev,
+        customer: prev.customer ? {
+          ...prev.customer,
+          addresses: prev.customer.addresses.filter(addr => addr.id !== id)
+        } : null,
+      }));
+      
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const getOrders = async (): Promise<Order[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockOrders;
+  const getOrders = async () => {
+    try {
+      const response = await orderService.getOrders();
+      return { success: true, data: response.orders };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const getFavorites = async (): Promise<number[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return favorites;
+  const getFavorites = async () => {
+    try {
+      const favoriteIds = await favoriteService.getFavorites();
+      setFavorites(favoriteIds);
+      return { success: true, data: favoriteIds };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const addToFavorites = async (productId: number): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setFavorites(prev => [...prev, productId]);
-    return true;
+  const addToFavorites = async (productId: number) => {
+    try {
+      await favoriteService.addToFavorites(productId);
+      setFavorites(prev => [...prev, productId]);
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
-  const removeFromFavorites = async (productId: number): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setFavorites(prev => prev.filter(id => id !== productId));
-    return true;
+  const removeFromFavorites = async (productId: number) => {
+    try {
+      await favoriteService.removeFromFavorites(productId);
+      setFavorites(prev => prev.filter(id => id !== productId));
+      return { success: true };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return { success: false, error: apiError.message };
+    }
   };
 
   const contextValue: AuthContextType = {

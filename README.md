@@ -1,73 +1,123 @@
-# Welcome to your Lovable project
+# Moria Peças e Serviços - Frontend
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9
 
-## How can I edit this code?
+## Estrutura do Projeto
 
-There are several ways of editing your application.
+Este projeto está organizado da seguinte forma:
 
-**Use Lovable**
+```
+src/
+├── api/              # Clientes e serviços para comunicação com a API
+├── components/       # Componentes reutilizáveis da interface
+│   ├── admin/        # Componentes do painel administrativo
+│   ├── customer/     # Componentes do painel do cliente
+│   └── ui/           # Componentes de UI reutilizáveis
+├── config/           # Configurações da aplicação
+├── contexts/         # Contextos do React para gerenciamento de estado
+├── hooks/            # Hooks customizados
+├── lib/              # Bibliotecas e utilitários
+├── pages/            # Páginas da aplicação
+└── styles/           # Arquivos de estilo
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) and start prompting.
+## Arquitetura
 
-Changes made via Lovable will be committed automatically to this repo.
+A aplicação segue uma arquitetura cliente-servidor onde o frontend (esta aplicação) se comunica com um backend através de uma API REST.
 
-**Use your preferred IDE**
+### Estrutura da API
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+O frontend está preparado para se comunicar com um backend que fornece os seguintes endpoints:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Autenticação: `/auth/login`, `/auth/register`, `/auth/profile`
+- Produtos: `/products`
+- Serviços: `/services`
+- Promoções: `/promotions`
+- Pedidos: `/orders`
+- Endereços: `/addresses`
+- Favoritos: `/favorites`
 
-Follow these steps:
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```
+VITE_API_BASE_URL=http://localhost:3001/api
+VITE_APP_ENV=development
+VITE_APP_VERSION=1.0.0
+```
+
+Veja o arquivo `.env.example` para mais detalhes.
+
+## Como posso editar este código?
+
+Existem várias formas de editar esta aplicação.
+
+**Usar o Lovable**
+
+Simplesmente visite o [Projeto Lovable](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) e comece a fazer prompts.
+
+As mudanças feitas via Lovable serão automaticamente commitadas neste repositório.
+
+**Usar sua IDE preferida**
+
+Se você quiser trabalhar localmente usando sua própria IDE, você pode clonar este repositório e fazer push das mudanças. As mudanças feitas serão refletidas no Lovable.
+
+O único requisito é ter Node.js & npm instalados - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Siga estes passos:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Passo 1: Clone o repositório usando a URL Git do projeto.
+git clone <SUA_URL_GIT>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Passo 2: Navegue até o diretório do projeto.
+cd <NOME_DO_SEU_PROJETO>
 
-# Step 3: Install the necessary dependencies.
+# Passo 3: Instale as dependências necessárias.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Passo 4: Inicie o servidor de desenvolvimento com auto-reload e preview instantâneo.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**Editar um arquivo diretamente no GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- Navegue até o arquivo desejado(s).
+- Clique no botão "Edit" (ícone de lápis) no canto superior direito da visualização do arquivo.
+- Faça suas mudanças e commite as alterações.
 
-**Use GitHub Codespaces**
+**Usar GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Navegue até a página principal do seu repositório.
+- Clique no botão "Code" (botão verde) próximo ao canto superior direito.
+- Selecione a aba "Codespaces".
+- Clique em "New codespace" para lançar um novo ambiente Codespaces.
+- Edite os arquivos diretamente dentro do Codespace e commite e faça push das suas mudanças quando terminar.
 
-## What technologies are used for this project?
+## Quais tecnologias são usadas para este projeto?
 
-This project is built with:
+Este projeto é construído com:
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Axios
+- React Router DOM
+- TanStack Query
 
-## How can I deploy this project?
+## Como posso fazer deploy deste projeto?
 
-Simply open [Lovable](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) and click on Share -> Publish.
+Simplesmente abra o [Lovable](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) e clique em Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+## Posso conectar um domínio personalizado ao meu projeto Lovable?
 
-Yes, you can!
+Sim, você pode!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Para conectar um domínio, navegue até Project > Settings > Domains e clique em Connect Domain.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Leia mais aqui: [Configurando um domínio personalizado](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
