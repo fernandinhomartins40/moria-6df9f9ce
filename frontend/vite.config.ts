@@ -2,17 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-// Importação segura do lovable-tagger
-let componentTagger: any = null;
-
-try {
-  const { componentTagger: tagger } = require("lovable-tagger");
-  componentTagger = tagger;
-} catch (error) {
-  // lovable-tagger não disponível - continuar sem ele
-  componentTagger = null;
-}
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production' || process.env.NODE_ENV === 'production';
@@ -24,7 +13,6 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      !isProduction && componentTagger && componentTagger(),
     ].filter(Boolean),
     resolve: {
       alias: {
@@ -34,6 +22,8 @@ export default defineConfig(({ mode }) => {
     build: {
       // Garantir cache-busting com hash nos filenames
       rollupOptions: {
+        // Adicionar externalização explícita para evitar erros
+        external: [],
         output: {
           entryFileNames: `assets/[name].[hash].js`,
           chunkFileNames: `assets/[name].[hash].js`,
@@ -49,8 +39,18 @@ export default defineConfig(({ mode }) => {
             router: ['react-router-dom'],
             query: ['@tanstack/react-query'],
             utils: ['clsx', 'class-variance-authority', 'tailwind-merge']
-          }
+          },
+          // Adicionar tratamento para warnings de externalização
+          hoistTransitiveImports: false,
         },
+        onwarn(warning, warn) {
+          // Suprimir warnings específicos de externalização que não afetam o funcionamento
+          if (warning.code === 'MISSING_NODE_BUILTINS') {
+            return;
+          }
+          // Usar o handler padrão para outros warnings
+          warn(warning);
+        }
       },
       // Limpar dist antes de cada build
       emptyOutDir: true,
