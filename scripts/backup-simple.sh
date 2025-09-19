@@ -1,26 +1,73 @@
 #!/bin/bash
-# scripts/backup-simple.sh
+
 # ========================================
-# BACKUP SCRIPT SIMPLES - FASE 4
-# Conforme PLANO_MIGRACAO_KNEX_PRISMA_DOCKER.md
+# SCRIPT DE BACKUP SIMPLES - MORIA PRISMA
+# ✅ Backup automatizado do banco de dados SQLite
+# ✅ Compatível com GitHub Actions
 # ========================================
 
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="./backups"
+set -e  # Sair imediatamente se algum comando falhar
 
-mkdir -p $BACKUP_DIR
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo "💾 Backup Prisma Database..."
+# Função para imprimir mensagens com cor
+print_status() {
+    echo -e "${BLUE}🔍 $1${NC}"
+}
 
-# Backup SQLite via docker
-docker exec moria-backend sqlite3 /app/data/moria.db ".backup /tmp/backup_${DATE}.db"
-docker cp moria-backend:/tmp/backup_${DATE}.db $BACKUP_DIR/
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
 
-# Backup schema Prisma
-docker cp moria-backend:/app/prisma/schema.prisma $BACKUP_DIR/schema_${DATE}.prisma
+print_warning() {
+    echo -e "${YELLOW}⚠️ $1${NC}"
+}
 
-gzip "$BACKUP_DIR/backup_${DATE}.db"
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
 
-echo "✅ Backup realizado:"
-echo "  - Database: backup_${DATE}.db.gz"
-echo "  - Schema: schema_${DATE}.prisma"
+# Criar diretório de backups se não existir
+mkdir -p backups
+
+# Verificar se Docker está instalado
+if ! command -v docker &> /dev/null; then
+    print_error "Docker não encontrado! Por favor, instale o Docker primeiro."
+    exit 1
+fi
+
+print_status "Iniciando backup simples do banco de dados Moria..."
+
+# Verificar se o container do backend está em execução
+if ! docker compose ps | grep -q "moria-backend.*Up"; then
+    print_error "Container moria-backend não está em execução! Inicie-o primeiro com 'docker compose up -d'"
+    exit 1
+fi
+
+# Data e hora para o nome do arquivo de backup
+TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+BACKUP_FILE="backups/moria-backup-$TIMESTAMP.db"
+
+print_status "Criando backup do banco de dados..."
+docker exec moria-backend sqlite3 /app/data/moria.db ".backup /tmp/moria-backup.db"
+
+print_status "Copiando backup para o host..."
+docker cp moria-backend:/tmp/moria-backup.db "$BACKUP_FILE"
+
+print_status "Verificando integridade do backup..."
+docker run --rm -v "$(pwd):/app" alpine sh -c "ls -la /app/$BACKUP_FILE"
+
+print_success "🎉 BACKUP SIMPLES CONCLUÍDO COM SUCESSO!"
+echo ""
+echo "📁 Backup criado em: $BACKUP_FILE"
+echo "📊 Tamanho do backup: $(du -h "$BACKUP_FILE" | cut -f1)"
+echo ""
+echo "📋 Para restaurar o backup:"
+echo "  1. Pare os containers: docker compose down"
+echo "  2. Substitua o banco: cp $BACKUP_FILE backend/data/moria.db"
+echo "  3. Inicie os containers: docker compose up -d"

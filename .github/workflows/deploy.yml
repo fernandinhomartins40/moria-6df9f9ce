@@ -15,7 +15,7 @@ env:
   VPS_HOST: '72.60.10.108'
   VPS_USER: 'root'
   APP_DIR: '/root/moria-pecas-servicos'
-  APP_PORT: '3032'  # Porta única da aplicação (nginx proxy)
+  APP_PORT: '3030'  # Padronizando para porta 3030
   COMPOSE_PROJECT: 'moria'
 
 jobs:
@@ -45,6 +45,35 @@ jobs:
         ls -la backend/prisma/schema.prisma || echo "⚠️ Schema Prisma faltando"
         echo "📋 Docker:"
         ls -la docker-compose.yml nginx.conf Dockerfile.nginx || echo "⚠️ Arquivos Docker faltando"
+        
+        # Validar arquivos de configuração
+        echo "📋 Validando arquivos de configuração..."
+        if [ ! -f "docker-compose.yml" ]; then
+          echo "❌ docker-compose.yml não encontrado!"
+          exit 1
+        fi
+        
+        if [ ! -f "nginx.conf" ]; then
+          echo "❌ nginx.conf não encontrado!"
+          exit 1
+        fi
+        
+        if [ ! -f "backend/prisma/schema.prisma" ]; then
+          echo "❌ backend/prisma/schema.prisma não encontrado!"
+          exit 1
+        fi
+        
+        if [ ! -f "frontend/package.json" ]; then
+          echo "❌ frontend/package.json não encontrado!"
+          exit 1
+        fi
+        
+        if [ ! -f "backend/package.json" ]; then
+          echo "❌ backend/package.json não encontrado!"
+          exit 1
+        fi
+        
+        echo "✅ Todos os arquivos essenciais encontrados!"
 
     - name: 📦 Prepare Full Stack Package
       run: |
@@ -122,6 +151,14 @@ jobs:
 
             # Remover apenas volumes específicos do moria
             docker volume ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker volume rm 2>/dev/null || true
+            
+            # Remover networks antigas do moria
+            echo '🧹 Removendo networks antigas do Moria...'
+            docker network ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker network rm 2>/dev/null || true
+
+            # Remover volumes órfãos do moria
+            echo '🧹 Removendo volumes órfãos do Moria...'
+            docker volume ls --format "table {{.Name}}" | grep -E "moria" | xargs -r docker volume rm 2>/dev/null || true
 
             echo '✅ Stack anterior parada, imagens antigas removidas e portas liberadas'
           fi
@@ -162,6 +199,8 @@ jobs:
           echo "VPS_HOST=${{ env.VPS_HOST }}" > .env.production
           echo "APP_PORT=${{ env.APP_PORT }}" >> .env.production
           echo "NGINX_PORT=${{ env.APP_PORT }}" >> .env.production
+          echo "FRONTEND_PORT=${{ env.APP_PORT }}" >> .env.production
+          echo "BACKEND_PORT=3001" >> .env.production
           echo "JWT_SECRET=moria-production-jwt-${{ github.sha }}" >> .env.production
           echo "NODE_ENV=production" >> .env.production
           echo "DATABASE_URL=file:/app/data/moria.db" >> .env.production
@@ -183,15 +222,13 @@ jobs:
           if netstat -tuln | grep -q ":${{ env.APP_PORT }} "; then
             echo "⚠️ Porta ${{ env.APP_PORT }} ainda ocupada, forçando liberação..."
             fuser -k ${{ env.APP_PORT }}/tcp 2>/dev/null || true
-            sleep 2
+            sleep 5  # Aumentando o tempo de espera
           fi
 
           # Build e start dos serviços com invalidação forçada de cache
           echo '🏗️ Building imagens com invalidação total de cache...'
 
-          # Remover APENAS imagens do moria (sem afetar outras aplicações)
-          echo '🧹 Limpeza final de imagens do Moria antes do build...'
-          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep -E "moria" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true
+          # Remover APENAS imagens do moria (sem afetar outras aplicações)\n          echo '🧹 Limpeza final de imagens do Moria antes do build...'\n          docker images --format \"table {{.Repository}}:{{.Tag}}\t{{.ID}}\" | grep -E \"moria\" | awk '{print $2}' | xargs -r docker rmi -f 2>/dev/null || true\n          \n          # Remover networks antigas do moria\n          echo '🧹 Removendo networks antigas do Moria...'\n          docker network ls --format \"table {{.Name}}\" | grep -E \"moria\" | xargs -r docker network rm 2>/dev/null || true\n\n          # Remover volumes órfãos do moria\n          echo '🧹 Removendo volumes órfãos do Moria...'\n          docker volume ls --format \"table {{.Name}}\" | grep -E \"moria\" | xargs -r docker volume rm 2>/dev/null || true
 
           # Build com cache totalmente limpo e timestamp único
           echo '🔨 Construindo imagens completamente novas...'
@@ -217,8 +254,8 @@ jobs:
           fi
 
           # Aguardar inicialização
-          echo '⏳ Aguardando stack inicializar (45s)...'
-          sleep 45
+          echo '⏳ Aguardando stack inicializar (60s)...'
+          sleep 60  # Aumentando o tempo de espera para 60 segundos
 
           # Verificar serviços
           echo '🔍 Verificando serviços...'
@@ -226,23 +263,23 @@ jobs:
 
           # Testar aplicação (via nginx proxy)
           echo '🔍 Testando aplicação...'
-          for i in {1..10}; do
+          for i in {1..15}; do
             if curl -f -s http://localhost:${{ env.APP_PORT }}/health >/dev/null 2>&1; then
               echo '✅ Nginx proxy health check passou!'
               break
             fi
-            echo "Nginx proxy - Tentativa \$i/10 - aguardando 5s..."
+            echo "Nginx proxy - Tentativa \$i/15 - aguardando 5s..."
             sleep 5
           done
 
           # Testar API backend via proxy
           echo '🔍 Testando API backend via proxy...'
-          for i in {1..8}; do
+          for i in {1..12}; do
             if curl -f -s http://localhost:${{ env.APP_PORT }}/api/health >/dev/null 2>&1; then
               echo '✅ Backend API health check passou!'
               break
             fi
-            echo "Backend API - Tentativa \$i/8 - aguardando 5s..."
+            echo "Backend API - Tentativa \$i/12 - aguardando 5s..."
             sleep 5
           done
 
@@ -255,7 +292,8 @@ jobs:
             echo '🩺 Health: http://${{ env.VPS_HOST }}:${{ env.APP_PORT }}/health'
           else
             echo '❌ Falha na verificação final!'
-            docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 20
+            echo '🔍 Exibindo logs detalhados...'
+            docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail 50
             exit 1
           fi
         DEPLOY_SCRIPT
