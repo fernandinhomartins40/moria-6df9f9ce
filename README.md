@@ -1,123 +1,256 @@
-# Moria Peças e Serviços - Frontend
+# Moria Pesca e Serviços - Monorepo
 
-## Project info
+Sistema de e-commerce para venda de produtos de pesca e agendamento de serviços náuticos.
 
-**URL**: https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9
+## 🏗️ Arquitetura Monorepo
 
-## Estrutura do Projeto
-
-Este projeto está organizado da seguinte forma:
+Este projeto utiliza uma arquitetura monorepo com **npm workspaces** e **Turbo** para gerenciar múltiplos pacotes e aplicações.
 
 ```
-src/
-├── api/              # Clientes e serviços para comunicação com a API
-├── components/       # Componentes reutilizáveis da interface
-│   ├── admin/        # Componentes do painel administrativo
-│   ├── customer/     # Componentes do painel do cliente
-│   └── ui/           # Componentes de UI reutilizáveis
-├── config/           # Configurações da aplicação
-├── contexts/         # Contextos do React para gerenciamento de estado
-├── hooks/            # Hooks customizados
-├── lib/              # Bibliotecas e utilitários
-├── pages/            # Páginas da aplicação
-└── styles/           # Arquivos de estilo
+moria-pesca-servicos/
+├── apps/
+│   ├── frontend/          # Aplicação React + Vite
+│   └── backend/           # Backend (aguardando implementação)
+├── packages/
+│   ├── types/             # Tipos TypeScript compartilhados
+│   └── utils/             # Utilitários compartilhados
+├── package.json           # Workspace root
+├── turbo.json            # Configuração Turbo
+└── README.md
 ```
 
-## Arquitetura
+## 🚀 Tecnologias
 
-A aplicação segue uma arquitetura cliente-servidor onde o frontend (esta aplicação) se comunica com um backend através de uma API REST.
+### Monorepo
+- **npm workspaces** - Gerenciamento de monorepo
+- **Turbo** - Build system otimizado
 
-### Estrutura da API
+### Frontend
+- **React 18** com TypeScript
+- **Vite** - Build tool
+- **Tailwind CSS** - Estilização
+- **Shadcn/ui** - Componentes UI
+- **React Router** - Roteamento
+- **React Query** - Gestão de estado
+- **Axios** - Cliente HTTP
+- **Zod** - Validação
 
-O frontend está preparado para se comunicar com um backend que fornece os seguintes endpoints:
+### Backend
+- ⏳ Aguardando implementação
+- Sugestões: Node.js/Python/Go + PostgreSQL
 
-- Autenticação: `/auth/login`, `/auth/register`, `/auth/profile`
-- Produtos: `/products`
-- Serviços: `/services`
-- Promoções: `/promotions`
-- Pedidos: `/orders`
-- Endereços: `/addresses`
-- Favoritos: `/favorites`
+### Packages
+- **@moria/types** - Tipos compartilhados
+- **@moria/utils** - Utilitários compartilhados
 
-### Variáveis de Ambiente
+## 📦 Instalação
 
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```bash
+# Instalar todas as dependências do monorepo
+npm install
 
+# Ou
+npm run install:all
 ```
+
+## 🛠️ Desenvolvimento
+
+```bash
+# Rodar apenas o frontend
+npm run dev
+# ou
+npm run dev:frontend
+
+# Rodar apenas o backend (quando implementado)
+npm run dev:backend
+
+# Rodar frontend e backend simultaneamente
+npm run dev:all
+```
+
+## 🏗️ Build
+
+```bash
+# Build de todos os workspaces
+npm run build
+
+# Build apenas do frontend
+npm run build:frontend
+
+# Build apenas do backend
+npm run build:backend
+```
+
+## 🔧 Configuração
+
+Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`:
+
+```env
 VITE_API_BASE_URL=http://localhost:3001/api
 VITE_APP_ENV=development
 VITE_APP_VERSION=1.0.0
 ```
 
-Veja o arquivo `.env.example` para mais detalhes.
+## 📁 Estrutura do Projeto
 
-## Como posso editar este código?
-
-Existem várias formas de editar esta aplicação.
-
-**Usar o Lovable**
-
-Simplesmente visite o [Projeto Lovable](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) e comece a fazer prompts.
-
-As mudanças feitas via Lovable serão automaticamente commitadas neste repositório.
-
-**Usar sua IDE preferida**
-
-Se você quiser trabalhar localmente usando sua própria IDE, você pode clonar este repositório e fazer push das mudanças. As mudanças feitas serão refletidas no Lovable.
-
-O único requisito é ter Node.js & npm instalados - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Siga estes passos:
-
-```sh
-# Passo 1: Clone o repositório usando a URL Git do projeto.
-git clone <SUA_URL_GIT>
-
-# Passo 2: Navegue até o diretório do projeto.
-cd <NOME_DO_SEU_PROJETO>
-
-# Passo 3: Instale as dependências necessárias.
-npm i
-
-# Passo 4: Inicie o servidor de desenvolvimento com auto-reload e preview instantâneo.
-npm run dev
+```
+src/
+├── api/              # Services de integração com backend
+├── components/       # Componentes React reutilizáveis
+│   ├── ui/          # Componentes base do Shadcn/ui
+│   ├── admin/       # Componentes do painel admin
+│   └── customer/    # Componentes do painel do cliente
+├── contexts/        # Contexts do React (Auth, Cart, etc)
+├── hooks/           # Custom hooks
+├── pages/           # Páginas/rotas da aplicação
+├── lib/             # Utilitários e helpers
+├── schemas/         # Schemas de validação Zod
+├── types/           # Definições de tipos TypeScript
+├── utils/           # Funções utilitárias
+└── config/          # Configurações da aplicação
 ```
 
-**Editar um arquivo diretamente no GitHub**
+## 🎯 Funcionalidades
 
-- Navegue até o arquivo desejado(s).
-- Clique no botão "Edit" (ícone de lápis) no canto superior direito da visualização do arquivo.
-- Faça suas mudanças e commite as alterações.
+### Área Pública
+- ✅ Catálogo de produtos de pesca
+- ✅ Catálogo de serviços náuticos
+- ✅ Sistema de promoções avançado
+- ✅ Carrinho de compras
+- ✅ Checkout com cupons de desconto
+- ✅ Filtros avançados de produtos
+- ✅ Busca inteligente
 
-**Usar GitHub Codespaces**
+### Painel do Cliente
+- ✅ Dashboard personalizado
+- ✅ Perfil e dados pessoais
+- ✅ Histórico de pedidos
+- ✅ Produtos favoritos
+- ✅ Gestão de endereços
+- ✅ Sistema de níveis (Bronze, Prata, Ouro, Platina)
 
-- Navegue até a página principal do seu repositório.
-- Clique no botão "Code" (botão verde) próximo ao canto superior direito.
-- Selecione a aba "Codespaces".
-- Clique em "New codespace" para lançar um novo ambiente Codespaces.
-- Edite os arquivos diretamente dentro do Codespace e commite e faça push das suas mudanças quando terminar.
+### Painel Administrativo
+- ✅ Dashboard com analytics
+- ✅ Gestão de produtos
+- ✅ Gestão de serviços
+- ✅ Gestão de pedidos
+- ✅ Gestão de clientes
+- ✅ Sistema de promoções
+- ✅ Gestão de cupons
+- ✅ Relatórios e estatísticas
 
-## Quais tecnologias são usadas para este projeto?
+## 🔌 Integração Backend
 
-Este projeto é construído com:
+O frontend está **preparado para receber um backend**. Consulte o arquivo [FRONTEND_BACKEND_INTEGRATION.md](./FRONTEND_BACKEND_INTEGRATION.md) para:
+- Endpoints esperados
+- Estrutura de dados
+- Autenticação JWT
+- Guia de integração
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Axios
-- React Router DOM
-- TanStack Query
+### Status Atual
+- ✅ Frontend totalmente funcional (UI/UX)
+- ✅ Services API prontos para integração
+- ⏳ Backend aguardando implementação
+- ⏳ Chamadas de API aguardando endpoints reais
 
-## Como posso fazer deploy deste projeto?
+## 🎨 Componentes UI
 
-Simplesmente abra o [Lovable](https://lovable.dev/projects/6155ec54-c567-4ed7-af25-16b5d9c539a9) e clique em Share -> Publish.
+O projeto utiliza o **Shadcn/ui**, uma coleção de componentes reutilizáveis construídos com Radix UI e Tailwind CSS:
 
-## Posso conectar um domínio personalizado ao meu projeto Lovable?
+- Accordion
+- Alert Dialog
+- Avatar
+- Badge
+- Button
+- Card
+- Checkbox
+- Dialog
+- Dropdown Menu
+- Form
+- Input
+- Label
+- Select
+- Table
+- Tabs
+- Toast
+- Tooltip
+- E mais...
 
-Sim, você pode!
+## 🛣️ Rotas
 
-Para conectar um domínio, navegue até Project > Settings > Domains e clique em Connect Domain.
+- `/` - Página inicial
+- `/about` - Sobre a empresa
+- `/contact` - Contato
+- `/customer` - Painel do cliente
+  - `/customer/dashboard` - Dashboard
+  - `/customer/profile` - Perfil
+  - `/customer/orders` - Pedidos
+  - `/customer/favorites` - Favoritos
+- `/admin` - Painel administrativo
+  - `/admin/dashboard` - Dashboard
+  - `/admin/products` - Produtos
+  - `/admin/services` - Serviços
+  - `/admin/orders` - Pedidos
+  - `/admin/customers` - Clientes
+  - `/admin/promotions` - Promoções
+  - `/admin/analytics` - Analytics
 
-Leia mais aqui: [Configurando um domínio personalizado](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🔐 Autenticação
+
+O sistema está preparado para autenticação JWT:
+- Token armazenado em `localStorage`
+- Interceptor automático no Axios
+- Proteção de rotas privadas
+- Renovação automática de sessão
+
+## 📱 Responsividade
+
+O frontend é totalmente responsivo e otimizado para:
+- 📱 Mobile (320px+)
+- 📱 Tablet (768px+)
+- 💻 Desktop (1024px+)
+- 🖥️ Wide Desktop (1440px+)
+
+## 🧪 Desenvolvimento
+
+```bash
+# Instalar dependências
+npm install
+
+# Rodar em modo desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build
+npm run preview
+
+# Lint
+npm run lint
+```
+
+## 📝 Próximos Passos
+
+1. **Implementar Backend**
+   - Escolher stack (Node.js/Python/Go/etc)
+   - Implementar endpoints conforme documentação
+   - Conectar banco de dados
+
+2. **Testes**
+   - Implementar testes unitários
+   - Implementar testes E2E
+   - Cobertura de código
+
+3. **Deploy**
+   - Configurar CI/CD
+   - Deploy do frontend (Vercel/Netlify)
+   - Deploy do backend
+
+## 📄 Licença
+
+Propriedade de Moria Pesca e Serviços. Todos os direitos reservados.
+
+## 👥 Contato
+
+Para mais informações, entre em contato através do nosso site ou redes sociais.

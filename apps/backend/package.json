@@ -1,0 +1,14 @@
+{
+  "name": "@moria/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Backend ainda não implementado. Escolha uma stack (Node.js/Python/Go) e implemente aqui.'",
+    "build": "echo 'Build do backend'",
+    "start": "echo 'Start do backend'",
+    "lint": "echo 'Lint do backend'",
+    "test": "echo 'Testes do backend'"
+  },
+  "description": "Backend da aplicação Moria Pesca e Serviços - Aguardando implementação"
+}

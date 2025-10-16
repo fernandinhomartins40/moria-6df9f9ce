@@ -1,0 +1,306 @@
+# .github/workflows/validation.yml - Workflow de validação automática
+
+name: Validação Automática do Sistema
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Executar validação diária às 2:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  validate-types:
+    name: Validação de Tipos
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Sincronizar tipos
+      run: |
+        node scripts/sync-types.js
+
+    - name: Verificar mudanças nos tipos
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "❌ Tipos desatualizados encontrados!"
+          git diff
+          exit 1
+        else
+          echo "✅ Tipos estão sincronizados"
+        fi
+
+  validate-schemas:
+    name: Validação de Schemas
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Verificar tipos TypeScript
+      run: npx tsc --noEmit
+
+    - name: Validar schemas Zod
+      run: |
+        echo "Validando schemas Zod..."
+        node -e "
+          try {
+            const schemas = require('./src/schemas/index.ts');
+            console.log('✅ Schemas carregados com sucesso');
+          } catch (error) {
+            console.error('❌ Erro ao carregar schemas:', error.message);
+            process.exit(1);
+          }
+        "
+
+  validate-system:
+    name: Validação Completa do Sistema
+    runs-on: ubuntu-latest
+    needs: [validate-types, validate-schemas]
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Executar validação completa
+      run: node scripts/validate-system.js
+
+    - name: Upload relatório de validação
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: validation-report
+        path: validation-report.json
+        retention-days: 30
+
+  lint-and-format:
+    name: Lint e Formatação
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Executar ESLint
+      run: npm run lint
+      continue-on-error: true
+
+    - name: Verificar formatação Prettier
+      run: npx prettier --check "src/**/*.{ts,tsx,js,jsx}"
+      continue-on-error: true
+
+  security-scan:
+    name: Verificação de Segurança
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Audit de segurança
+      run: npm audit --audit-level=moderate
+
+    - name: Verificar vulnerabilidades conhecidas
+      run: |
+        echo "Verificando vulnerabilidades conhecidas..."
+        if npm audit --json | jq -r '.vulnerabilities | length' | grep -v '^0$'; then
+          echo "❌ Vulnerabilidades encontradas!"
+          npm audit --json | jq -r '.vulnerabilities'
+        else
+          echo "✅ Nenhuma vulnerabilidade encontrada"
+        fi
+
+  performance-check:
+    name: Verificação de Performance
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Build do projeto
+      run: npm run build
+
+    - name: Análise de bundle
+      run: |
+        echo "Analisando tamanho do bundle..."
+        ls -la dist/
+
+        # Verificar se há arquivos muito grandes
+        find dist -name "*.js" -size +1M -exec echo "❌ Arquivo grande encontrado: {} $(stat -f%z {})" \;
+
+    - name: Upload artifacts de build
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: dist/
+        retention-days: 7
+
+  notification:
+    name: Notificação de Resultados
+    runs-on: ubuntu-latest
+    needs: [validate-system, lint-and-format, security-scan, performance-check]
+    if: always()
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Download relatório de validação
+      uses: actions/download-artifact@v3
+      with:
+        name: validation-report
+
+    - name: Processar resultados
+      run: |
+        echo "📊 Resumo da Validação:"
+
+        if [ -f validation-report.json ]; then
+          SCORE=$(jq -r '.summary.score' validation-report.json)
+          PASSED=$(jq -r '.summary.passed' validation-report.json)
+          ERRORS=$(jq -r '.summary.totalErrors' validation-report.json)
+          WARNINGS=$(jq -r '.summary.totalWarnings' validation-report.json)
+
+          echo "Score: $SCORE%"
+          echo "Status: $([ "$PASSED" = "true" ] && echo "✅ APROVADO" || echo "❌ REPROVADO")"
+          echo "Erros: $ERRORS"
+          echo "Avisos: $WARNINGS"
+
+          # Criar summary para GitHub
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+        ## 📋 Relatório de Validação
+
+        | Métrica | Valor |
+        |---------|-------|
+        | **Score** | $SCORE% |
+        | **Status** | $([ "$PASSED" = "true" ] && echo "✅ APROVADO" || echo "❌ REPROVADO") |
+        | **Erros** | $ERRORS |
+        | **Avisos** | $WARNINGS |
+
+        ### Detalhes
+        $(jq -r '.results | to_entries[] | "- **\(.key)**: \(if .value.passed then "✅ OK" else "❌ FALHOU" end)"' validation-report.json)
+        EOF
+
+          # Falhar se score < 80%
+          if [ "$SCORE" -lt 80 ]; then
+            echo "❌ Score muito baixo: $SCORE%"
+            exit 1
+          fi
+        else
+          echo "❌ Relatório de validação não encontrado"
+          exit 1
+        fi
+
+  auto-fix:
+    name: Correção Automática
+    runs-on: ubuntu-latest
+    needs: [validate-system]
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Executar correções automáticas
+      run: |
+        echo "🔧 Executando correções automáticas..."
+
+        # Sincronizar tipos
+        node scripts/sync-types.js
+
+        # Formatar código
+        npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
+
+        # Fix ESLint
+        npm run lint -- --fix || true
+
+    - name: Commit correções
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        if [ -n "$(git status --porcelain)" ]; then
+          git add .
+          git commit -m "🤖 Correções automáticas de validação
+
+          - Sincronização de tipos
+          - Formatação de código
+          - Correções de lint
+
+          [skip ci]"
+          git push
+          echo "✅ Correções aplicadas e commitadas"
+        else
+          echo "ℹ️ Nenhuma correção necessária"
+        fi

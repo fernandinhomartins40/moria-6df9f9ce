@@ -1,26 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)",
-      "Bash(move \"deploy.yml\" \".github/workflows/deploy.yml\")",
-      "Bash(mv:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(gh run list:*)",
-      "Bash(rg:*)",
-      "Bash(true)",
-      "Bash(find:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm install)",
-      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)",
       "Bash(taskkill:*)",
-      "Bash(rm:*)",
-      "Bash(ssh:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
       "Bash(npm run build:*)",
-      "Bash(tar:*)",
-      "Bash(scp:*)"
+      "Bash(tree:*)",
+      "Bash(npm install)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(git add:*)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }
