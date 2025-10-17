@@ -5,19 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Separator } from "../ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
-import { 
-  User, 
-  Package, 
-  Heart, 
-  Home, 
-  LogOut, 
+import {
+  User,
+  Package,
+  Heart,
+  Home,
+  LogOut,
   Settings,
   Gift,
   MessageCircle,
   ShoppingBag,
   Star,
   TrendingUp,
-  Calendar
+  Calendar,
+  ClipboardCheck
 } from "lucide-react";
 
 interface CustomerLayoutProps {
@@ -35,6 +36,7 @@ export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLa
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Visão geral da conta' },
     { id: 'profile', label: 'Meu Perfil', icon: User, description: 'Dados pessoais e endereços' },
     { id: 'orders', label: 'Meus Pedidos', icon: Package, description: 'Histórico e acompanhamento' },
+    { id: 'revisions', label: 'Minhas Revisões', icon: ClipboardCheck, description: 'Histórico de revisões veiculares' },
     { id: 'favorites', label: 'Favoritos', icon: Heart, description: 'Produtos salvos' },
     { id: 'coupons', label: 'Cupons', icon: Gift, description: 'Descontos disponíveis' },
     { id: 'support', label: 'Suporte', icon: MessageCircle, description: 'Atendimento ao cliente' },

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { 
+import {
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -14,7 +14,8 @@ import {
   Home,
   FileText,
   Wrench,
-  Gift
+  Gift,
+  ClipboardCheck
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -28,6 +29,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "orders", label: "Pedidos", icon: ShoppingCart },
   { id: "quotes", label: "Orçamentos", icon: FileText },
+  { id: "revisions", label: "Revisões", icon: ClipboardCheck },
   { id: "customers", label: "Clientes", icon: Users },
   { id: "products", label: "Produtos", icon: Package },
   { id: "services", label: "Serviços", icon: Wrench },

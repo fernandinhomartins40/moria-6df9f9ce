@@ -5,6 +5,7 @@ import { CustomerDashboard } from "../components/customer/CustomerDashboard";
 import { CustomerProfile } from "../components/customer/CustomerProfile";
 import { CustomerOrders } from "../components/customer/CustomerOrders";
 import { CustomerFavorites } from "../components/customer/CustomerFavorites";
+import { CustomerRevisions } from "../components/customer/CustomerRevisions";
 import "../styles/cliente.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -356,6 +357,8 @@ export default function CustomerPanel() {
         return <CustomerProfile />;
       case "orders":
         return <CustomerOrders />;
+      case "revisions":
+        return <CustomerRevisions />;
       case "favorites":
         return <CustomerFavorites />;
       case "coupons":

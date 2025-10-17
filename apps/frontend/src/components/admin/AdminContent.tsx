@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { 
-  Package, 
-  Wrench, 
-  User, 
-  Phone, 
-  Calendar, 
+import {
+  Package,
+  Wrench,
+  User,
+  Phone,
+  Calendar,
   DollarSign,
   ShoppingBag,
   MessageCircle,
@@ -37,6 +37,7 @@ import {
   BarChart3,
   FileText
 } from "lucide-react";
+import { RevisionsContent } from "./RevisionsContent";
 
 interface StoreOrder {
   id: string;
@@ -2419,6 +2420,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       return renderProducts();
     case 'services':
       return renderServices();
+    case 'revisions':
+      return <RevisionsContent />;
     case 'coupons':
       return renderCoupons();
     case 'promotions':
