@@ -12,6 +12,10 @@ import productsRoutes from '@modules/products/products.routes.js';
 import servicesRoutes from '@modules/services/services.routes.js';
 import vehiclesRoutes from '@modules/vehicles/vehicles.routes.js';
 import compatibilityRoutes from '@modules/compatibility/compatibility.routes.js';
+import ordersRoutes from '@modules/orders/orders.routes.js';
+import promotionsRoutes from '@modules/promotions/promotions.routes.js';
+import couponsRoutes from '@modules/coupons/coupons.routes.js';
+import favoritesRoutes from '@modules/favorites/favorites.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -62,6 +66,12 @@ export function createApp(): Express {
   app.use('/services', servicesRoutes);
   app.use('/vehicles', vehiclesRoutes);
   app.use('/compatibility', compatibilityRoutes);
+
+  // API Routes - Fase 3
+  app.use('/orders', ordersRoutes);
+  app.use('/promotions', promotionsRoutes);
+  app.use('/coupons', couponsRoutes);
+  app.use('/favorites', favoritesRoutes);
 
   // 404 handler
   app.use((req: Request, res: Response) => {

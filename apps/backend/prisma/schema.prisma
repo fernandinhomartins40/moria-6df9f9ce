@@ -46,6 +46,26 @@ enum ServiceStatus {
   INACTIVE
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderSource {
+  WEB
+  APP
+  PHONE
+}
+
+enum OrderItemType {
+  PRODUCT
+  SERVICE
+}
+
 // ============================================================================
 // MODELS - FASE 1
 // ============================================================================
@@ -70,6 +90,8 @@ model Customer {
 
   // Relations
   addresses     Address[]
+  orders        Order[]
+  favorites     Favorite[]
 
   @@index([email])
   @@index([cpf])
@@ -257,4 +279,193 @@ model ProductVehicleCompatibility {
   @@index([makeId])
   @@index([modelId])
   @@map("product_vehicle_compatibility")
+}
+
+// ============================================================================
+// MODELS - FASE 3: PEDIDOS, PROMOÇÕES E CUPONS
+// ============================================================================
+
+// Pedidos
+model Order {
+  id                String       @id @default(uuid())
+  customerId        String
+  addressId         String
+  status            OrderStatus  @default(PENDING)
+  source            OrderSource  @default(WEB)
+  hasProducts       Boolean      @default(false)
+  hasServices       Boolean      @default(false)
+
+  // Valores
+  subtotal          Decimal      @db.Decimal(10, 2)
+  discountAmount    Decimal      @default(0) @db.Decimal(10, 2)
+  total             Decimal      @db.Decimal(10, 2)
+
+  // Pagamento e Entrega
+  paymentMethod     String
+  trackingCode      String?
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+
+  // Cupom/Promoção
+  couponCode        String?
+  appliedPromotions Json?        // Array de IDs de promoções aplicadas
+
+  // Timestamps
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  cancelledAt       DateTime?
+
+  // Relations
+  customer          Customer     @relation(fields: [customerId], references: [id])
+  items             OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// Itens do Pedido
+model OrderItem {
+  id          String        @id @default(uuid())
+  orderId     String
+  productId   String?
+  serviceId   String?
+  type        OrderItemType
+  name        String
+  price       Decimal       @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal       @db.Decimal(10, 2)
+
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([serviceId])
+  @@map("order_items")
+}
+
+// Promoções
+model Promotion {
+  id                      String   @id @default(uuid())
+  name                    String
+  description             String   @db.Text
+  shortDescription        String?
+  bannerImage             String?
+  badgeText               String?
+
+  // Configuração
+  type                    String   // PERCENTAGE, FIXED, etc.
+  target                  String   // ALL_PRODUCTS, SPECIFIC_PRODUCTS, etc.
+  trigger                 String   // CART_VALUE, ITEM_QUANTITY, etc.
+
+  // Segmentação
+  customerSegments        Json     // Array de segmentos
+  geographicRestrictions  Json?
+  deviceTypes             Json?
+
+  // Regras
+  rules                   Json     // Array de regras complexas
+  tiers                   Json?    // Descontos escalonados
+
+  // Produtos alvo
+  targetProductIds        Json?
+  targetCategories        Json?
+  targetBrands            Json?
+  targetPriceRange        Json?
+  excludeProductIds       Json?
+  excludeCategories       Json?
+
+  // Recompensas
+  rewards                 Json     // Estrutura de recompensas
+
+  // Agendamento
+  schedule                Json     // Configuração de agenda
+  startDate               DateTime
+  endDate                 DateTime
+
+  // Limitações
+  usageLimit              Int?
+  usageLimitPerCustomer   Int?
+  usedCount               Int      @default(0)
+
+  // Combinação
+  canCombineWithOthers    Boolean  @default(false)
+  excludePromotionIds     Json?
+  priority                Int      @default(0)
+
+  // Código
+  code                    String?  @unique
+  autoApply               Boolean  @default(false)
+
+  // Estados
+  isActive                Boolean  @default(true)
+  isDraft                 Boolean  @default(false)
+
+  // Analytics
+  analytics               Json?
+
+  // Metadados
+  createdBy               String
+  lastModifiedBy          String?
+  approvedBy              String?
+  approvedAt              DateTime?
+  tags                    Json?
+  notes                   String?  @db.Text
+
+  // Configurações avançadas
+  customLogic             String?  @db.Text
+  webhookUrl              String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([code])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
+  @@map("promotions")
+}
+
+// Cupons
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  description   String
+  discountType  String   // PERCENTAGE, FIXED
+  discountValue Decimal  @db.Decimal(10, 2)
+  minValue      Decimal? @db.Decimal(10, 2)
+  maxDiscount   Decimal? @db.Decimal(10, 2)
+  expiresAt     DateTime
+  usageLimit    Int?
+  usedCount     Int      @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([code])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("coupons")
+}
+
+// Favoritos
+model Favorite {
+  id         String   @id @default(uuid())
+  customerId String
+  productId  String
+
+  createdAt  DateTime @default(now())
+
+  // Relations
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@index([productId])
+  @@map("favorites")
 }
