@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ServicesController } from './services.controller.js';
-import { AuthMiddleware } from '@middlewares/auth.middleware.js';
+import { AdminAuthMiddleware } from '@middlewares/admin-auth.middleware.js';
+import { AdminRole } from '@prisma/client';
 
 const router = Router();
 const servicesController = new ServicesController();
@@ -13,8 +14,8 @@ router.get('/category/:category', servicesController.getServicesByCategory);
 router.get('/:id', servicesController.getServiceById);
 
 // Protected routes (admin only)
-router.post('/', AuthMiddleware.authenticate, servicesController.createService);
-router.put('/:id', AuthMiddleware.authenticate, servicesController.updateService);
-router.delete('/:id', AuthMiddleware.authenticate, servicesController.deleteService);
+router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), servicesController.createService);
+router.put('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), servicesController.updateService);
+router.delete('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.ADMIN), servicesController.deleteService);
 
 export default router;

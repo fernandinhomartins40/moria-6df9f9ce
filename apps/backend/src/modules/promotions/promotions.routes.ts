@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PromotionsController } from './promotions.controller.js';
-import { AuthMiddleware } from '@middlewares/auth.middleware.js';
+import { AdminAuthMiddleware } from '@middlewares/admin-auth.middleware.js';
+import { AdminRole } from '@prisma/client';
 
 const router = Router();
 const promotionsController = new PromotionsController();
@@ -9,19 +10,16 @@ const promotionsController = new PromotionsController();
 router.get('/active', promotionsController.getActivePromotions);
 router.get('/code/:code', promotionsController.getPromotionByCode);
 
-// Protected routes (require authentication)
-router.use(AuthMiddleware.authenticate);
-
 // Admin routes (for creating/managing promotions)
-router.post('/', promotionsController.createPromotion);
-router.get('/', promotionsController.getPromotions);
-router.get('/:id', promotionsController.getPromotionById);
-router.patch('/:id', promotionsController.updatePromotion);
-router.delete('/:id', promotionsController.deletePromotion);
+router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.createPromotion);
+router.get('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), promotionsController.getPromotions);
+router.get('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), promotionsController.getPromotionById);
+router.patch('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.updatePromotion);
+router.delete('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.ADMIN), promotionsController.deletePromotion);
 
 // Promotion actions
-router.post('/:id/activate', promotionsController.activatePromotion);
-router.post('/:id/deactivate', promotionsController.deactivatePromotion);
-router.get('/:id/stats', promotionsController.getPromotionStats);
+router.post('/:id/activate', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.activatePromotion);
+router.post('/:id/deactivate', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.deactivatePromotion);
+router.get('/:id/stats', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), promotionsController.getPromotionStats);
 
 export default router;

@@ -8,9 +8,16 @@ export interface TokenPayload {
   status: string;
 }
 
+export interface AdminTokenPayload {
+  adminId: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
 export class JwtUtil {
   /**
-   * Generate JWT token
+   * Generate JWT token for customers
    */
   static generateToken(payload: TokenPayload): string {
     return jwt.sign(payload, environment.jwt.secret, {
@@ -21,7 +28,18 @@ export class JwtUtil {
   }
 
   /**
-   * Verify and decode JWT token
+   * Generate JWT token for admins
+   */
+  static generateAdminToken(payload: AdminTokenPayload): string {
+    return jwt.sign(payload, environment.jwt.secret, {
+      expiresIn: environment.jwt.expiresIn,
+      issuer: 'moria-backend',
+      audience: 'moria-admin',
+    });
+  }
+
+  /**
+   * Verify and decode JWT token for customers
    */
   static verifyToken(token: string): TokenPayload {
     try {
@@ -34,6 +52,27 @@ export class JwtUtil {
         customerId: decoded.customerId,
         email: decoded.email,
         level: decoded.level,
+        status: decoded.status,
+      };
+    } catch (error) {
+      throw new Error('Invalid or expired token');
+    }
+  }
+
+  /**
+   * Verify and decode JWT token for admins
+   */
+  static verifyAdminToken(token: string): AdminTokenPayload {
+    try {
+      const decoded = jwt.verify(token, environment.jwt.secret, {
+        issuer: 'moria-backend',
+        audience: 'moria-admin',
+      }) as JwtPayload;
+
+      return {
+        adminId: decoded.adminId,
+        email: decoded.email,
+        role: decoded.role,
         status: decoded.status,
       };
     } catch (error) {

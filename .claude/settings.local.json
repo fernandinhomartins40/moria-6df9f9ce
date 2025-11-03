@@ -10,7 +10,13 @@
       "Bash(docker-compose up:*)",
       "Bash(npx prisma db push:*)",
       "Bash(npm run prisma:seed:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(npm run dev:backend:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiN2JlNjRhZjctNDgxMC00NjQ1LWIwNzEtZTczNjBkNzk0YjBlIiwiZW1haWwiOiJqb2FvLnNpbHZhQGVtYWlsLmNvbSIsImxldmVsIjoiR09MRCIsInN0YXR1cyI6IkFDVElWRSIsImlhdCI6MTc2MjIxMDgzMCwiZXhwIjoxNzYyODE1NjMwLCJhdWQiOiJtb3JpYS1mcm9udGVuZCIsImlzcyI6Im1vcmlhLWJhY2tlbmQifQ.TT8l6SdGDrgaFd0IcL3rts89YGxk37snDc22lL67u-M\")",
+      "Bash(export:*)"
     ],
     "deny": [],
     "ask": []
