@@ -50,13 +50,15 @@ export type CustomerSegment =
   | 'BIRTHDAY_THIS_MONTH'
   | 'GEOGRAPHIC_REGION';
 
+export type PromotionRuleValue = string | number | boolean | Date;
+
 export interface PromotionRule {
   id: string;
   type: 'MIN_QUANTITY' | 'MIN_VALUE' | 'MAX_USES_PER_CUSTOMER' | 'CUSTOMER_SEGMENT' | 'TIME_WINDOW' | 'PRODUCT_COMBINATION' | 'EXCLUDE_SALE_ITEMS';
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'contains' | 'between';
-  value: any;
-  values?: any[];
+  value: PromotionRuleValue;
+  values?: PromotionRuleValue[];
   description: string;
 }
 
@@ -195,7 +197,7 @@ export interface PromotionApplicationResult {
   finalAmount: number;
   appliedRules: string[];
   warnings?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 // Contexto de aplicação de promoções
@@ -258,7 +260,7 @@ export interface PromotionTemplate {
     field: string;
     label: string;
     type: 'text' | 'number' | 'select' | 'multiselect' | 'date' | 'boolean';
-    options?: { value: any; label: string }[];
+    options?: { value: string | number | boolean; label: string }[];
     required: boolean;
     description?: string;
   }[];

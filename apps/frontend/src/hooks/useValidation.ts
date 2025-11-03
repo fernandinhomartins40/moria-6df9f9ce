@@ -26,7 +26,7 @@ export interface UseValidationReturn<T> {
   touched: Record<string, boolean>;
 
   // Métodos
-  setFieldValue: (field: keyof T, value: any) => void;
+  setFieldValue: (field: keyof T, value: T[keyof T]) => void;
   setFieldTouched: (field: keyof T, touched?: boolean) => void;
   setData: (data: Partial<T>) => void;
   validate: () => Promise<ValidationResult<T>>;
@@ -39,8 +39,8 @@ export interface UseValidationReturn<T> {
 
   // Helpers para formulários
   getFieldProps: (field: keyof T) => {
-    value: any;
-    onChange: (value: any) => void;
+    value: T[keyof T] | undefined;
+    onChange: (value: T[keyof T]) => void;
     onBlur: () => void;
     error: string | undefined;
     hasError: boolean;
@@ -136,7 +136,7 @@ export function useValidation<T>(
   }, [data, schema]);
 
   // Definir valor de campo
-  const setFieldValue = useCallback((field: keyof T, value: any) => {
+  const setFieldValue = useCallback((field: keyof T, value: T[keyof T]) => {
     setDataState(prev => ({
       ...prev,
       [field]: value
@@ -222,7 +222,7 @@ export function useValidation<T>(
   const getFieldProps = useCallback((field: keyof T) => {
     return {
       value: data[field],
-      onChange: (value: any) => setFieldValue(field, value),
+      onChange: (value: T[keyof T]) => setFieldValue(field, value),
       onBlur: () => setFieldTouched(field, true),
       error: getFieldError(field),
       hasError: hasFieldError(field),

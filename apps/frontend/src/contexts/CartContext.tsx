@@ -1,22 +1,8 @@
 import { createContext, useContext, useReducer, ReactNode } from "react";
+import type { CartItem, CouponInfo } from "@moria/types";
 
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-  category?: string;
-  type?: 'product' | 'service';
-  description?: string;
-}
-
-export interface CouponInfo {
-  code: string;
-  discountAmount: number;
-  discountType: 'PERCENTAGE' | 'FIXED';
-  description?: string;
-}
+// Re-export for backward compatibility
+export type { CartItem, CouponInfo } from "@moria/types";
 
 interface CartState {
   items: CartItem[];
@@ -43,7 +29,7 @@ const initialState: CartState = {
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-    case 'ADD_ITEM':
+    case 'ADD_ITEM': {
       const existingItem = state.items.find(item => item.id === action.payload.id);
       if (existingItem) {
         return {
@@ -59,6 +45,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: [...state.items, { ...action.payload, quantity: 1 }],
       };
+    }
 
     case 'REMOVE_ITEM':
       return {

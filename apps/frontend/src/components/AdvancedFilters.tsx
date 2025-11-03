@@ -46,6 +46,7 @@ import {
 } from '@/types/vehicles';
 import { generateFiltersFromProducts, filterProductsBySpecifications } from '@/utils/specifications';
 import { filterProductsByVehicleCompatibility } from '@/utils/vehicles';
+import type { Product } from '@moria/types';
 
 export interface FilterState {
   // Filtros básicos
@@ -73,7 +74,7 @@ export interface FilterState {
 }
 
 export interface AdvancedFiltersProps {
-  products: any[];
+  products: Product[];
   categories?: { id: string; name: string; count: number }[];
   brands?: { id: string; name: string; count: number }[];
   onFiltersChange: (filters: FilterState) => void;
@@ -84,7 +85,7 @@ export interface AdvancedFiltersProps {
   className?: string;
 }
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   dimensions: Ruler,
   performance: Package,
   materials: Layers,
@@ -173,7 +174,7 @@ export function AdvancedFilters({
     onFiltersChange(filters);
   }, [filters, onFiltersChange]);
 
-  const updateFilter = useCallback((key: keyof FilterState, value: any) => {
+  const updateFilter = useCallback((key: keyof FilterState, value: FilterState[keyof FilterState]) => {
     setFilters(prev => ({
       ...prev,
       [key]: value

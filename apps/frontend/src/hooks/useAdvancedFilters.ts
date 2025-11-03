@@ -49,10 +49,23 @@ export interface FilterMetadata {
   activeFilterCount: number;
 }
 
+interface FilterableProduct {
+  id: string;
+  name: string;
+  category?: string;
+  subcategory?: string;
+  price?: number;
+  salePrice?: number;
+  promoPrice?: number;
+  specifications?: string;
+  vehicleCompatibility?: string;
+  [key: string]: unknown;
+}
+
 export interface UseAdvancedFiltersOptions {
   persistFilters?: boolean;
   defaultFilters?: Partial<FilterState>;
-  onFiltersChange?: (filters: FilterState, results: any[]) => void;
+  onFiltersChange?: (filters: FilterState, results: FilterableProduct[]) => void;
   debounceMs?: number;
 }
 
@@ -65,7 +78,7 @@ export interface UseAdvancedFiltersResult {
   clearFilter: (key: keyof FilterState) => void;
 
   // Resultados filtrados
-  filteredProducts: any[];
+  filteredProducts: FilterableProduct[];
   isFiltering: boolean;
 
   // Metadados
@@ -86,7 +99,7 @@ export interface UseAdvancedFiltersResult {
   loadFiltersFromUrl: () => void;
 
   // Utilidades
-  getActiveFilters: () => Array<{ key: string; label: string; value: any }>;
+  getActiveFilters: () => Array<{ key: string; label: string; value: string | number | boolean | string[] }>;
   exportFilters: () => string;
   importFilters: (filtersJson: string) => void;
   resetToDefaults: () => void;
@@ -96,7 +109,7 @@ export interface UseAdvancedFiltersResult {
 }
 
 export function useAdvancedFilters(
-  products: any[] = [],
+  products: FilterableProduct[] = [],
   options: UseAdvancedFiltersOptions = {}
 ): UseAdvancedFiltersResult {
   const queryClient = useQueryClient();
@@ -398,14 +411,15 @@ export function useAdvancedFilters(
     if (!persistFilters) return null;
 
     try {
-      const filters: FilterState = {};
+      const filters: Partial<FilterState> = {};
       searchParams.forEach((value, key) => {
         try {
           // Tentar fazer parse como JSON primeiro
-          filters[key as keyof FilterState] = JSON.parse(value);
+          const parsed = JSON.parse(value);
+          filters[key as keyof FilterState] = parsed as FilterState[keyof FilterState];
         } catch {
           // Se falhar, usar como string
-          filters[key as keyof FilterState] = value as any;
+          filters[key as keyof FilterState] = value as FilterState[keyof FilterState];
         }
       });
 
@@ -417,7 +431,7 @@ export function useAdvancedFilters(
   }, [persistFilters, searchParams]);
 
   const getActiveFilters = useCallback(() => {
-    const active: Array<{ key: string; label: string; value: any }> = [];
+    const active: Array<{ key: string; label: string; value: string | number | boolean | string[] }> = [];
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {

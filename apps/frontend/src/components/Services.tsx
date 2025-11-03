@@ -73,7 +73,14 @@ const services = [
 export function Services() {
   const { addItem, openCart } = useCart();
 
-  const handleAddService = (service: any) => {
+  interface ServiceItem {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+  }
+
+  const handleAddService = (service: ServiceItem) => {
     addItem({
       id: service.id,
       name: service.title,

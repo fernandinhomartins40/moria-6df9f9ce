@@ -171,7 +171,7 @@ class PromotionService {
 
   async createFromTemplate(
     templateId: string,
-    configuration: Record<string, any>
+    configuration: Record<string, unknown>
   ): Promise<AdvancedPromotion> {
     const response = await apiClient.post<AdvancedPromotion>(`/promotions/templates/${templateId}/create`, {
       configuration

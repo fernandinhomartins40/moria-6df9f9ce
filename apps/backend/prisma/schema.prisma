@@ -1,0 +1,260 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum CustomerLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+  DISCONTINUED
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ============================================================================
+// MODELS - FASE 1
+// ============================================================================
+
+model Customer {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  phone         String
+  cpf           String?        @unique
+  birthDate     DateTime?
+  status        CustomerStatus @default(ACTIVE)
+  level         CustomerLevel  @default(BRONZE)
+  totalOrders   Int            @default(0)
+  totalSpent    Decimal        @default(0) @db.Decimal(10, 2)
+
+  // Timestamps
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  addresses     Address[]
+
+  @@index([email])
+  @@index([cpf])
+  @@index([status])
+  @@index([level])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+model Address {
+  id           String      @id @default(uuid())
+  customerId   String
+  type         AddressType @default(HOME)
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String      @db.Char(2)
+  zipCode      String      @db.Char(8)
+  isDefault    Boolean     @default(false)
+
+  // Timestamps
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relations
+  customer     Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([zipCode])
+  @@map("addresses")
+}
+
+// ============================================================================
+// MODELS - FASE 2: PRODUTOS, SERVIÇOS E VEÍCULOS
+// ============================================================================
+
+// Produtos
+model Product {
+  id                    String        @id @default(uuid())
+  name                  String
+  description           String        @db.Text
+  category              String
+  subcategory           String?
+  sku                   String        @unique
+  supplier              String
+  costPrice             Decimal       @db.Decimal(10, 2)
+  salePrice             Decimal       @db.Decimal(10, 2)
+  promoPrice            Decimal?      @db.Decimal(10, 2)
+  stock                 Int           @default(0)
+  minStock              Int           @default(5)
+  images                Json          // Array de URLs
+  specifications        Json?         // Especificações técnicas estruturadas
+  status                ProductStatus @default(ACTIVE)
+
+  // SEO
+  slug                  String        @unique
+  metaDescription       String?
+  metaKeywords          String?
+
+  // Timestamps
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Relations
+  vehicleCompatibility  ProductVehicleCompatibility[]
+
+  @@index([category])
+  @@index([status])
+  @@index([sku])
+  @@index([slug])
+  @@map("products")
+}
+
+// Serviços
+model Service {
+  id              String        @id @default(uuid())
+  name            String
+  description     String        @db.Text
+  category        String
+  estimatedTime   String        // Ex: "2 horas"
+  basePrice       Decimal?      @db.Decimal(10, 2)
+  specifications  Json?
+  status          ServiceStatus @default(ACTIVE)
+
+  // SEO
+  slug            String        @unique
+  metaDescription String?
+
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([slug])
+  @@map("services")
+}
+
+// Marcas de Veículos
+model VehicleMake {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  country   String
+  logo      String?
+  active    Boolean        @default(true)
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  models    VehicleModel[]
+
+  @@index([name])
+  @@map("vehicle_makes")
+}
+
+// Modelos de Veículos
+model VehicleModel {
+  id        String           @id @default(uuid())
+  makeId    String
+  name      String
+  segment   String           // mini, hatch, sedan, suv, etc.
+  bodyType  String           // 2-door, 4-door, etc.
+  fuelTypes Json             // Array de tipos de combustível
+  active    Boolean          @default(true)
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relations
+  make      VehicleMake      @relation(fields: [makeId], references: [id], onDelete: Cascade)
+  variants  VehicleVariant[]
+
+  @@index([makeId])
+  @@index([segment])
+  @@map("vehicle_models")
+}
+
+// Variantes de Veículos
+model VehicleVariant {
+  id             String   @id @default(uuid())
+  modelId        String
+  name           String
+  engineInfo     Json     // Informações do motor
+  transmission   String
+  yearStart      Int
+  yearEnd        Int?
+  specifications Json     // Especificações técnicas
+  active         Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  model          VehicleModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@index([modelId])
+  @@index([yearStart])
+  @@index([yearEnd])
+  @@map("vehicle_variants")
+}
+
+// Compatibilidade Produto-Veículo
+model ProductVehicleCompatibility {
+  id              String   @id @default(uuid())
+  productId       String
+  makeId          String?
+  modelId         String?
+  variantId       String?
+  yearStart       Int?
+  yearEnd         Int?
+  compatibilityData Json   // Regras detalhadas de compatibilidade
+  verified        Boolean  @default(false)
+  notes           String?  @db.Text
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([makeId])
+  @@index([modelId])
+  @@map("product_vehicle_compatibility")
+}

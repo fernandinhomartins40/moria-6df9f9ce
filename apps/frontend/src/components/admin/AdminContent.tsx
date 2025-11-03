@@ -44,7 +44,13 @@ interface StoreOrder {
   userId: string;
   customerName: string;
   customerWhatsApp: string;
-  items: any[];
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    type?: string;
+  }>;
   total: number;
   hasProducts: boolean;
   hasServices: boolean;
@@ -116,15 +122,30 @@ interface AdminContentProps {
   activeTab: string;
 }
 
+interface Quote {
+  id: string;
+  customerName: string;
+  customerWhatsApp: string;
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  total: number;
+  status: string;
+  createdAt: string;
+}
+
 export function AdminContent({ activeTab }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
-  const [quotes, setQuotes] = useState<any[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
-  const [filteredQuotes, setFilteredQuotes] = useState<any[]>([]);
+  const [filteredQuotes, setFilteredQuotes] = useState<Quote[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [filteredCoupons, setFilteredCoupons] = useState<Coupon[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -811,7 +832,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       <span className="text-orange-600">Aguardando Orçamento</span>
                     </div>
                     <div className="ml-5 text-sm text-gray-600">
-                      {quote.items.map((item: any, index: number) => (
+                      {quote.items.map((item, index: number) => (
                         <div key={index} className="mb-1">
                           • {item.name} (Qtd: {item.quantity})
                           {item.description && (

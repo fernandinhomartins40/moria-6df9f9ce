@@ -16,6 +16,22 @@ export interface OrderListResponse {
   limit: number;
 }
 
+export interface OrderTrackingEvent {
+  id: string;
+  status: string;
+  description: string;
+  timestamp: string;
+  location?: string;
+}
+
+export interface OrderTrackingResponse {
+  orderId: string;
+  currentStatus: string;
+  estimatedDelivery?: string;
+  trackingNumber?: string;
+  events: OrderTrackingEvent[];
+}
+
 class OrderService {
   async createOrder(data: CreateOrderRequest): Promise<Order> {
     const response = await apiClient.post<Order>('/orders', data);
@@ -46,8 +62,8 @@ class OrderService {
     return response.data;
   }
 
-  async getOrderTracking(orderId: string): Promise<any> {
-    const response = await apiClient.get<any>(`/orders/${orderId}/tracking`);
+  async getOrderTracking(orderId: string): Promise<OrderTrackingResponse> {
+    const response = await apiClient.get<OrderTrackingResponse>(`/orders/${orderId}/tracking`);
     return response.data;
   }
 }

@@ -49,11 +49,37 @@ export function stringifyVehicleCompatibility(compatibility: VehicleCompatibilit
 }
 
 /**
+ * Interface para formato legado de compatibilidade
+ */
+interface LegacyCompatibilityFormat {
+  makes?: Array<{
+    id?: string;
+    name?: string;
+    yearStart?: number;
+    yearEnd?: number;
+    models?: string[];
+  }>;
+  make?: string;
+  model?: string;
+  yearStart?: number;
+  yearEnd?: number;
+  [key: string]: unknown;
+}
+
+interface LegacyMake {
+  id?: string;
+  name?: string;
+  yearStart?: number;
+  yearEnd?: number;
+  models?: string[];
+}
+
+/**
  * Converte formato legado de compatibilidade
  */
-function convertLegacyCompatibility(legacy: any): VehicleCompatibilityRule[] {
+function convertLegacyCompatibility(legacy: LegacyCompatibilityFormat): VehicleCompatibilityRule[] {
   if (legacy.makes && Array.isArray(legacy.makes)) {
-    return legacy.makes.map((make: any) => ({
+    return legacy.makes.map((make: LegacyMake) => ({
       makeId: make.id || make.name?.toLowerCase(),
       yearStart: make.yearStart || legacy.yearStart,
       yearEnd: make.yearEnd || legacy.yearEnd,
@@ -301,12 +327,20 @@ function generateCompatibilitySuggestions(
 }
 
 /**
+ * Interface para produtos com compatibilidade de veículos
+ */
+export interface ProductWithCompatibility {
+  vehicleCompatibility?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Filtra produtos por compatibilidade de veículo
  */
-export function filterProductsByVehicleCompatibility(
-  products: any[],
+export function filterProductsByVehicleCompatibility<T extends ProductWithCompatibility>(
+  products: T[],
   filter: VehicleCompatibilityFilter
-): any[] {
+): T[] {
   if (!Object.keys(filter).length) return products;
 
   return products.filter(product => {
@@ -353,7 +387,7 @@ export function filterProductsByVehicleCompatibility(
 /**
  * Gera estatísticas de compatibilidade
  */
-export function generateCompatibilityStats(products: any[]): {
+export function generateCompatibilityStats(products: ProductWithCompatibility[]): {
   totalProducts: number;
   withCompatibility: number;
   byMake: Record<string, number>;
@@ -460,7 +494,7 @@ export function createDefaultCompatibilityRule(): VehicleCompatibilityRule {
 /**
  * Cria filtro de veículos a partir de uma lista de produtos
  */
-export function createVehicleFilterFromProducts(products: any[]): {
+export function createVehicleFilterFromProducts(products: ProductWithCompatibility[]): {
   makes: Array<{ id: string; name: string; count: number }>;
   yearRange: { min: number; max: number };
   fuelTypes: Array<{ id: FuelType; name: string; count: number }>;

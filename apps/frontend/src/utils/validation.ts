@@ -12,7 +12,7 @@ export interface ValidationError {
   field: string;
   message: string;
   code: string;
-  value?: any;
+  value?: unknown;
 }
 
 /**
@@ -119,13 +119,30 @@ export function validateArray<T>(
 }
 
 /**
+ * Express-like request/response types for middleware
+ */
+export interface ValidationRequest {
+  body?: unknown;
+  query?: unknown;
+  params?: unknown;
+  [key: string]: unknown;
+}
+
+export interface ValidationResponse {
+  status(code: number): ValidationResponse;
+  json(data: unknown): ValidationResponse;
+}
+
+export type NextFunction = () => void;
+
+/**
  * Middleware para validação de requisições
  */
 export function createValidationMiddleware<T>(
   schema: z.ZodSchema<T>,
   target: 'body' | 'query' | 'params' = 'body'
 ) {
-  return (req: any, res: any, next: any) => {
+  return (req: ValidationRequest, res: ValidationResponse, next: NextFunction) => {
     const dataToValidate = req[target];
     const result = validateData(schema, dataToValidate);
 
@@ -146,10 +163,10 @@ export function createValidationMiddleware<T>(
  * Decorator para validação de métodos de classe
  */
 export function ValidateInput<T>(schema: z.ZodSchema<T>) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const originalMethod = descriptor.value;
+  return function (target: object, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value as (...args: unknown[]) => unknown;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (this: unknown, ...args: unknown[]) {
       if (args.length > 0) {
         const result = validateData(schema, args[0]);
 
@@ -318,7 +335,7 @@ class AutoValidationSystem {
     averageTime: number;
     lastValidation: Date;
   }> = new Map();
-  private realtimeValidators: Map<string, any> = new Map();
+  private realtimeValidators: Map<string, DataValidator<unknown>> = new Map();
 
   static getInstance(): AutoValidationSystem {
     if (!AutoValidationSystem.instance) {
@@ -330,8 +347,8 @@ class AutoValidationSystem {
   /**
    * Registra validator para monitoramento em tempo real
    */
-  registerValidator(name: string, validator: DataValidator<any>) {
-    this.realtimeValidators.set(name, validator);
+  registerValidator<T>(name: string, validator: DataValidator<T>) {
+    this.realtimeValidators.set(name, validator as DataValidator<unknown>);
   }
 
   /**
@@ -367,8 +384,18 @@ class AutoValidationSystem {
   /**
    * Obtém estatísticas de validação
    */
-  getStats(): Record<string, any> {
-    const stats: Record<string, any> = {};
+  getStats(): Record<string, {
+    totalValidations: number;
+    successRate: number;
+    averageTime: number;
+    lastValidation: string;
+  }> {
+    const stats: Record<string, {
+      totalValidations: number;
+      successRate: number;
+      averageTime: number;
+      lastValidation: string;
+    }> = {};
 
     for (const [name, stat] of this.validationStats.entries()) {
       const successRate = (stat.successfulValidations / stat.totalValidations) * 100;
@@ -493,9 +520,9 @@ export function useValidationMonitor(validatorName?: string) {
  * Decorator para auto-registro de validators
  */
 export function AutoRegisterValidator(name: string) {
-  return function<T extends { new(...args: any[]): DataValidator<any> }>(constructor: T) {
+  return function<T extends new(...args: unknown[]) => DataValidator<unknown>>(constructor: T) {
     return class extends constructor {
-      constructor(...args: any[]) {
+      constructor(...args: unknown[]) {
         super(...args);
         autoValidationSystem.registerValidator(name, this);
       }
@@ -538,12 +565,22 @@ export function createValidationLogger<T>(
 }
 
 /**
+ * Interface para dados de consistência
+ */
+export interface ConsistencyData {
+  id?: string;
+  customerId?: string;
+  orderId?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Utilitário para validação de consistency entre dados relacionados
  */
 export async function validateConsistency(
-  primaryData: { type: string; data: any },
-  relatedData: Array<{ type: string; data: any; relation: string }>
-): Promise<ValidationResult<any> & { consistencyScore: number }> {
+  primaryData: { type: string; data: ConsistencyData },
+  relatedData: Array<{ type: string; data: ConsistencyData; relation: string }>
+): Promise<ValidationResult<ConsistencyData> & { consistencyScore: number }> {
   const errors: ValidationError[] = [];
   let consistencyScore = 1.0;
 
@@ -585,7 +622,7 @@ export async function validateConsistency(
  * Sistema de cache para validações frequentes
  */
 class ValidationCache {
-  private cache = new Map<string, { result: any; timestamp: number; ttl: number }>();
+  private cache = new Map<string, { result: ValidationResult<unknown>; timestamp: number; ttl: number }>();
   private hitCount = 0;
   private missCount = 0;
 

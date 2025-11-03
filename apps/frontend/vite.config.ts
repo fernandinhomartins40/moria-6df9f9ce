@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@moria/types": path.resolve(__dirname, "../../packages/types/src"),
+      "@moria/utils": path.resolve(__dirname, "../../packages/utils/src"),
     },
   },
   build: {

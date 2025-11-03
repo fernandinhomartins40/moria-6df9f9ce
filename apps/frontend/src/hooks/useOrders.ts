@@ -3,6 +3,21 @@ import { useState } from 'react';
 import { orderService, handleApiError } from '@/api';
 import { Order } from '@/api/orderService';
 
+interface CreateOrderData {
+  customerId: string;
+  items: Array<{
+    productId?: string;
+    serviceId?: string;
+    name: string;
+    price: number;
+    quantity: number;
+    type: 'PRODUCT' | 'SERVICE';
+  }>;
+  addressId: string;
+  paymentMethod: string;
+  couponCode?: string;
+}
+
 interface UseOrdersResult {
   orders: Order[];
   loading: boolean;
@@ -16,7 +31,7 @@ interface UseOrdersResult {
     status?: string;
   }) => Promise<void>;
   getOrderById: (id: string) => Promise<Order | null>;
-  createOrder: (data: any) => Promise<Order | null>;
+  createOrder: (data: CreateOrderData) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: string) => Promise<Order | null>;
   cancelOrder: (orderId: string) => Promise<Order | null>;
 }
@@ -67,7 +82,7 @@ export const useOrders = (): UseOrdersResult => {
     }
   };
 
-  const createOrder = async (data: any): Promise<Order | null> => {
+  const createOrder = async (data: CreateOrderData): Promise<Order | null> => {
     setLoading(true);
     setError(null);
     

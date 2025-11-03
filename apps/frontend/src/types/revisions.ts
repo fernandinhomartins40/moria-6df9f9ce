@@ -1,81 +1,22 @@
 // Tipos para o sistema de Revisões Veiculares
+import type {
+  Vehicle,
+  ChecklistItem,
+  ChecklistCategory,
+  ItemStatus,
+  RevisionChecklistItem,
+  Revision
+} from "@moria/types";
 
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  cpf?: string;
-  createdAt: Date;
-}
-
-export interface Vehicle {
-  id: string;
-  customerId: string;
-  brand: string;
-  model: string;
-  year: number;
-  plate: string;
-  chassisNumber?: string;
-  color?: string;
-  mileage?: number;
-  createdAt: Date;
-}
-
-export interface ChecklistItem {
-  id: string;
-  categoryId: string;
-  name: string;
-  description?: string;
-  isDefault: boolean; // Se é item padrão do sistema
-  isEnabled: boolean; // Se está habilitado
-  order: number;
-  createdAt: Date;
-}
-
-export interface ChecklistCategory {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  isDefault: boolean; // Se é categoria padrão do sistema
-  isEnabled: boolean; // Se está habilitada
-  order: number;
-  items: ChecklistItem[];
-  createdAt: Date;
-}
-
-export enum ItemStatus {
-  NOT_CHECKED = 'not_checked',
-  OK = 'ok',
-  ATTENTION = 'attention',
-  CRITICAL = 'critical',
-  NOT_APPLICABLE = 'not_applicable'
-}
-
-export interface RevisionChecklistItem {
-  itemId: string;
-  status: ItemStatus;
-  notes?: string;
-  photosUrls?: string[];
-  checkedAt?: Date;
-  checkedBy?: string;
-}
-
-export interface Revision {
-  id: string;
-  customerId: string;
-  vehicleId: string;
-  date: Date;
-  mileage?: number;
-  status: 'draft' | 'in_progress' | 'completed' | 'cancelled';
-  checklistItems: RevisionChecklistItem[];
-  generalNotes?: string;
-  recommendations?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
-}
+// Re-export types for backward compatibility
+export type {
+  Vehicle,
+  ChecklistItem,
+  ChecklistCategory,
+  RevisionChecklistItem,
+  Revision
+} from "@moria/types";
+export { ItemStatus } from "@moria/types";
 
 // Dados padrão do checklist
 export const DEFAULT_CHECKLIST_CATEGORIES: Omit<ChecklistCategory, 'id' | 'createdAt'>[] = [

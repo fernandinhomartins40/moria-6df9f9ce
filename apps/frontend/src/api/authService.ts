@@ -1,21 +1,9 @@
 // src/api/authService.ts
 import apiClient from './apiClient';
-import { Customer, RegisterData } from '@/contexts/AuthContext';
+import type { Customer, RegisterRequest } from '@moria/types';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  customer: Customer;
-}
-
-export interface RegisterResponse {
-  token: string;
-  customer: Customer;
-}
+export type RegisterData = RegisterRequest;
+export type { LoginRequest, LoginResponse, RegisterResponse } from '@moria/types';
 
 class AuthService {
   async login(data: LoginRequest): Promise<LoginResponse> {

@@ -456,9 +456,9 @@ export function CustomerProfile() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address-type">Tipo do Endereço</Label>
-                <Select 
-                  value={addressForm.type} 
-                  onValueChange={(value) => setAddressForm(prev => ({ ...prev, type: value as any }))}
+                <Select
+                  value={addressForm.type}
+                  onValueChange={(value) => setAddressForm(prev => ({ ...prev, type: value as 'HOME' | 'WORK' | 'OTHER' }))}
                 >
                   <SelectTrigger>
                     <SelectValue />

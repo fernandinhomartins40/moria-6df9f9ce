@@ -7,17 +7,18 @@ import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { 
-  User, 
-  Phone, 
-  MessageCircle, 
-  ShoppingBag, 
+import {
+  User,
+  Phone,
+  MessageCircle,
+  ShoppingBag,
   Loader2,
   CheckCircle,
   Package,
   Wrench
 } from "lucide-react";
 import { toast } from "sonner";
+import type { CartItem } from "@moria/types";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -56,12 +57,56 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     }
   };
 
-  const createProvisionalUser = async (name: string, whatsapp: string) => {
+interface ProvisionalUser {
+  id: string;
+  name: string;
+  whatsapp: string;
+  login: string;
+  password: string;
+  isProvisional: boolean;
+  createdAt: string;
+}
+
+interface OrderAndQuoteResult {
+  order: StoreOrder | null;
+  quote: ServiceQuote | null;
+}
+
+interface StoreOrder {
+  id: string;
+  sessionId: string;
+  userId: string;
+  customerName: string;
+  customerWhatsApp: string;
+  items: CartItem[];
+  total: number;
+  type: 'order';
+  status: 'pending';
+  hasLinkedQuote: boolean;
+  createdAt: string;
+  source: 'website';
+}
+
+interface ServiceQuote {
+  id: string;
+  sessionId: string;
+  userId: string;
+  customerName: string;
+  customerWhatsApp: string;
+  items: CartItem[];
+  type: 'quote';
+  status: 'pending';
+  hasLinkedOrder: boolean;
+  createdAt: string;
+  source: 'website';
+}
+
+  const createProvisionalUser = async (name: string, whatsapp: string): Promise<ProvisionalUser> => {
     // Simula criação de usuário provisório
     const login = whatsapp.replace(/\D/g, ''); // Remove caracteres não numéricos
     const password = name.slice(0, 3).toLowerCase(); // 3 primeiras letras do nome
-    
-    const user = {
+
+    const user: ProvisionalUser = {
       id: Date.now().toString(),
       name,
       whatsapp,
@@ -79,27 +124,24 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     return user;
   };
 
-  const createOrderAndQuote = async (user: any) => {
+  const createOrderAndQuote = async (user: ProvisionalUser): Promise<OrderAndQuoteResult> => {
     const sessionId = Date.now().toString(); // ID único para vincular pedido e orçamento
     const products = items.filter(item => item.type !== 'service');
     const services = items.filter(item => item.type === 'service');
-    
-    const results = { order: null, quote: null };
+
+    const results: OrderAndQuoteResult = { order: null, quote: null };
 
     // Criar pedido apenas se houver produtos
     if (products.length > 0) {
       const productTotal = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      const order = {
+
+      const order: StoreOrder = {
         id: `P${sessionId}`,
         sessionId,
         userId: user.id,
         customerName: user.name,
         customerWhatsApp: user.whatsapp,
-        items: products.map(item => ({
-          ...item,
-          subtotal: item.price * item.quantity
-        })),
+        items: products,
         total: productTotal,
         type: 'order',
         status: 'pending',
@@ -116,17 +158,13 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
     // Criar orçamento apenas se houver serviços
     if (services.length > 0) {
-      const quote = {
+      const quote: ServiceQuote = {
         id: `O${sessionId}`,
         sessionId,
         userId: user.id,
         customerName: user.name,
         customerWhatsApp: user.whatsapp,
-        items: services.map(item => ({
-          ...item,
-          quantity: item.quantity,
-          description: item.description || ''
-        })),
+        items: services,
         type: 'quote',
         status: 'pending',
         hasLinkedOrder: products.length > 0,
@@ -143,7 +181,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     return results;
   };
 
-  const generateWhatsAppMessage = (results: { order: any, quote: any }) => {
+  const generateWhatsAppMessage = (results: OrderAndQuoteResult): string => {
     const { order, quote } = results;
     
     let message = `🔧 *Moria Peças e Serviços*\n`;
@@ -160,18 +198,18 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
     if (order) {
       message += `🛒 *PRODUTOS:*\n`;
-      order.items.forEach((item: any, index: number) => {
+      order.items.forEach((item, index) => {
         message += `${index + 1}. ${item.name}\n`;
         message += `   • Quantidade: ${item.quantity}x\n`;
         message += `   • Valor: ${formatPrice(item.price)}\n`;
-        message += `   • Subtotal: ${formatPrice(item.subtotal)}\n\n`;
+        message += `   • Subtotal: ${formatPrice(item.price * item.quantity)}\n\n`;
       });
       message += `💰 *Total dos Produtos: ${formatPrice(order.total)}*\n\n`;
     }
 
     if (quote) {
       message += `🔧 *SERVIÇOS (Orçamento):*\n`;
-      quote.items.forEach((item: any, index: number) => {
+      quote.items.forEach((item, index) => {
         message += `${index + 1}. ${item.name}\n`;
         if (item.description) {
           message += `   • Descrição: ${item.description}\n`;

@@ -14,6 +14,11 @@ export type SpecificationValueType =
   | 'material'
   | 'warranty';
 
+export type SpecificationPrimitiveValue = string | number | boolean;
+export type SpecificationArrayValue = string[] | number[];
+export type SpecificationRangeValue = { min: number; max: number };
+export type SpecificationValueUnion = SpecificationPrimitiveValue | SpecificationArrayValue | SpecificationRangeValue;
+
 export interface SpecificationDefinition {
   key: string;
   name: string;
@@ -33,7 +38,7 @@ export interface SpecificationDefinition {
 
 export interface SpecificationValue {
   key: string;
-  value: any;
+  value: SpecificationValueUnion;
   displayValue?: string;
   unit?: string;
 }
@@ -355,8 +360,8 @@ export interface SpecificationFilter {
   key: string;
   name: string;
   type: SpecificationValueType;
-  values: any[];
-  selectedValues: any[];
+  values: SpecificationPrimitiveValue[];
+  selectedValues: SpecificationPrimitiveValue[];
   unit?: string;
   options?: string[];
   min?: number;
@@ -381,6 +386,6 @@ export type SpecificationFilterOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'l
 export interface SpecificationFilterCondition {
   key: string;
   operator: SpecificationFilterOperator;
-  value: any;
-  values?: any[];
+  value: SpecificationPrimitiveValue | SpecificationRangeValue;
+  values?: SpecificationPrimitiveValue[];
 }

@@ -53,7 +53,7 @@ export function stringifySpecifications(specifications: SpecificationValue[]): s
 /**
  * Formata valor de especificação para exibição
  */
-export function formatSpecificationValue(key: string, value: any, unit?: string): string {
+export function formatSpecificationValue(key: string, value: unknown, unit?: string): string {
   const spec = COMMON_SPECIFICATIONS[key];
   const specUnit = unit || spec?.unit;
 
@@ -67,12 +67,13 @@ export function formatSpecificationValue(key: string, value: any, unit?: string)
 
     case 'number':
     case 'weight':
-    case 'volume':
+    case 'volume': {
       const numValue = Number(value);
       if (isNaN(numValue)) return String(value);
 
       const formatted = numValue % 1 === 0 ? numValue.toString() : numValue.toFixed(2);
       return specUnit ? `${formatted} ${specUnit}` : formatted;
+    }
 
     case 'range':
       if (Array.isArray(value) && value.length === 2) {
@@ -87,7 +88,7 @@ export function formatSpecificationValue(key: string, value: any, unit?: string)
       }
       return String(value);
 
-    case 'warranty':
+    case 'warranty': {
       const months = Number(value);
       if (isNaN(months)) return String(value);
 
@@ -97,6 +98,7 @@ export function formatSpecificationValue(key: string, value: any, unit?: string)
         const years = months / 12;
         return `${years} ${years === 1 ? 'ano' : 'anos'}`;
       }
+    }
 
     case 'dimension':
       return specUnit ? `${value} ${specUnit}` : String(value);
@@ -179,7 +181,7 @@ export function getSpecificationDefinitionsByCategory(): Record<string, Specific
  */
 export function validateSpecificationValue(
   definition: SpecificationDefinition,
-  value: any
+  value: unknown
 ): { valid: boolean; error?: string } {
   if (definition.required && (value == null || value === '')) {
     return { valid: false, error: `${definition.name} é obrigatório` };
@@ -192,7 +194,7 @@ export function validateSpecificationValue(
   switch (definition.type) {
     case 'number':
     case 'weight':
-    case 'volume':
+    case 'volume': {
       const numValue = Number(value);
       if (isNaN(numValue)) {
         return { valid: false, error: `${definition.name} deve ser um número` };
@@ -207,6 +209,7 @@ export function validateSpecificationValue(
       }
 
       return { valid: true };
+    }
 
     case 'select':
       if (definition.options && !definition.options.includes(String(value))) {
@@ -227,7 +230,7 @@ export function validateSpecificationValue(
       }
       return { valid: true };
 
-    case 'range':
+    case 'range': {
       if (!Array.isArray(value) || value.length !== 2) {
         return { valid: false, error: `${definition.name} deve ser um range com dois valores` };
       }
@@ -242,6 +245,7 @@ export function validateSpecificationValue(
       }
 
       return { valid: true };
+    }
 
     case 'boolean':
       if (typeof value !== 'boolean') {
@@ -257,10 +261,15 @@ export function validateSpecificationValue(
 /**
  * Aplica filtros de especificação em produtos
  */
-export function filterProductsBySpecifications(
-  products: any[],
+interface ProductWithSpecs {
+  specifications?: string;
+  [key: string]: unknown;
+}
+
+export function filterProductsBySpecifications<T extends ProductWithSpecs>(
+  products: T[],
   filters: SpecificationFilterCondition[]
-): any[] {
+): T[] {
   if (!filters.length) return products;
 
   return products.filter(product => {
@@ -302,11 +311,12 @@ export function filterProductsBySpecifications(
         case 'contains':
           return String(value).toLowerCase().includes(String(filter.value).toLowerCase());
 
-        case 'range':
+        case 'range': {
           if (!filter.values || filter.values.length !== 2) return false;
           const numValue = Number(value);
           const [min, max] = filter.values.map(Number);
           return numValue >= min && numValue <= max;
+        }
 
         default:
           return true;
@@ -319,7 +329,7 @@ export function filterProductsBySpecifications(
  * Gera filtros disponíveis baseados em uma lista de produtos
  */
 export function generateFiltersFromProducts(
-  products: any[],
+  products: ProductWithSpecs[],
   category?: string
 ): SpecificationFilter[] {
   const specDefinitions = category
@@ -331,7 +341,7 @@ export function generateFiltersFromProducts(
   specDefinitions.forEach(definition => {
     if (!definition.filterable) return;
 
-    const values = new Set<any>();
+    const values = new Set<string | number | boolean>();
     let min: number | undefined;
     let max: number | undefined;
 
@@ -342,7 +352,11 @@ export function generateFiltersFromProducts(
 
       if (spec?.value != null) {
         if (definition.type === 'multiselect' && Array.isArray(spec.value)) {
-          spec.value.forEach((v: any) => values.add(v));
+          spec.value.forEach((v: unknown) => {
+            if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+              values.add(v);
+            }
+          });
         } else if (definition.type === 'number' || definition.type === 'weight' || definition.type === 'volume') {
           const numValue = Number(spec.value);
           if (!isNaN(numValue)) {
@@ -377,10 +391,21 @@ export function generateFiltersFromProducts(
 /**
  * Cria dados de comparação entre produtos
  */
+interface ProductComparison {
+  productIds: string[];
+  specifications: Array<{
+    key: string;
+    name: string;
+    values: Record<string, unknown>;
+    isDifferent: boolean;
+  }>;
+  categories: string[];
+}
+
 export function createProductComparison(
-  products: any[],
+  products: ProductWithSpecs[],
   specificationsToCompare?: string[]
-): any {
+): ProductComparison {
   if (products.length === 0) {
     return {
       productIds: [],
@@ -389,8 +414,14 @@ export function createProductComparison(
     };
   }
 
-  const productIds = products.map(p => p.id);
-  const allSpecifications = new Map<string, any>();
+  const productIds = products.map(p => (p as { id: string }).id);
+  const allSpecifications = new Map<string, {
+    key: string;
+    name: string;
+    values: Record<string, unknown>;
+    category: string;
+    comparable: boolean;
+  }>();
 
   // Coletar todas as especificações
   products.forEach(product => {
@@ -434,7 +465,7 @@ export function createProductComparison(
 /**
  * Converte especificações legadas para o novo formato
  */
-export function migrateSpecifications(oldSpecs: any): SpecificationValue[] {
+export function migrateSpecifications(oldSpecs: unknown): SpecificationValue[] {
   if (!oldSpecs) return [];
 
   try {

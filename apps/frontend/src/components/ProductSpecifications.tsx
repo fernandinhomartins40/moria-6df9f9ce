@@ -38,7 +38,7 @@ interface ProductSpecificationsProps {
   className?: string;
 }
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, React.ComponentType> = {
   dimensions: Ruler,
   performance: Gauge,
   materials: Layers,

@@ -12,7 +12,7 @@ import {
   PromotionTemplate,
   CustomerSegment
 } from '@/types/promotions';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, Customer } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 
@@ -42,7 +42,7 @@ export interface UsePromotionsResult {
   totalSavings: number;
 
   // Ações básicas
-  createPromotion: (promotion: any) => Promise<AdvancedPromotion>;
+  createPromotion: (promotion: Omit<AdvancedPromotion, 'id' | 'createdAt' | 'updatedAt'>) => Promise<AdvancedPromotion>;
   updatePromotion: (id: string, promotion: Partial<AdvancedPromotion>) => Promise<AdvancedPromotion>;
   deletePromotion: (id: string) => Promise<void>;
   duplicatePromotion: (id: string, newName: string) => Promise<AdvancedPromotion>;
@@ -78,7 +78,7 @@ export interface UsePromotionsResult {
 
   // Templates
   templates: PromotionTemplate[];
-  createFromTemplate: (templateId: string, configuration: Record<string, any>) => Promise<AdvancedPromotion>;
+  createFromTemplate: (templateId: string, configuration: Record<string, unknown>) => Promise<AdvancedPromotion>;
 
   // Context atual
   currentContext: PromotionContext;
@@ -185,7 +185,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       toast.success('Promoção criada com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro ao criar promoção: ${error.message}`);
     }
   });
@@ -197,7 +197,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       toast.success('Promoção atualizada com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro ao atualizar promoção: ${error.message}`);
     }
   });
@@ -208,7 +208,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       toast.success('Promoção removida com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro ao remover promoção: ${error.message}`);
     }
   });
@@ -219,7 +219,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       toast.success('Promoção ativada!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro ao ativar promoção: ${error.message}`);
     }
   });
@@ -230,7 +230,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       toast.success('Promoção desativada!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Erro ao desativar promoção: ${error.message}`);
     }
   });
@@ -258,7 +258,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       toast.success(`Código aplicado! Desconto: ${formatDiscount(result)}`);
       setApplicationResults(prev => [...prev, result]);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Código inválido: ${error.message}`);
     }
   });
@@ -281,7 +281,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
   }, [bestCombination]);
 
   // Funções auxiliares
-  const determineCustomerSegment = (customer: any): CustomerSegment => {
+  const determineCustomerSegment = (customer: Customer | null): CustomerSegment => {
     if (!customer) return 'ALL';
     if (customer.level === 'VIP') return 'VIP';
     if (customer.level === 'REGULAR') return 'REGULAR';
@@ -361,7 +361,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     setSearchTerm('');
   }, []);
 
-  const createFromTemplate = useCallback(async (templateId: string, configuration: Record<string, any>) => {
+  const createFromTemplate = useCallback(async (templateId: string, configuration: Record<string, unknown>) => {
     const result = await promotionService.createFromTemplate(templateId, configuration);
     queryClient.invalidateQueries({ queryKey: ['promotions'] });
     toast.success('Promoção criada a partir do template!');

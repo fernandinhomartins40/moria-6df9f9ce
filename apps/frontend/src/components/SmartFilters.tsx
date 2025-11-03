@@ -34,7 +34,15 @@ interface SmartSuggestion {
   filters: Partial<FilterState>;
   confidence: number; // 0-1
   reason: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType;
+}
+
+interface FilterableProduct {
+  id: string;
+  name: string;
+  category?: string;
+  price?: number;
+  [key: string]: unknown;
 }
 
 interface UserBehavior {
@@ -54,8 +62,8 @@ interface UserBehavior {
 }
 
 export interface SmartFiltersProps {
-  products: any[];
-  onFiltersChange: (filters: FilterState, results: any[]) => void;
+  products: FilterableProduct[];
+  onFiltersChange: (filters: FilterState, results: FilterableProduct[]) => void;
   initialFilters?: Partial<FilterState>;
   showVehicleFilters?: boolean;
   showSpecificationFilters?: boolean;
@@ -417,7 +425,7 @@ export function SmartFilters({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'filters' | 'suggestions' | 'trending')}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="filters" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />

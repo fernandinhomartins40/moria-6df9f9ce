@@ -1,0 +1,80 @@
+import { z } from 'zod';
+
+export const updateProductSchema = z.object({
+  name: z
+    .string()
+    .min(3, 'Name must be at least 3 characters')
+    .max(200, 'Name must not exceed 200 characters')
+    .trim()
+    .optional(),
+  description: z
+    .string()
+    .min(10, 'Description must be at least 10 characters')
+    .trim()
+    .optional(),
+  category: z
+    .string()
+    .min(2, 'Category must be at least 2 characters')
+    .trim()
+    .optional(),
+  subcategory: z
+    .string()
+    .min(2, 'Subcategory must be at least 2 characters')
+    .optional()
+    .nullable(),
+  sku: z
+    .string()
+    .min(3, 'SKU must be at least 3 characters')
+    .max(50, 'SKU must not exceed 50 characters')
+    .trim()
+    .toUpperCase()
+    .optional(),
+  supplier: z
+    .string()
+    .min(2, 'Supplier must be at least 2 characters')
+    .trim()
+    .optional(),
+  costPrice: z
+    .number()
+    .positive('Cost price must be positive')
+    .multipleOf(0.01, 'Cost price must have at most 2 decimal places')
+    .optional(),
+  salePrice: z
+    .number()
+    .positive('Sale price must be positive')
+    .multipleOf(0.01, 'Sale price must have at most 2 decimal places')
+    .optional(),
+  promoPrice: z
+    .number()
+    .positive('Promo price must be positive')
+    .multipleOf(0.01, 'Promo price must have at most 2 decimal places')
+    .optional()
+    .nullable(),
+  stock: z
+    .number()
+    .int('Stock must be an integer')
+    .min(0, 'Stock cannot be negative')
+    .optional(),
+  minStock: z
+    .number()
+    .int('Min stock must be an integer')
+    .min(0, 'Min stock cannot be negative')
+    .optional(),
+  images: z
+    .array(z.string().url('Invalid image URL'))
+    .min(1, 'At least one image is required')
+    .optional(),
+  specifications: z.record(z.any()).optional().nullable(),
+  status: z
+    .enum(['ACTIVE', 'INACTIVE', 'OUT_OF_STOCK', 'DISCONTINUED'])
+    .optional(),
+  slug: z
+    .string()
+    .min(3, 'Slug must be at least 3 characters')
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers and hyphens')
+    .optional(),
+  metaDescription: z.string().max(160, 'Meta description must not exceed 160 characters').optional().nullable(),
+  metaKeywords: z.string().max(255, 'Meta keywords must not exceed 255 characters').optional().nullable(),
+});
+
+export type UpdateProductDto = z.infer<typeof updateProductSchema>;

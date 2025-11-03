@@ -184,3 +184,91 @@ export interface RegisterResponse {
   token: string;
   customer: Customer;
 }
+
+// Revision Types (from apps/frontend/src/types/revisions.ts)
+export interface Vehicle {
+  id: string;
+  customerId: string;
+  brand: string;
+  model: string;
+  year: number;
+  plate: string;
+  chassisNumber?: string;
+  color?: string;
+  mileage?: number;
+  createdAt: Date | string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  isEnabled: boolean;
+  order: number;
+  createdAt: Date | string;
+}
+
+export interface ChecklistCategory {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  isDefault: boolean;
+  isEnabled: boolean;
+  order: number;
+  items: ChecklistItem[];
+  createdAt: Date | string;
+}
+
+export enum ItemStatus {
+  NOT_CHECKED = 'not_checked',
+  OK = 'ok',
+  ATTENTION = 'attention',
+  CRITICAL = 'critical',
+  NOT_APPLICABLE = 'not_applicable'
+}
+
+export interface RevisionChecklistItem {
+  itemId: string;
+  status: ItemStatus;
+  notes?: string;
+  photosUrls?: string[];
+  checkedAt?: Date | string;
+  checkedBy?: string;
+}
+
+export interface Revision {
+  id: string;
+  customerId: string;
+  vehicleId: string;
+  date: Date | string;
+  mileage?: number;
+  status: 'draft' | 'in_progress' | 'completed' | 'cancelled';
+  checklistItems: RevisionChecklistItem[];
+  generalNotes?: string;
+  recommendations?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  completedAt?: Date | string;
+}
+
+// Cart Types (from apps/frontend/src/contexts/CartContext.tsx)
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  category?: string;
+  type?: 'product' | 'service';
+  description?: string;
+}
+
+export interface CouponInfo {
+  code: string;
+  discountAmount: number;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  description?: string;
+}

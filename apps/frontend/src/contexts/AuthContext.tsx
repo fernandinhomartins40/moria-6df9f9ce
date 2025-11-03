@@ -6,70 +6,11 @@ import {
   favoriteService,
   handleApiError
 } from "@/api";
+import type { Customer, Address, Order, OrderItem, RegisterRequest } from "@moria/types";
 
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  cpf?: string;
-  birthDate?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
-  totalOrders: number;
-  totalSpent: number;
-  level: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
-  addresses: Address[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Address {
-  id: string;
-  customerId: string;
-  type: 'HOME' | 'WORK' | 'OTHER';
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  isDefault: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Order {
-  id: string;
-  customerId: string;
-  items: OrderItem[];
-  total: number;
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
-  source: 'WEB' | 'APP' | 'PHONE';
-  hasProducts: boolean;
-  hasServices: boolean;
-  couponCode?: string;
-  discountAmount: number;
-  totalWithDiscount: number;
-  address: Address;
-  addressId: string;
-  paymentMethod: string;
-  trackingCode?: string;
-  estimatedDelivery?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  productId?: string;
-  serviceId?: string;
-  name: string;
-  price: number;
-  quantity: number;
-  type: 'PRODUCT' | 'SERVICE';
-}
+// Re-export types for backward compatibility
+export type { Customer, Address, Order, OrderItem } from "@moria/types";
+export type RegisterData = RegisterRequest;
 
 interface AuthState {
   customer: Customer | null;
@@ -92,14 +33,6 @@ interface AuthContextType {
   getFavorites: () => Promise<{ success: boolean; data?: string[]; error?: string }>;
   addToFavorites: (productId: string) => Promise<{ success: boolean; error?: string }>;
   removeFromFavorites: (productId: string) => Promise<{ success: boolean; error?: string }>;
-}
-
-export interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  cpf?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
