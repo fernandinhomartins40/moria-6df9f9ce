@@ -8,6 +8,10 @@ async function main() {
 
   // Clear existing data (in reverse order of dependencies)
   console.log('🗑️  Clearing existing data...');
+  await prisma.revision.deleteMany();
+  await prisma.checklistItem.deleteMany();
+  await prisma.checklistCategory.deleteMany();
+  await prisma.customerVehicle.deleteMany();
   await prisma.productVehicleCompatibility.deleteMany();
   await prisma.vehicleVariant.deleteMany();
   await prisma.vehicleModel.deleteMany();
@@ -546,6 +550,11 @@ async function main() {
   console.log(`✅ Created 4 compatibility records`);
 
   // =========================================================================
+  // CHECKLIST CATEGORIES AND ITEMS (FASE 4)
+  // =========================================================================
+  await seedChecklistData();
+
+  // =========================================================================
   // SUMMARY
   // =========================================================================
   console.log('\n📊 Seed Summary:');
@@ -557,8 +566,210 @@ async function main() {
   console.log(`✅ Products: ${products.length}`);
   console.log(`✅ Services: ${services.length}`);
   console.log(`✅ Compatibility Records: 4`);
+  console.log(`✅ Checklist Categories: 10`);
   console.log('=====================================');
   console.log('🎉 Seed completed successfully!');
+}
+
+async function seedChecklistData() {
+  console.log('📋 Seeding checklist data...');
+
+  const categories = [
+    {
+      name: 'Freios',
+      description: 'Verificação completa do sistema de freios',
+      icon: '🛑',
+      order: 1,
+      items: [
+        { name: 'Pastilhas de freio dianteiras', order: 1 },
+        { name: 'Pastilhas de freio traseiras', order: 2 },
+        { name: 'Discos de freio dianteiros', order: 3 },
+        { name: 'Discos de freio traseiros', order: 4 },
+        { name: 'Fluido de freio (nível e qualidade)', order: 5 },
+        { name: 'Cilindro mestre', order: 6 },
+        { name: 'Cilindros de roda', order: 7 },
+        { name: 'Freio de mão', order: 8 },
+        { name: 'Mangueiras e tubulações', order: 9 },
+      ],
+    },
+    {
+      name: 'Suspensão',
+      description: 'Verificação do sistema de suspensão',
+      icon: '🔧',
+      order: 2,
+      items: [
+        { name: 'Amortecedores dianteiros', order: 1 },
+        { name: 'Amortecedores traseiros', order: 2 },
+        { name: 'Molas', order: 3 },
+        { name: 'Bandejas', order: 4 },
+        { name: 'Buchas', order: 5 },
+        { name: 'Pivôs', order: 6 },
+        { name: 'Barra estabilizadora', order: 7 },
+        { name: 'Batentes', order: 8 },
+      ],
+    },
+    {
+      name: 'Motor',
+      description: 'Verificação geral do motor',
+      icon: '⚙️',
+      order: 3,
+      items: [
+        { name: 'Óleo do motor (nível e qualidade)', order: 1 },
+        { name: 'Filtro de óleo', order: 2 },
+        { name: 'Filtro de ar', order: 3 },
+        { name: 'Filtro de combustível', order: 4 },
+        { name: 'Velas de ignição', order: 5 },
+        { name: 'Cabos de vela', order: 6 },
+        { name: 'Correia dentada', order: 7 },
+        { name: 'Correia do alternador', order: 8 },
+        { name: 'Correia da direção hidráulica', order: 9 },
+        { name: 'Vazamentos', order: 10 },
+        { name: 'Ruídos anormais', order: 11 },
+      ],
+    },
+    {
+      name: 'Sistema de Arrefecimento',
+      description: 'Verificação do sistema de refrigeração',
+      icon: '🌡️',
+      order: 4,
+      items: [
+        { name: 'Radiador', order: 1 },
+        { name: 'Líquido de arrefecimento (nível e qualidade)', order: 2 },
+        { name: 'Mangueiras', order: 3 },
+        { name: 'Bomba d\'água', order: 4 },
+        { name: 'Válvula termostática', order: 5 },
+        { name: 'Eletroventilador', order: 6 },
+        { name: 'Tampa do radiador', order: 7 },
+      ],
+    },
+    {
+      name: 'Sistema Elétrico',
+      description: 'Verificação do sistema elétrico',
+      icon: '⚡',
+      order: 5,
+      items: [
+        { name: 'Bateria (carga e terminais)', order: 1 },
+        { name: 'Alternador', order: 2 },
+        { name: 'Motor de arranque', order: 3 },
+        { name: 'Faróis dianteiros', order: 4 },
+        { name: 'Lanternas traseiras', order: 5 },
+        { name: 'Luzes de freio', order: 6 },
+        { name: 'Pisca-pisca', order: 7 },
+        { name: 'Luz de ré', order: 8 },
+        { name: 'Luz da placa', order: 9 },
+        { name: 'Fusíveis', order: 10 },
+      ],
+    },
+    {
+      name: 'Transmissão',
+      description: 'Verificação do sistema de transmissão',
+      icon: '🔄',
+      order: 6,
+      items: [
+        { name: 'Óleo da transmissão (nível e qualidade)', order: 1 },
+        { name: 'Embreagem', order: 2 },
+        { name: 'Pedal da embreagem', order: 3 },
+        { name: 'Vazamentos', order: 4 },
+        { name: 'Ruídos ao trocar marcha', order: 5 },
+        { name: 'Dificuldade ao engatar marchas', order: 6 },
+      ],
+    },
+    {
+      name: 'Direção',
+      description: 'Verificação do sistema de direção',
+      icon: '🎯',
+      order: 7,
+      items: [
+        { name: 'Fluido da direção hidráulica', order: 1 },
+        { name: 'Bomba da direção', order: 2 },
+        { name: 'Caixa de direção', order: 3 },
+        { name: 'Terminais de direção', order: 4 },
+        { name: 'Barra axial', order: 5 },
+        { name: 'Folgas na direção', order: 6 },
+        { name: 'Alinhamento', order: 7 },
+        { name: 'Balanceamento', order: 8 },
+      ],
+    },
+    {
+      name: 'Pneus e Rodas',
+      description: 'Verificação de pneus e rodas',
+      icon: '🛞',
+      order: 8,
+      items: [
+        { name: 'Pneu dianteiro esquerdo (calibragem e desgaste)', order: 1 },
+        { name: 'Pneu dianteiro direito (calibragem e desgaste)', order: 2 },
+        { name: 'Pneu traseiro esquerdo (calibragem e desgaste)', order: 3 },
+        { name: 'Pneu traseiro direito (calibragem e desgaste)', order: 4 },
+        { name: 'Estepe', order: 5 },
+        { name: 'Rodas (estado e parafusos)', order: 6 },
+        { name: 'Calotas', order: 7 },
+      ],
+    },
+    {
+      name: 'Carroceria e Interior',
+      description: 'Verificação da carroceria e interior',
+      icon: '🚗',
+      order: 9,
+      items: [
+        { name: 'Portas (funcionamento e travas)', order: 1 },
+        { name: 'Vidros elétricos', order: 2 },
+        { name: 'Retrovisores', order: 3 },
+        { name: 'Limpadores de para-brisa', order: 4 },
+        { name: 'Fluido do limpador', order: 5 },
+        { name: 'Ar condicionado', order: 6 },
+        { name: 'Bancos', order: 7 },
+        { name: 'Cintos de segurança', order: 8 },
+        { name: 'Painel de instrumentos', order: 9 },
+        { name: 'Buzina', order: 10 },
+      ],
+    },
+    {
+      name: 'Sistema de Escapamento',
+      description: 'Verificação do sistema de escape',
+      icon: '💨',
+      order: 10,
+      items: [
+        { name: 'Coletor de escapamento', order: 1 },
+        { name: 'Catalisador', order: 2 },
+        { name: 'Silencioso', order: 3 },
+        { name: 'Ponteira', order: 4 },
+        { name: 'Suportes e borrachas', order: 5 },
+        { name: 'Vazamentos', order: 6 },
+        { name: 'Ruídos excessivos', order: 7 },
+      ],
+    },
+  ];
+
+  for (const categoryData of categories) {
+    const { items, ...categoryInfo } = categoryData;
+
+    const category = await prisma.checklistCategory.create({
+      data: {
+        ...categoryInfo,
+        isDefault: true,
+        isEnabled: true,
+      },
+    });
+
+    console.log(`  ✅ Created category: ${category.name}`);
+
+    // Create items for this category
+    for (const itemData of items) {
+      await prisma.checklistItem.create({
+        data: {
+          categoryId: category.id,
+          name: itemData.name,
+          order: itemData.order,
+          isDefault: true,
+          isEnabled: true,
+        },
+      });
+    }
+
+    console.log(`     ➕ Created ${items.length} items`);
+  }
+
+  console.log('✅ Checklist data seeded successfully!');
 }
 
 main()

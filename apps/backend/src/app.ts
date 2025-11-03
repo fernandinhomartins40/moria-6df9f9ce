@@ -16,6 +16,9 @@ import ordersRoutes from '@modules/orders/orders.routes.js';
 import promotionsRoutes from '@modules/promotions/promotions.routes.js';
 import couponsRoutes from '@modules/coupons/coupons.routes.js';
 import favoritesRoutes from '@modules/favorites/favorites.routes.js';
+import customerVehiclesRoutes from '@modules/customer-vehicles/customer-vehicles.routes.js';
+import checklistRoutes from '@modules/checklist/checklist.routes.js';
+import revisionsRoutes from '@modules/revisions/revisions.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -72,6 +75,11 @@ export function createApp(): Express {
   app.use('/promotions', promotionsRoutes);
   app.use('/coupons', couponsRoutes);
   app.use('/favorites', favoritesRoutes);
+
+  // API Routes - Fase 4
+  app.use('/customer-vehicles', customerVehiclesRoutes);
+  app.use('/checklist', checklistRoutes);
+  app.use('/revisions', revisionsRoutes);
 
   // 404 handler
   app.use((req: Request, res: Response) => {
