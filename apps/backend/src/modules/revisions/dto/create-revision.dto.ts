@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { ChecklistItemStatus } from '@prisma/client';
+
+export enum ChecklistItemStatus {
+  NOT_CHECKED = 'NOT_CHECKED',
+  OK = 'OK',
+  ATTENTION = 'ATTENTION',
+  CRITICAL = 'CRITICAL',
+  NOT_APPLICABLE = 'NOT_APPLICABLE',
+}
 
 export const checklistItemCheckSchema = z.object({
   categoryId: z.string().uuid(),

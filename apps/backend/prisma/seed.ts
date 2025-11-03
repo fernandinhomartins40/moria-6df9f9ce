@@ -20,6 +20,7 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.address.deleteMany();
   await prisma.customer.deleteMany();
+  await prisma.admin.deleteMany();
 
   // =========================================================================
   // CUSTOMERS
@@ -71,6 +72,46 @@ async function main() {
   });
 
   console.log(`✅ Created ${2} customers`);
+
+  // =========================================================================
+  // ADMINS (LOJISTAS)
+  // =========================================================================
+  console.log('👨‍💼 Creating admins...');
+
+  const admin1 = await prisma.admin.create({
+    data: {
+      email: 'admin@moria.com',
+      password: hashedPassword, // Same password: Test123!
+      name: 'Administrador Moria',
+      role: 'SUPER_ADMIN',
+      status: 'ACTIVE',
+      permissions: ['ALL'],
+    },
+  });
+
+  const admin2 = await prisma.admin.create({
+    data: {
+      email: 'gerente@moria.com',
+      password: hashedPassword, // Same password: Test123!
+      name: 'Gerente da Loja',
+      role: 'MANAGER',
+      status: 'ACTIVE',
+      permissions: ['products', 'services', 'orders', 'customers', 'revisions'],
+    },
+  });
+
+  const admin3 = await prisma.admin.create({
+    data: {
+      email: 'mecanico@moria.com',
+      password: hashedPassword, // Same password: Test123!
+      name: 'João Mecânico',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      permissions: ['revisions', 'vehicles', 'checklist'],
+    },
+  });
+
+  console.log(`✅ Created ${3} admins`);
 
   // =========================================================================
   // VEHICLE MAKES
@@ -560,6 +601,7 @@ async function main() {
   console.log('\n📊 Seed Summary:');
   console.log('=====================================');
   console.log(`✅ Customers: 2`);
+  console.log(`✅ Admins (Lojistas): 3`);
   console.log(`✅ Vehicle Makes: ${makes.length}`);
   console.log(`✅ Vehicle Models: 4`);
   console.log(`✅ Vehicle Variants: ${variants.length}`);

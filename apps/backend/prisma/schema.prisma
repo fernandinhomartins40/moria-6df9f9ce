@@ -66,9 +66,42 @@ enum OrderItemType {
   SERVICE
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum AdminStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 // ============================================================================
 // MODELS - FASE 1
 // ============================================================================
+
+model Admin {
+  id          String      @id @default(uuid())
+  email       String      @unique
+  password    String
+  name        String
+  role        AdminRole   @default(STAFF)
+  status      AdminStatus @default(ACTIVE)
+  permissions Json?       // Array de permissões customizadas
+
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  lastLoginAt DateTime?
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("admins")
+}
 
 model Customer {
   id          String         @id @default(uuid())

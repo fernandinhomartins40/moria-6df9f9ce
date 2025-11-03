@@ -1,24 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma:*)",
-      "Bash(taskkill:*)",
-      "Bash(npx tsc:*)",
-      "Bash(curl:*)",
-      "Bash(npm run build:*)",
-      "Bash(tree:*)",
-      "Bash(npm install)",
-      "Bash(timeout 10 npm run dev)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git log:*)",
       "Bash(npm run dev:*)",
-      "Bash(npm run type-check:*)",
-      "Bash(npm ls:*)",
-      "Bash(npm run lint)",
-      "Bash(npx eslint:*)",
-      "Bash(dir:*)"
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiNmJhNjJkODUtOThiMy00ZTJmLWFmY2ItZDA2YzA3MmI0OTY0IiwiZW1haWwiOiJqb2FvLnNpbHZhQGVtYWlsLmNvbSIsImxldmVsIjoiR09MRCIsInN0YXR1cyI6IkFDVElWRSIsImlhdCI6MTc2MjIwODI0MSwiZXhwIjoxNzYyODEzMDQxLCJhdWQiOiJtb3JpYS1mcm9udGVuZCIsImlzcyI6Im1vcmlhLWJhY2tlbmQifQ.XzFfmqAP3AsyuuFcsVV6Q7nCeFtxx-bcpXo-DFgo-U0\")",
+      "Bash(netstat:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

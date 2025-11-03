@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { RevisionStatus, ChecklistItemStatus } from '@prisma/client';
+import { RevisionStatus } from '@prisma/client';
+import { ChecklistItemStatus } from './create-revision.dto.js';
 
 export const checklistItemCheckSchema = z.object({
   categoryId: z.string().uuid(),

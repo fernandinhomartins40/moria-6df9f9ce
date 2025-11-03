@@ -38,5 +38,8 @@
     "monorepo"
   ],
   "author": "Moria Pesca e Serviços",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
 }
