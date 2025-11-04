@@ -15,10 +15,12 @@ import {
   FileText,
   Wrench,
   Gift,
-  ClipboardCheck
+  ClipboardCheck,
+  User
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 interface SidebarProps {
   activeTab: string;
@@ -41,6 +43,11 @@ const menuItems = [
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { admin, logout } = useAdminAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className={cn(
@@ -82,6 +89,21 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           </Button>
         </div>
       </div>
+
+      {/* Admin Info */}
+      {!isCollapsed && admin && (
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-moria-orange rounded-full flex items-center justify-center">
+              <User className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{admin.name}</p>
+              <p className="text-xs text-gray-400 truncate">{admin.role.replace(/_/g, " ")}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -135,10 +157,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             "w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-red-400",
             isCollapsed && "justify-center px-2"
           )}
-          onClick={() => {
-            // Implementar logout se necessário
-            window.location.href = '/';
-          }}
+          onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
           {!isCollapsed && <span className="ml-3">Sair</span>}
