@@ -38,6 +38,11 @@ import {
   FileText
 } from "lucide-react";
 import { RevisionsContent } from "./RevisionsContent";
+import { RevisionsListContent } from "./RevisionsListContent";
+import adminService from "@/api/adminService";
+import productService from "@/api/productService";
+import serviceService from "@/api/serviceService";
+import couponService from "@/api/couponService";
 
 interface StoreOrder {
   id: string;
@@ -137,6 +142,18 @@ interface Quote {
   createdAt: string;
 }
 
+interface DashboardStats {
+  totalOrders: number;
+  totalRevenue: number;
+  pendingOrders: number;
+  completedOrders: number;
+  totalCustomers: number;
+  activeProducts: number;
+  lowStockProducts: number;
+  activeCoupons: number;
+  recentOrders: StoreOrder[];
+}
+
 export function AdminContent({ activeTab }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -144,6 +161,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<ProvisionalUser[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [filteredOrders, setFilteredOrders] = useState<StoreOrder[]>([]);
   const [filteredQuotes, setFilteredQuotes] = useState<Quote[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
@@ -152,6 +170,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [revisionView, setRevisionView] = useState<'list' | 'create'>('list');
 
   useEffect(() => {
     loadData();
@@ -168,216 +187,35 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const storeOrders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-      const storeQuotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
-      const storeServices = JSON.parse(localStorage.getItem('store_services') || '[]');
-      const storeCoupons = JSON.parse(localStorage.getItem('store_coupons') || '[]');
-      const storeProducts = JSON.parse(localStorage.getItem('store_products') || '[]');
-      const provisionalUsers = JSON.parse(localStorage.getItem('provisional_users') || '[]');
-      
-      // Se não há serviços, criar alguns exemplos
-      if (storeServices.length === 0) {
-        const defaultServices: Service[] = [
-          {
-            id: 'srv-001',
-            name: 'Troca de Óleo',
-            description: 'Troca completa de óleo do motor com filtro',
-            category: 'Manutenção',
-            estimatedTime: '30 minutos',
-            basePrice: 120.00,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'srv-002',
-            name: 'Alinhamento e Balanceamento',
-            description: 'Alinhamento e balanceamento das 4 rodas',
-            category: 'Suspensão',
-            estimatedTime: '45 minutos',
-            basePrice: 80.00,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'srv-003',
-            name: 'Revisão Completa',
-            description: 'Revisão geral do veículo com check-up completo',
-            category: 'Revisão',
-            estimatedTime: '2 horas',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_services', JSON.stringify(defaultServices));
-        setServices(defaultServices);
-      } else {
-        setServices(storeServices);
-      }
-      
-      // Se não há cupons, criar alguns exemplos
-      if (storeCoupons.length === 0) {
-        const defaultCoupons: Coupon[] = [
-          {
-            id: 'coupon-001',
-            code: 'PRIMEIRA20',
-            description: '20% de desconto na primeira compra',
-            discountType: 'percentage',
-            discountValue: 20,
-            minValue: 100,
-            maxDiscount: 50,
-            expiresAt: '2024-12-31',
-            usageLimit: 100,
-            usedCount: 25,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'coupon-002',
-            code: 'FRETE10',
-            description: 'Frete grátis em compras acima de R$ 150',
-            discountType: 'free_shipping',
-            discountValue: 0,
-            minValue: 150,
-            expiresAt: '2024-12-31',
-            usedCount: 12,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'coupon-003',
-            code: 'COMBO15',
-            description: '15% de desconto em combos',
-            discountType: 'percentage',
-            discountValue: 15,
-            minValue: 200,
-            maxDiscount: 30,
-            expiresAt: '2024-11-30',
-            usageLimit: 50,
-            usedCount: 45,
-            isActive: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_coupons', JSON.stringify(defaultCoupons));
-        setCoupons(defaultCoupons);
-      } else {
-        setCoupons(storeCoupons);
-      }
-      
-      // Se não há produtos, criar alguns exemplos
-      if (storeProducts.length === 0) {
-        const defaultProducts: Product[] = [
-          {
-            id: 'prod-001',
-            name: 'Filtro de Óleo Mann W75/3',
-            description: 'Filtro de óleo de alta qualidade para motores 1.0, 1.4 e 1.6',
-            category: 'Filtros',
-            subcategory: 'Filtro de Óleo',
-            sku: 'FLT-W753',
-            supplier: 'Mann Filter',
-            costPrice: 15.90,
-            salePrice: 25.90,
-            promoPrice: 22.90,
-            stock: 45,
-            minStock: 10,
-            images: [],
-            specifications: {
-              'Aplicação': 'VW Fox, Gol, Voyage / Fiat Uno, Palio',
-              'Material': 'Papel filtrante especial',
-              'Garantia': '12 meses'
-            },
-            vehicleCompatibility: ['VW Fox', 'VW Gol', 'VW Voyage', 'Fiat Uno', 'Fiat Palio'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-002',
-            name: 'Pastilha de Freio Dianteira Cobreq',
-            description: 'Pastilha de freio dianteira com cerâmica para maior durabilidade',
-            category: 'Freios',
-            subcategory: 'Pastilhas',
-            sku: 'FRE-N1049',
-            supplier: 'Cobreq',
-            costPrice: 89.90,
-            salePrice: 139.90,
-            stock: 12,
-            minStock: 5,
-            images: [],
-            specifications: {
-              'Posição': 'Dianteira',
-              'Material': 'Cerâmica',
-              'Garantia': '20.000 km'
-            },
-            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Toyota Corolla'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-003',
-            name: 'Amortecedor Traseiro Monroe',
-            description: 'Amortecedor traseiro Monroe Gas-Matic para maior conforto',
-            category: 'Suspensão',
-            subcategory: 'Amortecedores',
-            sku: 'SUS-G8203',
-            supplier: 'Monroe',
-            costPrice: 125.00,
-            salePrice: 189.90,
-            stock: 8,
-            minStock: 3,
-            images: [],
-            specifications: {
-              'Posição': 'Traseiro',
-              'Tecnologia': 'Gas-Matic',
-              'Garantia': '2 anos'
-            },
-            vehicleCompatibility: ['VW Gol G5/G6', 'VW Voyage', 'VW Fox'],
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 'prod-004',
-            name: 'Vela de Ignição NGK',
-            description: 'Vela de ignição NGK com eletrodo de irídio',
-            category: 'Motor',
-            subcategory: 'Velas',
-            sku: 'MOT-BKR6E',
-            supplier: 'NGK',
-            costPrice: 18.50,
-            salePrice: 32.90,
-            stock: 3,
-            minStock: 8,
-            images: [],
-            specifications: {
-              'Tipo': 'Irídio',
-              'Abertura': '0.8mm',
-              'Garantia': '30.000 km'
-            },
-            vehicleCompatibility: ['Honda Civic', 'Honda Fit', 'Honda City'],
-            isActive: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem('store_products', JSON.stringify(defaultProducts));
-        setProducts(defaultProducts);
-      } else {
-        setProducts(storeProducts);
-      }
-      
-      setOrders(storeOrders);
-      setQuotes(storeQuotes);
-      setUsers(provisionalUsers);
+      // Load data from backend APIs
+      const [dashboardStatsRes, ordersRes, servicesRes, couponsRes, productsRes, customersRes] = await Promise.all([
+        adminService.getDashboardStats().catch(() => null),
+        adminService.getOrders({ page: 1, limit: 100 }).catch(() => ({ orders: [], totalCount: 0 })),
+        adminService.getServices({ page: 1, limit: 100 }).catch(() => ({ services: [], totalCount: 0 })),
+        adminService.getCoupons({ page: 1, limit: 100 }).catch(() => ({ coupons: [], totalCount: 0 })),
+        adminService.getProducts({ page: 1, limit: 100 }).catch(() => ({ products: [], totalCount: 0 })),
+        adminService.getCustomers({ page: 1, limit: 100 }).catch(() => ({ customers: [], totalCount: 0 }))
+      ]);
+
+      setDashboardStats(dashboardStatsRes);
+      setOrders(ordersRes.orders || []);
+      setServices(servicesRes.services || []);
+      setCoupons(couponsRes.coupons || []);
+      setProducts(productsRes.products || []);
+      setUsers(customersRes.customers || []);
+
+      // Show orders with services as quotes (orçamentos são pedidos com serviços)
+      const ordersWithServices = (ordersRes.orders || []).filter(order => order.hasServices);
+      setQuotes(ordersWithServices.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          description: item.type === 'service' ? 'Serviço' : undefined
+        }))
+      })) as any);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -502,11 +340,18 @@ export function AdminContent({ activeTab }: AdminContentProps) {
 
   const getStatusInfo = (status: string) => {
     const statusMap = {
+      PENDING: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+      CONFIRMED: { label: 'Confirmado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+      PREPARING: { label: 'Preparando', color: 'bg-blue-100 text-blue-800', icon: Package },
+      SHIPPED: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
+      DELIVERED: { label: 'Entregue', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+      CANCELLED: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: AlertCircle },
+      // Fallback para status antigos em lowercase
       pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
       quote_requested: { label: 'Orçamento Solicitado', color: 'bg-blue-100 text-blue-800', icon: AlertCircle },
       confirmed: { label: 'Confirmado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
     };
-    return statusMap[status as keyof typeof statusMap] || statusMap.pending;
+    return statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
   };
 
   const handleWhatsAppContact = (order: StoreOrder) => {
@@ -515,7 +360,26 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     window.open(whatsappUrl, '_blank');
   };
 
-  const stats = {
+  // Use backend stats if available, otherwise calculate from local data
+  const stats = dashboardStats ? {
+    totalOrders: dashboardStats.totalOrders,
+    totalQuotes: quotes.length,
+    totalServices: services.length,
+    totalCoupons: coupons.length,
+    totalProducts: products.length,
+    pendingOrders: dashboardStats.pendingOrders,
+    pendingQuotes: quotes.filter(q => q.status === 'pending').length,
+    activeServices: services.filter(s => s.isActive).length,
+    activeCoupons: dashboardStats.activeCoupons,
+    activeProducts: dashboardStats.activeProducts,
+    lowStockProducts: dashboardStats.lowStockProducts,
+    outOfStockProducts: products.filter(p => p.stock === 0).length,
+    totalInventoryValue: products.reduce((sum, product) => sum + (product.stock * product.costPrice), 0),
+    totalRevenue: dashboardStats.totalRevenue,
+    totalCustomers: dashboardStats.totalCustomers,
+    averageTicket: dashboardStats.totalOrders > 0 ? dashboardStats.totalRevenue / dashboardStats.totalOrders : 0,
+    conversionRate: quotes.length > 0 ? (dashboardStats.totalOrders / (dashboardStats.totalOrders + quotes.length)) * 100 : 0,
+  } : {
     totalOrders: orders.length,
     totalQuotes: quotes.length,
     totalServices: services.length,
@@ -655,14 +519,16 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardDescription>Últimos 5 pedidos recebidos</CardDescription>
           </CardHeader>
           <CardContent>
-            {orders.slice(0, 5).length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <ShoppingBag className="mx-auto h-12 w-12 text-gray-300" />
-                <p className="mt-2">Nenhum pedido recebido ainda</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orders.slice(0, 5).map((order) => {
+            {(() => {
+              const recentOrders = dashboardStats?.recentOrders || orders.slice(0, 5);
+              return recentOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <ShoppingBag className="mx-auto h-12 w-12 text-gray-300" />
+                  <p className="mt-2">Nenhum pedido recebido ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order) => {
                   const statusInfo = getStatusInfo(order.status);
                   const StatusIcon = statusInfo.icon;
                   
@@ -690,9 +556,10 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            )}
+                  })}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -783,15 +650,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           </Select>
         </div>
 
-        <ScrollArea className="h-96">
-          {filteredQuotes.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Wrench className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2">Nenhum orçamento encontrado</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredQuotes.map((quote) => (
+        {filteredQuotes.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+            <p className="mt-2">Nenhum orçamento encontrado</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredQuotes.map((quote) => (
                 <div key={quote.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -871,7 +737,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               ))}
             </div>
           )}
-        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -942,15 +807,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             </Select>
           </div>
 
-          <ScrollArea className="h-96">
-            {filteredServices.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Wrench className="mx-auto h-12 w-12 text-gray-300" />
-                <p className="mt-2">Nenhum serviço encontrado</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredServices.map((service) => (
+          {filteredServices.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2">Nenhum serviço encontrado</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredServices.map((service) => (
                   <div key={service.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
@@ -1031,7 +895,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 ))}
               </div>
             )}
-          </ScrollArea>
         </CardContent>
       </Card>
     );
@@ -1127,15 +990,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             </Select>
           </div>
 
-          <ScrollArea className="h-96">
-            {filteredCoupons.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Gift className="mx-auto h-12 w-12 text-gray-300" />
-                <p className="mt-2">Nenhum cupom encontrado</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredCoupons.map((coupon) => {
+          {filteredCoupons.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Gift className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2">Nenhum cupom encontrado</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredCoupons.map((coupon) => {
                   const expired = isExpired(coupon.expiresAt);
                   
                   return (
@@ -1242,7 +1104,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 })}
               </div>
             )}
-          </ScrollArea>
         </CardContent>
       </Card>
     );
@@ -1275,22 +1136,24 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="pending">Pendente</SelectItem>
-              <SelectItem value="quote_requested">Orçamento Solicitado</SelectItem>
-              <SelectItem value="confirmed">Confirmado</SelectItem>
+              <SelectItem value="PENDING">Pendente</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmado</SelectItem>
+              <SelectItem value="PREPARING">Preparando</SelectItem>
+              <SelectItem value="SHIPPED">Enviado</SelectItem>
+              <SelectItem value="DELIVERED">Entregue</SelectItem>
+              <SelectItem value="CANCELLED">Cancelado</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <ScrollArea className="h-96">
-          {filteredOrders.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Package className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2">Nenhum pedido encontrado</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredOrders.map((order) => {
+        {filteredOrders.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Package className="mx-auto h-12 w-12 text-gray-300" />
+            <p className="mt-2">Nenhum pedido encontrado</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map((order) => {
                 const statusInfo = getStatusInfo(order.status);
                 const StatusIcon = statusInfo.icon;
                 
@@ -1361,7 +1224,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               })}
             </div>
           )}
-        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -1587,9 +1449,15 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                           <span className="text-sm font-medium">Compatibilidade</span>
                         </div>
                         <div className="text-sm">
-                          <p className="text-gray-600">{product.vehicleCompatibility.slice(0, 2).join(', ')}</p>
-                          {product.vehicleCompatibility.length > 2 && (
-                            <p className="text-xs text-gray-500">+{product.vehicleCompatibility.length - 2} mais</p>
+                          {product.vehicleCompatibility && product.vehicleCompatibility.length > 0 ? (
+                            <>
+                              <p className="text-gray-600">{product.vehicleCompatibility.slice(0, 2).join(', ')}</p>
+                              {product.vehicleCompatibility.length > 2 && (
+                                <p className="text-xs text-gray-500">+{product.vehicleCompatibility.length - 2} mais</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-gray-500 text-xs">Não especificado</p>
                           )}
                         </div>
                       </div>
@@ -2442,7 +2310,31 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     case 'services':
       return renderServices();
     case 'revisions':
-      return <RevisionsContent />;
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">
+              {revisionView === 'list' ? 'Revisões' : 'Nova Revisão'}
+            </h2>
+            <div className="flex gap-2">
+              <Button
+                variant={revisionView === 'list' ? 'default' : 'outline'}
+                onClick={() => setRevisionView('list')}
+              >
+                Listar Revisões
+              </Button>
+              <Button
+                variant={revisionView === 'create' ? 'default' : 'outline'}
+                onClick={() => setRevisionView('create')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Revisão
+              </Button>
+            </div>
+          </div>
+          {revisionView === 'list' ? <RevisionsListContent /> : <RevisionsContent />}
+        </div>
+      );
     case 'coupons':
       return renderCoupons();
     case 'promotions':

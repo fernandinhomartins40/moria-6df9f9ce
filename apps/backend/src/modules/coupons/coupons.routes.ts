@@ -10,6 +10,7 @@ const couponsController = new CouponsController();
 // Public routes (customers can validate coupons)
 router.post('/validate', AuthMiddleware.authenticate, couponsController.validateCoupon);
 router.get('/active', couponsController.getActiveCoupons);
+router.get('/active/count', couponsController.getActiveCouponCount);
 
 // Admin routes (for creating/managing coupons)
 router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.createCoupon);

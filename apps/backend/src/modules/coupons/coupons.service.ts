@@ -333,4 +333,18 @@ export class CouponsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  /**
+   * Get count of active coupons
+   */
+  async getActiveCouponCount(): Promise<number> {
+    const now = new Date();
+
+    return prisma.coupon.count({
+      where: {
+        isActive: true,
+        expiresAt: { gte: now },
+      },
+    });
+  }
 }

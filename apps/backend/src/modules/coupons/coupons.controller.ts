@@ -218,4 +218,25 @@ export class CouponsController {
       next(error);
     }
   };
+
+  /**
+   * GET /coupons/active/count
+   * Get count of active coupons
+   */
+  getActiveCouponCount = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const count = await this.couponsService.getActiveCouponCount();
+
+      res.status(200).json({
+        success: true,
+        data: { count },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -17,8 +17,8 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    // Limpar token do localStorage
-    localStorage.removeItem('authToken');
+    // Chamar endpoint de logout para limpar o cookie httpOnly
+    await apiClient.post('/auth/logout');
   }
 
   async getProfile(): Promise<Customer> {
@@ -29,18 +29,6 @@ class AuthService {
   async updateProfile(data: Partial<Customer>): Promise<Customer> {
     const response = await apiClient.put<Customer>('/auth/profile', data);
     return response.data;
-  }
-
-  setAuthToken(token: string): void {
-    localStorage.setItem('authToken', token);
-  }
-
-  getAuthToken(): string | null {
-    return localStorage.getItem('authToken');
-  }
-
-  removeAuthToken(): void {
-    localStorage.removeItem('authToken');
   }
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import {
   authService,
   addressService,
@@ -45,27 +45,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const isInitializing = useRef(false);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    // Check for existing session
+    // Prevent multiple initialization calls using ref
+    if (hasInitialized.current || isInitializing.current) return;
+
+    // Skip customer auth initialization on admin routes
+    const isAdminRoute = window.location.pathname.startsWith('/store-panel') ||
+                        window.location.pathname.startsWith('/admin');
+
+    if (isAdminRoute) {
+      setState(prev => ({ ...prev, isLoading: false }));
+      hasInitialized.current = true;
+      return;
+    }
+
+    isInitializing.current = true;
+
+    // Check for existing session (cookie-based)
     const initializeAuth = async () => {
       try {
-        const token = authService.getAuthToken();
-        if (token) {
-          // Try to get user profile
-          const customer = await authService.getProfile();
-          setState({
-            customer,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } else {
-          setState(prev => ({ ...prev, isLoading: false }));
+        // Try to get user profile using the httpOnly cookie
+        const customer = await authService.getProfile();
+        setState({
+          customer,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } catch (error: any) {
+        // If cookie is invalid/missing, user is not authenticated
+        // Silently handle 401 errors (expected when no customer session exists)
+        if (error?.response?.status !== 401) {
+          console.error('Error initializing customer auth:', error);
         }
-      } catch (error) {
-        // If token is invalid, remove it
-        authService.removeAuthToken();
         setState(prev => ({ ...prev, isLoading: false }));
+      } finally {
+        hasInitialized.current = true;
+        isInitializing.current = false;
       }
     };
 
@@ -74,17 +92,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       const response = await authService.login({ email, password });
-      authService.setAuthToken(response.token);
-      
+      // O token agora vem em um httpOnly cookie, não precisamos armazenar
+
       setState({
-        customer: response.customer,
+        customer: response.data.customer,
         isAuthenticated: true,
         isLoading: false,
       });
-      
+
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
@@ -95,17 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     setState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       const response = await authService.register(data);
-      authService.setAuthToken(response.token);
-      
+      // O token agora vem em um httpOnly cookie, não precisamos armazenar
+
       setState({
-        customer: response.customer,
+        customer: response.data.customer,
         isAuthenticated: true,
         isLoading: false,
       });
-      
+
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
@@ -114,13 +132,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setState({
-      customer: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      // Mesmo se houver erro, vamos fazer logout local
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      setState({
+        customer: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
   };
 
   const updateProfile = async (data: Partial<Customer>) => {

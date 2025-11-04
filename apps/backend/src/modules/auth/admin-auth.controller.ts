@@ -17,9 +17,20 @@ export class AdminAuthController {
       const dto = adminLoginSchema.parse(req.body);
       const result = await this.adminAuthService.login(dto);
 
+      // Set httpOnly cookie for admin
+      res.cookie('adminToken', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       res.status(200).json({
         success: true,
-        data: result,
+        data: {
+          admin: result.admin,
+          token: result.token,
+        },
       });
     } catch (error) {
       next(error);
@@ -74,7 +85,13 @@ export class AdminAuthController {
    */
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // In JWT, logout is handled client-side by removing the token
+      // Clear httpOnly cookie
+      res.clearCookie('adminToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
+
       res.status(200).json({
         success: true,
         message: 'Logged out successfully',

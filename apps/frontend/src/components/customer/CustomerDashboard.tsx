@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuth, Order } from "../../contexts/AuthContext";
+import { favoriteService, couponService } from "../../api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
-import { 
-  Package, 
-  Truck, 
-  CheckCircle, 
-  Clock, 
+import {
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
   Heart,
   Gift,
   Star,
@@ -24,21 +25,41 @@ export function CustomerDashboard() {
   const { customer, getOrders } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [couponsCount, setCouponsCount] = useState(0);
 
   useEffect(() => {
-    const loadOrders = async () => {
+    const loadDashboardData = async () => {
       try {
+        // Load orders
         const orderList = await getOrders();
         setOrders(orderList.slice(0, 3)); // Show only last 3 orders
+
+        // Load favorites count
+        try {
+          const favCount = await favoriteService.getFavoriteCount();
+          setFavoritesCount(favCount);
+        } catch (error) {
+          console.error('Error loading favorites count:', error);
+        }
+
+        // Load coupons count
+        try {
+          const couponCount = await couponService.getActiveCouponCount();
+          setCouponsCount(couponCount);
+        } catch (error) {
+          console.error('Error loading coupons count:', error);
+        }
       } catch (error) {
-        console.error('Error loading orders:', error);
+        console.error('Error loading dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadOrders();
-  }, [getOrders]);
+    loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!customer) return null;
 
@@ -164,7 +185,7 @@ export function CustomerDashboard() {
               <Heart className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">Favoritos</p>
-                <p className="text-2xl font-bold">8</p>
+                <p className="text-2xl font-bold">{favoritesCount}</p>
               </div>
             </div>
           </CardContent>
@@ -175,8 +196,8 @@ export function CustomerDashboard() {
             <div className="flex items-center">
               <Gift className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Cupons</p>
-                <p className="text-2xl font-bold">3</p>
+                <p className="text-sm font-medium text-muted-foreground">Cupons Disponíveis</p>
+                <p className="text-2xl font-bold">{couponsCount}</p>
               </div>
             </div>
           </CardContent>

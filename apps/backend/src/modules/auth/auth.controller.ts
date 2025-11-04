@@ -18,9 +18,19 @@ export class AuthController {
       const dto = loginSchema.parse(req.body);
       const result = await this.authService.login(dto);
 
+      // Set httpOnly cookie
+      res.cookie('authToken', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       res.status(200).json({
         success: true,
-        data: result,
+        data: {
+          customer: result.customer,
+        },
       });
     } catch (error) {
       next(error);
@@ -35,9 +45,19 @@ export class AuthController {
       const dto = registerSchema.parse(req.body);
       const result = await this.authService.register(dto);
 
+      // Set httpOnly cookie
+      res.cookie('authToken', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       res.status(201).json({
         success: true,
-        data: result,
+        data: {
+          customer: result.customer,
+        },
       });
     } catch (error) {
       next(error);
@@ -92,8 +112,13 @@ export class AuthController {
    */
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // In JWT, logout is handled client-side by removing the token
-      // Here we just confirm the action
+      // Clear httpOnly cookie
+      res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
+
       res.status(200).json({
         success: true,
         message: 'Logged out successfully',

@@ -13,15 +13,20 @@ export class RevisionsController {
 
   /**
    * GET /revisions
-   * Get all revisions for authenticated customer
+   * Get all revisions (Admin only - removes customer filter)
    */
   getRevisions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const filters: any = {};
+
+      // Allow filtering by customer
+      if (req.query.customerId) {
+        filters.customerId = req.query.customerId as string;
+      }
 
       if (req.query.vehicleId) {
         filters.vehicleId = req.query.vehicleId as string;
@@ -47,10 +52,7 @@ export class RevisionsController {
         filters.limit = parseInt(req.query.limit as string, 10);
       }
 
-      const result = await this.revisionsService.getRevisions(
-        req.user.customerId,
-        filters
-      );
+      const result = await this.revisionsService.getAllRevisions(filters);
 
       res.status(200).json({
         success: true,
@@ -64,18 +66,15 @@ export class RevisionsController {
 
   /**
    * GET /revisions/:id
-   * Get revision by ID
+   * Get revision by ID (Admin)
    */
   getRevisionById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const revision = await this.revisionsService.getRevisionById(
-        req.params.id,
-        req.user.customerId
-      );
+      const revision = await this.revisionsService.getRevisionByIdAdmin(req.params.id);
 
       res.status(200).json({
         success: true,
@@ -88,17 +87,17 @@ export class RevisionsController {
 
   /**
    * POST /revisions
-   * Create new revision
+   * Create new revision (Admin)
    */
   createRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const dto = createRevisionSchema.parse(req.body);
       const revision = await this.revisionsService.createRevision(
-        req.user.customerId,
+        dto.customerId,
         dto
       );
 
@@ -113,18 +112,17 @@ export class RevisionsController {
 
   /**
    * PUT /revisions/:id
-   * Update revision
+   * Update revision (Admin)
    */
   updateRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const dto = updateRevisionSchema.parse(req.body);
-      const revision = await this.revisionsService.updateRevision(
+      const revision = await this.revisionsService.updateRevisionAdmin(
         req.params.id,
-        req.user.customerId,
         dto
       );
 
@@ -139,15 +137,15 @@ export class RevisionsController {
 
   /**
    * DELETE /revisions/:id
-   * Delete revision
+   * Delete revision (Admin)
    */
   deleteRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      await this.revisionsService.deleteRevision(req.params.id, req.user.customerId);
+      await this.revisionsService.deleteRevisionAdmin(req.params.id);
 
       res.status(204).send();
     } catch (error) {
@@ -157,18 +155,15 @@ export class RevisionsController {
 
   /**
    * PATCH /revisions/:id/start
-   * Start revision
+   * Start revision (Admin)
    */
   startRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const revision = await this.revisionsService.startRevision(
-        req.params.id,
-        req.user.customerId
-      );
+      const revision = await this.revisionsService.startRevisionAdmin(req.params.id);
 
       res.status(200).json({
         success: true,
@@ -181,18 +176,15 @@ export class RevisionsController {
 
   /**
    * PATCH /revisions/:id/complete
-   * Complete revision
+   * Complete revision (Admin)
    */
   completeRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const revision = await this.revisionsService.completeRevision(
-        req.params.id,
-        req.user.customerId
-      );
+      const revision = await this.revisionsService.completeRevisionAdmin(req.params.id);
 
       res.status(200).json({
         success: true,
@@ -205,18 +197,15 @@ export class RevisionsController {
 
   /**
    * PATCH /revisions/:id/cancel
-   * Cancel revision
+   * Cancel revision (Admin)
    */
   cancelRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const revision = await this.revisionsService.cancelRevision(
-        req.params.id,
-        req.user.customerId
-      );
+      const revision = await this.revisionsService.cancelRevisionAdmin(req.params.id);
 
       res.status(200).json({
         success: true,
@@ -229,17 +218,15 @@ export class RevisionsController {
 
   /**
    * GET /revisions/statistics
-   * Get revision statistics
+   * Get revision statistics (Admin - all customers)
    */
   getStatistics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const statistics = await this.revisionsService.getRevisionStatistics(
-        req.user.customerId
-      );
+      const statistics = await this.revisionsService.getAllRevisionStatistics();
 
       res.status(200).json({
         success: true,
@@ -252,17 +239,16 @@ export class RevisionsController {
 
   /**
    * GET /revisions/vehicle/:vehicleId/history
-   * Get revision history for a vehicle
+   * Get revision history for a vehicle (Admin)
    */
   getVehicleHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
-      const revisions = await this.revisionsService.getVehicleRevisionHistory(
-        req.params.vehicleId,
-        req.user.customerId
+      const revisions = await this.revisionsService.getVehicleRevisionHistoryAdmin(
+        req.params.vehicleId
       );
 
       res.status(200).json({

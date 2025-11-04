@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 interface Admin {
   id: string;
@@ -28,7 +27,7 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
 
 // Role hierarchy for permission checking
 const roleHierarchy = {
@@ -46,34 +45,35 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Check for existing admin session
+    // Skip admin auth initialization on customer routes
+    const isCustomerRoute = !window.location.pathname.startsWith('/store-panel') &&
+                           !window.location.pathname.startsWith('/admin');
+
+    if (isCustomerRoute) {
+      setState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
+
+    // Check for existing admin session (cookie-based)
     const initializeAuth = async () => {
       try {
-        const token = localStorage.getItem('admin_token');
-        if (token) {
-          // Try to get admin profile
-          const response = await fetch(`${API_URL}/auth/admin/profile`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
+        // Try to get admin profile using the httpOnly cookie
+        const response = await fetch(`${API_URL}/auth/admin/profile`, {
+          credentials: 'include', // Send cookies
+        });
 
-          if (response.ok) {
-            const data = await response.json();
-            setState({
-              admin: data.data,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-          } else {
-            localStorage.removeItem('admin_token');
-            setState(prev => ({ ...prev, isLoading: false }));
-          }
+        if (response.ok) {
+          const data = await response.json();
+          setState({
+            admin: data.data,
+            isAuthenticated: true,
+            isLoading: false,
+          });
         } else {
           setState(prev => ({ ...prev, isLoading: false }));
         }
       } catch (error) {
-        localStorage.removeItem('admin_token');
+        // If cookie is invalid/missing, admin is not authenticated
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -90,13 +90,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Send/receive cookies
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('admin_token', data.data.token);
+        // Save the token to localStorage for API calls
+        if (data.data.token) {
+          localStorage.setItem('admin_token', data.data.token);
+        }
 
         setState({
           admin: data.data.admin,
@@ -115,13 +119,25 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('admin_token');
-    setState({
-      admin: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+  const logout = async () => {
+    try {
+      // Clear token from localStorage
+      localStorage.removeItem('admin_token');
+
+      // Call backend to clear httpOnly cookie
+      await fetch(`${API_URL}/auth/admin/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      setState({
+        admin: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
   };
 
   const hasRole = (roles: string | string[]) => {

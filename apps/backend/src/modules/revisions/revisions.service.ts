@@ -7,6 +7,7 @@ import { PaginationUtil, PaginatedResponse } from '@shared/utils/pagination.util
 import { logger } from '@shared/utils/logger.util.js';
 
 export interface RevisionFilters {
+  customerId?: string;
   vehicleId?: string;
   status?: RevisionStatus;
   dateFrom?: Date;
@@ -16,6 +17,74 @@ export interface RevisionFilters {
 }
 
 export class RevisionsService {
+  /**
+   * Get all revisions (Admin) - without customer filter unless specified
+   */
+  async getAllRevisions(
+    filters: RevisionFilters = {}
+  ): Promise<PaginatedResponse<Revision>> {
+    const { page, limit } = PaginationUtil.validateParams({
+      page: filters.page,
+      limit: filters.limit,
+    });
+
+    const where: any = {};
+
+    if (filters.customerId) {
+      where.customerId = filters.customerId;
+    }
+
+    if (filters.vehicleId) {
+      where.vehicleId = filters.vehicleId;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      where.date = {};
+      if (filters.dateFrom) {
+        where.date.gte = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        where.date.lte = filters.dateTo;
+      }
+    }
+
+    const [revisions, totalCount] = await Promise.all([
+      prisma.revision.findMany({
+        where,
+        skip: PaginationUtil.calculateSkip(page, limit),
+        take: limit,
+        orderBy: { date: 'desc' },
+        include: {
+          vehicle: {
+            select: {
+              id: true,
+              brand: true,
+              model: true,
+              year: true,
+              plate: true,
+              color: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      }),
+      prisma.revision.count({ where }),
+    ]);
+
+    return PaginationUtil.buildResponse(revisions, page, limit, totalCount);
+  }
+
   /**
    * Get all revisions for a customer with filters
    */
@@ -366,6 +435,210 @@ export class RevisionsService {
     return prisma.revision.findMany({
       where: { vehicleId },
       orderBy: { date: 'desc' },
+    });
+  }
+
+  // ==================== ADMIN METHODS ====================
+
+  /**
+   * Get revision by ID (Admin - no customer check)
+   */
+  async getRevisionByIdAdmin(id: string): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+      include: {
+        vehicle: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    return revision;
+  }
+
+  /**
+   * Update revision (Admin - no customer check)
+   */
+  async updateRevisionAdmin(
+    id: string,
+    dto: UpdateRevisionDto
+  ): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        ...(dto.mileage !== undefined && { mileage: dto.mileage }),
+        ...(dto.status && { status: dto.status }),
+        ...(dto.checklistItems && { checklistItems: dto.checklistItems }),
+        ...(dto.generalNotes !== undefined && { generalNotes: dto.generalNotes }),
+        ...(dto.recommendations !== undefined && {
+          recommendations: dto.recommendations,
+        }),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Delete revision (Admin - no customer check)
+   */
+  async deleteRevisionAdmin(id: string): Promise<void> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    await prisma.revision.delete({
+      where: { id },
+    });
+
+    logger.info(`Revision deleted by admin: ${id}`);
+  }
+
+  /**
+   * Start revision (Admin)
+   */
+  async startRevisionAdmin(id: string): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (revision.status !== RevisionStatus.DRAFT) {
+      throw ApiError.badRequest('Only draft revisions can be started');
+    }
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        status: RevisionStatus.IN_PROGRESS,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Complete revision (Admin)
+   */
+  async completeRevisionAdmin(id: string): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (revision.status === RevisionStatus.COMPLETED) {
+      throw ApiError.badRequest('Revision is already completed');
+    }
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        status: RevisionStatus.COMPLETED,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Cancel revision (Admin)
+   */
+  async cancelRevisionAdmin(id: string): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (revision.status === RevisionStatus.COMPLETED) {
+      throw ApiError.badRequest('Cannot cancel completed revision');
+    }
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        status: RevisionStatus.CANCELLED,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Get all revision statistics (Admin)
+   */
+  async getAllRevisionStatistics(): Promise<any> {
+    const [total, draft, inProgress, completed, cancelled] = await Promise.all([
+      prisma.revision.count(),
+      prisma.revision.count({ where: { status: RevisionStatus.DRAFT } }),
+      prisma.revision.count({ where: { status: RevisionStatus.IN_PROGRESS } }),
+      prisma.revision.count({ where: { status: RevisionStatus.COMPLETED } }),
+      prisma.revision.count({ where: { status: RevisionStatus.CANCELLED } }),
+    ]);
+
+    return {
+      total,
+      byStatus: {
+        draft,
+        inProgress,
+        completed,
+        cancelled,
+      },
+    };
+  }
+
+  /**
+   * Get vehicle revision history (Admin - no customer check)
+   */
+  async getVehicleRevisionHistoryAdmin(vehicleId: string): Promise<Revision[]> {
+    const vehicle = await prisma.customerVehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      throw ApiError.notFound('Vehicle not found');
+    }
+
+    return prisma.revision.findMany({
+      where: { vehicleId },
+      orderBy: { date: 'desc' },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
   }
 }

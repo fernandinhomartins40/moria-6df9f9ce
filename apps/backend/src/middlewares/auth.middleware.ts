@@ -18,13 +18,19 @@ export class AuthMiddleware {
    */
   static authenticate(req: Request, res: Response, next: NextFunction): void {
     try {
-      const authHeader = req.headers.authorization;
+      // Try to get token from cookie first, then fallback to Authorization header
+      let token = req.cookies?.authToken;
 
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw ApiError.unauthorized('No token provided');
+      if (!token) {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        }
       }
 
-      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      if (!token) {
+        throw ApiError.unauthorized('No token provided');
+      }
 
       try {
         const payload = JwtUtil.verifyToken(token);

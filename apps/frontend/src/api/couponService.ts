@@ -71,6 +71,11 @@ class CouponService {
     });
     return response.data;
   }
+
+  async getActiveCouponCount(): Promise<number> {
+    const response = await apiClient.get<{ count: number }>('/coupons/active/count');
+    return response.data.count;
+  }
 }
 
 export default new CouponService();

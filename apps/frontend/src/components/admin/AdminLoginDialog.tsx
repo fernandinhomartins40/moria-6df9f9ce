@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +10,8 @@ import { Loader2, LogIn, Shield } from "lucide-react";
 
 export function AdminLoginDialog() {
   const { login, isLoading } = useAdminAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +27,25 @@ export function AdminLoginDialog() {
     if (!result.success) {
       setError(result.error || "Erro ao fazer login");
       setIsSubmitting(false);
+      toast({
+        variant: "destructive",
+        title: "Erro no login",
+        description: result.error || "Erro ao fazer login. Verifique suas credenciais.",
+      });
+    } else {
+      // Login bem-sucedido, navegar para o painel do lojista
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo ao painel administrativo.",
+      });
+      navigate("/store-panel");
     }
+  };
+
+  const handleAutoFill = (userEmail: string, userPassword: string) => {
+    setEmail(userEmail);
+    setPassword(userPassword);
+    setError("");
   };
 
   return (
@@ -101,25 +123,46 @@ export function AdminLoginDialog() {
           {/* Credentials hint for testing */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center mb-3">
-              Credenciais de teste:
+              Acesso rápido para testes:
             </p>
-            <div className="space-y-2 text-xs text-gray-600 bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between">
-                <span className="font-medium">Super Admin:</span>
-                <span>admin@moria.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Gerente:</span>
-                <span>gerente@moria.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Mecânico:</span>
-                <span>mecanico@moria.com</span>
-              </div>
-              <div className="text-center mt-2 pt-2 border-t border-gray-200">
-                <span className="font-medium">Senha:</span> Test123!
-              </div>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs h-9"
+                onClick={() => handleAutoFill("admin@moria.com", "Test123!")}
+                disabled={isSubmitting}
+              >
+                <Shield className="mr-2 h-3 w-3" />
+                Super Admin - admin@moria.com
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs h-9"
+                onClick={() => handleAutoFill("gerente@moria.com", "Test123!")}
+                disabled={isSubmitting}
+              >
+                <Shield className="mr-2 h-3 w-3" />
+                Gerente - gerente@moria.com
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-xs h-9"
+                onClick={() => handleAutoFill("mecanico@moria.com", "Test123!")}
+                disabled={isSubmitting}
+              >
+                <Shield className="mr-2 h-3 w-3" />
+                Mecânico - mecanico@moria.com
+              </Button>
             </div>
+            <p className="text-xs text-gray-400 text-center mt-3">
+              Clique em um botão para preencher automaticamente
+            </p>
           </div>
         </div>
 

@@ -55,6 +55,11 @@ class FavoriteService {
     const response = await apiClient.get<Favorite>(`/favorites/${id}`);
     return response.data;
   }
+
+  async getFavoriteCount(): Promise<number> {
+    const response = await apiClient.get<{ count: number }>('/favorites/count');
+    return response.data.count;
+  }
 }
 
 export default new FavoriteService();

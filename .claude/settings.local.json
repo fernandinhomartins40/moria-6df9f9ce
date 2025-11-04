@@ -18,7 +18,14 @@
       "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiN2JlNjRhZjctNDgxMC00NjQ1LWIwNzEtZTczNjBkNzk0YjBlIiwiZW1haWwiOiJqb2FvLnNpbHZhQGVtYWlsLmNvbSIsImxldmVsIjoiR09MRCIsInN0YXR1cyI6IkFDVElWRSIsImlhdCI6MTc2MjIxMDgzMCwiZXhwIjoxNzYyODE1NjMwLCJhdWQiOiJtb3JpYS1mcm9udGVuZCIsImlzcyI6Im1vcmlhLWJhY2tlbmQifQ.TT8l6SdGDrgaFd0IcL3rts89YGxk37snDc22lL67u-M\")",
       "Bash(export:*)",
       "Bash(git commit:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(cd:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:backend:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run dev:frontend:*)"
     ],
     "deny": [],
     "ask": []
