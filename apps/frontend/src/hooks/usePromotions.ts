@@ -85,10 +85,26 @@ export interface UsePromotionsResult {
   updateContext: (updates: Partial<PromotionContext>) => void;
 }
 
+// Helper functions defined outside the hook
+const determineCustomerSegment = (customer: Customer | null): CustomerSegment => {
+  if (!customer) return 'ALL';
+  // Map customer levels to promotion segments
+  if (customer.level === 'PLATINUM') return 'VIP';
+  if (customer.level === 'GOLD' || customer.level === 'SILVER') return 'REGULAR';
+  return 'NEW_CUSTOMER';
+};
+
+const determineDeviceType = (): 'MOBILE' | 'DESKTOP' | 'TABLET' => {
+  const width = window.innerWidth;
+  if (width < 768) return 'MOBILE';
+  if (width < 1024) return 'TABLET';
+  return 'DESKTOP';
+};
+
 export function usePromotions(options: UsePromotionsOptions = {}): UsePromotionsResult {
   const queryClient = useQueryClient();
-  const { user, customer } = useAuth();
-  const { items: cartItems, total: cartTotal } = useCart();
+  const { customer } = useAuth();
+  const { items: cartItems, totalPrice: cartTotal } = useCart();
 
   const [filter, setFilter] = useState<PromotionFilter>(options.filter || {});
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,13 +116,15 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     return {
       customerId: customer?.id,
       customerSegment: options.customerSegment || determineCustomerSegment(customer),
-      cartItems: cartItems.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        price: item.product.salePrice,
-        category: item.product.category,
-        brand: item.product.supplier || 'Unknown'
-      })),
+      cartItems: cartItems
+        .filter(item => item.id && item.price)
+        .map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price,
+          category: item.category || 'Unknown',
+          brand: 'Unknown' // CartItem não tem supplier/brand
+        })),
       cartTotal,
       orderHistory: customer ? {
         totalOrders: 0, // Seria obtido do backend
@@ -118,7 +136,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
       currentTime: new Date().toTimeString().split(' ')[0],
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       deviceType: determineDeviceType(),
-      loyaltyPoints: customer?.level === 'VIP' ? 1000 : customer?.level === 'REGULAR' ? 500 : 0
+      loyaltyPoints: customer?.level === 'PLATINUM' ? 1000 : customer?.level === 'GOLD' ? 500 : customer?.level === 'SILVER' ? 250 : 0
     };
   }, [customer, cartItems, cartTotal, options.customerSegment]);
 
@@ -126,17 +144,21 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
   const {
     data: promotions = [],
     isLoading,
-    error,
-    refetch
+    error
   } = useQuery({
     queryKey: ['promotions', filter, searchTerm],
     queryFn: async () => {
-      const response = await promotionService.getPromotions({
-        ...filter,
-        searchTerm: searchTerm || undefined,
-        active: !options.includeInactive ? true : undefined
-      });
-      return response.promotions;
+      try {
+        const response = await promotionService.getPromotions({
+          ...filter,
+          searchTerm: searchTerm || undefined,
+          active: !options.includeInactive ? true : undefined
+        });
+        return response.promotions || [];
+      } catch (error) {
+        console.error('Error fetching promotions:', error);
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
@@ -148,34 +170,51 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     isLoading: isLoadingActive
   } = useQuery({
     queryKey: ['promotions', 'active'],
-    queryFn: () => promotionService.getActivePromotions(),
+    queryFn: async () => {
+      try {
+        const result = await promotionService.getActivePromotions();
+        return result || [];
+      } catch (error) {
+        console.error('Error fetching active promotions:', error);
+        return [];
+      }
+    },
     staleTime: 2 * 60 * 1000, // 2 minutos
     enabled: !!options.autoEvaluate
   });
 
   // Query para promoções aplicáveis
   const {
-    data: applicablePromotions = [],
-    isLoading: isLoadingApplicable
+    data: applicablePromotions = []
   } = useQuery({
     queryKey: ['promotions', 'applicable', currentContext],
-    queryFn: () => promotionService.getApplicablePromotions(currentContext),
+    queryFn: async () => {
+      try {
+        const result = await promotionService.getApplicablePromotions(currentContext);
+        return result || [];
+      } catch (error) {
+        console.error('Error fetching applicable promotions:', error);
+        return [];
+      }
+    },
     staleTime: 30 * 1000, // 30 segundos
     enabled: !!options.autoEvaluate && cartItems.length > 0
   });
 
-  // Query para templates
+  // Query para templates (desabilitado até implementação backend)
   const { data: templates = [] } = useQuery({
     queryKey: ['promotions', 'templates'],
     queryFn: () => promotionService.getPromotionTemplates(),
     staleTime: 30 * 60 * 1000, // 30 minutos
+    enabled: false, // Desabilitado - endpoint não implementado
   });
 
-  // Query para analytics
+  // Query para analytics (desabilitado até implementação backend)
   const { data: analytics, refetch: refreshAnalytics } = useQuery({
     queryKey: ['promotions', 'analytics'],
     queryFn: () => promotionService.getPromotionStats(),
     staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: false, // Desabilitado - endpoint não implementado
   });
 
   // Mutations
@@ -280,21 +319,6 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     return bestCombination.reduce((total, result) => total + (result.originalAmount - result.finalAmount), 0);
   }, [bestCombination]);
 
-  // Funções auxiliares
-  const determineCustomerSegment = (customer: Customer | null): CustomerSegment => {
-    if (!customer) return 'ALL';
-    if (customer.level === 'VIP') return 'VIP';
-    if (customer.level === 'REGULAR') return 'REGULAR';
-    return 'NEW_CUSTOMER';
-  };
-
-  const determineDeviceType = (): 'MOBILE' | 'DESKTOP' | 'TABLET' => {
-    const width = window.innerWidth;
-    if (width < 768) return 'MOBILE';
-    if (width < 1024) return 'TABLET';
-    return 'DESKTOP';
-  };
-
   const getPromotionById = useCallback((id: string) => {
     return promotions.find(p => p.id === id);
   }, [promotions]);
@@ -326,7 +350,7 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     }).format(result.discountAmount);
   }, []);
 
-  const updateContext = useCallback((updates: Partial<PromotionContext>) => {
+  const updateContext = useCallback((_updates: Partial<PromotionContext>) => {
     // Este contexto é recalculado automaticamente via useMemo
     // Mas poderia ter lógica adicional se necessário
   }, []);
@@ -413,8 +437,8 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     duplicatePromotion: promotionService.duplicatePromotion,
 
     // Ações de estado
-    activatePromotion: activateMutation.mutateAsync,
-    deactivatePromotion: deactivateMutation.mutateAsync,
+    activatePromotion: async (id: string) => { await activateMutation.mutateAsync(id); },
+    deactivatePromotion: async (id: string) => { await deactivateMutation.mutateAsync(id); },
     bulkActivate,
     bulkDeactivate,
     bulkDelete,
