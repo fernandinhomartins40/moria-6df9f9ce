@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: moria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moria2024}
+      POSTGRES_DB: ${POSTGRES_DB:-moria}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moria}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Moria Application (Backend + Frontend)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-default}
+    container_name: moria-vps
+    restart: unless-stopped
+    ports:
+      - "3090:3090"
+    environment:
+      NODE_ENV: production
+      PORT: 3090
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-8h}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      FRONTEND_URL: ${FRONTEND_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  moria-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: moria_postgres_data

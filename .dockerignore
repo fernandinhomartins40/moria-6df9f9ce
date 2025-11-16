@@ -1,0 +1,73 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Development files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
+.env.local
+.env.development
+.env.test
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+
+# Uploads (will be in volume)
+uploads
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Prisma
+prisma/migrations/*.sql

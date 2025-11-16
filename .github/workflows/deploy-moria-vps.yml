@@ -1,0 +1,248 @@
+name: Deploy Moria to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_PASSWORD }}" > ~/.ssh/vps_password
+          chmod 600 ~/.ssh/vps_password
+
+      - name: Sync code to VPS
+        run: |
+          # Instalar sshpass para autenticação com senha
+          sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+          # Criar diretório no VPS
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "mkdir -p /root/moria"
+
+          # Sincronizar código via rsync
+          sshpass -f ~/.ssh/vps_password rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='*.db' \
+            --exclude='*.db-*' \
+            --exclude='uploads' \
+            --exclude='.env' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ root@moriapecas.com.br:/root/moria/
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: moriapecas.com.br
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          timeout: 300s
+          command_timeout: 300s
+          script: |
+            set -e
+
+            echo "=== Iniciando Deploy Moria Peças ==="
+
+            # Diretório da aplicação
+            APP_DIR="/root/moria"
+
+            # Parar containers existentes
+            echo "Parando containers existentes..."
+            cd $APP_DIR
+            docker-compose -f docker-compose.vps.yml down || true
+
+            echo "Verificando código sincronizado..."
+            ls -la
+
+            # Criar arquivo .env
+            echo "Criando arquivo .env..."
+            cat > .env << 'EOF'
+            # Node.js
+            NODE_ENV=production
+
+            # Application
+            PORT=3090
+
+            # PostgreSQL
+            POSTGRES_USER=moria
+            POSTGRES_PASSWORD=moria2024secure
+            POSTGRES_DB=moria
+
+            # Database URL (PostgreSQL)
+            DATABASE_URL=postgresql://moria:moria2024secure@postgres:5432/moria
+
+            # JWT
+            JWT_SECRET=moria-production-secret-$(date +%s)-$(openssl rand -hex 16)
+            JWT_EXPIRES_IN=7d
+            JWT_ADMIN_EXPIRES_IN=8h
+
+            # CORS
+            FRONTEND_URL=https://www.moriapecas.com.br
+            CORS_ORIGIN=https://www.moriapecas.com.br
+            ALLOWED_ORIGINS=https://www.moriapecas.com.br,http://www.moriapecas.com.br,https://moriapecas.com.br,http://moriapecas.com.br,http://72.60.10.108:3090,http://localhost:3090
+
+            # Logs
+            LOG_LEVEL=info
+            EOF
+
+            # Adicionar BUILD_TIMESTAMP ao .env
+            echo "BUILD_TIMESTAMP=$(date +%s)" >> .env
+
+            # Limpar containers e imagens antigas (PRESERVAR volumes do PostgreSQL)
+            echo "Limpando recursos antigos..."
+            docker container prune -f || true
+            docker image prune -af || true
+
+            # Garantir BUILD_TIMESTAMP como variável de ambiente ANTES do build
+            export BUILD_TIMESTAMP=$(date +%s)
+            echo "BUILD_TIMESTAMP=${BUILD_TIMESTAMP}"
+
+            # ===== VALIDAÇÃO PRÉ-BUILD: Verificar estrutura do projeto =====
+            echo "=== Validando estrutura do projeto antes do build ==="
+
+            if [ ! -f "apps/backend/src/server.ts" ]; then
+              echo "❌ ERRO: server.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ server.ts encontrado"
+
+            if [ ! -f "apps/backend/src/app.ts" ]; then
+              echo "❌ ERRO: app.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ app.ts encontrado"
+
+            if [ ! -f "apps/backend/prisma/schema.prisma" ]; then
+              echo "❌ ERRO: schema.prisma não encontrado!"
+              exit 1
+            fi
+            echo "✓ schema.prisma encontrado"
+
+            if [ ! -d "apps/frontend/src" ]; then
+              echo "❌ ERRO: diretório frontend/src não encontrado!"
+              exit 1
+            fi
+            echo "✓ Estrutura frontend encontrada"
+
+            echo "=== Todos os arquivos críticos validados ==="
+
+            # Build da imagem sem cache (BUILD_TIMESTAMP vem do export acima)
+            echo "Construindo nova imagem..."
+            docker-compose -f docker-compose.vps.yml build --no-cache --pull
+
+            # Iniciar container
+            echo "Iniciando container..."
+            docker-compose -f docker-compose.vps.yml up -d
+
+            # Aguardar PostgreSQL e aplicação iniciarem
+            echo "Aguardando containers iniciarem..."
+            sleep 30
+
+            # ===== DIAGNÓSTICO: Verificar se aplicação está rodando =====
+            echo "=== Verificando status no supervisord ==="
+            docker exec moria-vps supervisorctl status || true
+
+            echo "=== Logs do backend ===\"
+            docker exec moria-vps cat /var/log/backend.stdout.log || echo "Nenhum log stdout"
+            docker exec moria-vps cat /var/log/backend.stderr.log || echo "Nenhum log stderr"
+
+            echo "=== Logs do frontend ===\"
+            docker exec moria-vps cat /var/log/frontend.stdout.log || echo "Nenhum log frontend stdout"
+            docker exec moria-vps cat /var/log/frontend.stderr.log || echo "Nenhum log frontend stderr"
+
+            # Verificar status
+            echo "Verificando status dos containers..."
+            docker-compose -f docker-compose.vps.yml ps
+
+            # Verificar logs do PostgreSQL
+            echo "=== Logs do PostgreSQL ===\"
+            docker logs moria-postgres --tail=20
+
+            # Verificar logs da aplicação
+            echo "=== Logs da Aplicação ===\"
+            docker logs moria-vps --tail=100
+
+            # Verificar se container está rodando
+            if ! docker ps | grep -q moria-vps; then
+              echo "❌ Container moria-vps não está rodando!"
+              echo "=== Logs completos do container ===\"
+              docker logs moria-vps
+              exit 1
+            fi
+
+            # ===== VALIDAÇÃO PÓS-BUILD: Verificar compilação =====
+            echo "=== Validando compilação no container ===\"
+
+            # Verificar se o backend foi compilado
+            if ! docker exec moria-vps test -f /app/apps/backend/dist/server.js; then
+              echo "❌ ERRO: Backend não foi compilado no container!"
+              echo "=== Listando arquivos em backend/dist ===\"
+              docker exec moria-vps ls -la /app/apps/backend/dist/ || true
+              exit 1
+            fi
+            echo "✓ Backend compilado no container"
+
+            # Verificar se o frontend foi compilado
+            if ! docker exec moria-vps test -f /app/apps/frontend/dist/index.html; then
+              echo "❌ ERRO: Frontend não foi compilado no container!"
+              echo "=== Listando arquivos em frontend/dist ===\"
+              docker exec moria-vps ls -la /app/apps/frontend/dist/ || true
+              exit 1
+            fi
+            echo "✓ Frontend compilado no container"
+
+            # Aguardar aplicação inicializar completamente
+            echo "=== Aguardando aplicação inicializar (10s) ===\"
+            sleep 10
+
+            # Verificar health
+            echo "Verificando health check..."
+            for i in {1..15}; do
+              if curl -f http://localhost:3090/health; then
+                echo "✅ Moria está rodando na porta 3090!"
+
+                # Validar rota de produtos está acessível
+                echo "=== Validando rota /api/products ===\"
+                if curl -f http://localhost:3090/api/products; then
+                  echo "✅ Rota /api/products está acessível!"
+                  exit 0
+                else
+                  echo "⚠️ Rota /api/products retornou erro (pode ser normal se não houver produtos)"
+                  echo "✅ Deploy concluído - aplicação está rodando!"
+                  exit 0
+                fi
+              fi
+              echo "Tentativa $i/15 falhou, aguardando 10s..."
+
+              # Mostrar logs a cada 3 tentativas
+              if [ $((i % 3)) -eq 0 ]; then
+                echo "=== Logs recentes ===\"
+                docker logs moria-vps --tail=30
+              fi
+
+              sleep 10
+            done
+
+            echo "⚠️ Health check falhou após 15 tentativas"
+            echo "Logs completos:"
+            docker-compose -f docker-compose.vps.yml logs
+            exit 1
+
+      - name: Verify Deployment
+        if: success()
+        run: |
+          echo "✅ Deploy concluído com sucesso!"
+          echo "🌐 Moria Peças disponível em: https://www.moriapecas.com.br"
+          echo "🌐 Acesso alternativo: http://72.60.10.108:3090"
+          echo "📊 Health check: http://72.60.10.108:3090/health"
