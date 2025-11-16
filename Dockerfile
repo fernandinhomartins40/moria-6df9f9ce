@@ -101,6 +101,16 @@ nodaemon=true
 logfile=/var/log/supervisord.log
 pidfile=/tmp/supervisord.pid
 
+[supervisorctl]
+serverurl=unix:///tmp/supervisor.sock
+
+[unix_http_server]
+file=/tmp/supervisor.sock
+chmod=0700
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
 [program:backend]
 command=node dist/server.js
 directory=/app/apps/backend
