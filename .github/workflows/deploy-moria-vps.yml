@@ -135,6 +135,31 @@ jobs:
             fi
             echo "✓ Estrutura frontend encontrada"
 
+            # Validar módulos críticos
+            if [ ! -f "apps/backend/src/modules/uploads/uploads.routes.ts" ]; then
+              echo "❌ ERRO: uploads.routes.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ uploads module encontrado"
+
+            if [ ! -f "apps/backend/src/modules/landing/landing.routes.ts" ]; then
+              echo "❌ ERRO: landing.routes.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ landing module encontrado"
+
+            if [ ! -f "apps/backend/src/modules/loyalty/loyalty.routes.ts" ]; then
+              echo "❌ ERRO: loyalty.routes.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ loyalty module encontrado"
+
+            if [ ! -f "apps/backend/src/modules/shipping/shipping.routes.ts" ]; then
+              echo "❌ ERRO: shipping.routes.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ shipping module encontrado"
+
             echo "=== Todos os arquivos críticos validados ==="
 
             # Build da imagem sem cache (BUILD_TIMESTAMP vem do export acima)
