@@ -141,7 +141,7 @@ export class ServicesService {
         category: dto.category,
         estimatedTime: dto.estimatedTime,
         basePrice: dto.basePrice,
-        specifications: dto.specifications || null,
+        specifications: dto.specifications || Prisma.JsonNull,
         status: dto.status || ServiceStatus.ACTIVE,
         slug,
         metaDescription: dto.metaDescription,
@@ -181,7 +181,7 @@ export class ServicesService {
         ...dto,
         ...(slug && { slug }),
         ...(dto.basePrice === null && { basePrice: null }),
-        ...(dto.specifications === null && { specifications: null }),
+        ...(dto.specifications === null && { specifications: Prisma.JsonNull }),
         ...(dto.metaDescription === null && { metaDescription: null }),
       },
     });

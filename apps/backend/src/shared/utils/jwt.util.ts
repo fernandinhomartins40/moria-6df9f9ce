@@ -21,7 +21,7 @@ export class JwtUtil {
    */
   static generateToken(payload: TokenPayload): string {
     const options: SignOptions = {
-      expiresIn: environment.jwt.expiresIn,
+      expiresIn: environment.jwt.expiresIn as string | number,
       issuer: 'moria-backend',
       audience: 'moria-frontend',
     };
@@ -33,7 +33,7 @@ export class JwtUtil {
    */
   static generateAdminToken(payload: AdminTokenPayload): string {
     const options: SignOptions = {
-      expiresIn: environment.jwt.expiresIn,
+      expiresIn: environment.jwt.expiresIn as string | number,
       issuer: 'moria-backend',
       audience: 'moria-admin',
     };
