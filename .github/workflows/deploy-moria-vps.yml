@@ -242,7 +242,7 @@ jobs:
             echo "✓ Frontend compilado no container"
 
             # Aguardar aplicação inicializar completamente
-            echo "=== Aguardando aplicação inicializar (10s) ==="
+            echo "=== Aguardando aplicação inicializar 10s ==="
             sleep 10
 
             # Verificar health
