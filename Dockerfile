@@ -66,7 +66,6 @@ COPY packages ./packages
 COPY apps/backend/package*.json ./apps/backend/
 COPY --from=backend-builder /build/apps/backend/dist ./apps/backend/dist
 COPY --from=backend-builder /build/apps/backend/prisma ./apps/backend/prisma
-COPY --from=backend-builder /build/apps/backend/node_modules/.prisma ./apps/backend/node_modules/.prisma
 
 # Copy frontend built files
 COPY --from=frontend-builder /build/apps/frontend/dist ./apps/frontend/dist
