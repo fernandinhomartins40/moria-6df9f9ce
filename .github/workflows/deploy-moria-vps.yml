@@ -28,6 +28,13 @@ jobs:
           # Criar diretório no VPS
           sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "mkdir -p /root/moria"
 
+          # Verificar se módulos existem antes do rsync
+          echo "=== Verificando módulos localmente antes do rsync ==="
+          ls -la apps/backend/src/modules/uploads/ || echo "❌ uploads não encontrado"
+          ls -la apps/backend/src/modules/landing/ || echo "❌ landing não encontrado"
+          ls -la apps/backend/src/modules/loyalty/ || echo "❌ loyalty não encontrado"
+          ls -la apps/backend/src/modules/shipping/ || echo "❌ shipping não encontrado"
+
           # Sincronizar código via rsync
           sshpass -f ~/.ssh/vps_password rsync -avz --delete \
             --exclude='.git' \
@@ -35,10 +42,17 @@ jobs:
             --exclude='dist' \
             --exclude='*.db' \
             --exclude='*.db-*' \
-            --exclude='uploads' \
+            --exclude='apps/backend/uploads' \
             --exclude='.env' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ root@moriapecas.com.br:/root/moria/
+
+          # Verificar se módulos foram copiados
+          echo "=== Verificando módulos na VPS após rsync ==="
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "ls -la /root/moria/apps/backend/src/modules/uploads/ || echo '❌ uploads não copiado'"
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "ls -la /root/moria/apps/backend/src/modules/landing/ || echo '❌ landing não copiado'"
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "ls -la /root/moria/apps/backend/src/modules/loyalty/ || echo '❌ loyalty não copiado'"
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "ls -la /root/moria/apps/backend/src/modules/shipping/ || echo '❌ shipping não copiado'"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
