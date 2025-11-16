@@ -175,15 +175,21 @@ export class ServicesService {
       slug = await this.ensureUniqueSlug(dto.slug, id);
     }
 
+    // Build update data object
+    const updateData: any = { ...dto };
+
+    if (slug) {
+      updateData.slug = slug;
+    }
+
+    // Handle JSON null values properly
+    if (dto.specifications === null) {
+      updateData.specifications = Prisma.JsonNull;
+    }
+
     const service = await prisma.service.update({
       where: { id },
-      data: {
-        ...dto,
-        ...(slug && { slug }),
-        ...(dto.basePrice === null && { basePrice: null }),
-        ...(dto.specifications === null && { specifications: Prisma.JsonNull }),
-        ...(dto.metaDescription === null && { metaDescription: null }),
-      },
+      data: updateData,
     });
 
     logger.info(`Service updated: ${service.name} (ID: ${service.id})`);
