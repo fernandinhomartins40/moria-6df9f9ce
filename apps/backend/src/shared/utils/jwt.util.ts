@@ -21,7 +21,7 @@ export class JwtUtil {
    */
   static generateToken(payload: TokenPayload): string {
     return jwt.sign(payload, environment.jwt.secret, {
-      expiresIn: environment.jwt.expiresIn,
+      expiresIn: environment.jwt.expiresIn as string,
       issuer: 'moria-backend',
       audience: 'moria-frontend',
     });
@@ -32,7 +32,7 @@ export class JwtUtil {
    */
   static generateAdminToken(payload: AdminTokenPayload): string {
     return jwt.sign(payload, environment.jwt.secret, {
-      expiresIn: environment.jwt.expiresIn,
+      expiresIn: environment.jwt.expiresIn as string,
       issuer: 'moria-backend',
       audience: 'moria-admin',
     });
