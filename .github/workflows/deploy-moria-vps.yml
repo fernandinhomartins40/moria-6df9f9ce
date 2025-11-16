@@ -278,6 +278,90 @@ jobs:
             docker-compose -f docker-compose.vps.yml logs
             exit 1
 
+      - name: Configure Nginx
+        uses: appleboy/ssh-action@master
+        with:
+          host: moriapecas.com.br
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          timeout: 60s
+          script: |
+            set -e
+
+            echo "=== Configurando Nginx para porta 3090 ==="
+
+            # Criar configuração do Nginx
+            cat > /etc/nginx/sites-available/moriapecas.conf << 'NGINX_EOF'
+            server {
+                listen 3090;
+                listen [::]:3090;
+
+                server_name moriapecas.com.br www.moriapecas.com.br localhost;
+
+                # Logs
+                access_log /var/log/nginx/moriapecas-access.log;
+                error_log /var/log/nginx/moriapecas-error.log;
+
+                # Limite de upload
+                client_max_body_size 10M;
+
+                # API Backend - proxy para porta 3091 (backend no container)
+                location /api/ {
+                    proxy_pass http://127.0.0.1:3091/api/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+
+                    proxy_connect_timeout 60s;
+                    proxy_send_timeout 60s;
+                    proxy_read_timeout 60s;
+                }
+
+                # Health check do backend
+                location /health {
+                    proxy_pass http://127.0.0.1:3091/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                }
+
+                # Frontend - proxy para porta 8080 (serve no container)
+                location / {
+                    proxy_pass http://127.0.0.1:8080/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX_EOF
+
+            # Habilitar site
+            ln -sf /etc/nginx/sites-available/moriapecas.conf /etc/nginx/sites-enabled/
+
+            # Testar e recarregar Nginx
+            nginx -t && systemctl reload nginx
+            echo "✅ Nginx configurado com sucesso na porta 3090"
+
+            # Testar acesso
+            sleep 3
+            echo ""
+            echo "=== Testando frontend ==="
+            curl -I http://localhost:3090 | head -5
+
+            echo ""
+            echo "=== Testando API ==="
+            curl http://localhost:3090/health
+
       - name: Verify Deployment
         if: success()
         run: |

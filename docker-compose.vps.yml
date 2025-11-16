@@ -30,7 +30,8 @@ services:
     container_name: moria-vps
     restart: unless-stopped
     ports:
-      - "3090:3090"
+      - "127.0.0.1:3091:3090"  # Backend interno
+      - "127.0.0.1:8080:8080"  # Frontend interno
     environment:
       NODE_ENV: production
       PORT: 3090
