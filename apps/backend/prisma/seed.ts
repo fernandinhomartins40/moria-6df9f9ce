@@ -1010,125 +1010,300 @@ async function main() {
   console.log(`✅ Created ${coupons.length} coupons`);
 
   // =========================================================================
-  // PROMOTIONS (5 promoções)
+  // PROMOTIONS (8 promoções variadas)
   // =========================================================================
   console.log('🎁 Creating promotions...');
 
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
   const promotions = await Promise.all([
+    // Promoção Flash - 24 horas
     prisma.promotion.create({
       data: {
-        name: 'Super Desconto em Filtros',
-        description: 'Todos os filtros com 20% de desconto',
-        shortDescription: '20% OFF em filtros',
-        type: 'PERCENTAGE',
-        target: 'SPECIFIC_CATEGORY',
+        name: 'Flash Sale - Filtros',
+        description: 'Oferta relâmpago! Todos os filtros automotivos com 30% de desconto válido apenas por 24 horas',
+        shortDescription: '30% OFF em filtros',
+        bannerImage: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
+        badgeText: 'FLASH 24H',
+        type: 'TIME_LIMITED_FLASH',
+        target: 'CATEGORY',
         trigger: 'AUTO_APPLY',
         customerSegments: ['ALL'],
-        rules: [{ type: 'category_discount', category: 'Filtros', discount: 20 }],
-        rewards: { discountPercentage: 20 },
-        schedule: { daysOfWeek: [1, 2, 3, 4, 5, 6, 0], hours: '00:00-23:59' },
-        startDate: new Date('2025-01-01'),
-        endDate: new Date('2025-12-31'),
+        rules: [{
+          id: '1',
+          type: 'MIN_VALUE',
+          field: 'cartTotal',
+          operator: 'gte',
+          value: 0,
+          description: 'Válido para todos os valores'
+        }],
+        targetCategories: ['Filtros'],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 30, unit: '%' },
+          freeShipping: false
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: tomorrow.toISOString()
+        },
+        startDate: now,
+        endDate: tomorrow,
         autoApply: true,
         isActive: true,
         isDraft: false,
         createdBy: admins[0].id,
-        priority: 1,
+        priority: 10,
+        usedCount: 45,
+        usageLimit: 100,
       },
     }),
+
+    // Oferta da Semana
     prisma.promotion.create({
       data: {
-        name: 'Combo Troca de Óleo',
-        description: 'Óleo + Filtro + Serviço de Troca com preço especial',
-        shortDescription: 'Combo troca de óleo',
-        type: 'COMBO',
-        target: 'COMBO_PRODUCTS',
-        trigger: 'CART_ITEMS',
+        name: 'Semana do Freio',
+        description: 'Aproveite nossa semana especial de freios! Pastilhas, discos e kits completos com até 25% de desconto.',
+        shortDescription: '25% OFF em freios',
+        bannerImage: 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f',
+        badgeText: 'SEMANA DO FREIO',
+        type: 'PERCENTAGE',
+        target: 'CATEGORY',
+        trigger: 'AUTO_APPLY',
         customerSegments: ['ALL'],
-        rules: [{ type: 'combo', items: ['oil', 'oil_filter', 'service'], discount: 15 }],
-        rewards: { discountPercentage: 15 },
-        schedule: { daysOfWeek: [1, 2, 3, 4, 5, 6, 0], hours: '00:00-23:59' },
-        startDate: new Date('2025-01-01'),
-        endDate: new Date('2025-12-31'),
+        rules: [{
+          id: '1',
+          type: 'MIN_VALUE',
+          field: 'cartTotal',
+          operator: 'gte',
+          value: 100,
+          description: 'Compra mínima de R$ 100'
+        }],
+        targetCategories: ['Freios', 'Sistema de Freios'],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 25, unit: '%' },
+          freeShipping: false
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: nextWeek.toISOString()
+        },
+        startDate: now,
+        endDate: nextWeek,
+        autoApply: true,
         isActive: true,
         isDraft: false,
         createdBy: admins[0].id,
-        priority: 2,
+        priority: 8,
+        usedCount: 28,
       },
     }),
+
+    // Desconto Progressivo
     prisma.promotion.create({
       data: {
         name: 'Desconto Progressivo',
-        description: 'Quanto mais você compra, mais desconto ganha',
-        shortDescription: 'Desconto progressivo',
-        type: 'TIERED',
+        description: 'Quanto mais você compra, maior o desconto! De 5% a 15% de desconto conforme o valor da compra.',
+        shortDescription: 'Até 15% de desconto progressivo',
+        type: 'TIERED_DISCOUNT',
         target: 'ALL_PRODUCTS',
         trigger: 'CART_VALUE',
         customerSegments: ['ALL'],
         rules: [
-          { type: 'tier', minValue: 200, discount: 5 },
-          { type: 'tier', minValue: 500, discount: 10 },
-          { type: 'tier', minValue: 1000, discount: 15 },
+          { id: '1', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 200, description: '5% acima de R$ 200' },
+          { id: '2', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 500, description: '10% acima de R$ 500' },
+          { id: '3', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 1000, description: '15% acima de R$ 1000' },
         ],
         tiers: [
-          { minValue: 200, discountPercentage: 5 },
-          { minValue: 500, discountPercentage: 10 },
-          { minValue: 1000, discountPercentage: 15 },
+          { id: '1', threshold: 200, discountType: 'PERCENTAGE', discountValue: 5, description: '5% de desconto' },
+          { id: '2', threshold: 500, discountType: 'PERCENTAGE', discountValue: 10, description: '10% de desconto' },
+          { id: '3', threshold: 1000, discountType: 'PERCENTAGE', discountValue: 15, description: '15% de desconto' },
         ],
-        rewards: { type: 'tiered' },
-        schedule: { daysOfWeek: [1, 2, 3, 4, 5, 6, 0], hours: '00:00-23:59' },
-        startDate: new Date('2025-01-01'),
-        endDate: new Date('2025-12-31'),
-        autoApply: true,
-        isActive: true,
-        isDraft: false,
-        createdBy: admins[0].id,
-        priority: 3,
-      },
-    }),
-    prisma.promotion.create({
-      data: {
-        name: 'Frete Grátis para Clientes Gold',
-        description: 'Clientes nível Gold têm frete grátis em todas as compras',
-        shortDescription: 'Frete grátis Gold',
-        type: 'FREE_SHIPPING',
-        target: 'ALL_PRODUCTS',
-        trigger: 'CUSTOMER_LEVEL',
-        customerSegments: ['GOLD', 'PLATINUM'],
-        rules: [{ type: 'free_shipping', levels: ['GOLD', 'PLATINUM'] }],
-        rewards: { freeShipping: true },
-        schedule: { daysOfWeek: [1, 2, 3, 4, 5, 6, 0], hours: '00:00-23:59' },
-        startDate: new Date('2025-01-01'),
-        endDate: new Date('2025-12-31'),
+        rewards: {
+          primary: { type: 'TIERED_DISCOUNT', value: 15, unit: '%', maxAmount: 500 }
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: nextMonth.toISOString()
+        },
+        startDate: now,
+        endDate: nextMonth,
         autoApply: true,
         isActive: true,
         isDraft: false,
         createdBy: admins[0].id,
         priority: 5,
+        usedCount: 156,
       },
     }),
+
+    // Frete Grátis para Clientes VIP
     prisma.promotion.create({
       data: {
-        name: 'Semana do Freio',
-        description: 'Todos os produtos e serviços de freio com 25% de desconto',
-        shortDescription: 'Semana do Freio - 25% OFF',
-        bannerImage: 'https://example.com/banners/brake-week.jpg',
-        badgeText: 'SEMANA DO FREIO',
-        type: 'PERCENTAGE',
-        target: 'SPECIFIC_CATEGORY',
-        trigger: 'AUTO_APPLY',
+        name: 'Frete Grátis VIP',
+        description: 'Clientes Gold e Platinum têm frete grátis em todas as compras acima de R$ 150',
+        shortDescription: 'Frete grátis para VIP',
+        type: 'FREE_SHIPPING',
+        target: 'ALL_PRODUCTS',
+        trigger: 'MANUAL_CODE',
+        customerSegments: ['GOLD', 'PLATINUM'],
+        rules: [
+          { id: '1', type: 'CUSTOMER_SEGMENT', field: 'customerLevel', operator: 'in', values: ['GOLD', 'PLATINUM'], description: 'Apenas Gold e Platinum' },
+          { id: '2', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 150, description: 'Compra mínima de R$ 150' }
+        ],
+        rewards: {
+          primary: { type: 'FREE_SHIPPING', value: 0, unit: 'fixed' },
+          freeShipping: true
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: nextMonth.toISOString()
+        },
+        startDate: now,
+        endDate: nextMonth,
+        code: 'FRETEVIP',
+        autoApply: false,
+        isActive: true,
+        isDraft: false,
+        createdBy: admins[0].id,
+        priority: 7,
+        usedCount: 89,
+      },
+    }),
+
+    // Bundle Discount
+    prisma.promotion.create({
+      data: {
+        name: 'Kit Revisão Completa',
+        description: 'Monte seu kit de revisão! Leve 3 ou mais produtos de manutenção e ganhe 20% de desconto.',
+        shortDescription: 'Kit revisão - 20% OFF',
+        bannerImage: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7',
+        badgeText: 'KIT REVISÃO',
+        type: 'BUNDLE_DISCOUNT',
+        target: 'CATEGORY',
+        trigger: 'ITEM_QUANTITY',
         customerSegments: ['ALL'],
-        rules: [{ type: 'category_discount', category: 'Freios', discount: 25 }],
-        targetCategories: ['Freios'],
-        rewards: { discountPercentage: 25 },
-        schedule: { daysOfWeek: [1, 2, 3, 4, 5, 6, 0], hours: '00:00-23:59' },
-        startDate: new Date('2025-03-01'),
-        endDate: new Date('2025-03-07'),
+        rules: [
+          { id: '1', type: 'MIN_QUANTITY', field: 'itemQuantity', operator: 'gte', value: 3, description: 'Mínimo 3 produtos' }
+        ],
+        targetCategories: ['Óleos e Lubrificantes', 'Filtros', 'Velas'],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 20, unit: '%' }
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: nextMonth.toISOString()
+        },
+        startDate: now,
+        endDate: nextMonth,
         autoApply: true,
         isActive: true,
         isDraft: false,
         createdBy: admins[0].id,
-        priority: 4,
+        priority: 6,
+        usedCount: 67,
+      },
+    }),
+
+    // Primeira Compra
+    prisma.promotion.create({
+      data: {
+        name: 'Primeira Compra',
+        description: 'Bem-vindo! Ganhe 15% de desconto na sua primeira compra conosco.',
+        shortDescription: '15% OFF primeira compra',
+        type: 'PERCENTAGE',
+        target: 'ALL_PRODUCTS',
+        trigger: 'FIRST_PURCHASE',
+        customerSegments: ['NEW_CUSTOMER'],
+        rules: [
+          { id: '1', type: 'CUSTOMER_SEGMENT', field: 'isFirstPurchase', operator: 'eq', value: true, description: 'Primeira compra' }
+        ],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 15, unit: '%', maxAmount: 100 }
+        },
+        schedule: {
+          startDate: now.toISOString(),
+          endDate: nextMonth.toISOString()
+        },
+        startDate: now,
+        endDate: nextMonth,
+        code: 'BEMVINDO15',
+        autoApply: false,
+        isActive: true,
+        isDraft: false,
+        createdBy: admins[0].id,
+        priority: 9,
+        usedCount: 234,
+        usageLimitPerCustomer: 1,
+      },
+    }),
+
+    // Black Friday Futura (Agendada)
+    prisma.promotion.create({
+      data: {
+        name: 'Black Friday Automotiva 2025',
+        description: 'A maior Black Friday do setor automotivo! Descontos de até 50% em produtos selecionados.',
+        shortDescription: 'Black Friday - Até 50% OFF',
+        bannerImage: 'https://images.unsplash.com/photo-1607082349566-187342175e2f',
+        badgeText: 'BLACK FRIDAY',
+        type: 'PERCENTAGE',
+        target: 'ALL_PRODUCTS',
+        trigger: 'AUTO_APPLY',
+        customerSegments: ['ALL'],
+        rules: [
+          { id: '1', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 0, description: 'Todos os valores' }
+        ],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 50, unit: '%', maxAmount: 1000 },
+          freeShipping: true
+        },
+        schedule: {
+          startDate: new Date('2025-11-25').toISOString(),
+          endDate: new Date('2025-11-30').toISOString()
+        },
+        startDate: new Date('2025-11-25'),
+        endDate: new Date('2025-11-30'),
+        autoApply: true,
+        isActive: true,
+        isDraft: false,
+        createdBy: admins[0].id,
+        priority: 10,
+        usedCount: 0,
+        usageLimit: 1000,
+      },
+    }),
+
+    // Promoção Inativa (Expirada)
+    prisma.promotion.create({
+      data: {
+        name: 'Páscoa 2024 - Encerrada',
+        description: 'Promoção especial de Páscoa já encerrada',
+        shortDescription: 'Promoção encerrada',
+        type: 'PERCENTAGE',
+        target: 'ALL_PRODUCTS',
+        trigger: 'AUTO_APPLY',
+        customerSegments: ['ALL'],
+        rules: [
+          { id: '1', type: 'MIN_VALUE', field: 'cartTotal', operator: 'gte', value: 100, description: 'Mínimo R$ 100' }
+        ],
+        rewards: {
+          primary: { type: 'PERCENTAGE', value: 20, unit: '%' }
+        },
+        schedule: {
+          startDate: new Date('2024-03-20').toISOString(),
+          endDate: new Date('2024-04-05').toISOString()
+        },
+        startDate: new Date('2024-03-20'),
+        endDate: new Date('2024-04-05'),
+        autoApply: true,
+        isActive: false,
+        isDraft: false,
+        createdBy: admins[0].id,
+        priority: 1,
+        usedCount: 342,
+        usageLimit: 500,
       },
     }),
   ]);

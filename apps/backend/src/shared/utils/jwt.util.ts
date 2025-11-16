@@ -21,24 +21,22 @@ export class JwtUtil {
    * Generate JWT token for customers
    */
   static generateToken(payload: TokenPayload): string {
-    const options: SignOptions = {
+    return jwt.sign(payload, environment.jwt.secret, {
       expiresIn: environment.jwt.expiresIn,
       issuer: 'moria-backend',
       audience: 'moria-frontend',
-    };
-    return jwt.sign(payload, environment.jwt.secret, options);
+    } as SignOptions);
   }
 
   /**
    * Generate JWT token for admins
    */
   static generateAdminToken(payload: AdminTokenPayload): string {
-    const options: SignOptions = {
+    return jwt.sign(payload, environment.jwt.secret, {
       expiresIn: environment.jwt.expiresIn,
       issuer: 'moria-backend',
       audience: 'moria-admin',
-    };
-    return jwt.sign(payload, environment.jwt.secret, options);
+    } as SignOptions);
   }
 
   /**

@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { LoyaltyService } from './loyalty.service.js';
 import { AuthRequest } from '@shared/types/request.types.js';
 import { RedeemRewardDtoSchema } from './dto/redeem-reward.dto.js';
-import { logger } from '@shared/utils/logger.util.js';
 
 export class LoyaltyController {
   private loyaltyService: LoyaltyService;

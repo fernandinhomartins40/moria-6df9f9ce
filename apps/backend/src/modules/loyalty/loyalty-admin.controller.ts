@@ -5,7 +5,6 @@ import { UpdateRewardDtoSchema } from './dto/update-reward.dto.js';
 import { UpdateLoyaltySettingsDtoSchema } from './dto/update-loyalty-settings.dto.js';
 import { ManualPointsDtoSchema } from './dto/manual-points.dto.js';
 import { RewardStatus, CustomerLevel } from '@prisma/client';
-import { logger } from '@shared/utils/logger.util.js';
 
 export class LoyaltyAdminController {
   private loyaltyService: LoyaltyService;

@@ -30,7 +30,18 @@ const envSchema = z.object({
 // Validate and parse environment variables
 const env = envSchema.parse(process.env);
 
-export const environment = {
+export const environment: {
+  nodeEnv: 'development' | 'production' | 'test';
+  port: number;
+  isDevelopment: boolean;
+  isProduction: boolean;
+  isTest: boolean;
+  database: { url: string };
+  jwt: { secret: string; expiresIn: string };
+  bcrypt: { rounds: number };
+  cors: { origins: string[] };
+  logging: { level: 'error' | 'warn' | 'info' | 'debug' };
+} = {
   nodeEnv: env.NODE_ENV,
   port: env.PORT,
   isDevelopment: env.NODE_ENV === 'development',
@@ -43,7 +54,7 @@ export const environment = {
 
   jwt: {
     secret: env.JWT_SECRET,
-    expiresIn: env.JWT_EXPIRES_IN as string,
+    expiresIn: env.JWT_EXPIRES_IN,
   },
 
   bcrypt: {

@@ -10,7 +10,8 @@ export interface AuthRequest extends Request {
 
 /**
  * Extended Express Request with authenticated admin
+ * Note: Uses 'admin' property instead of 'user' to avoid type conflicts
  */
 export interface AdminAuthRequest extends Request {
-  user?: AdminTokenPayload;
+  admin?: AdminTokenPayload;
 }

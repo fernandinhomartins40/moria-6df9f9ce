@@ -104,17 +104,23 @@ model Admin {
 }
 
 model Customer {
-  id          String         @id @default(uuid())
-  email       String         @unique
-  password    String
-  name        String
-  phone       String
-  cpf         String?        @unique
-  birthDate   DateTime?
-  status      CustomerStatus @default(ACTIVE)
-  level       CustomerLevel  @default(BRONZE)
-  totalOrders Int            @default(0)
-  totalSpent  Decimal        @default(0) @db.Decimal(10, 2)
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  password               String
+  name                   String
+  phone                  String
+  cpf                    String?        @unique
+  birthDate              DateTime?
+  status                 CustomerStatus @default(ACTIVE)
+  level                  CustomerLevel  @default(BRONZE)
+  totalOrders            Int            @default(0)
+  totalSpent             Decimal        @default(0) @db.Decimal(10, 2)
+  hasProvisionalPassword Boolean        @default(false) // Indica se precisa trocar senha
+
+  // Programa de Fidelidade
+  loyaltyPoints          Int            @default(0) // Pontos atuais disponíveis
+  totalPointsEarned      Int            @default(0) // Total de pontos ganhos (histórico)
+  totalPointsRedeemed    Int            @default(0) // Total de pontos resgatados (histórico)
 
   // Timestamps
   createdAt   DateTime  @default(now())
@@ -122,17 +128,21 @@ model Customer {
   lastLoginAt DateTime?
 
   // Relations
-  addresses Address[]
-  orders    Order[]
-  favorites Favorite[]
-  vehicles  CustomerVehicle[]
-  revisions Revision[]
+  addresses           Address[]
+  orders              Order[]
+  favorites           Favorite[]
+  vehicles            CustomerVehicle[]
+  revisions           Revision[]
+  pointTransactions   PointTransaction[]
+  redeemedRewards     RedeemedReward[]
 
   @@index([email])
   @@index([cpf])
   @@index([status])
   @@index([level])
+  @@index([phone])
   @@index([createdAt])
+  @@index([loyaltyPoints])
   @@map("customers")
 }
 
@@ -194,6 +204,7 @@ model Product {
 
   // Relations
   vehicleCompatibility ProductVehicleCompatibility[]
+  favorites            Favorite[]
 
   @@index([category])
   @@index([status])
@@ -351,8 +362,9 @@ model Order {
   cancelledAt DateTime?
 
   // Relations
-  customer Customer    @relation(fields: [customerId], references: [id])
+  customer Customer       @relation(fields: [customerId], references: [id])
   items    OrderItem[]
+  tracking OrderTracking?
 
   @@index([customerId])
   @@index([status])
@@ -498,6 +510,7 @@ model Favorite {
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, productId])
   @@index([customerId])
@@ -522,6 +535,38 @@ enum ChecklistItemStatus {
   ATTENTION
   CRITICAL
   NOT_APPLICABLE
+}
+
+// ============================================================================
+// MODELS - FASE 5: PROGRAMA DE FIDELIDADE
+// ============================================================================
+
+enum PointTransactionType {
+  EARN_PURCHASE      // Ganho por compra
+  EARN_REVISION      // Ganho por revisão
+  EARN_REFERRAL      // Ganho por indicação
+  EARN_BIRTHDAY      // Ganho de aniversário
+  EARN_MANUAL        // Adição manual pelo admin
+  REDEEM_REWARD      // Resgate de recompensa
+  REDEEM_DISCOUNT    // Resgate de desconto
+  EXPIRE             // Expiração de pontos
+  ADJUST_MANUAL      // Ajuste manual (positivo ou negativo)
+  CANCELLED_ORDER    // Estorno por cancelamento de pedido
+}
+
+enum RewardType {
+  DISCOUNT_PERCENTAGE // Desconto percentual
+  DISCOUNT_FIXED      // Desconto fixo em reais
+  FREE_PRODUCT        // Produto grátis
+  FREE_SERVICE        // Serviço grátis
+  FREE_SHIPPING       // Frete grátis
+  SPECIAL_OFFER       // Oferta especial
+}
+
+enum RewardStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
 }
 
 // Veículos dos Clientes (para Revisões)
@@ -597,9 +642,28 @@ model Revision {
   date            DateTime
   mileage         Int?
   status          RevisionStatus @default(DRAFT)
-  checklistItems  Json // Array de itens verificados
+  checklistItems  Json // Array de itens verificados com detalhes completos
   generalNotes    String?        @db.Text
   recommendations String?        @db.Text
+
+  // Atribuição de mecânico
+  mechanicName    String? // Nome do mecânico responsável
+  mechanicNotes   String?        @db.Text // Notas internas do mecânico
+  assignedBy      String? // Quem atribuiu a revisão (admin ID/nome)
+  assignedAt      DateTime? // Quando foi atribuída
+
+  // Campos para notificações e lembretes
+  nextRevisionDate     DateTime? // Próxima revisão sugerida
+  nextRevisionMileage  Int? // Quilometragem sugerida para próxima revisão
+  oilChangeDate        DateTime? // Data da troca de óleo
+  oilChangeMileage     Int? // Quilometragem da troca de óleo
+  nextOilChangeDate    DateTime? // Próxima troca de óleo sugerida
+  nextOilChangeMileage Int? // Quilometragem sugerida para próxima troca
+
+  // Dados completos em JSON para histórico detalhado
+  revisionData    Json? // Snapshot completo da revisão (cliente, veículo, itens)
+  servicesPerformed String[] @default([]) // Lista de serviços realizados
+  partsReplaced     String[] @default([]) // Lista de peças substituídas
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -613,5 +677,215 @@ model Revision {
   @@index([vehicleId])
   @@index([status])
   @@index([date])
+  @@index([mechanicName])
+  @@index([nextRevisionDate])
+  @@index([nextOilChangeDate])
   @@map("revisions")
+}
+
+// Configuração do Programa de Fidelidade
+model LoyaltySettings {
+  id String @id @default(uuid())
+
+  // Configuração de Pontos
+  pointsPerReal          Decimal @default(1) @db.Decimal(10, 2) // Pontos ganhos por real gasto
+  minPurchaseForPoints   Decimal @default(0) @db.Decimal(10, 2) // Valor mínimo para ganhar pontos
+  pointsExpirationDays   Int?    // Dias até pontos expirarem (null = nunca)
+
+  // Bônus por Revisão
+  revisionBonusPoints    Int     @default(0) // Pontos ganhos ao fazer revisão
+
+  // Bônus por Aniversário
+  birthdayBonusPoints    Int     @default(0) // Pontos ganhos no aniversário
+  birthdayBonusEnabled   Boolean @default(false)
+
+  // Bônus por Indicação
+  referralBonusPoints    Int     @default(0) // Pontos por indicar amigo
+  referralBonusEnabled   Boolean @default(false)
+
+  // Multiplicadores por Nível
+  bronzeMultiplier       Decimal @default(1.0) @db.Decimal(3, 2)
+  silverMultiplier       Decimal @default(1.2) @db.Decimal(3, 2)
+  goldMultiplier         Decimal @default(1.5) @db.Decimal(3, 2)
+  platinumMultiplier     Decimal @default(2.0) @db.Decimal(3, 2)
+
+  // Status do Programa
+  isActive               Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("loyalty_settings")
+}
+
+// Transações de Pontos (Histórico)
+model PointTransaction {
+  id          String                @id @default(uuid())
+  customerId  String
+  type        PointTransactionType
+  points      Int                   // Pode ser positivo (ganho) ou negativo (gasto/expiração)
+  description String
+
+  // Referências opcionais
+  orderId     String?               // Se relacionado a um pedido
+  rewardId    String?               // Se relacionado a uma recompensa
+  referenceId String?               // ID de referência genérico (ex: ID da revisão)
+
+  // Metadados
+  metadata    Json?                 // Dados adicionais flexíveis
+  expiresAt   DateTime?             // Data de expiração desses pontos
+
+  // Admin que executou (para transações manuais)
+  executedBy  String?               // ID do admin que fez a transação manual
+
+  createdAt   DateTime              @default(now())
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([orderId])
+  @@map("point_transactions")
+}
+
+// Recompensas Disponíveis
+model LoyaltyReward {
+  id              String       @id @default(uuid())
+  name            String
+  description     String       @db.Text
+  type            RewardType
+  pointsCost      Int          // Custo em pontos
+  status          RewardStatus @default(ACTIVE)
+
+  // Configurações por Tipo
+  discountValue   Decimal?     @db.Decimal(10, 2) // Valor do desconto (% ou R$)
+  productId       String?      // ID do produto grátis
+  serviceId       String?      // ID do serviço grátis
+  minPurchase     Decimal?     @db.Decimal(10, 2) // Valor mínimo de compra
+  maxDiscount     Decimal?     @db.Decimal(10, 2) // Desconto máximo (para %)
+
+  // Limitações
+  usageLimit      Int?         // Limite total de resgates
+  usageCount      Int          @default(0) // Quantidade de resgates
+  limitPerCustomer Int?        // Limite por cliente
+
+  // Validade
+  expiresAt       DateTime?    // Data de expiração da recompensa
+
+  // Restrições de nível
+  minLevel        CustomerLevel? // Nível mínimo necessário
+
+  // Visual
+  image           String?      // URL da imagem
+  icon            String?      // Ícone da recompensa
+  badgeColor      String?      // Cor do badge
+
+  // Ordenação e destaque
+  featured        Boolean      @default(false) // Destaque na lista
+  order           Int          @default(0) // Ordem de exibição
+
+  // Metadados
+  termsAndConditions String?  @db.Text // Termos e condições
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  redemptions RedeemedReward[]
+
+  @@index([status])
+  @@index([pointsCost])
+  @@index([featured])
+  @@index([order])
+  @@map("loyalty_rewards")
+}
+
+// Recompensas Resgatadas
+model RedeemedReward {
+  id         String   @id @default(uuid())
+  customerId String
+  rewardId   String
+  pointsUsed Int      // Pontos gastos no resgate
+
+  // Status de uso
+  isUsed     Boolean  @default(false)
+  usedAt     DateTime?
+
+  // Código único para validação
+  redemptionCode String @unique // Código para o cliente apresentar
+
+  // Validade do resgate
+  expiresAt  DateTime?
+
+  // Metadados do resgate (snapshot da recompensa)
+  rewardData Json     // Dados da recompensa no momento do resgate
+
+  // Relacionado a pedido (se usado em compra)
+  orderId    String?
+
+  createdAt  DateTime @default(now())
+
+  // Relations
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reward   LoyaltyReward @relation(fields: [rewardId], references: [id])
+
+  @@index([customerId])
+  @@index([rewardId])
+  @@index([redemptionCode])
+  @@index([isUsed])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("redeemed_rewards")
+}
+
+// ============================================================================
+// MODELS - RASTREIO DE PEDIDOS
+// ============================================================================
+
+// Métodos de Envio
+model ShippingMethod {
+  id          String  @id @default(uuid())
+  name        String  @unique // Ex: "Correios PAC", "Correios SEDEX", "Transportadora XYZ"
+  type        String  // CORREIOS, TRANSPORTADORA, MOTOBOY, RETIRADA
+  trackingUrl String? // URL base para rastreamento. Ex: "https://rastreamento.correios.com.br/app/index.php?codigo={code}"
+  isActive    Boolean @default(true)
+  order       Int     @default(0) // Ordem de exibição
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  trackings OrderTracking[]
+
+  @@index([type])
+  @@index([isActive])
+  @@map("shipping_methods")
+}
+
+// Rastreio de Pedidos
+model OrderTracking {
+  id               String   @id @default(uuid())
+  orderId          String   @unique
+  shippingMethodId String
+  trackingCode     String
+  shippedAt        DateTime @default(now())
+  estimatedDelivery DateTime?
+  deliveredAt      DateTime?
+  notes            String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shippingMethod ShippingMethod @relation(fields: [shippingMethodId], references: [id])
+
+  @@index([orderId])
+  @@index([shippingMethodId])
+  @@index([trackingCode])
+  @@map("order_trackings")
 }
