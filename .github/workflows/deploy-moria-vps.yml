@@ -192,11 +192,11 @@ jobs:
             echo "=== Verificando status no supervisord ==="
             docker exec moria-vps supervisorctl status || true
 
-            echo "=== Logs do backend ===\"
+            echo "=== Logs do backend ==="
             docker exec moria-vps cat /var/log/backend.stdout.log || echo "Nenhum log stdout"
             docker exec moria-vps cat /var/log/backend.stderr.log || echo "Nenhum log stderr"
 
-            echo "=== Logs do frontend ===\"
+            echo "=== Logs do frontend ==="
             docker exec moria-vps cat /var/log/frontend.stdout.log || echo "Nenhum log frontend stdout"
             docker exec moria-vps cat /var/log/frontend.stderr.log || echo "Nenhum log frontend stderr"
 
@@ -205,28 +205,28 @@ jobs:
             docker-compose -f docker-compose.vps.yml ps
 
             # Verificar logs do PostgreSQL
-            echo "=== Logs do PostgreSQL ===\"
+            echo "=== Logs do PostgreSQL ==="
             docker logs moria-postgres --tail=20
 
             # Verificar logs da aplicação
-            echo "=== Logs da Aplicação ===\"
+            echo "=== Logs da Aplicação ==="
             docker logs moria-vps --tail=100
 
             # Verificar se container está rodando
             if ! docker ps | grep -q moria-vps; then
               echo "❌ Container moria-vps não está rodando!"
-              echo "=== Logs completos do container ===\"
+              echo "=== Logs completos do container ==="
               docker logs moria-vps
               exit 1
             fi
 
             # ===== VALIDAÇÃO PÓS-BUILD: Verificar compilação =====
-            echo "=== Validando compilação no container ===\"
+            echo "=== Validando compilação no container ==="
 
             # Verificar se o backend foi compilado
             if ! docker exec moria-vps test -f /app/apps/backend/dist/server.js; then
               echo "❌ ERRO: Backend não foi compilado no container!"
-              echo "=== Listando arquivos em backend/dist ===\"
+              echo "=== Listando arquivos em backend/dist ==="
               docker exec moria-vps ls -la /app/apps/backend/dist/ || true
               exit 1
             fi
@@ -235,14 +235,14 @@ jobs:
             # Verificar se o frontend foi compilado
             if ! docker exec moria-vps test -f /app/apps/frontend/dist/index.html; then
               echo "❌ ERRO: Frontend não foi compilado no container!"
-              echo "=== Listando arquivos em frontend/dist ===\"
+              echo "=== Listando arquivos em frontend/dist ==="
               docker exec moria-vps ls -la /app/apps/frontend/dist/ || true
               exit 1
             fi
             echo "✓ Frontend compilado no container"
 
             # Aguardar aplicação inicializar completamente
-            echo "=== Aguardando aplicação inicializar (10s) ===\"
+            echo "=== Aguardando aplicação inicializar (10s) ==="
             sleep 10
 
             # Verificar health
@@ -266,7 +266,7 @@ jobs:
 
               # Mostrar logs a cada 3 tentativas
               if [ $((i % 3)) -eq 0 ]; then
-                echo "=== Logs recentes ===\"
+                echo "=== Logs recentes ==="
                 docker logs moria-vps --tail=30
               fi
 

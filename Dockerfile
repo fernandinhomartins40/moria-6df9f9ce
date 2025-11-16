@@ -51,8 +51,8 @@ RUN npm run build:frontend
 # Stage 3: Production Runtime
 FROM node:20-alpine
 
-# Install supervisor, curl for healthcheck, and postgresql-client
-RUN apk add --no-cache supervisor curl postgresql-client
+# Install OpenSSL 3, supervisor, curl for healthcheck, and postgresql-client
+RUN apk add --no-cache supervisor curl postgresql-client openssl openssl-dev
 
 WORKDIR /app
 
@@ -74,7 +74,11 @@ COPY --from=frontend-builder /build/apps/frontend/dist ./apps/frontend/dist
 RUN npm install --production --workspace=apps/backend
 RUN npm install --production --workspace=packages/types
 
-# Generate Prisma Client in production node_modules
+# Create necessary directories with proper permissions BEFORE generating Prisma
+RUN mkdir -p /app/node_modules/@prisma/engines && \
+    chown -R node:node /app
+
+# Generate Prisma Client in production node_modules with proper permissions
 RUN cd apps/backend && npx prisma generate
 
 # Create uploads directory
