@@ -1,4 +1,4 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { environment } from '@config/environment.js';
 
 export interface TokenPayload {
@@ -20,22 +20,24 @@ export class JwtUtil {
    * Generate JWT token for customers
    */
   static generateToken(payload: TokenPayload): string {
-    return jwt.sign(payload, environment.jwt.secret, {
-      expiresIn: environment.jwt.expiresIn as string,
+    const options: SignOptions = {
+      expiresIn: environment.jwt.expiresIn,
       issuer: 'moria-backend',
       audience: 'moria-frontend',
-    });
+    };
+    return jwt.sign(payload, environment.jwt.secret, options);
   }
 
   /**
    * Generate JWT token for admins
    */
   static generateAdminToken(payload: AdminTokenPayload): string {
-    return jwt.sign(payload, environment.jwt.secret, {
-      expiresIn: environment.jwt.expiresIn as string,
+    const options: SignOptions = {
+      expiresIn: environment.jwt.expiresIn,
       issuer: 'moria-backend',
       audience: 'moria-admin',
-    });
+    };
+    return jwt.sign(payload, environment.jwt.secret, options);
   }
 
   /**
