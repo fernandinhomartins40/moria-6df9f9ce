@@ -252,12 +252,12 @@ jobs:
                 echo "✅ Moria está rodando na porta 3090!"
 
                 # Validar rota de produtos está acessível
-                echo "=== Validando rota /api/products ===\"
+                echo "=== Validando rota /api/products ==="
                 if curl -f http://localhost:3090/api/products; then
                   echo "✅ Rota /api/products está acessível!"
                   exit 0
                 else
-                  echo "⚠️ Rota /api/products retornou erro (pode ser normal se não houver produtos)"
+                  echo "⚠️ Rota /api/products retornou erro - pode ser normal se não houver produtos"
                   echo "✅ Deploy concluído - aplicação está rodando!"
                   exit 0
                 fi
