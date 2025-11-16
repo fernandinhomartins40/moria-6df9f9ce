@@ -85,18 +85,25 @@ RUN cd apps/backend && npx prisma generate
 RUN mkdir -p /app/apps/backend/uploads && \
     chown -R node:node /app/apps/backend/uploads
 
-# Configure supervisor
+# Create log directory with proper permissions
+RUN mkdir -p /var/log && \
+    touch /var/log/supervisord.log \
+          /var/log/backend.stdout.log \
+          /var/log/backend.stderr.log \
+          /var/log/frontend.stdout.log \
+          /var/log/frontend.stderr.log && \
+    chown -R node:node /var/log
+
+# Configure supervisor (run as node user, not root)
 COPY <<EOF /etc/supervisord.conf
 [supervisord]
 nodaemon=true
-user=root
 logfile=/var/log/supervisord.log
-pidfile=/var/run/supervisord.pid
+pidfile=/tmp/supervisord.pid
 
 [program:backend]
 command=node dist/server.js
 directory=/app/apps/backend
-user=node
 autostart=true
 autorestart=true
 stdout_logfile=/var/log/backend.stdout.log
@@ -106,7 +113,6 @@ environment=NODE_ENV=production
 [program:frontend]
 command=npx serve -s dist -l 8080
 directory=/app/apps/frontend
-user=node
 autostart=true
 autorestart=true
 stdout_logfile=/var/log/frontend.stdout.log
