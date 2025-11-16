@@ -11,6 +11,7 @@ export interface TokenPayload {
 export interface AdminTokenPayload {
   adminId: string;
   email: string;
+  name: string;
   role: string;
   status: string;
 }
@@ -74,6 +75,7 @@ export class JwtUtil {
       return {
         adminId: decoded.adminId,
         email: decoded.email,
+        name: decoded.name,
         role: decoded.role,
         status: decoded.status,
       };

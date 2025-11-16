@@ -1,4 +1,4 @@
-import { Customer, CustomerStatus, CustomerLevel } from '@prisma/client';
+import { Customer, CustomerStatus, CustomerLevel, Prisma } from '@prisma/client';
 import { prisma } from '@config/database.js';
 import { HashUtil } from '@shared/utils/hash.util.js';
 import { JwtUtil } from '@shared/utils/jwt.util.js';
@@ -9,7 +9,10 @@ import { logger } from '@shared/utils/logger.util.js';
 
 export interface AuthResponse {
   token: string;
-  customer: Omit<Customer, 'password'>;
+  customer: Omit<Customer, 'password'> & {
+    totalSpent: number;
+  };
+  requiresPasswordChange?: boolean;
 }
 
 export class AuthService {
@@ -17,13 +20,27 @@ export class AuthService {
    * Login customer
    */
   async login(dto: LoginDto): Promise<AuthResponse> {
-    // Find customer by email
-    const customer = await prisma.customer.findUnique({
-      where: { email: dto.email },
-    });
+    // Determine if input is email or phone
+    const isEmail = dto.emailOrPhone.includes('@');
+    const cleanPhone = dto.emailOrPhone.replace(/\D/g, ''); // Remove non-numeric chars
+
+    // Find customer by email or phone
+    let customer = null;
+
+    if (isEmail) {
+      // Login with email
+      customer = await prisma.customer.findUnique({
+        where: { email: dto.emailOrPhone.toLowerCase() },
+      });
+    } else {
+      // Login with phone (without country code)
+      customer = await prisma.customer.findFirst({
+        where: { phone: cleanPhone },
+      });
+    }
 
     if (!customer) {
-      throw ApiError.unauthorized('Invalid email or password');
+      throw ApiError.unauthorized('Invalid credentials');
     }
 
     // Check if customer is blocked
@@ -47,6 +64,21 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
+    // Calculate real totalOrders and totalSpent
+    const orderStats = await prisma.order.aggregate({
+      where: {
+        customerId: customer.id,
+        status: {
+          in: ['CONFIRMED', 'PREPARING', 'SHIPPED', 'DELIVERED'],
+        },
+      },
+      _count: { id: true },
+      _sum: { total: true },
+    });
+
+    const realTotalOrders = orderStats._count.id || 0;
+    const realTotalSpent = orderStats._sum.total || new Prisma.Decimal(0);
+
     // Generate JWT token
     const token = JwtUtil.generateToken({
       customerId: customer.id,
@@ -56,13 +88,18 @@ export class AuthService {
     });
 
     // Remove password from response
-    const { password, ...customerWithoutPassword } = customer;
+    const { password, totalSpent, totalOrders, ...customerData } = customer;
 
     logger.info(`Customer logged in: ${customer.email}`);
 
     return {
       token,
-      customer: customerWithoutPassword,
+      customer: {
+        ...customerData,
+        totalOrders: realTotalOrders,
+        totalSpent: Number(realTotalSpent),
+      } as any,
+      requiresPasswordChange: customer.hasProvisionalPassword,
     };
   }
 
@@ -116,20 +153,24 @@ export class AuthService {
     });
 
     // Remove password from response
-    const { password, ...customerWithoutPassword } = customer;
+    const { password, totalSpent, totalOrders, ...customerData } = customer;
 
     logger.info(`New customer registered: ${customer.email}`);
 
     return {
       token,
-      customer: customerWithoutPassword,
+      customer: {
+        ...customerData,
+        totalOrders,
+        totalSpent: Number(totalSpent),
+      } as any,
     };
   }
 
   /**
    * Get customer profile
    */
-  async getProfile(customerId: string): Promise<Omit<Customer, 'password'>> {
+  async getProfile(customerId: string): Promise<Omit<Customer, 'password'> & { totalSpent: number }> {
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
@@ -143,8 +184,40 @@ export class AuthService {
       throw ApiError.notFound('Customer not found');
     }
 
-    const { password, ...customerWithoutPassword } = customer;
-    return customerWithoutPassword;
+    // Calculate real totalOrders and totalSpent from orders
+    const orderStats = await prisma.order.aggregate({
+      where: {
+        customerId: customerId,
+        status: {
+          in: ['CONFIRMED', 'PREPARING', 'SHIPPED', 'DELIVERED'],
+        },
+      },
+      _count: { id: true },
+      _sum: { total: true },
+    });
+
+    // Update customer with real values if they differ
+    const realTotalOrders = orderStats._count.id || 0;
+    const realTotalSpent = orderStats._sum.total || new Prisma.Decimal(0);
+
+    if (customer.totalOrders !== realTotalOrders || customer.totalSpent.toString() !== realTotalSpent.toString()) {
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: {
+          totalOrders: realTotalOrders,
+          totalSpent: realTotalSpent,
+        },
+      });
+    }
+
+    const { password, totalSpent, totalOrders, ...customerData } = customer;
+
+    // Return with updated values
+    return {
+      ...customerData,
+      totalOrders: realTotalOrders,
+      totalSpent: Number(realTotalSpent),
+    } as any;
   }
 
   /**
@@ -180,5 +253,47 @@ export class AuthService {
 
     const { password, ...customerWithoutPassword } = customer;
     return customerWithoutPassword;
+  }
+
+  /**
+   * Change password (including provisional passwords)
+   */
+  async changePassword(
+    customerId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    // Get customer
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw ApiError.notFound('Customer not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await HashUtil.comparePassword(
+      currentPassword,
+      customer.password
+    );
+
+    if (!isPasswordValid) {
+      throw ApiError.unauthorized('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await HashUtil.hashPassword(newPassword);
+
+    // Update password and remove provisional flag
+    await prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        password: hashedPassword,
+        hasProvisionalPassword: false,
+      },
+    });
+
+    logger.info(`Password changed for customer: ${customer.email}`);
   }
 }

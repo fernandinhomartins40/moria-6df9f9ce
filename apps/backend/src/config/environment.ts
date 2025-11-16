@@ -57,6 +57,6 @@ export const environment = {
   logging: {
     level: env.LOG_LEVEL,
   },
-} as const;
+};
 
 export type Environment = typeof environment;

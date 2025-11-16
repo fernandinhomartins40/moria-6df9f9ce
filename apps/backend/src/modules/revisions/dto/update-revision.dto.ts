@@ -3,13 +3,13 @@ import { RevisionStatus } from '@prisma/client';
 import { ChecklistItemStatus } from './create-revision.dto.js';
 
 export const checklistItemCheckSchema = z.object({
-  categoryId: z.string().uuid(),
+  categoryId: z.string(),
   categoryName: z.string(),
-  itemId: z.string().uuid(),
+  itemId: z.string(),
   itemName: z.string(),
   status: z.nativeEnum(ChecklistItemStatus),
-  notes: z.string().optional(),
-  photos: z.array(z.string().url()).optional().default([]),
+  notes: z.string().nullable().optional().transform(val => val || undefined),
+  photos: z.array(z.string()).optional().default([]),
 });
 
 export const updateRevisionSchema = z.object({
@@ -36,6 +36,20 @@ export const updateRevisionSchema = z.object({
   recommendations: z
     .string()
     .max(5000, 'Recommendations must not exceed 5000 characters')
+    .trim()
+    .nullable()
+    .optional()
+    .transform(val => val || undefined),
+  mechanicName: z
+    .string()
+    .min(2, 'Mechanic name must be at least 2 characters')
+    .max(100, 'Mechanic name must not exceed 100 characters')
+    .trim()
+    .nullable()
+    .optional(),
+  mechanicNotes: z
+    .string()
+    .max(5000, 'Mechanic notes must not exceed 5000 characters')
     .trim()
     .nullable()
     .optional()

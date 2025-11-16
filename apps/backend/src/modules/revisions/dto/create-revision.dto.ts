@@ -9,16 +9,19 @@ export enum ChecklistItemStatus {
 }
 
 export const checklistItemCheckSchema = z.object({
-  categoryId: z.string().uuid(),
+  categoryId: z.string(),
   categoryName: z.string(),
-  itemId: z.string().uuid(),
+  itemId: z.string(),
   itemName: z.string(),
   status: z.nativeEnum(ChecklistItemStatus),
-  notes: z.string().optional(),
-  photos: z.array(z.string().url()).optional().default([]),
+  notes: z.string().nullable().optional().transform(val => val || undefined),
+  photos: z.array(z.string()).optional().default([]),
 });
 
 export const createRevisionSchema = z.object({
+  customerId: z
+    .string({ required_error: 'Customer ID is required' })
+    .uuid('Customer ID must be a valid UUID'),
   vehicleId: z
     .string({ required_error: 'Vehicle ID is required' })
     .uuid('Vehicle ID must be a valid UUID'),

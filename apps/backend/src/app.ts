@@ -20,7 +20,18 @@ import favoritesRoutes from '@modules/favorites/favorites.routes.js';
 import customerVehiclesRoutes from '@modules/customer-vehicles/customer-vehicles.routes.js';
 import checklistRoutes from '@modules/checklist/checklist.routes.js';
 import revisionsRoutes from '@modules/revisions/revisions.routes.js';
+import customerRevisionsRoutes from '@modules/revisions/customer-revisions.routes.js';
 import adminRoutes from '@modules/admin/admin.routes.js';
+import landingRoutes from '@modules/landing/landing.routes.js';
+import uploadsRoutes from '@modules/uploads/uploads.routes.js';
+import loyaltyRoutes from '@modules/loyalty/loyalty.routes.js';
+import loyaltyAdminRoutes from '@modules/loyalty/loyalty-admin.routes.js';
+import shippingRoutes from '@modules/shipping/shipping.routes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function createApp(): Express {
   const app = express();
@@ -32,6 +43,7 @@ export function createApp(): Express {
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }));
 
   // CORS
@@ -46,6 +58,10 @@ export function createApp(): Express {
 
   // Compression
   app.use(compression());
+
+  // Serve static files from uploads directory
+  const uploadsPath = path.join(__dirname, '../uploads');
+  app.use('/uploads', express.static(uploadsPath));
 
   // Request logging
   app.use((req, res, next) => {
@@ -85,9 +101,23 @@ export function createApp(): Express {
   app.use('/customer-vehicles', customerVehiclesRoutes);
   app.use('/checklist', checklistRoutes);
   app.use('/revisions', revisionsRoutes);
+  app.use('/customer-revisions', customerRevisionsRoutes);
+
+  // API Routes - Fase 5: Loyalty Program
+  app.use('/loyalty', loyaltyRoutes);
+  app.use('/admin/loyalty', loyaltyAdminRoutes);
+
+  // Shipping Routes
+  app.use('/shipping', shippingRoutes);
 
   // Admin Routes
   app.use('/admin', adminRoutes);
+
+  // Public Landing Page Routes
+  app.use('/landing', landingRoutes);
+
+  // Upload Routes
+  app.use('/uploads', uploadsRoutes);
 
   // 404 handler
   app.use((req: Request, res: Response) => {

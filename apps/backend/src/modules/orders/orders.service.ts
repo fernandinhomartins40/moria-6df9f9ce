@@ -1,13 +1,15 @@
-import { Order, OrderItem, OrderStatus, OrderItemType, Prisma } from '@prisma/client';
+import { Order, OrderItem, OrderStatus, OrderItemType, Prisma, PointTransactionType, OrderTracking } from '@prisma/client';
 import { prisma } from '@config/database.js';
 import { ApiError } from '@shared/utils/error.util.js';
 import { PaginationUtil, PaginatedResponse } from '@shared/utils/pagination.util.js';
 import { logger } from '@shared/utils/logger.util.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { UpdateOrderDto } from './dto/update-order.dto.js';
+import { LoyaltyService } from '@modules/loyalty/loyalty.service.js';
 
 export type OrderWithItems = Order & {
   items: OrderItem[];
+  tracking?: OrderTracking | null;
 };
 
 export interface OrderFilters {
@@ -16,7 +18,19 @@ export interface OrderFilters {
   endDate?: Date;
 }
 
+export interface CreateTrackingDto {
+  shippingMethodId: string;
+  trackingCode: string;
+  estimatedDelivery?: Date;
+  notes?: string;
+}
+
 export class OrdersService {
+  private loyaltyService: LoyaltyService;
+
+  constructor() {
+    this.loyaltyService = new LoyaltyService();
+  }
   /**
    * Create new order
    */
@@ -222,6 +236,24 @@ export class OrdersService {
       },
     });
 
+    // Award loyalty points for the purchase
+    try {
+      const points = await this.loyaltyService.calculatePointsForPurchase(customerId, Number(total));
+      if (points > 0) {
+        await this.loyaltyService.awardPoints(
+          customerId,
+          points,
+          PointTransactionType.EARN_PURCHASE,
+          `Compra #${order.id.substring(0, 8)} - R$ ${total.toFixed(2)}`,
+          { orderId: order.id }
+        );
+        logger.info(`Awarded ${points} loyalty points for order ${order.id}`);
+      }
+    } catch (error) {
+      logger.error(`Failed to award loyalty points for order ${order.id}:`, error);
+      // Don't fail the order creation if loyalty points fail
+    }
+
     logger.info(`Order created: ${order.id} for customer ${customerId}`);
 
     return order;
@@ -256,6 +288,18 @@ export class OrdersService {
         where,
         include: {
           items: true,
+          tracking: {
+            include: {
+              shippingMethod: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -264,7 +308,21 @@ export class OrdersService {
       prisma.order.count({ where }),
     ]);
 
-    return PaginationUtil.buildResponse(orders, validPage, validLimit, totalCount);
+    // Buscar endereços para todos os pedidos
+    const addressIds = orders.map(o => o.addressId);
+    const addresses = await prisma.address.findMany({
+      where: { id: { in: addressIds } },
+    });
+
+    const addressMap = new Map(addresses.map(a => [a.id, a]));
+
+    // Adicionar address a cada order
+    const ordersWithAddress = orders.map(order => ({
+      ...order,
+      address: addressMap.get(order.addressId),
+    }));
+
+    return PaginationUtil.buildResponse(ordersWithAddress, validPage, validLimit, totalCount);
   }
 
   /**
@@ -275,6 +333,11 @@ export class OrdersService {
       where: { id: orderId, customerId },
       include: {
         items: true,
+        tracking: {
+          include: {
+            shippingMethod: true,
+          },
+        },
       },
     });
 
@@ -326,6 +389,30 @@ export class OrdersService {
                 },
               });
             }
+          }
+
+          // Deduct loyalty points that were awarded for this order
+          try {
+            const pointTransaction = await prisma.pointTransaction.findFirst({
+              where: {
+                orderId: orderId,
+                type: PointTransactionType.EARN_PURCHASE,
+              },
+            });
+
+            if (pointTransaction && pointTransaction.points > 0) {
+              await this.loyaltyService.deductPoints(
+                customerId,
+                pointTransaction.points,
+                PointTransactionType.CANCELLED_ORDER,
+                `Estorno - Pedido cancelado #${orderId.substring(0, 8)}`,
+                { orderId }
+              );
+              logger.info(`Deducted ${pointTransaction.points} loyalty points for cancelled order ${orderId}`);
+            }
+          } catch (error) {
+            logger.error(`Failed to deduct loyalty points for cancelled order ${orderId}:`, error);
+            // Don't fail the order cancellation if loyalty points fail
           }
         }
       }
@@ -397,5 +484,140 @@ export class OrdersService {
       totalSpent: Number(customer?.totalSpent || 0),
       ordersByStatus,
     };
+  }
+
+  /**
+   * Add tracking to order (Admin only)
+   */
+  async addTracking(orderId: string, dto: CreateTrackingDto): Promise<OrderTracking> {
+    // Verify order exists
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { tracking: true },
+    });
+
+    if (!order) {
+      throw ApiError.notFound('Order not found');
+    }
+
+    // Check if tracking already exists
+    if (order.tracking) {
+      throw ApiError.badRequest('Order already has tracking information');
+    }
+
+    // Verify order status is SHIPPED
+    if (order.status !== 'SHIPPED') {
+      throw ApiError.badRequest('Can only add tracking to shipped orders');
+    }
+
+    // Verify shipping method exists
+    const shippingMethod = await prisma.shippingMethod.findUnique({
+      where: { id: dto.shippingMethodId },
+    });
+
+    if (!shippingMethod) {
+      throw ApiError.notFound('Shipping method not found');
+    }
+
+    // Create tracking
+    const tracking = await prisma.orderTracking.create({
+      data: {
+        orderId,
+        shippingMethodId: dto.shippingMethodId,
+        trackingCode: dto.trackingCode,
+        estimatedDelivery: dto.estimatedDelivery,
+        notes: dto.notes,
+      },
+      include: {
+        shippingMethod: true,
+      },
+    });
+
+    logger.info(`Tracking added to order ${orderId}: ${dto.trackingCode}`);
+
+    return tracking;
+  }
+
+  /**
+   * Update tracking information (Admin only)
+   */
+  async updateTracking(orderId: string, dto: Partial<CreateTrackingDto>): Promise<OrderTracking> {
+    // Verify order exists
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { tracking: true },
+    });
+
+    if (!order) {
+      throw ApiError.notFound('Order not found');
+    }
+
+    if (!order.tracking) {
+      throw ApiError.notFound('Order does not have tracking information');
+    }
+
+    // If updating shipping method, verify it exists
+    if (dto.shippingMethodId) {
+      const shippingMethod = await prisma.shippingMethod.findUnique({
+        where: { id: dto.shippingMethodId },
+      });
+
+      if (!shippingMethod) {
+        throw ApiError.notFound('Shipping method not found');
+      }
+    }
+
+    // Update tracking
+    const tracking = await prisma.orderTracking.update({
+      where: { orderId },
+      data: dto,
+      include: {
+        shippingMethod: true,
+      },
+    });
+
+    logger.info(`Tracking updated for order ${orderId}`);
+
+    return tracking;
+  }
+
+  /**
+   * Get tracking information
+   */
+  async getTracking(orderId: string): Promise<OrderTracking | null> {
+    const tracking = await prisma.orderTracking.findUnique({
+      where: { orderId },
+      include: {
+        shippingMethod: true,
+        order: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return tracking;
+  }
+
+  /**
+   * Delete tracking information (Admin only)
+   */
+  async deleteTracking(orderId: string): Promise<void> {
+    const tracking = await prisma.orderTracking.findUnique({
+      where: { orderId },
+    });
+
+    if (!tracking) {
+      throw ApiError.notFound('Tracking not found');
+    }
+
+    await prisma.orderTracking.delete({
+      where: { orderId },
+    });
+
+    logger.info(`Tracking deleted for order ${orderId}`);
   }
 }

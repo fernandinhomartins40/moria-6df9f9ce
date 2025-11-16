@@ -213,7 +213,7 @@ export class ProductsService {
         stock: dto.stock,
         minStock: dto.minStock,
         images: dto.images,
-        specifications: dto.specifications || null,
+        specifications: dto.specifications || Prisma.JsonNull,
         status,
         slug,
         metaDescription: dto.metaDescription,
@@ -265,18 +265,24 @@ export class ProductsService {
       status = ProductStatus.OUT_OF_STOCK;
     }
 
+    // Build update data object
+    const updateData: any = { ...dto };
+
+    if (slug) {
+      updateData.slug = slug;
+    }
+    if (status) {
+      updateData.status = status;
+    }
+
+    // Handle JSON null values properly
+    if (dto.specifications === null) {
+      updateData.specifications = Prisma.JsonNull;
+    }
+
     const product = await prisma.product.update({
       where: { id },
-      data: {
-        ...dto,
-        ...(slug && { slug }),
-        ...(status && { status }),
-        ...(dto.subcategory === null && { subcategory: null }),
-        ...(dto.promoPrice === null && { promoPrice: null }),
-        ...(dto.specifications === null && { specifications: null }),
-        ...(dto.metaDescription === null && { metaDescription: null }),
-        ...(dto.metaKeywords === null && { metaKeywords: null }),
-      },
+      data: updateData,
     });
 
     logger.info(`Product updated: ${product.name} (ID: ${product.id})`);

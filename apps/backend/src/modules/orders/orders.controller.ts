@@ -167,4 +167,76 @@ export class OrdersController {
       next(error);
     }
   };
+
+  /**
+   * POST /orders/:id/tracking
+   * Add tracking to order (Admin only)
+   */
+  addTracking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const tracking = await this.ordersService.addTracking(id, req.body);
+
+      res.status(201).json({
+        success: true,
+        data: tracking,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PATCH /orders/:id/tracking
+   * Update tracking information (Admin only)
+   */
+  updateTracking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const tracking = await this.ordersService.updateTracking(id, req.body);
+
+      res.status(200).json({
+        success: true,
+        data: tracking,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /orders/:id/tracking
+   * Get tracking information
+   */
+  getTracking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const tracking = await this.ordersService.getTracking(id);
+
+      res.status(200).json({
+        success: true,
+        data: tracking,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /orders/:id/tracking
+   * Delete tracking information (Admin only)
+   */
+  deleteTracking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      await this.ordersService.deleteTracking(id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Tracking deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

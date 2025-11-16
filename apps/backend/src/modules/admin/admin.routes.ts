@@ -31,8 +31,14 @@ router.patch('/orders/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.
 // ==================== CUSTOMERS ====================
 router.get('/customers', adminController.getCustomers);
 router.get('/customers/:id', adminController.getCustomerById);
+router.post('/customers', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.createCustomer);
+router.get('/customers/:id/vehicles', adminController.getCustomerVehicles);
+router.post('/customers/:id/vehicles', adminController.createCustomerVehicle);
+router.put('/customers/:id/vehicles/:vehicleId', adminController.updateCustomerVehicle);
+router.delete('/customers/:id/vehicles/:vehicleId', adminController.deleteCustomerVehicle);
 router.patch('/customers/:id/level', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerLevel);
 router.patch('/customers/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerStatus);
+router.put('/customers/:id', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.updateCustomer);
 
 // ==================== REVISIONS ====================
 router.get('/revisions/statistics', revisionsController.getStatistics);
@@ -62,14 +68,18 @@ router.get('/services', servicesController.getServices);
 router.get('/services/:id', servicesController.getServiceById);
 router.post('/services', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), servicesController.createService);
 router.put('/services/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), servicesController.updateService);
+router.patch('/services/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), servicesController.updateService);
 router.delete('/services/:id', AdminAuthMiddleware.requireMinRole(AdminRole.ADMIN), servicesController.deleteService);
 
 // ==================== COUPONS ====================
 router.get('/coupons', couponsController.getCoupons);
 router.get('/coupons/:id', couponsController.getCouponById);
 router.post('/coupons', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.createCoupon);
-router.put('/coupons/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.updateCoupon);
+router.patch('/coupons/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.updateCoupon);
 router.delete('/coupons/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.deleteCoupon);
+router.post('/coupons/:id/activate', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.activateCoupon);
+router.post('/coupons/:id/deactivate', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.deactivateCoupon);
+router.get('/coupons/:id/stats', couponsController.getCouponStats);
 
 // ==================== PROMOTIONS ====================
 router.get('/promotions', promotionsController.getPromotions);

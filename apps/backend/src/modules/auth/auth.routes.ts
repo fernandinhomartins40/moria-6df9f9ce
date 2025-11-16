@@ -16,6 +16,7 @@ router.post('/logout', authController.logout);
 // Customer protected routes
 router.get('/profile', AuthMiddleware.authenticate, authController.getProfile);
 router.put('/profile', AuthMiddleware.authenticate, authController.updateProfile);
+router.post('/change-password', AuthMiddleware.authenticate, authController.changePassword);
 
 // Admin public routes
 router.post('/admin/login', adminAuthController.login);

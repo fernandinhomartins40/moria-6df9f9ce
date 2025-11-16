@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service.js';
 import { loginSchema } from './dto/login.dto.js';
 import { registerSchema } from './dto/register.dto.js';
+import { changePasswordSchema } from './dto/change-password.dto.js';
 
 export class AuthController {
   private authService: AuthService;
@@ -30,6 +31,7 @@ export class AuthController {
         success: true,
         data: {
           customer: result.customer,
+          requiresPasswordChange: result.requiresPasswordChange,
         },
       });
     } catch (error) {
@@ -101,6 +103,31 @@ export class AuthController {
       res.status(200).json({
         success: true,
         data: customer,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /auth/change-password
+   */
+  changePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const dto = changePasswordSchema.parse(req.body);
+      await this.authService.changePassword(
+        req.user.customerId,
+        dto.currentPassword,
+        dto.newPassword
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Password changed successfully',
       });
     } catch (error) {
       next(error);

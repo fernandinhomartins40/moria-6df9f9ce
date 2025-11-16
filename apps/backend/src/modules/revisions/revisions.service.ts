@@ -14,6 +14,8 @@ export interface RevisionFilters {
   dateTo?: Date;
   page?: number;
   limit?: number;
+  sortBy?: 'date' | 'status' | 'mileage' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class RevisionsService {
@@ -52,12 +54,18 @@ export class RevisionsService {
       }
     }
 
+    // Determinar ordenação
+    const sortBy = filters.sortBy || 'date';
+    const sortOrder = filters.sortOrder || 'desc';
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
+
     const [revisions, totalCount] = await Promise.all([
       prisma.revision.findMany({
         where,
         skip: PaginationUtil.calculateSkip(page, limit),
         take: limit,
-        orderBy: { date: 'desc' },
+        orderBy,
         include: {
           vehicle: {
             select: {
@@ -491,6 +499,109 @@ export class RevisionsService {
         ...(dto.recommendations !== undefined && {
           recommendations: dto.recommendations,
         }),
+        ...(dto.mechanicName !== undefined && { mechanicName: dto.mechanicName }),
+        ...(dto.mechanicNotes !== undefined && { mechanicNotes: dto.mechanicNotes }),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Update revision checklist partially (Admin)
+   * Permite salvar progresso parcial do checklist
+   */
+  async updateRevisionChecklistPartial(
+    id: string,
+    checklistItems: any[]
+  ): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    // Permite atualizar mesmo se a revisão estiver completada
+    // para casos de correção/adição de informações
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        checklistItems,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Assign mechanic to revision (Admin)
+   */
+  async assignMechanicToRevision(
+    id: string,
+    mechanicName: string,
+    assignedBy: string
+  ): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        mechanicName,
+        assignedBy,
+        assignedAt: new Date(),
+        // Automaticamente move para IN_PROGRESS se estava em DRAFT
+        ...(revision.status === RevisionStatus.DRAFT && {
+          status: RevisionStatus.IN_PROGRESS,
+        }),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Transfer revision to another mechanic (Admin)
+   */
+  async transferRevisionToMechanic(
+    id: string,
+    newMechanicName: string,
+    transferredBy: string,
+    transferNotes?: string
+  ): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (revision.status === RevisionStatus.COMPLETED) {
+      throw ApiError.badRequest('Cannot transfer completed revision');
+    }
+
+    if (revision.status === RevisionStatus.CANCELLED) {
+      throw ApiError.badRequest('Cannot transfer cancelled revision');
+    }
+
+    // Adiciona nota de transferência
+    const transferNote = `[TRANSFERIDO] De ${revision.mechanicName || 'não atribuído'} para ${newMechanicName} por ${transferredBy}${transferNotes ? `: ${transferNotes}` : ''}`;
+    const updatedMechanicNotes = revision.mechanicNotes
+      ? `${revision.mechanicNotes}\n\n${transferNote}`
+      : transferNote;
+
+    return prisma.revision.update({
+      where: { id },
+      data: {
+        mechanicName: newMechanicName,
+        mechanicNotes: updatedMechanicNotes,
+        assignedBy: transferredBy,
+        assignedAt: new Date(),
         updatedAt: new Date(),
       },
     });
@@ -546,6 +657,10 @@ export class RevisionsService {
   async completeRevisionAdmin(id: string): Promise<Revision> {
     const revision = await prisma.revision.findUnique({
       where: { id },
+      include: {
+        customer: true,
+        vehicle: true,
+      },
     });
 
     if (!revision) {
@@ -556,12 +671,81 @@ export class RevisionsService {
       throw ApiError.badRequest('Revision is already completed');
     }
 
+    // Calcular datas de próximas revisões
+    const now = new Date();
+    const nextRevisionDate = new Date(now);
+    nextRevisionDate.setMonth(now.getMonth() + 6); // Próxima revisão em 6 meses
+
+    const nextOilChangeDate = new Date(now);
+    nextOilChangeDate.setMonth(now.getMonth() + 3); // Troca de óleo em 3 meses
+
+    // Calcular quilometragem sugerida
+    const nextRevisionMileage = revision.mileage ? revision.mileage + 10000 : undefined;
+    const nextOilChangeMileage = revision.mileage ? revision.mileage + 5000 : undefined;
+
+    // Extrair serviços realizados e peças trocadas do checklist
+    const checklistItems = revision.checklistItems as any[];
+    const servicesPerformed: string[] = [];
+    const partsReplaced: string[] = [];
+
+    if (Array.isArray(checklistItems)) {
+      checklistItems.forEach((item: any) => {
+        if (item.status === 'REPLACED' || item.status === 'SERVICED') {
+          servicesPerformed.push(item.itemName || item.name);
+        }
+        if (item.status === 'REPLACED') {
+          partsReplaced.push(item.itemName || item.name);
+        }
+      });
+    }
+
+    // Snapshot completo dos dados
+    const revisionData = {
+      customer: {
+        id: revision.customer.id,
+        name: revision.customer.name,
+        email: revision.customer.email,
+        phone: revision.customer.phone,
+      },
+      vehicle: {
+        id: revision.vehicle.id,
+        brand: revision.vehicle.brand,
+        model: revision.vehicle.model,
+        year: revision.vehicle.year,
+        plate: revision.vehicle.plate,
+        color: revision.vehicle.color,
+      },
+      revisionDate: revision.date,
+      mileage: revision.mileage,
+      checklistItems: revision.checklistItems,
+      generalNotes: revision.generalNotes,
+      recommendations: revision.recommendations,
+      completedAt: now,
+    };
+
+    // Atualizar quilometragem do veículo
+    if (revision.mileage) {
+      await prisma.customerVehicle.update({
+        where: { id: revision.vehicleId },
+        data: { mileage: revision.mileage },
+      });
+    }
+
     return prisma.revision.update({
       where: { id },
       data: {
         status: RevisionStatus.COMPLETED,
-        completedAt: new Date(),
-        updatedAt: new Date(),
+        completedAt: now,
+        updatedAt: now,
+        nextRevisionDate,
+        nextRevisionMileage,
+        oilChangeDate: now,
+        oilChangeMileage: revision.mileage,
+        nextOilChangeDate,
+        nextOilChangeMileage,
+        revisionData,
+        servicesPerformed,
+        partsReplaced,
       },
     });
   }
@@ -589,6 +773,103 @@ export class RevisionsService {
         updatedAt: new Date(),
       },
     });
+  }
+
+  /**
+   * Get upcoming maintenance reminders for customer
+   */
+  async getUpcomingReminders(customerId: string) {
+    const now = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+    // Get all completed revisions for the customer
+    const revisions = await prisma.revision.findMany({
+      where: {
+        customerId,
+        status: RevisionStatus.COMPLETED,
+        OR: [
+          {
+            nextRevisionDate: {
+              lte: thirtyDaysFromNow,
+              gte: now,
+            },
+          },
+          {
+            nextOilChangeDate: {
+              lte: thirtyDaysFromNow,
+              gte: now,
+            },
+          },
+        ],
+      },
+      include: {
+        vehicle: {
+          select: {
+            id: true,
+            brand: true,
+            model: true,
+            year: true,
+            plate: true,
+            mileage: true,
+          },
+        },
+      },
+      orderBy: {
+        nextRevisionDate: 'asc',
+      },
+    });
+
+    // Build reminders array
+    const reminders: any[] = [];
+
+    revisions.forEach((revision) => {
+      // Check for upcoming revision
+      if (revision.nextRevisionDate && revision.nextRevisionDate >= now) {
+        const daysUntil = Math.ceil(
+          (revision.nextRevisionDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        reminders.push({
+          type: 'revision',
+          vehicle: revision.vehicle,
+          dueDate: revision.nextRevisionDate,
+          dueMileage: revision.nextRevisionMileage,
+          daysUntil,
+          lastRevisionDate: revision.completedAt,
+          lastRevisionMileage: revision.mileage,
+          urgent: daysUntil <= 7,
+        });
+      }
+
+      // Check for upcoming oil change
+      if (revision.nextOilChangeDate && revision.nextOilChangeDate >= now) {
+        const daysUntil = Math.ceil(
+          (revision.nextOilChangeDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        reminders.push({
+          type: 'oil_change',
+          vehicle: revision.vehicle,
+          dueDate: revision.nextOilChangeDate,
+          dueMileage: revision.nextOilChangeMileage,
+          daysUntil,
+          lastOilChangeDate: revision.oilChangeDate,
+          lastOilChangeMileage: revision.oilChangeMileage,
+          urgent: daysUntil <= 7,
+        });
+      }
+    });
+
+    // Sort by urgency and date
+    reminders.sort((a, b) => {
+      if (a.urgent !== b.urgent) {
+        return a.urgent ? -1 : 1;
+      }
+      return a.daysUntil - b.daysUntil;
+    });
+
+    return reminders;
   }
 
   /**

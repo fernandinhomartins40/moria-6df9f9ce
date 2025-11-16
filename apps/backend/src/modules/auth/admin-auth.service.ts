@@ -50,6 +50,7 @@ export class AdminAuthService {
     const token = JwtUtil.generateAdminToken({
       adminId: admin.id,
       email: admin.email,
+      name: admin.name,
       role: admin.role,
       status: admin.status,
     });

@@ -20,6 +20,13 @@ router.get('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.require
 router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.createRevision);
 router.put('/:id', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.updateRevision);
 
+// Partial updates (staff can save partial progress)
+router.patch('/:id/checklist', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.updateChecklistPartial);
+
+// Mechanic assignment (staff can assign mechanics)
+router.patch('/:id/assign-mechanic', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.assignMechanic);
+router.patch('/:id/transfer-mechanic', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), revisionsController.transferMechanic);
+
 // Status changes (staff can manage revision status)
 router.patch('/:id/start', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.startRevision);
 router.patch('/:id/complete', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), revisionsController.completeRevision);

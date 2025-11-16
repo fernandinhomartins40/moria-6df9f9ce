@@ -96,12 +96,72 @@ export class AdminController {
     }
   };
 
+  getCustomerVehicles = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { search } = req.query;
+      const vehicles = await this.adminService.getCustomerVehicles(id, search as string);
+      res.json(vehicles);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createCustomerVehicle = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const vehicle = await this.adminService.createCustomerVehicle(id, req.body);
+      res.status(201).json(vehicle);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateCustomerVehicle = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, vehicleId } = req.params;
+      const vehicle = await this.adminService.updateCustomerVehicle(id, vehicleId, req.body);
+      res.json(vehicle);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteCustomerVehicle = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, vehicleId } = req.params;
+      await this.adminService.deleteCustomerVehicle(id, vehicleId);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
   updateCustomerStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
       const customer = await this.adminService.updateCustomerStatus(id, status);
       res.json(customer);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateCustomer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const customer = await this.adminService.updateCustomer(id, req.body);
+      res.json(customer);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createCustomer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.adminService.createCustomer(req.body);
+      res.status(201).json(result);
     } catch (error) {
       next(error);
     }

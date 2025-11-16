@@ -46,7 +46,7 @@ export class ErrorMiddleware {
 
     // Handle Prisma errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      const prismaError = this.handlePrismaError(error);
+      const prismaError = ErrorMiddleware.handlePrismaError(error);
       res.status(prismaError.statusCode).json({
         success: false,
         error: prismaError.message,
@@ -106,3 +106,4 @@ export class ErrorMiddleware {
     }
   }
 }
+

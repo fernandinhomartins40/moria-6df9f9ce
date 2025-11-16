@@ -53,7 +53,7 @@ export const createProductSchema = z.object({
     .min(0, 'Min stock cannot be negative')
     .default(5),
   images: z
-    .array(z.string().url('Invalid image URL'))
+    .array(z.string().min(1, 'Image URL cannot be empty'))
     .min(1, 'At least one image is required')
     .default([]),
   specifications: z.record(z.any()).optional(),

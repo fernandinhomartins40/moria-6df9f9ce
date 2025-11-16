@@ -10,10 +10,10 @@ export const createCouponSchema = z.object({
   description: z.string().min(1, 'Description is required').max(500),
   discountType: z.enum(['PERCENTAGE', 'FIXED']),
   discountValue: z.number().positive('Discount value must be positive'),
-  minValue: z.number().positive().optional(),
-  maxDiscount: z.number().positive().optional(),
+  minValue: z.number().positive().optional().or(z.literal(undefined)),
+  maxDiscount: z.number().positive().optional().or(z.literal(undefined)),
   expiresAt: z.string().datetime(),
-  usageLimit: z.number().int().positive().optional(),
+  usageLimit: z.number().int().positive().optional().or(z.literal(undefined)),
   isActive: z.boolean().default(true),
 }).refine(
   (data) => {

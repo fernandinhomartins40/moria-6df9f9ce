@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database.js';
 import { CustomerLevel, CustomerStatus, OrderStatus, Prisma, Customer } from '@prisma/client';
+import { HashUtil } from '@shared/utils/hash.util.js';
 
 // ==================== TYPES ====================
 
@@ -252,6 +253,273 @@ export class AdminService {
     return this.mapCustomerToResponse(customer);
   }
 
+  async updateCustomer(id: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    cpf?: string;
+  }) {
+    // Verificar se o cliente existe
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { id }
+    });
+
+    if (!existingCustomer) {
+      const error = new Error('Cliente não encontrado');
+      (error as any).statusCode = 404;
+      throw error;
+    }
+
+    // Se o email está sendo alterado, verificar se já existe outro cliente com esse email
+    if (data.email && data.email !== existingCustomer.email) {
+      const emailInUse = await prisma.customer.findUnique({
+        where: { email: data.email }
+      });
+
+      if (emailInUse) {
+        const error = new Error('Já existe um cliente cadastrado com este e-mail');
+        (error as any).statusCode = 409;
+        throw error;
+      }
+    }
+
+    // Se o CPF está sendo alterado, verificar se já existe outro cliente com esse CPF
+    if (data.cpf && data.cpf !== existingCustomer.cpf) {
+      const cpfInUse = await prisma.customer.findUnique({
+        where: { cpf: data.cpf }
+      });
+
+      if (cpfInUse) {
+        const error = new Error('Já existe um cliente cadastrado com este CPF');
+        (error as any).statusCode = 409;
+        throw error;
+      }
+    }
+
+    const customer = await prisma.customer.update({
+      where: { id },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.email && { email: data.email }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.cpf !== undefined && { cpf: data.cpf })
+      }
+    });
+
+    return this.mapCustomerToResponse(customer);
+  }
+
+  async createCustomer(data: {
+    name: string;
+    email: string;
+    phone: string;
+    cpf?: string;
+    birthDate?: string;
+  }) {
+    // Verificar se já existe um cliente com o mesmo email
+    const existingEmail = await prisma.customer.findUnique({
+      where: { email: data.email }
+    });
+
+    if (existingEmail) {
+      const error = new Error('Já existe um cliente cadastrado com este e-mail');
+      (error as any).statusCode = 409;
+      throw error;
+    }
+
+    // Verificar se já existe um cliente com o mesmo CPF (se fornecido)
+    if (data.cpf) {
+      const existingCpf = await prisma.customer.findUnique({
+        where: { cpf: data.cpf }
+      });
+
+      if (existingCpf) {
+        const error = new Error('Já existe um cliente cadastrado com este CPF');
+        (error as any).statusCode = 409;
+        throw error;
+      }
+    }
+
+    // Gerar senha provisória (primeiros 4 dígitos do telefone + últimos 4)
+    const phoneDigits = data.phone.replace(/\D/g, '');
+    const provisionalPassword = phoneDigits.slice(0, 4) + phoneDigits.slice(-4);
+
+    // Hash da senha provisória
+    const hashedPassword = await HashUtil.hashPassword(provisionalPassword);
+
+    // Criar o cliente com senha provisória
+    const customer = await prisma.customer.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        cpf: data.cpf,
+        birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+        password: hashedPassword,
+        hasProvisionalPassword: true,
+        status: CustomerStatus.ACTIVE,
+        level: CustomerLevel.BRONZE
+      }
+    });
+
+    return {
+      customer: this.mapCustomerToResponse(customer),
+      provisionalPassword // Retornar a senha para o admin informar o cliente
+    };
+  }
+
+  async getCustomerVehicles(customerId: string, search?: string) {
+    const where: Prisma.CustomerVehicleWhereInput = {
+      customerId
+    };
+
+    if (search) {
+      where.OR = [
+        { brand: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+        { plate: { contains: search, mode: 'insensitive' } },
+        { color: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const vehicles = await prisma.customerVehicle.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return vehicles;
+  }
+
+  async createCustomerVehicle(customerId: string, data: {
+    brand: string;
+    model: string;
+    year: number;
+    plate: string;
+    chassisNumber?: string;
+    color?: string;
+    mileage?: number;
+  }) {
+    // Verificar se o cliente existe
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId }
+    });
+
+    if (!customer) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    // Verificar se já existe um veículo com essa placa
+    const plateUpperCase = data.plate.toUpperCase();
+    const existingVehicle = await prisma.customerVehicle.findUnique({
+      where: { plate: plateUpperCase }
+    });
+
+    if (existingVehicle) {
+      const error = new Error(`Já existe um veículo cadastrado com a placa ${plateUpperCase}`);
+      (error as any).statusCode = 409;
+      throw error;
+    }
+
+    // Criar o veículo
+    const vehicle = await prisma.customerVehicle.create({
+      data: {
+        customerId,
+        brand: data.brand,
+        model: data.model,
+        year: data.year,
+        plate: plateUpperCase,
+        chassisNumber: data.chassisNumber,
+        color: data.color,
+        mileage: data.mileage
+      }
+    });
+
+    return vehicle;
+  }
+
+  async updateCustomerVehicle(customerId: string, vehicleId: string, data: {
+    brand?: string;
+    model?: string;
+    year?: number;
+    plate?: string;
+    chassisNumber?: string;
+    color?: string;
+    mileage?: number;
+  }) {
+    // Verificar se o veículo existe e pertence ao cliente
+    const vehicle = await prisma.customerVehicle.findUnique({
+      where: { id: vehicleId }
+    });
+
+    if (!vehicle) {
+      const error = new Error('Veículo não encontrado');
+      (error as any).statusCode = 404;
+      throw error;
+    }
+
+    if (vehicle.customerId !== customerId) {
+      const error = new Error('Este veículo não pertence ao cliente especificado');
+      (error as any).statusCode = 403;
+      throw error;
+    }
+
+    // Se estiver atualizando a placa, verificar se já existe outra com essa placa
+    if (data.plate) {
+      const plateUpperCase = data.plate.toUpperCase();
+      if (plateUpperCase !== vehicle.plate) {
+        const existingVehicle = await prisma.customerVehicle.findUnique({
+          where: { plate: plateUpperCase }
+        });
+
+        if (existingVehicle) {
+          const error = new Error(`Já existe um veículo cadastrado com a placa ${plateUpperCase}`);
+          (error as any).statusCode = 409;
+          throw error;
+        }
+      }
+    }
+
+    // Atualizar o veículo
+    const updatedVehicle = await prisma.customerVehicle.update({
+      where: { id: vehicleId },
+      data: {
+        brand: data.brand,
+        model: data.model,
+        year: data.year,
+        plate: data.plate?.toUpperCase(),
+        chassisNumber: data.chassisNumber,
+        color: data.color,
+        mileage: data.mileage
+      }
+    });
+
+    return updatedVehicle;
+  }
+
+  async deleteCustomerVehicle(customerId: string, vehicleId: string) {
+    // Verificar se o veículo existe e pertence ao cliente
+    const vehicle = await prisma.customerVehicle.findUnique({
+      where: { id: vehicleId }
+    });
+
+    if (!vehicle) {
+      const error = new Error('Veículo não encontrado');
+      (error as any).statusCode = 404;
+      throw error;
+    }
+
+    if (vehicle.customerId !== customerId) {
+      const error = new Error('Este veículo não pertence ao cliente especificado');
+      (error as any).statusCode = 403;
+      throw error;
+    }
+
+    // Excluir o veículo
+    await prisma.customerVehicle.delete({
+      where: { id: vehicleId }
+    });
+  }
+
   // ==================== HELPER METHODS ====================
 
   private mapOrderItemToResponse(item: OrderItemWithRelations) {
@@ -260,7 +528,8 @@ export class AdminService {
       name: item.name,
       quantity: item.quantity,
       price: Number(item.price),
-      type: (item.productId ? 'product' : 'service') as 'product' | 'service'
+      type: (item.productId ? 'product' : 'service') as 'product' | 'service',
+      linkedId: item.productId || item.serviceId || undefined
     };
   }
 

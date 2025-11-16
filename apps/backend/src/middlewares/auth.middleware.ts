@@ -84,3 +84,37 @@ export class AuthMiddleware {
     };
   }
 }
+
+// Export convenience functions
+export const authenticate = AuthMiddleware.authenticate;
+export const requireActive = AuthMiddleware.requireActive;
+export const requireLevel = AuthMiddleware.requireLevel;
+
+// Admin authentication (from admin module)
+export const authenticateAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    // Try to get token from cookie first, then fallback to Authorization header
+    let token = req.cookies?.adminAuthToken;
+
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+
+    if (!token) {
+      throw ApiError.unauthorized('No admin token provided');
+    }
+
+    try {
+      const payload = JwtUtil.verifyAdminToken(token);
+      req.user = payload as any;
+      next();
+    } catch (error) {
+      throw ApiError.unauthorized('Invalid or expired admin token');
+    }
+  } catch (error) {
+    next(error);
+  }
+};

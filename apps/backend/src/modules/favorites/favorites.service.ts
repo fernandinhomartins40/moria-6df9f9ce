@@ -95,13 +95,14 @@ export class FavoritesService {
 
     const include = includeProduct
       ? {
-          customer: false,
+          product: true,
         }
       : undefined;
 
     const [favorites, totalCount] = await Promise.all([
       prisma.favorite.findMany({
         where,
+        include,
         orderBy: { createdAt: 'desc' },
         skip,
         take: validLimit,
@@ -109,22 +110,8 @@ export class FavoritesService {
       prisma.favorite.count({ where }),
     ]);
 
-    // Fetch products separately if needed
-    let favoritesWithProducts = favorites;
-    if (includeProduct) {
-      const productIds = favorites.map((f) => f.productId);
-      const products = await prisma.product.findMany({
-        where: { id: { in: productIds } },
-      });
-
-      favoritesWithProducts = favorites.map((favorite) => ({
-        ...favorite,
-        product: products.find((p) => p.id === favorite.productId),
-      })) as any;
-    }
-
     return PaginationUtil.buildResponse(
-      favoritesWithProducts,
+      favorites,
       validPage,
       validLimit,
       totalCount

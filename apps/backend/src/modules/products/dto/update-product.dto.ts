@@ -19,9 +19,17 @@ export const updateProductSchema = z.object({
     .optional(),
   subcategory: z
     .string()
-    .min(2, 'Subcategory must be at least 2 characters')
     .optional()
-    .nullable(),
+    .nullable()
+    .transform(val => {
+      if (val === '' || val === null || val === undefined) {
+        return null;
+      }
+      return val;
+    })
+    .refine(val => val === null || val.length >= 2, {
+      message: 'Subcategory must be at least 2 characters'
+    }),
   sku: z
     .string()
     .min(3, 'SKU must be at least 3 characters')
@@ -61,7 +69,7 @@ export const updateProductSchema = z.object({
     .min(0, 'Min stock cannot be negative')
     .optional(),
   images: z
-    .array(z.string().url('Invalid image URL'))
+    .array(z.string().min(1, 'Image URL cannot be empty'))
     .min(1, 'At least one image is required')
     .optional(),
   specifications: z.record(z.any()).optional().nullable(),
