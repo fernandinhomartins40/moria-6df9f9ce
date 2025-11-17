@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import apiClient from "../api/apiClient";
 
 interface Admin {
   id: string;
@@ -26,8 +27,6 @@ interface AdminAuthContextType {
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
 
 // Role hierarchy for permission checking
 const roleHierarchy = {
@@ -58,20 +57,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Try to get admin profile using the httpOnly cookie
-        const response = await fetch(`${API_URL}/auth/admin/profile`, {
-          credentials: 'include', // Send cookies
-        });
+        const response = await apiClient.get('/auth/admin/profile');
 
-        if (response.ok) {
-          const data = await response.json();
-          setState({
-            admin: data.data,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } else {
-          setState(prev => ({ ...prev, isLoading: false }));
-        }
+        setState({
+          admin: response.data,
+          isAuthenticated: true,
+          isLoading: false,
+        });
       } catch (error) {
         // If cookie is invalid/missing, admin is not authenticated
         setState(prev => ({ ...prev, isLoading: false }));
@@ -85,37 +77,25 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const response = await fetch(`${API_URL}/auth/admin/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Send/receive cookies
-        body: JSON.stringify({ email, password }),
+      const response = await apiClient.post('/auth/admin/login', { email, password });
+      const data = response.data;
+
+      // Save the token to localStorage for API calls
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+      }
+
+      setState({
+        admin: data.admin,
+        isAuthenticated: true,
+        isLoading: false,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Save the token to localStorage for API calls
-        if (data.data.token) {
-          localStorage.setItem('admin_token', data.data.token);
-        }
-
-        setState({
-          admin: data.data.admin,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-
-        return { success: true };
-      } else {
-        setState(prev => ({ ...prev, isLoading: false }));
-        return { success: false, error: data.error || 'Falha no login' };
-      }
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       setState(prev => ({ ...prev, isLoading: false }));
-      return { success: false, error: 'Erro ao conectar com o servidor' };
+      const errorMessage = error.response?.data?.error || 'Erro ao conectar com o servidor';
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -125,10 +105,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('admin_token');
 
       // Call backend to clear httpOnly cookie
-      await fetch(`${API_URL}/auth/admin/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await apiClient.post('/auth/admin/logout');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     } finally {

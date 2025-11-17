@@ -108,6 +108,9 @@ jobs:
 
             # Logs
             LOG_LEVEL=info
+
+            # Seed
+            RUN_SEED=true
             EOF
 
             # Adicionar BUILD_TIMESTAMP ao .env

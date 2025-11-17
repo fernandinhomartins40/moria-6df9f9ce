@@ -131,8 +131,8 @@ stdout_logfile=/var/log/frontend.stdout.log
 stderr_logfile=/var/log/frontend.stderr.log
 EOF
 
-# Install serve globally for serving frontend
-RUN npm install -g serve
+# Install serve globally for serving frontend and tsx for running seeds
+RUN npm install -g serve tsx
 
 # Expose port
 EXPOSE 3090
@@ -156,6 +156,14 @@ echo "PostgreSQL is ready!"
 echo "Running database migrations..."
 cd /app/apps/backend
 npx prisma migrate deploy
+
+# Run seed if RUN_SEED environment variable is set to 'true'
+if [ "$RUN_SEED" = "true" ]; then
+  echo "Running database seed..."
+  npx tsx prisma/seed.ts || echo "Warning: Seed failed or already populated"
+else
+  echo "Skipping seed (set RUN_SEED=true to run seed)"
+fi
 
 echo "Starting supervisor..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf

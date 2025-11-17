@@ -42,6 +42,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       FRONTEND_URL: ${FRONTEND_URL}
+      RUN_SEED: ${RUN_SEED:-false}
+      POSTGRES_USER: ${POSTGRES_USER:-moria}
     depends_on:
       postgres:
         condition: service_healthy
