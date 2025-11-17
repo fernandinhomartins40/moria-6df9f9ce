@@ -194,4 +194,20 @@ export class ProductsController {
       next(error);
     }
   };
+
+  /**
+   * PATCH /products/:id/toggle-status
+   */
+  toggleProductStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const product = await this.productsService.toggleProductStatus(req.params.id);
+
+      res.status(200).json({
+        success: true,
+        data: product,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

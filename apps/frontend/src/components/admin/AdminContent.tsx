@@ -108,7 +108,7 @@ interface Product {
   images: string[];
   specifications: Record<string, string>;
   vehicleCompatibility: string[];
-  isActive: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
   createdAt: string;
   updatedAt: string;
 }
@@ -318,13 +318,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     }
 
     if (statusFilter === "active") {
-      filtered = filtered.filter(product => product.isActive);
+      filtered = filtered.filter(product => product.status === 'ACTIVE');
     } else if (statusFilter === "inactive") {
-      filtered = filtered.filter(product => !product.isActive);
+      filtered = filtered.filter(product => product.status === 'INACTIVE');
     } else if (statusFilter === "low_stock") {
-      filtered = filtered.filter(product => product.stock <= product.minStock);
+      filtered = filtered.filter(product => product.stock > 0 && product.stock <= product.minStock);
     } else if (statusFilter === "out_of_stock") {
-      filtered = filtered.filter(product => product.stock === 0);
+      filtered = filtered.filter(product => product.stock === 0 || product.status === 'OUT_OF_STOCK');
     }
 
     filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -1403,9 +1403,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                             {product.subcategory && (
                               <Badge variant="outline">{product.subcategory}</Badge>
                             )}
-                            {!product.isActive && (
+                            {product.status === 'INACTIVE' && (
                               <Badge variant="secondary" className="bg-red-100 text-red-800">
                                 Inativo
+                              </Badge>
+                            )}
+                            {product.status === 'DISCONTINUED' && (
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                                Descontinuado
                               </Badge>
                             )}
                           </div>
@@ -1484,17 +1489,22 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          variant={product.isActive ? "secondary" : "outline"}
+                          variant={product.status === 'ACTIVE' ? "secondary" : "outline"}
                           size="sm"
-                          onClick={() => {
-                            const updatedProducts = products.map(p =>
-                              p.id === product.id ? { ...p, isActive: !p.isActive, updatedAt: new Date().toISOString() } : p
-                            );
-                            setProducts(updatedProducts);
-                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                          onClick={async () => {
+                            try {
+                              const updatedProduct = await adminService.toggleProductStatus(product.id);
+                              const updatedProducts = products.map(p =>
+                                p.id === product.id ? updatedProduct : p
+                              );
+                              setProducts(updatedProducts);
+                            } catch (error) {
+                              console.error('Error toggling product status:', error);
+                              alert('Erro ao alterar status do produto. Verifique o console.');
+                            }
                           }}
                         >
-                          {product.isActive ? (
+                          {product.status === 'ACTIVE' ? (
                             <>
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Ativo
@@ -1510,13 +1520,21 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                           <Eye className="h-4 w-4 mr-1" />
                           Editar
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => {
-                            const updatedProducts = products.filter(p => p.id !== product.id);
-                            setProducts(updatedProducts);
-                            localStorage.setItem('store_products', JSON.stringify(updatedProducts));
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            if (!confirm('Tem certeza que deseja excluir este produto?')) {
+                              return;
+                            }
+                            try {
+                              await adminService.deleteProduct(product.id);
+                              const updatedProducts = products.filter(p => p.id !== product.id);
+                              setProducts(updatedProducts);
+                            } catch (error) {
+                              console.error('Error deleting product:', error);
+                              alert('Erro ao excluir produto. Verifique o console.');
+                            }
                           }}
                           className="text-red-600 hover:text-red-700 hover:border-red-300"
                         >
