@@ -239,7 +239,7 @@ interface ServiceQuote {
       return;
     }
 
-    if (form.whatsapp.replace(/\D/g, '').length < 10) {
+    if (form.whatsapp && form.whatsapp.replace(/\D/g, '').length < 10) {
       toast.error("WhatsApp deve ter pelo menos 10 dígitos");
       return;
     }

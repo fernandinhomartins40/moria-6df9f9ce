@@ -99,7 +99,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{admin.name}</p>
-              <p className="text-xs text-gray-400 truncate">{admin.role.replace(/_/g, " ")}</p>
+              <p className="text-xs text-gray-400 truncate">{admin.role ? admin.role.replace(/_/g, " ") : ""}</p>
             </div>
           </div>
         </div>
