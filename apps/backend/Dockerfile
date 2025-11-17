@@ -21,7 +21,7 @@ FROM base AS development
 COPY --from=dev-dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-EXPOSE 3001
+EXPOSE 3003
 CMD ["npm", "run", "dev"]
 
 # Build stage
@@ -41,5 +41,5 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package*.json ./
 
 USER node
-EXPOSE 3001
+EXPOSE 3003
 CMD ["npm", "run", "start:prod"]
