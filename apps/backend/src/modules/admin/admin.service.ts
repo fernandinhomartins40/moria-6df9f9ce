@@ -341,7 +341,7 @@ export class AdminService {
     }
 
     // Gerar senha provisória (primeiros 4 dígitos do telefone + últimos 4)
-    const phoneDigits = data.phone.replace(/\D/g, '');
+    const phoneDigits = data.phone ? data.phone.replace(/\D/g, '') : '';
     const provisionalPassword = phoneDigits.slice(0, 4) + phoneDigits.slice(-4);
 
     // Hash da senha provisória
