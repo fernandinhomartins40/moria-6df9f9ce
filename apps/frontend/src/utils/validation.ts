@@ -281,6 +281,7 @@ export const cpfSchema = z.string()
   .regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido')
   .refine((cpf) => {
     // Algoritmo de validação de CPF
+    if (!cpf) return false;
     const digits = cpf.replace(/\D/g, '');
 
     if (digits.length !== 11) return false;

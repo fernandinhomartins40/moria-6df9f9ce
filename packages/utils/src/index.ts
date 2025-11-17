@@ -21,6 +21,7 @@ export const formatDate = (date: string | Date): string => {
  * Formata um CPF
  */
 export const formatCPF = (cpf: string): string => {
+  if (!cpf) return '';
   return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 };
 
@@ -28,6 +29,7 @@ export const formatCPF = (cpf: string): string => {
  * Formata um CEP
  */
 export const formatZipCode = (zipCode: string): string => {
+  if (!zipCode) return '';
   return zipCode.replace(/(\d{5})(\d{3})/, '$1-$2');
 };
 
@@ -35,6 +37,7 @@ export const formatZipCode = (zipCode: string): string => {
  * Formata um telefone
  */
 export const formatPhone = (phone: string): string => {
+  if (!phone) return '';
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 11) {
     return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
@@ -46,6 +49,7 @@ export const formatPhone = (phone: string): string => {
  * Valida um CPF
  */
 export const validateCPF = (cpf: string): boolean => {
+  if (!cpf) return false;
   const cleaned = cpf.replace(/\D/g, '');
 
   if (cleaned.length !== 11 || /^(\d)\1+$/.test(cleaned)) {
@@ -87,6 +91,7 @@ export const validateEmail = (email: string): boolean => {
  * Gera um slug a partir de uma string
  */
 export const generateSlug = (text: string): string => {
+  if (!text) return '';
   return text
     .toLowerCase()
     .normalize('NFD')
@@ -108,6 +113,7 @@ export const calculateDiscount = (originalPrice: number, discountedPrice: number
  * Trunca um texto
  */
 export const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return '';
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
 };

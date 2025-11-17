@@ -12,6 +12,7 @@ export class ProductsService {
    * Generate slug from product name
    */
   private generateSlug(name: string): string {
+    if (!name) return '';
     return name
       .toLowerCase()
       .normalize('NFD')

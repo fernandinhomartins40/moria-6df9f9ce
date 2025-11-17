@@ -45,6 +45,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
   const formatWhatsApp = (value: string) => {
     // Remove tudo que não for número
+    if (!value) return '';
     const numbers = value.replace(/\D/g, '');
     
     // Aplica a máscara (11) 99999-9999
@@ -103,7 +104,7 @@ interface ServiceQuote {
 
   const createProvisionalUser = async (name: string, whatsapp: string): Promise<ProvisionalUser> => {
     // Simula criação de usuário provisório
-    const login = whatsapp.replace(/\D/g, ''); // Remove caracteres não numéricos
+    const login = whatsapp ? whatsapp.replace(/\D/g, '') : ''; // Remove caracteres não numéricos
     const password = name.slice(0, 3).toLowerCase(); // 3 primeiras letras do nome
 
     const user: ProvisionalUser = {
