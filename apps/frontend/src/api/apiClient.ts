@@ -9,10 +9,9 @@ const getBaseURL = () => {
   }
 
   // Em produção, usar URL relativa (mesmo servidor/domínio)
+  // O Nginx roteia /api/* para o backend, então basta usar '' ou '/' como base
   if (import.meta.env.PROD) {
-    // Como o Nginx já roteia /api/* para o backend,
-    // usar window.location.origin garante que funcione em qualquer domínio/IP
-    return `${window.location.origin}`;
+    return '';
   }
 
   // Em desenvolvimento, usar localhost
