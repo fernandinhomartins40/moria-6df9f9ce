@@ -61,6 +61,7 @@ router.post('/products', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), 
 router.put('/products/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), productsController.updateProduct);
 router.delete('/products/:id', AdminAuthMiddleware.requireMinRole(AdminRole.ADMIN), productsController.deleteProduct);
 router.patch('/products/:id/stock', productsController.updateStock);
+router.patch('/products/:id/toggle-status', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), productsController.toggleProductStatus);
 
 // ==================== SERVICES ====================
 router.get('/services/categories/list', servicesController.getCategories);

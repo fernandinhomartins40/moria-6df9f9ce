@@ -88,7 +88,8 @@ export interface AdminProduct {
   stock: number;
   minStock: number;
   images: string[];
-  isActive: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
+  isActive?: boolean; // Computed field for backward compatibility
   createdAt: string;
   updatedAt: string;
 }

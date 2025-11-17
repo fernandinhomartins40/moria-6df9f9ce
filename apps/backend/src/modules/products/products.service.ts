@@ -400,4 +400,33 @@ export class ProductsService {
       count: cat._count.category,
     }));
   }
+
+  /**
+   * Toggle product status (ACTIVE <-> INACTIVE)
+   */
+  async toggleProductStatus(id: string): Promise<Product> {
+    const product = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product) {
+      throw ApiError.notFound('Product not found');
+    }
+
+    // Toggle between ACTIVE and INACTIVE
+    const newStatus = product.status === ProductStatus.ACTIVE
+      ? ProductStatus.INACTIVE
+      : ProductStatus.ACTIVE;
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        status: newStatus,
+      },
+    });
+
+    logger.info(`Product status toggled: ${updatedProduct.name} (Status: ${newStatus})`);
+
+    return updatedProduct;
+  }
 }
