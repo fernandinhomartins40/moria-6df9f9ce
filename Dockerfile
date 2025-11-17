@@ -37,6 +37,8 @@ COPY packages ./packages
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY apps/frontend/tsconfig*.json ./apps/frontend/
 COPY apps/frontend/vite.config.ts ./apps/frontend/
+COPY apps/frontend/tailwind.config.ts ./apps/frontend/
+COPY apps/frontend/postcss.config.js ./apps/frontend/
 COPY apps/frontend/index.html ./apps/frontend/
 COPY apps/frontend/public ./apps/frontend/public
 COPY apps/frontend/src ./apps/frontend/src
