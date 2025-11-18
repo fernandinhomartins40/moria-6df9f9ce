@@ -183,8 +183,30 @@ jobs:
             docker rm -f moria-vps 2>/dev/null || true
             docker rm -f moria-postgres 2>/dev/null || true
 
-            # Build da imagem sem cache (BUILD_TIMESTAMP vem do export acima)
-            echo "Construindo nova imagem..."
+            # ===== BUILD NO HOST (FORA DO DOCKER) =====
+            echo "=== Instalando dependências e fazendo build no host ==="
+
+            # Backend
+            cd $APP_DIR/apps/backend
+            echo "Instalando dependências do backend..."
+            npm install
+            echo "Gerando Prisma client..."
+            npx prisma generate
+            echo "Compilando backend..."
+            npm run build
+
+            # Frontend
+            cd $APP_DIR/apps/frontend
+            echo "Instalando dependências do frontend..."
+            npm install
+            echo "Compilando frontend..."
+            VITE_API_BASE_URL=/api npm run build
+
+            cd $APP_DIR
+            echo "✅ Build concluído no host"
+
+            # Build da imagem Docker (agora apenas copia os arquivos já compilados)
+            echo "Construindo imagem Docker..."
             docker-compose -f docker-compose.vps.yml build --no-cache --pull
 
             # Iniciar container

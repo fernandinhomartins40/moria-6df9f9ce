@@ -1,7 +1,9 @@
 # Dockerfile para produção VPS - Backend + Frontend + Nginx
-FROM node:18-slim AS base
+# Build direto sem multi-stage para evitar problemas de rede no Docker
+FROM node:18-slim
 WORKDIR /app
-# Instalar dependências necessárias
+
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
     openssl \
     curl \
@@ -9,51 +11,14 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# ===== Backend Build =====
-FROM base AS backend-deps
-WORKDIR /app/apps/backend
-COPY apps/backend/package*.json ./
-RUN npm install
-
-FROM base AS backend-build
-WORKDIR /app/apps/backend
-COPY --from=backend-deps /app/apps/backend/node_modules ./node_modules
-COPY apps/backend/ ./
-# Configurar Prisma para ignorar checksum em caso de erro de download
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-# Gerar Prisma client e fazer build
-RUN npx prisma generate && npm run build
-
-# ===== Frontend Build =====
-FROM base AS frontend-deps
-WORKDIR /app/apps/frontend
-COPY apps/frontend/package*.json ./
-RUN npm install
-
-FROM base AS frontend-build
-WORKDIR /app/apps/frontend
-COPY --from=frontend-deps /app/apps/frontend/node_modules ./node_modules
-COPY apps/frontend/ ./
-# Set API URL for production build - uses relative path since nginx proxies /api
-ENV VITE_API_BASE_URL=/api
-RUN npm run build
-
-# ===== Production Image =====
-FROM base AS production
+# Copiar código fonte
+COPY . .
 
 # Criar diretórios
-RUN mkdir -p /var/log/supervisor /var/run/nginx /app/apps/backend /app/apps/frontend
+RUN mkdir -p /var/log/supervisor /var/run/nginx
 
-# Copiar backend compilado
-WORKDIR /app/apps/backend
-COPY --from=backend-build /app/apps/backend/dist ./dist
-COPY --from=backend-build /app/apps/backend/prisma ./prisma
-COPY --from=backend-build /app/apps/backend/node_modules ./node_modules
-COPY --from=backend-build /app/apps/backend/package*.json ./
-
-# Copiar frontend compilado
-WORKDIR /app/apps/frontend
-COPY --from=frontend-build /app/apps/frontend/dist ./dist
+# Nota: node_modules, prisma generate e build serão feitos FORA do Docker
+# no VPS host antes de buildar a imagem, para evitar problemas de rede
 
 # Configuração do Nginx
 RUN mkdir -p /etc/nginx/conf.d
@@ -177,9 +142,8 @@ cd /app/apps/backend
 echo "Sincronizando schema do Prisma..."
 npx prisma db push --accept-data-loss --skip-generate 2>&1
 
-# Gerar cliente Prisma
-echo "Gerando cliente Prisma..."
-npx prisma generate 2>&1
+# Prisma client já foi gerado no build do host, não precisa gerar novamente
+echo "✓ Prisma client já gerado"
 
 # Sempre executar seed (ele verifica se já foi executado)
 echo "Executando seed do banco de dados..."
