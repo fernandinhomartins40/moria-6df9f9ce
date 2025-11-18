@@ -19,6 +19,8 @@ FROM base AS backend-build
 WORKDIR /app/apps/backend
 COPY --from=backend-deps /app/apps/backend/node_modules ./node_modules
 COPY apps/backend/ ./
+# Configurar Prisma para ignorar checksum em caso de erro de download
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 # Gerar Prisma client e fazer build
 RUN npx prisma generate && npm run build
 
