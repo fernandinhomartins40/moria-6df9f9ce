@@ -7,7 +7,7 @@ O botão "Salvar Alterações" no modal de editar/criar produto:
 - **Não indicava se salvou com sucesso ou erro**
 - Usuário não sabia se a ação foi concluída
 - Sem loading states
-- URL da API estava incorreta (3000 em vez de 3003)
+- URL da API estava incorreta (3000 em vez de 3001)
 
 ---
 
@@ -160,12 +160,12 @@ const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 #### ✅ Depois (CORRETO):
 ```typescript
-const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
+const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 ```
 
 **Agora usa:**
 - Variável de ambiente correta: `VITE_API_BASE_URL`
-- Porta correta do backend: `3003`
+- Porta correta do backend: `3001`
 - Fallback correto
 
 ---

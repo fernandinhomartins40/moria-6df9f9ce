@@ -3,7 +3,7 @@
 ## ❌ PROBLEMA
 
 ```
-PUT http://localhost:3003/products/{id} 401 (Unauthorized)
+PUT http://localhost:3001/products/{id} 401 (Unauthorized)
 ```
 
 **Causa raiz:** O ProductModal estava buscando o token errado no localStorage.

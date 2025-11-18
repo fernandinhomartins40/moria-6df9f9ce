@@ -19,12 +19,12 @@
                 output.textContent += '\nToken: ' + (token ? 'Found' : 'Not found');
 
                 if (!token) {
-                    output.textContent += '\n\nPlease login first at http://localhost:3002/store-panel';
+                    output.textContent += '\n\nPlease login first at http://localhost:3000/store-panel';
                     return;
                 }
 
                 // Test API call
-                const response = await fetch('http://localhost:3003/admin/revisions?page=1&limit=5', {
+                const response = await fetch('http://localhost:3001/admin/revisions?page=1&limit=5', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'

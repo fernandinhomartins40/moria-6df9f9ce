@@ -294,10 +294,10 @@ if (isAuthenticated && admin) {
 O contexto usa a variável de ambiente para definir a URL da API:
 
 ```env
-VITE_API_URL=http://localhost:3002
+VITE_API_URL=http://localhost:3001
 ```
 
-Se não definida, usa `http://localhost:3002` como padrão.
+Se não definida, usa `http://localhost:3001` como padrão.
 
 ---
 

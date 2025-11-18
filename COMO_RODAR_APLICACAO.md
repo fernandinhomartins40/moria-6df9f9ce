@@ -12,13 +12,13 @@
 ## ⚙️ CONFIGURAÇÕES DE PORTA
 
 ### Backend (API)
-- **Porta**: 3003
-- **URL**: http://localhost:3003
-- **Health Check**: http://localhost:3003/health
+- **Porta**: 3001
+- **URL**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
 
 ### Frontend (Interface)
-- **Porta**: 3002
-- **URL**: http://localhost:3002
+- **Porta**: 3000
+- **URL**: http://localhost:3000
 
 ---
 
@@ -59,7 +59,7 @@ npx prisma db seed
 
 ---
 
-## 🚀 PASSO 2: INICIAR BACKEND (Porta 3003)
+## 🚀 PASSO 2: INICIAR BACKEND (Porta 3001)
 
 ### Opção A: Terminal Separado
 ```bash
@@ -75,9 +75,9 @@ npm run dev
 
 **Você verá:**
 ```
-🚀 Server running on port 3003
+🚀 Server running on port 3001
 📝 Environment: development
-🔗 Health check: http://localhost:3003/health
+🔗 Health check: http://localhost:3001/health
 ✅ Database connected successfully
 ```
 
@@ -88,7 +88,7 @@ npm run dev:backend
 ```
 
 ### ✅ Testar Backend
-Abra no navegador: http://localhost:3003/health
+Abra no navegador: http://localhost:3001/health
 
 Deve retornar:
 ```json
@@ -101,7 +101,7 @@ Deve retornar:
 
 ---
 
-## 🎨 PASSO 3: INICIAR FRONTEND (Porta 3002)
+## 🎨 PASSO 3: INICIAR FRONTEND (Porta 3000)
 
 ### Opção A: Terminal Separado
 ```bash
@@ -119,7 +119,7 @@ npm run dev
 ```
   VITE v5.x.x  ready in xxx ms
 
-  ➜  Local:   http://localhost:3002/
+  ➜  Local:   http://localhost:3000/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
 ```
@@ -131,7 +131,7 @@ npm run dev:frontend
 ```
 
 ### ✅ Testar Frontend
-Abra no navegador: http://localhost:3002
+Abra no navegador: http://localhost:3000
 
 ---
 
@@ -144,8 +144,8 @@ npm run dev:all
 ```
 
 Isso inicia:
-- Backend na porta **3003**
-- Frontend na porta **3002**
+- Backend na porta **3001**
+- Frontend na porta **3000**
 
 ---
 
@@ -153,11 +153,11 @@ Isso inicia:
 
 ### Verificar Portas em Uso (Windows)
 ```bash
-# Backend (3003)
-netstat -ano | findstr ":3003"
+# Backend (3001)
+netstat -ano | findstr ":3001"
 
-# Frontend (3002)
-netstat -ano | findstr ":3002"
+# Frontend (3000)
+netstat -ano | findstr ":3000"
 
 # PostgreSQL (5432)
 netstat -ano | findstr ":5432"
@@ -166,9 +166,9 @@ netstat -ano | findstr ":5432"
 ### Parar Processo em Porta Específica (se necessário)
 ```bash
 # Descobrir PID
-netstat -ano | findstr ":3003"
+netstat -ano | findstr ":3001"
 # Exemplo de output:
-# TCP    0.0.0.0:3003    0.0.0.0:0    LISTENING    4224
+# TCP    0.0.0.0:3001    0.0.0.0:0    LISTENING    4224
 #                                                  ^^^^^ (PID)
 
 # Matar processo
@@ -183,11 +183,11 @@ taskkill /PID 4224 /F
 
 | Serviço | URL | Descrição |
 |---------|-----|-----------|
-| **Frontend** | http://localhost:3002 | Interface pública |
-| **Backend API** | http://localhost:3003 | API REST |
-| **Health Check** | http://localhost:3003/health | Status da API |
-| **Admin Panel** | http://localhost:3002/admin | Painel administrativo |
-| **Store Panel** | http://localhost:3002/store-panel | Painel de vendas |
+| **Frontend** | http://localhost:3000 | Interface pública |
+| **Backend API** | http://localhost:3001 | API REST |
+| **Health Check** | http://localhost:3001/health | Status da API |
+| **Admin Panel** | http://localhost:3000/admin | Painel administrativo |
+| **Store Panel** | http://localhost:3000/store-panel | Painel de vendas |
 
 ---
 
@@ -246,25 +246,25 @@ npx tsc --noEmit
 
 ## 🐛 TROUBLESHOOTING
 
-### Problema: "Port 3003 is already in use"
+### Problema: "Port 3001 is already in use"
 **Solução:**
 ```bash
 # Descobrir processo
-netstat -ano | findstr ":3003"
+netstat -ano | findstr ":3001"
 
 # Matar processo
 taskkill /PID [PID] /F
 
 # Ou mudar porta no .env
 # apps/backend/.env
-PORT=3004
+PORT=3000
 ```
 
-### Problema: "Port 3002 is already in use"
+### Problema: "Port 3000 is already in use"
 **Solução:**
 ```bash
 # Descobrir processo
-netstat -ano | findstr ":3002"
+netstat -ano | findstr ":3000"
 
 # Matar processo
 taskkill /PID [PID] /F
@@ -272,7 +272,7 @@ taskkill /PID [PID] /F
 # Ou mudar porta no vite.config.ts
 # apps/frontend/vite.config.ts
 server: {
-  port: 3005
+  port: 3000
 }
 ```
 
@@ -303,12 +303,12 @@ npm install
 
 ### Problema: Frontend não conecta com Backend
 **Verificar:**
-1. Backend está rodando em 3003?
+1. Backend está rodando em 3001?
 2. CORS está configurado corretamente?
 3. .env do frontend aponta para backend correto?
    ```bash
    # apps/frontend/.env
-   VITE_API_BASE_URL=http://localhost:3003
+   VITE_API_BASE_URL=http://localhost:3001
    ```
 
 ---
@@ -318,12 +318,12 @@ npm install
 ```
 moria-6df9f9ce/
 ├── apps/
-│   ├── backend/          # API (porta 3003)
+│   ├── backend/          # API (porta 3001)
 │   │   ├── src/
 │   │   ├── prisma/
 │   │   ├── .env         # Configurações backend
 │   │   └── package.json
-│   └── frontend/         # Interface (porta 3002)
+│   └── frontend/         # Interface (porta 3000)
 │       ├── src/
 │       ├── .env         # Configurações frontend
 │       ├── vite.config.ts
@@ -340,10 +340,10 @@ moria-6df9f9ce/
 - [ ] PostgreSQL rodando (porta 5432)
 - [ ] Database `moria_db` criada
 - [ ] Migrations rodadas (`npx prisma migrate dev`)
-- [ ] Backend rodando (porta 3003)
-- [ ] Health check funcionando (http://localhost:3003/health)
-- [ ] Frontend rodando (porta 3002)
-- [ ] Frontend carrega (http://localhost:3002)
+- [ ] Backend rodando (porta 3001)
+- [ ] Health check funcionando (http://localhost:3001/health)
+- [ ] Frontend rodando (porta 3000)
+- [ ] Frontend carrega (http://localhost:3000)
 - [ ] Login funciona (admin@moria.com / admin123)
 
 ---
@@ -352,13 +352,13 @@ moria-6df9f9ce/
 
 Agora você pode:
 
-✅ Acessar a loja pública em http://localhost:3002
+✅ Acessar a loja pública em http://localhost:3000
 ✅ Fazer login no admin panel
 ✅ Criar/editar produtos
 ✅ Ver produtos aparecendo na loja pública
 ✅ Testar todo o fluxo de CRUD
 
 **As aplicações estão rodando nas portas corretas:**
-- 🎨 Frontend: **3002**
-- ⚙️ Backend: **3003**
+- 🎨 Frontend: **3000**
+- ⚙️ Backend: **3001**
 - 🗄️ PostgreSQL: **5432**

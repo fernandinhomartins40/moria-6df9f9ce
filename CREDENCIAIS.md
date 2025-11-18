@@ -79,11 +79,11 @@ Total Gasto: R$ 2.300,00
 
 ### Login Admin (Lojista)
 
-**Endpoint**: `POST http://localhost:3002/auth/admin/login`
+**Endpoint**: `POST http://localhost:3001/auth/admin/login`
 
 ```bash
 # Super Admin
-curl -X POST http://localhost:3002/auth/admin/login \
+curl -X POST http://localhost:3001/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@moria.com",
@@ -91,7 +91,7 @@ curl -X POST http://localhost:3002/auth/admin/login \
   }'
 
 # Gerente
-curl -X POST http://localhost:3002/auth/admin/login \
+curl -X POST http://localhost:3001/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "gerente@moria.com",
@@ -99,7 +99,7 @@ curl -X POST http://localhost:3002/auth/admin/login \
   }'
 
 # Mecânico
-curl -X POST http://localhost:3002/auth/admin/login \
+curl -X POST http://localhost:3001/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "mecanico@moria.com",
@@ -109,11 +109,11 @@ curl -X POST http://localhost:3002/auth/admin/login \
 
 ### Login Cliente
 
-**Endpoint**: `POST http://localhost:3002/auth/login`
+**Endpoint**: `POST http://localhost:3001/auth/login`
 
 ```bash
 # Cliente Gold
-curl -X POST http://localhost:3002/auth/login \
+curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "joao.silva@email.com",
@@ -121,7 +121,7 @@ curl -X POST http://localhost:3002/auth/login \
   }'
 
 # Cliente Silver
-curl -X POST http://localhost:3002/auth/login \
+curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "maria.santos@email.com",

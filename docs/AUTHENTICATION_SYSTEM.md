@@ -316,12 +316,12 @@ Ambos os middlewares verificam:
 
 ```bash
 # 1. Fazer login
-curl -X POST http://localhost:3002/auth/login \
+curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"joao.silva@email.com","password":"Test123!"}'
 
 # 2. Usar o token retornado
-curl -X GET http://localhost:3002/orders \
+curl -X GET http://localhost:3001/orders \
   -H "Authorization: Bearer {token_do_cliente}"
 ```
 
@@ -329,12 +329,12 @@ curl -X GET http://localhost:3002/orders \
 
 ```bash
 # 1. Fazer login como admin
-curl -X POST http://localhost:3002/auth/admin/login \
+curl -X POST http://localhost:3001/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@moria.com","password":"Test123!"}'
 
 # 2. Criar produto com o token de admin
-curl -X POST http://localhost:3002/products \
+curl -X POST http://localhost:3001/products \
   -H "Authorization: Bearer {token_do_admin}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -349,12 +349,12 @@ curl -X POST http://localhost:3002/products \
 
 ```bash
 # 1. Login como mecânico (STAFF)
-curl -X POST http://localhost:3002/auth/admin/login \
+curl -X POST http://localhost:3001/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{"email":"mecanico@moria.com","password":"Test123!"}'
 
 # 2. Criar revisão
-curl -X POST http://localhost:3002/revisions \
+curl -X POST http://localhost:3001/revisions \
   -H "Authorization: Bearer {token_do_mecanico}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -364,7 +364,7 @@ curl -X POST http://localhost:3002/revisions \
   }'
 
 # 3. Iniciar revisão
-curl -X PATCH http://localhost:3002/revisions/{id}/start \
+curl -X PATCH http://localhost:3001/revisions/{id}/start \
   -H "Authorization: Bearer {token_do_mecanico}"
 ```
 
