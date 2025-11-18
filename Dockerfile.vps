@@ -166,13 +166,15 @@ sleep 5
 # Sincronizar schema do Prisma com o banco
 cd /app/apps/backend
 echo "Sincronizando schema do Prisma..."
-npx prisma db push --accept-data-loss || echo "Schema já sincronizado ou erro"
+npx prisma db push --accept-data-loss --skip-generate 2>&1
 
-# Seed se necessário
-if [ "$RUN_SEED" = "true" ]; then
-    echo "Executando seed..."
-    npx prisma db seed || echo "Seed já executado ou erro"
-fi
+# Gerar cliente Prisma
+echo "Gerando cliente Prisma..."
+npx prisma generate 2>&1
+
+# Sempre executar seed (ele verifica se já foi executado)
+echo "Executando seed do banco de dados..."
+npx prisma db seed 2>&1 || echo "⚠️ Seed falhou ou já foi executado"
 
 # Iniciar supervisor
 echo "Iniciando serviços..."
