@@ -46,18 +46,18 @@ export interface ChecklistCategory {
 }
 
 export enum ItemStatus {
-  NOT_CHECKED = 'not_checked',
-  OK = 'ok',
-  ATTENTION = 'attention',
-  CRITICAL = 'critical',
-  NOT_APPLICABLE = 'not_applicable'
+  NOT_CHECKED = 'NOT_CHECKED',
+  OK = 'OK',
+  ATTENTION = 'ATTENTION',
+  CRITICAL = 'CRITICAL',
+  NOT_APPLICABLE = 'NOT_APPLICABLE'
 }
 
 export interface RevisionChecklistItem {
   itemId: string;
   status: ItemStatus;
   notes?: string;
-  photosUrls?: string[];
+  photos?: string[];
   checkedAt?: Date;
   checkedBy?: string;
 }
