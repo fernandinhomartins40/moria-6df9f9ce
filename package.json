@@ -40,6 +40,9 @@
   "author": "Moria Pesca e Serviços",
   "license": "UNLICENSED",
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "@types/multer": "^2.0.0",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.5"
   }
 }

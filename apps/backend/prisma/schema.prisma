@@ -41,6 +41,12 @@ enum ProductStatus {
   DISCONTINUED
 }
 
+enum OfferType {
+  DIA
+  SEMANA
+  MES
+}
+
 enum ServiceStatus {
   ACTIVE
   INACTIVE
@@ -183,6 +189,12 @@ model Product {
   specifications Json? // Especificações técnicas estruturadas
   status         ProductStatus @default(ACTIVE)
 
+  // Ofertas (Dia/Semana/Mês)
+  offerType      OfferType?
+  offerStartDate DateTime?
+  offerEndDate   DateTime?
+  offerBadge     String? // Ex: "LIMITADO", "QUEIMA DE ESTOQUE"
+
   // SEO
   slug            String  @unique
   metaDescription String?
@@ -199,6 +211,7 @@ model Product {
   @@index([status])
   @@index([sku])
   @@index([slug])
+  @@index([offerType, offerStartDate, offerEndDate])
   @@map("products")
 }
 

@@ -1,0 +1,21 @@
+{
+  "index": 1,
+  "hasItemId": true,
+  "hasId": false,
+  "hasCategoryId": true,
+  "hasStatus": true,
+  "keys": [
+    "notes",
+    "itemId",
+    "photos",
+    "status",
+    "itemName",
+    "checkedAt",
+    "checkedBy",
+    "categoryId",
+    "categoryName"
+  ],
+  "itemIdValue": "d55a3e89-1503-4186-aee5-5e7ba0569a56",
+  "categoryIdValue": "d421c6e3-4303-480d-88a8-66284de3779b",
+  "statusValue": "OK"
+}

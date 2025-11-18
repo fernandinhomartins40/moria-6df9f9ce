@@ -213,8 +213,13 @@ export class ProductsService {
         stock: dto.stock,
         minStock: dto.minStock,
         images: dto.images,
-        specifications: dto.specifications || null,
+        specifications: dto.specifications ? dto.specifications : Prisma.JsonNull,
         status,
+        // Ofertas
+        offerType: dto.offerType || null,
+        offerStartDate: dto.offerStartDate || null,
+        offerEndDate: dto.offerEndDate || null,
+        offerBadge: dto.offerBadge || null,
         slug,
         metaDescription: dto.metaDescription,
         metaKeywords: dto.metaKeywords,
@@ -273,9 +278,14 @@ export class ProductsService {
         ...(status && { status }),
         ...(dto.subcategory === null && { subcategory: null }),
         ...(dto.promoPrice === null && { promoPrice: null }),
-        ...(dto.specifications === null && { specifications: null }),
+        ...(dto.specifications === null && { specifications: Prisma.JsonNull }),
         ...(dto.metaDescription === null && { metaDescription: null }),
         ...(dto.metaKeywords === null && { metaKeywords: null }),
+        // Ofertas - allow null to clear
+        ...(dto.offerType === null && { offerType: null }),
+        ...(dto.offerStartDate === null && { offerStartDate: null }),
+        ...(dto.offerEndDate === null && { offerEndDate: null }),
+        ...(dto.offerBadge === null && { offerBadge: null }),
       },
     });
 
@@ -392,5 +402,30 @@ export class ProductsService {
       category: cat.category,
       count: cat._count.category,
     }));
+  }
+
+  /**
+   * Get active offers by type
+   */
+  async getActiveOffers(offerType?: 'DIA' | 'SEMANA' | 'MES'): Promise<Product[]> {
+    const now = new Date();
+
+    const where: Prisma.ProductWhereInput = {
+      status: ProductStatus.ACTIVE,
+      offerType: offerType ? offerType : { not: null },
+      promoPrice: { not: null },
+      offerStartDate: { lte: now },
+      offerEndDate: { gte: now },
+    };
+
+    const products = await prisma.product.findMany({
+      where,
+      orderBy: [
+        { offerType: 'asc' }, // DIA, SEMANA, MES
+        { createdAt: 'desc' },
+      ],
+    });
+
+    return products;
   }
 }

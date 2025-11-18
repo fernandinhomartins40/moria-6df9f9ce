@@ -25,7 +25,9 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:backend:*)",
       "Bash(timeout:*)",
-      "Bash(npm run dev:frontend:*)"
+      "Bash(npm run dev:frontend:*)",
+      "Bash(npm run:*)",
+      "Bash(POSTGRES_PORT=5433 docker-compose up -d postgres)"
     ],
     "deny": [],
     "ask": []

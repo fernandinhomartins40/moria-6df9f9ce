@@ -14,9 +14,9 @@ interface CropData {
 
 interface ImageCropperProps {
   imageUrl: string;
-  onCropComplete: (cropData: CropData) => void;
+  onCropComplete: (croppedBlob: Blob) => void;
   onCancel: () => void;
-  aspectRatio?: number; // null para livre, ou número como 1 para 1:1
+  aspectRatio?: number | null; // null para livre, ou número como 1 para 1:1
   minCropSize?: number;
   maxWidth?: number;
   maxHeight?: number;
@@ -39,6 +39,7 @@ export function ImageCropper({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [resizing, setResizing] = useState<string | null>(null);
+  const [currentCursor, setCurrentCursor] = useState<string>('grab');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -47,43 +48,52 @@ export function ImageCropper({
   // Carregar imagem
   useEffect(() => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+
     img.onload = () => {
-      const container = containerRef.current;
-      if (!container) return;
+      // Usar setTimeout para garantir que o containerRef está disponível
+      setTimeout(() => {
+        const container = containerRef.current;
 
-      const containerWidth = Math.min(maxWidth, container.clientWidth);
-      const containerHeight = Math.min(maxHeight, container.clientHeight);
+        // Se container não existe, usar valores padrão
+        const containerWidth = container ? Math.min(maxWidth, container.clientWidth) : maxWidth;
+        const containerHeight = container ? Math.min(maxHeight, container.clientHeight) : maxHeight;
 
-      // Calcular tamanho para caber no container
-      const imgAspect = img.naturalWidth / img.naturalHeight;
-      const containerAspect = containerWidth / containerHeight;
+        // Calcular tamanho para caber no container
+        const imgAspect = img.naturalWidth / img.naturalHeight;
+        const containerAspect = containerWidth / containerHeight;
 
-      let displayWidth, displayHeight;
-      if (imgAspect > containerAspect) {
-        displayWidth = containerWidth;
-        displayHeight = containerWidth / imgAspect;
-      } else {
-        displayHeight = containerHeight;
-        displayWidth = containerHeight * imgAspect;
-      }
+        let displayWidth, displayHeight;
+        if (imgAspect > containerAspect) {
+          displayWidth = containerWidth;
+          displayHeight = containerWidth / imgAspect;
+        } else {
+          displayHeight = containerHeight;
+          displayWidth = containerHeight * imgAspect;
+        }
 
-      setImageSize({
-        width: displayWidth,
-        height: displayHeight
-      });
+        setImageSize({
+          width: displayWidth,
+          height: displayHeight
+        });
 
-      // Centralizar crop inicial
-      const initialCropSize = Math.min(displayWidth, displayHeight) * 0.6;
-      setCropArea({
-        x: (displayWidth - initialCropSize) / 2,
-        y: (displayHeight - initialCropSize) / 2,
-        width: initialCropSize,
-        height: aspectRatio ? initialCropSize : initialCropSize
-      });
+        // Centralizar crop inicial
+        const initialCropSize = Math.min(displayWidth, displayHeight) * 0.6;
+        setCropArea({
+          x: (displayWidth - initialCropSize) / 2,
+          y: (displayHeight - initialCropSize) / 2,
+          width: initialCropSize,
+          height: aspectRatio ? initialCropSize : initialCropSize
+        });
 
-      setImageLoaded(true);
+        setImageLoaded(true);
+      }, 100);
     };
+
+    img.onerror = (e) => {
+      console.error('Erro ao carregar imagem:', e);
+      setImageLoaded(true); // Mesmo com erro, mostrar algo
+    };
+
     img.src = imageUrl;
   }, [imageUrl, maxWidth, maxHeight, aspectRatio]);
 
@@ -109,7 +119,71 @@ export function ImageCropper({
     return newCrop;
   }, [aspectRatio, minCropSize, imageSize]);
 
-  // Handlers de mouse
+  // Handlers de mouse com eventos globais
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDragging && !resizing) return;
+
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (resizing) {
+        handleResize(x, y);
+      } else if (isDragging) {
+        const newCrop = {
+          ...cropArea,
+          x: Math.max(0, Math.min(x - dragStart.x, imageSize.width - cropArea.width)),
+          y: Math.max(0, Math.min(y - dragStart.y, imageSize.height - cropArea.height))
+        };
+        setCropArea(newCrop);
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      setResizing(null);
+    };
+
+    if (isDragging || resizing) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, resizing, dragStart, cropArea, imageSize]);
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (isDragging || resizing) return; // Não mudar cursor durante drag/resize
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Verificar se está sobre algum handle de resize (área maior para facilitar)
+    const handles = getResizeHandles();
+    const hoveredHandle = handles.find(handle =>
+      x >= handle.x - 15 && x <= handle.x + 15 &&
+      y >= handle.y - 15 && y <= handle.y + 15
+    );
+
+    if (hoveredHandle) {
+      setCurrentCursor(hoveredHandle.cursor);
+    } else if (x >= cropArea.x && x <= cropArea.x + cropArea.width &&
+               y >= cropArea.y && y <= cropArea.y + cropArea.height) {
+      setCurrentCursor('grab');
+    } else {
+      setCurrentCursor('default');
+    }
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -118,11 +192,11 @@ export function ImageCropper({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Verificar se clicou em algum handle de resize
+    // Verificar se clicou em algum handle de resize (área maior para facilitar)
     const handles = getResizeHandles();
     const clickedHandle = handles.find(handle =>
-      x >= handle.x - 5 && x <= handle.x + 15 &&
-      y >= handle.y - 5 && y <= handle.y + 15
+      x >= handle.x - 15 && x <= handle.x + 15 &&
+      y >= handle.y - 15 && y <= handle.y + 15
     );
 
     if (clickedHandle) {
@@ -140,30 +214,6 @@ export function ImageCropper({
         y: y - cropArea.y
       });
     }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (resizing) {
-      handleResize(x, y);
-    } else if (isDragging) {
-      const newCrop = {
-        ...cropArea,
-        x: Math.max(0, Math.min(x - dragStart.x, imageSize.width - cropArea.width)),
-        y: Math.max(0, Math.min(y - dragStart.y, imageSize.height - cropArea.height))
-      };
-      setCropArea(newCrop);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setResizing(null);
   };
 
   // Resize handlers
@@ -260,14 +310,14 @@ export function ImageCropper({
       ctx.lineWidth = 2;
       ctx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
 
-      // Desenhar handles de resize
+      // Desenhar handles de resize (maiores para facilitar interação)
       const handles = getResizeHandles();
       handles.forEach(handle => {
         ctx.fillStyle = '#3b82f6';
-        ctx.fillRect(handle.x - 5, handle.y - 5, 10, 10);
+        ctx.fillRect(handle.x - 8, handle.y - 8, 16, 16);
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(handle.x - 5, handle.y - 5, 10, 10);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(handle.x - 8, handle.y - 8, 16, 16);
       });
 
       // Desenhar grid
@@ -290,8 +340,7 @@ export function ImageCropper({
   // Aplicar crop
   const handleApplyCrop = () => {
     // Converter coordenadas para imagem original
-    const img = imageRef.current || new Image();
-    img.crossOrigin = 'anonymous';
+    const img = new Image();
     img.onload = () => {
       const scaleX = img.naturalWidth / imageSize.width;
       const scaleY = img.naturalHeight / imageSize.height;
@@ -303,7 +352,34 @@ export function ImageCropper({
         height: Math.round(cropArea.height * scaleY / scale)
       };
 
-      onCropComplete(finalCrop);
+      // Criar canvas para crop
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Definir tamanho do canvas
+      canvas.width = finalCrop.width;
+      canvas.height = finalCrop.height;
+
+      // Desenhar a parte cropada da imagem
+      ctx.drawImage(
+        img,
+        finalCrop.x,
+        finalCrop.y,
+        finalCrop.width,
+        finalCrop.height,
+        0,
+        0,
+        finalCrop.width,
+        finalCrop.height
+      );
+
+      // Converter para blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          onCropComplete(blob);
+        }
+      }, 'image/jpeg', 0.9);
     };
     img.src = imageUrl;
   };
@@ -365,19 +441,23 @@ export function ImageCropper({
         {/* Canvas de edição */}
         <div
           ref={containerRef}
-          className="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
-          style={{ maxWidth: maxWidth, maxHeight: maxHeight }}
+          className="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center"
+          style={{
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
+            minHeight: 400
+          }}
         >
           <canvas
             ref={canvasRef}
-            className="block cursor-move"
+            className="block"
             style={{
-              cursor: resizing ? resizing : isDragging ? 'grabbing' : 'grab'
+              cursor: resizing ? resizing : isDragging ? 'grabbing' : currentCursor,
+              margin: '0 auto',
+              userSelect: 'none'
             }}
+            onMouseMove={handleCanvasMouseMove}
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
           />
         </div>
 

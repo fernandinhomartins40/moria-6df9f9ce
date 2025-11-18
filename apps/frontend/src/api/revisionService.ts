@@ -1,0 +1,144 @@
+import apiClient from './apiClient';
+
+export interface CreateRevisionRequest {
+  customerId: string;
+  vehicleId: string;
+  date: string;
+  mileage?: number;
+  checklistItems: any[];
+  generalNotes?: string;
+  recommendations?: string;
+}
+
+export interface UpdateRevisionRequest {
+  mileage?: number;
+  status?: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  checklistItems?: any[];
+  generalNotes?: string;
+  recommendations?: string;
+  mechanicName?: string;
+  mechanicNotes?: string;
+}
+
+export interface RevisionResponse {
+  id: string;
+  customerId: string;
+  vehicleId: string;
+  date: string;
+  mileage: number | null;
+  status: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  checklistItems: any;
+  generalNotes: string | null;
+  recommendations: string | null;
+  mechanicName: string | null;
+  mechanicNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+class RevisionService {
+  /**
+   * Create a new revision (Admin)
+   */
+  async createRevision(data: CreateRevisionRequest): Promise<RevisionResponse> {
+    const response = await apiClient.post('/admin/revisions', data);
+    return response.data;
+  }
+
+  /**
+   * Update revision (Admin)
+   */
+  async updateRevision(id: string, data: UpdateRevisionRequest): Promise<RevisionResponse> {
+    const response = await apiClient.put(`/admin/revisions/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Update revision checklist partially (Admin)
+   */
+  async updateRevisionChecklistPartial(id: string, checklistItems: any[]): Promise<RevisionResponse> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/checklist`, { checklistItems });
+    return response.data;
+  }
+
+  /**
+   * Start revision (Admin)
+   */
+  async startRevision(id: string): Promise<RevisionResponse> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/start`);
+    return response.data;
+  }
+
+  /**
+   * Complete revision (Admin)
+   */
+  async completeRevision(id: string): Promise<RevisionResponse> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/complete`);
+    return response.data;
+  }
+
+  /**
+   * Cancel revision (Admin)
+   */
+  async cancelRevision(id: string): Promise<RevisionResponse> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/cancel`);
+    return response.data;
+  }
+
+  /**
+   * Get revision by ID (Admin)
+   */
+  async getRevisionById(id: string): Promise<RevisionResponse> {
+    const response = await apiClient.get(`/admin/revisions/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Delete revision (Admin)
+   */
+  async deleteRevision(id: string): Promise<void> {
+    await apiClient.delete(`/admin/revisions/${id}`);
+  }
+
+  // ==================== CUSTOMER METHODS ====================
+
+  /**
+   * Get all revisions for authenticated customer
+   */
+  async getCustomerRevisions(params?: {
+    page?: number;
+    limit?: number;
+    vehicleId?: string;
+    status?: string;
+  }): Promise<{ data: RevisionResponse[]; meta?: any }> {
+    const response = await apiClient.get('/customer-revisions', { params });
+    return response.data;
+  }
+
+  /**
+   * Get specific revision by ID for authenticated customer
+   */
+  async getCustomerRevisionById(id: string): Promise<RevisionResponse> {
+    const response = await apiClient.get(`/customer-revisions/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Get revisions for specific vehicle of authenticated customer
+   */
+  async getCustomerRevisionsByVehicle(vehicleId: string): Promise<{ data: RevisionResponse[]; meta?: any }> {
+    const response = await apiClient.get(`/customer-revisions/vehicle/${vehicleId}`);
+    return response.data;
+  }
+
+  /**
+   * Get upcoming maintenance reminders for authenticated customer
+   */
+  async getUpcomingReminders(): Promise<any[]> {
+    const response = await apiClient.get('/customer-revisions/reminders/upcoming');
+    return response.data;
+  }
+}
+
+export default new RevisionService();

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import 'express-async-errors';
 import { corsOptions } from '@config/cors.js';
 import { ErrorMiddleware } from '@middlewares/error.middleware.js';
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
 
   // CORS
@@ -46,6 +48,9 @@ export function createApp(): Express {
 
   // Compression
   app.use(compression());
+
+  // Servir arquivos estáticos de upload
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Request logging
   app.use((req, res, next) => {

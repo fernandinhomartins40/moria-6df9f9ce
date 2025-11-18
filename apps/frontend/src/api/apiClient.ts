@@ -15,17 +15,12 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Cookies são enviados automaticamente com withCredentials: true
-    // Mas também enviamos token JWT no header para rotas admin
+    // O cookie httpOnly 'adminToken' é enviado automaticamente pelo browser
+    // Não precisamos adicionar Authorization header manualmente
 
-    // Tenta obter token admin do localStorage primeiro
-    const adminToken = localStorage.getItem('admin_token');
-    if (adminToken && config.url?.includes('/admin')) {
-      config.headers.Authorization = `Bearer ${adminToken}`;
-    }
-
-    // Se não for rota admin, tenta token de cliente
+    // Para clientes (não admin), ainda usamos localStorage por compatibilidade
     const customerToken = localStorage.getItem('customer_token');
-    if (customerToken && !config.url?.includes('/admin')) {
+    if (customerToken && !config.url?.includes('/admin') && !config.url?.includes('/auth/admin')) {
       config.headers.Authorization = `Bearer ${customerToken}`;
     }
 

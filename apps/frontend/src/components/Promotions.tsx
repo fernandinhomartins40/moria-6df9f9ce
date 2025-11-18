@@ -4,9 +4,10 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Clock, Timer, TrendingDown, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import offerService, { Offer } from "../api/offerService";
 
 interface PromotionalProduct {
-  id: number;
+  id: string;
   name: string;
   originalPrice: number;
   discountPrice: number;
@@ -15,6 +16,7 @@ interface PromotionalProduct {
   category: string;
   limited?: boolean;
   endTime?: Date;
+  badge?: string;
 }
 
 // Simulated countdown timer hook
@@ -45,117 +47,65 @@ function useCountdown(targetDate: Date) {
   return timeLeft;
 }
 
-const dailyOffers: PromotionalProduct[] = [
-  {
-    id: 1,
-    name: "Kit Pastilha + Disco de Freio",
-    originalPrice: 280.00,
-    discountPrice: 189.90,
-    discount: 32,
-    image: "",
-    category: "Freios",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-  },
-  {
-    id: 2,
-    name: "Filtro de Combustível Premium",
-    originalPrice: 85.00,
-    discountPrice: 59.90,
-    discount: 29,
-    image: "",
-    category: "Filtros",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  },
-  {
-    id: 3,
-    name: "Óleo Sintético 5W40 + Filtro",
-    originalPrice: 120.00,
-    discountPrice: 79.90,
-    discount: 33,
-    image: "",
-    category: "Óleos",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  },
-  {
-    id: 4,
-    name: "Vela de Ignição NGK (4un)",
-    originalPrice: 95.00,
-    discountPrice: 67.90,
-    discount: 28,
-    image: "",
-    category: "Motor",
-    limited: true,
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  }
-];
+// Helper para converter Offer em PromotionalProduct
+const convertOfferToPromotional = (offer: Offer): PromotionalProduct => {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
+  const imageUrl = offer.images && offer.images.length > 0
+    ? (offer.images[0].startsWith('http') ? offer.images[0] : `${baseUrl}${offer.images[0]}`)
+    : '';
 
-const weeklyOffers: PromotionalProduct[] = [
-  {
-    id: 5,
-    name: "Kit Correia Dentada + Tensor",
-    originalPrice: 350.00,
-    discountPrice: 245.90,
-    discount: 30,
-    image: "",
-    category: "Motor"
-  },
-  {
-    id: 6,
-    name: "Amortecedor Traseiro Par",
-    originalPrice: 580.00,
-    discountPrice: 419.90,
-    discount: 27,
-    image: "",
-    category: "Suspensão"
-  },
-  {
-    id: 7,
-    name: "Bateria 60Ah Heliar",
-    originalPrice: 290.00,
-    discountPrice: 199.90,
-    discount: 31,
-    image: "",
-    category: "Elétrica"
-  },
-  {
-    id: 8,
-    name: "Kit Embreagem Completo",
-    originalPrice: 450.00,
-    discountPrice: 329.90,
-    discount: 27,
-    image: "",
-    category: "Motor"
-  }
-];
-
-const monthlyOffers: PromotionalProduct[] = [
-  {
-    id: 9,
-    name: "Kit Revisão Completa",
-    originalPrice: 650.00,
-    discountPrice: 449.90,
-    discount: 31,
-    image: "",
-    category: "Manutenção"
-  },
-  {
-    id: 10,
-    name: "Kit Suspensão Completa",
-    originalPrice: 890.00,
-    discountPrice: 649.90,
-    discount: 27,
-    image: "",
-    category: "Suspensão"
-  }
-];
+  return {
+    id: offer.id,
+    name: offer.name,
+    originalPrice: Number(offer.salePrice),
+    discountPrice: Number(offer.promoPrice),
+    discount: offerService.calculateDiscount(Number(offer.salePrice), Number(offer.promoPrice)),
+    image: imageUrl,
+    category: offer.category,
+    limited: offer.offerType === 'DIA',
+    endTime: offer.offerType === 'DIA' ? new Date(offer.offerEndDate) : undefined,
+    badge: offer.offerBadge
+  };
+};
 
 export function Promotions() {
   const { addItem, openCart } = useCart();
-  const countdownTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const timeLeft = useCountdown(countdownTime);
+
+  const [dailyOffers, setDailyOffers] = useState<PromotionalProduct[]>([]);
+  const [weeklyOffers, setWeeklyOffers] = useState<PromotionalProduct[]>([]);
+  const [monthlyOffers, setMonthlyOffers] = useState<PromotionalProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Buscar próxima data de expiração das ofertas diárias para o countdown
+  const nextDailyExpiration = dailyOffers.length > 0 && dailyOffers[0].endTime
+    ? dailyOffers[0].endTime
+    : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  const timeLeft = useCountdown(nextDailyExpiration);
+
+  // Carregar ofertas da API
+  useEffect(() => {
+    const loadOffers = async () => {
+      try {
+        setLoading(true);
+        const [daily, weekly, monthly] = await Promise.all([
+          offerService.getOffersByType('DIA'),
+          offerService.getOffersByType('SEMANA'),
+          offerService.getOffersByType('MES')
+        ]);
+
+        setDailyOffers(daily.map(convertOfferToPromotional));
+        setWeeklyOffers(weekly.map(convertOfferToPromotional));
+        setMonthlyOffers(monthly.map(convertOfferToPromotional));
+      } catch (error) {
+        console.error('Erro ao carregar ofertas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOffers();
+  }, []);
 
 
   const PromotionCard = ({ product }: { product: PromotionalProduct }) => (
@@ -169,9 +119,9 @@ export function Promotions() {
         <Badge className="absolute top-2 left-2 bg-red-500 text-white font-bold animate-pulse">
           -{product.discount}%
         </Badge>
-        {product.limited && (
+        {(product.badge || product.limited) && (
           <Badge className="absolute top-2 right-2 bg-moria-orange text-white font-bold">
-            LIMITADO
+            {product.badge || 'LIMITADO'}
           </Badge>
         )}
       </div>
@@ -270,53 +220,87 @@ export function Promotions() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dailyOffers.map((product) => (
-              <PromotionCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-
-        {/* Weekly Offers */}
-        <div className="mb-16">
-          <div className="flex items-center mb-8">
-            <TrendingDown className="h-8 w-8 text-gold-accent mr-3" />
-            <div>
-              <h3 className="text-3xl font-bold">Ofertas da Semana</h3>
-              <p className="text-gray-400">Semana da Manutenção</p>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="h-64 animate-pulse bg-gray-700" />
+              ))}
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {weeklyOffers.map((product) => (
-              <PromotionCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-
-        {/* Monthly Offers */}
-        <div className="mb-16">
-          <div className="gold-metallic-bg p-8 rounded-lg">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center">
-                <Package className="h-8 w-8 text-moria-black mr-3" />
-                <div>
-                  <h3 className="text-3xl font-bold text-moria-black">Ofertas do Mês</h3>
-                  <p className="text-moria-black/70">Kits promocionais com desconto progressivo</p>
-                </div>
-              </div>
-              <Badge className="bg-moria-black text-gold-accent font-bold text-lg px-4 py-2">
-                ATÉ 31% OFF
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {monthlyOffers.map((product) => (
+          ) : dailyOffers.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {dailyOffers.map((product) => (
                 <PromotionCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-800/50 rounded-lg">
+              <p className="text-gray-400">Nenhuma oferta do dia disponível no momento</p>
+            </div>
+          )}
         </div>
+
+        {/* Weekly Offers */}
+        {(loading || weeklyOffers.length > 0) && (
+          <div className="mb-16">
+            <div className="flex items-center mb-8">
+              <TrendingDown className="h-8 w-8 text-gold-accent mr-3" />
+              <div>
+                <h3 className="text-3xl font-bold">Ofertas da Semana</h3>
+                <p className="text-gray-400">Semana da Manutenção</p>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <Card key={i} className="h-64 animate-pulse bg-gray-700" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {weeklyOffers.map((product) => (
+                  <PromotionCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Monthly Offers */}
+        {(loading || monthlyOffers.length > 0) && (
+          <div className="mb-16">
+            <div className="gold-metallic-bg p-8 rounded-lg">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center">
+                  <Package className="h-8 w-8 text-moria-black mr-3" />
+                  <div>
+                    <h3 className="text-3xl font-bold text-moria-black">Ofertas do Mês</h3>
+                    <p className="text-moria-black/70">Kits promocionais com desconto progressivo</p>
+                  </div>
+                </div>
+                {monthlyOffers.length > 0 && (
+                  <Badge className="bg-moria-black text-gold-accent font-bold text-lg px-4 py-2">
+                    ATÉ {Math.max(...monthlyOffers.map(p => p.discount))}% OFF
+                  </Badge>
+                )}
+              </div>
+
+              {loading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {[1, 2].map((i) => (
+                    <Card key={i} className="h-64 animate-pulse bg-gray-700/30" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {monthlyOffers.map((product) => (
+                    <PromotionCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* CTA Section */}
         <div className="text-center bg-moria-orange/10 border border-moria-orange/30 rounded-lg p-8">

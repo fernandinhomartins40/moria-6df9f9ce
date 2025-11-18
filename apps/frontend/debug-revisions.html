@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Revisions API</title>
+</head>
+<body>
+    <h1>Debug Revisions API</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...';
+
+            try {
+                // Get token from localStorage
+                const token = localStorage.getItem('admin_token');
+                output.textContent += '\nToken: ' + (token ? 'Found' : 'Not found');
+
+                if (!token) {
+                    output.textContent += '\n\nPlease login first at http://localhost:3002/store-panel';
+                    return;
+                }
+
+                // Test API call
+                const response = await fetch('http://localhost:3003/admin/revisions?page=1&limit=5', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                output.textContent += '\n\nStatus: ' + response.status;
+
+                const data = await response.json();
+                output.textContent += '\n\nResponse:\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent += '\n\nError: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -39,8 +39,9 @@ import {
 } from "lucide-react";
 import { RevisionsContent } from "./RevisionsContent";
 import { RevisionsListContent } from "./RevisionsListContent";
+import { ProductModal } from "./ProductModal";
 import adminService from "@/api/adminService";
-import productService from "@/api/productService";
+import productService, { Product as ApiProduct } from "@/api/productService";
 import serviceService from "@/api/serviceService";
 import couponService from "@/api/couponService";
 
@@ -92,26 +93,8 @@ interface Coupon {
   updatedAt: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  subcategory?: string;
-  sku: string;
-  supplier: string;
-  costPrice: number;
-  salePrice: number;
-  promoPrice?: number;
-  stock: number;
-  minStock: number;
-  images: string[];
-  specifications: Record<string, string>;
-  vehicleCompatibility: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Usar o tipo do productService
+type Product = ApiProduct;
 
 interface ProvisionalUser {
   id: string;
@@ -171,6 +154,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const [revisionView, setRevisionView] = useState<'list' | 'create'>('list');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -193,7 +179,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         adminService.getOrders({ page: 1, limit: 100 }).catch(() => ({ orders: [], totalCount: 0 })),
         adminService.getServices({ page: 1, limit: 100 }).catch(() => ({ services: [], totalCount: 0 })),
         adminService.getCoupons({ page: 1, limit: 100 }).catch(() => ({ coupons: [], totalCount: 0 })),
-        adminService.getProducts({ page: 1, limit: 100 }).catch(() => ({ products: [], totalCount: 0 })),
+        productService.getPublicProducts({ page: 1, limit: 100 }).catch(() => ({ data: [], meta: { totalCount: 0, page: 1, limit: 100, totalPages: 0 } })),
         adminService.getCustomers({ page: 1, limit: 100 }).catch(() => ({ customers: [], totalCount: 0 }))
       ]);
 
@@ -201,7 +187,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       setOrders(ordersRes.orders || []);
       setServices(servicesRes.services || []);
       setCoupons(couponsRes.coupons || []);
-      setProducts(productsRes.products || []);
+      setProducts(productsRes.data || []);
       setUsers(customersRes.customers || []);
 
       // Show orders with services as quotes (orçamentos são pedidos com serviços)
@@ -318,13 +304,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     }
 
     if (statusFilter === "active") {
-      filtered = filtered.filter(product => product.isActive);
+      filtered = filtered.filter(product => product.status === 'ACTIVE');
     } else if (statusFilter === "inactive") {
-      filtered = filtered.filter(product => !product.isActive);
+      filtered = filtered.filter(product => product.status === 'DISCONTINUED');
     } else if (statusFilter === "low_stock") {
-      filtered = filtered.filter(product => product.stock <= product.minStock);
+      filtered = filtered.filter(product => product.stock <= product.minStock && product.stock > 0);
     } else if (statusFilter === "out_of_stock") {
-      filtered = filtered.filter(product => product.stock === 0);
+      filtered = filtered.filter(product => product.stock === 0 || product.status === 'OUT_OF_STOCK');
     }
 
     filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -352,6 +338,36 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       confirmed: { label: 'Confirmado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
     };
     return statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
+  };
+
+  const handleCreateProduct = () => {
+    setEditingProduct(null);
+    setIsProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const handleCloseProductModal = () => {
+    setIsProductModalOpen(false);
+    setEditingProduct(null);
+  };
+
+  const handleSaveProduct = async (productData: Partial<Product>) => {
+    try {
+      setIsSavingProduct(true);
+
+      // O ProductModal já faz o save via fetch (com FormData para upload de imagens)
+      // Aqui apenas recarregamos os dados após o modal fechar
+      await loadData();
+      handleCloseProductModal();
+    } catch (error) {
+      console.error('Erro ao recarregar produtos:', error);
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
   const handleWhatsAppContact = (order: StoreOrder) => {
@@ -1335,9 +1351,10 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="bg-moria-orange hover:bg-moria-orange/90"
+                onClick={handleCreateProduct}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Produto
@@ -1382,14 +1399,49 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 const isLowStock = product.stock <= product.minStock;
                 const isOutOfStock = product.stock === 0;
                 const hasPromo = product.promoPrice && product.promoPrice < product.salePrice;
-                
+
+                // Helper para gerar URL da thumbnail
+                const getThumbnailUrl = (imageUrl: string) => {
+                  // Se já é uma URL completa (http/https), retorna direto
+                  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+                    return imageUrl;
+                  }
+                  // Se é caminho relativo, adiciona base URL e converte para thumb
+                  const thumbPath = imageUrl.replace('-full.jpg', '-thumb.jpg');
+                  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003'}${thumbPath}`;
+                };
+
+                const thumbnailUrl = product.images && product.images.length > 0
+                  ? getThumbnailUrl(product.images[0])
+                  : null;
+
                 return (
                   <div key={product.id} className="border rounded-lg p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <div className="bg-moria-orange text-white rounded-lg p-3">
-                          <Box className="h-6 w-6" />
-                        </div>
+                        {thumbnailUrl ? (
+                          <div className="relative w-16 h-16 flex-shrink-0">
+                            <img
+                              src={thumbnailUrl}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                // Fallback para ícone se imagem não carregar
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.parentElement?.querySelector('.fallback-icon');
+                                if (fallback) fallback.classList.remove('hidden');
+                              }}
+                            />
+                            <div className="fallback-icon hidden absolute inset-0 bg-moria-orange text-white rounded-lg flex items-center justify-center">
+                              <Box className="h-6 w-6" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-moria-orange text-white rounded-lg p-3 flex-shrink-0">
+                            <Box className="h-6 w-6" />
+                          </div>
+                        )}
                         <div>
                           <h3 className="text-lg font-semibold">{product.name}</h3>
                           <p className="text-sm text-gray-600 mb-2">{product.description}</p>
@@ -1503,13 +1555,17 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                             </>
                           )}
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                        >
                           <Eye className="h-4 w-4 mr-1" />
                           Editar
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             const updatedProducts = products.filter(p => p.id !== product.id);
                             setProducts(updatedProducts);
@@ -2296,54 +2352,69 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     </Card>
   );
 
-  switch (activeTab) {
-    case 'dashboard':
-      return renderDashboard();
-    case 'orders':
-      return renderOrders();
-    case 'quotes':
-      return renderQuotes();
-    case 'customers':
-      return renderCustomers();
-    case 'products':
-      return renderProducts();
-    case 'services':
-      return renderServices();
-    case 'revisions':
-      return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">
-              {revisionView === 'list' ? 'Revisões' : 'Nova Revisão'}
-            </h2>
-            <div className="flex gap-2">
-              <Button
-                variant={revisionView === 'list' ? 'default' : 'outline'}
-                onClick={() => setRevisionView('list')}
-              >
-                Listar Revisões
-              </Button>
-              <Button
-                variant={revisionView === 'create' ? 'default' : 'outline'}
-                onClick={() => setRevisionView('create')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Revisão
-              </Button>
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboard();
+      case 'orders':
+        return renderOrders();
+      case 'quotes':
+        return renderQuotes();
+      case 'customers':
+        return renderCustomers();
+      case 'products':
+        return renderProducts();
+      case 'services':
+        return renderServices();
+      case 'revisions':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
+                {revisionView === 'list' ? 'Revisões' : 'Nova Revisão'}
+              </h2>
+              <div className="flex gap-2">
+                <Button
+                  variant={revisionView === 'list' ? 'default' : 'outline'}
+                  onClick={() => setRevisionView('list')}
+                >
+                  Listar Revisões
+                </Button>
+                <Button
+                  variant={revisionView === 'create' ? 'default' : 'outline'}
+                  onClick={() => setRevisionView('create')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Revisão
+                </Button>
+              </div>
             </div>
+            {revisionView === 'list' ? <RevisionsListContent /> : <RevisionsContent />}
           </div>
-          {revisionView === 'list' ? <RevisionsListContent /> : <RevisionsContent />}
-        </div>
-      );
-    case 'coupons':
-      return renderCoupons();
-    case 'promotions':
-      return renderPromotions();
-    case 'reports':
-      return renderReports();
-    case 'settings':
-      return renderSettings();
-    default:
-      return renderDashboard();
-  }
+        );
+      case 'coupons':
+        return renderCoupons();
+      case 'promotions':
+        return renderPromotions();
+      case 'reports':
+        return renderReports();
+      case 'settings':
+        return renderSettings();
+      default:
+        return renderDashboard();
+    }
+  };
+
+  return (
+    <>
+      {renderContent()}
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={handleCloseProductModal}
+        onSave={handleSaveProduct}
+        product={editingProduct}
+        loading={isSavingProduct}
+      />
+    </>
+  );
 }

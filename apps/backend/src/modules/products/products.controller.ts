@@ -3,6 +3,7 @@ import { ProductsService } from './products.service.js';
 import { createProductSchema } from './dto/create-product.dto.js';
 import { updateProductSchema } from './dto/update-product.dto.js';
 import { queryProductsSchema } from './dto/query-products.dto.js';
+import { processProductImage } from '../../middleware/upload.middleware.js';
 import { z } from 'zod';
 
 export class ProductsController {
@@ -132,13 +133,61 @@ export class ProductsController {
    */
   createProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dto = createProductSchema.parse(req.body);
-      const product = await this.productsService.createProduct(dto);
+      // Processar dados do formulário
+      let productData = { ...req.body };
 
-      res.status(201).json({
-        success: true,
-        data: product,
-      });
+      // Parse de campos JSON se necessário
+      if (typeof productData.specifications === 'string') {
+        productData.specifications = JSON.parse(productData.specifications);
+      }
+      if (typeof productData.vehicle_compatibility === 'string') {
+        productData.vehicle_compatibility = JSON.parse(productData.vehicle_compatibility);
+      }
+
+      // Converter campos numéricos (vêm como string do FormData)
+      if (productData.costPrice) productData.costPrice = Number(productData.costPrice);
+      if (productData.salePrice) productData.salePrice = Number(productData.salePrice);
+      if (productData.promoPrice) productData.promoPrice = Number(productData.promoPrice);
+      if (productData.stock) productData.stock = Number(productData.stock);
+      if (productData.minStock) productData.minStock = Number(productData.minStock);
+
+      // Processar imagens se houver
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (files && files.length > 0) {
+        const imageUrls: string[] = [];
+
+        // Criar produto temporariamente para ter ID
+        const tempProduct = await this.productsService.createProduct({
+          ...productData,
+          images: [],
+          image_url: ''
+        });
+
+        // Processar cada imagem
+        for (const file of files) {
+          const processedImages = await processProductImage(file.path, tempProduct.id);
+          imageUrls.push(processedImages.full);
+        }
+
+        // Atualizar produto com imagens
+        const product = await this.productsService.updateProduct(tempProduct.id, {
+          images: imageUrls
+        } as any);
+
+        res.status(201).json({
+          success: true,
+          data: product,
+        });
+      } else {
+        // Sem imagens, criar produto normalmente
+        const dto = createProductSchema.parse(productData);
+        const product = await this.productsService.createProduct(dto);
+
+        res.status(201).json({
+          success: true,
+          data: product,
+        });
+      }
     } catch (error) {
       next(error);
     }
@@ -149,7 +198,49 @@ export class ProductsController {
    */
   updateProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const dto = updateProductSchema.parse(req.body);
+      // Processar dados do formulário
+      let productData = { ...req.body };
+
+      // Parse de campos JSON se necessário
+      if (typeof productData.specifications === 'string') {
+        productData.specifications = JSON.parse(productData.specifications);
+      }
+      if (typeof productData.vehicle_compatibility === 'string') {
+        productData.vehicle_compatibility = JSON.parse(productData.vehicle_compatibility);
+      }
+      if (typeof productData.existingImages === 'string') {
+        productData.existingImages = JSON.parse(productData.existingImages);
+      }
+
+      // Converter campos numéricos (vêm como string do FormData)
+      if (productData.costPrice) productData.costPrice = Number(productData.costPrice);
+      if (productData.salePrice) productData.salePrice = Number(productData.salePrice);
+      if (productData.promoPrice) productData.promoPrice = Number(productData.promoPrice);
+      if (productData.stock !== undefined) productData.stock = Number(productData.stock);
+      if (productData.minStock) productData.minStock = Number(productData.minStock);
+
+      // Processar imagens
+      const files = req.files as Express.Multer.File[] | undefined;
+      const existingImages = productData.existingImages || [];
+      const newImageUrls: string[] = [];
+
+      // Processar novas imagens se houver
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const processedImages = await processProductImage(file.path, req.params.id);
+          newImageUrls.push(processedImages.full);
+        }
+      }
+
+      // Mesclar imagens existentes com novas
+      if (newImageUrls.length > 0 || existingImages.length > 0) {
+        productData.images = [...existingImages, ...newImageUrls];
+      }
+
+      // Remover campo auxiliar
+      delete productData.existingImages;
+
+      const dto = updateProductSchema.parse(productData) as any;
       const product = await this.productsService.updateProduct(req.params.id, dto);
 
       res.status(200).json({
@@ -189,6 +280,27 @@ export class ProductsController {
       res.status(200).json({
         success: true,
         data: product,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /products/offers/active
+   */
+  getActiveOffers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schema = z.object({
+        type: z.enum(['DIA', 'SEMANA', 'MES']).optional(),
+      });
+
+      const { type } = schema.parse(req.query);
+      const offers = await this.productsService.getActiveOffers(type);
+
+      res.status(200).json({
+        success: true,
+        data: offers,
       });
     } catch (error) {
       next(error);

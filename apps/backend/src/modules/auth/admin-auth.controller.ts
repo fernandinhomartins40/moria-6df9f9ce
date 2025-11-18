@@ -21,7 +21,7 @@ export class AdminAuthController {
       res.cookie('adminToken', result.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -29,7 +29,7 @@ export class AdminAuthController {
         success: true,
         data: {
           admin: result.admin,
-          token: result.token,
+          // Token removido do response - agora apenas no cookie httpOnly
         },
       });
     } catch (error) {

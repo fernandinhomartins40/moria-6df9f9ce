@@ -97,10 +97,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Save the token to localStorage for API calls
-        if (data.data.token) {
-          localStorage.setItem('admin_token', data.data.token);
-        }
+        // O token agora é enviado apenas via httpOnly cookie pelo backend
+        // Não precisamos mais armazenar no localStorage (segurança contra XSS)
 
         setState({
           admin: data.data.admin,
@@ -121,10 +119,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      // Clear token from localStorage
-      localStorage.removeItem('admin_token');
-
-      // Call backend to clear httpOnly cookie
+      // Chama o backend para limpar o httpOnly cookie
       await fetch(`${API_URL}/auth/admin/logout`, {
         method: 'POST',
         credentials: 'include',

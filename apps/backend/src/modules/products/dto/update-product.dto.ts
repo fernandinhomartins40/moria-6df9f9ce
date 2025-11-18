@@ -61,13 +61,35 @@ export const updateProductSchema = z.object({
     .min(0, 'Min stock cannot be negative')
     .optional(),
   images: z
-    .array(z.string().url('Invalid image URL'))
+    .array(z.string().min(1, 'Image URL cannot be empty'))
     .min(1, 'At least one image is required')
     .optional(),
   specifications: z.record(z.any()).optional().nullable(),
   status: z
     .enum(['ACTIVE', 'INACTIVE', 'OUT_OF_STOCK', 'DISCONTINUED'])
     .optional(),
+  // Ofertas
+  offerType: z
+    .enum(['DIA', 'SEMANA', 'MES'])
+    .optional()
+    .nullable(),
+  offerStartDate: z
+    .string()
+    .datetime()
+    .optional()
+    .nullable()
+    .transform(val => val ? new Date(val) : null),
+  offerEndDate: z
+    .string()
+    .datetime()
+    .optional()
+    .nullable()
+    .transform(val => val ? new Date(val) : null),
+  offerBadge: z
+    .string()
+    .max(50, 'Offer badge must not exceed 50 characters')
+    .optional()
+    .nullable(),
   slug: z
     .string()
     .min(3, 'Slug must be at least 3 characters')

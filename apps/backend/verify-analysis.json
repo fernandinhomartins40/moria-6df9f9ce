@@ -1,0 +1,78 @@
+{
+  "totalCategoryItems": 83,
+  "totalRevisionItems": 83,
+  "matched": 83,
+  "notMatched": 0,
+  "details": [
+    {
+      "categoryName": "Freios",
+      "itemName": "Pastilhas de freio dianteiras",
+      "itemIdFromCategory": "45397ed1-edb5-47ca-8f2f-0648f5be4351",
+      "hasStatus": true,
+      "status": "NOT_CHECKED"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Pastilhas de freio traseiras",
+      "itemIdFromCategory": "d55a3e89-1503-4186-aee5-5e7ba0569a56",
+      "hasStatus": true,
+      "status": "OK"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Discos de freio dianteiros",
+      "itemIdFromCategory": "0c85bc11-dc87-4d05-97ad-1f512b5899ff",
+      "hasStatus": true,
+      "status": "ATTENTION"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Discos de freio traseiros",
+      "itemIdFromCategory": "ccf4a96f-2fa3-4e61-a862-77a20387138d",
+      "hasStatus": true,
+      "status": "NOT_CHECKED"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Fluido de freio (nível e qualidade)",
+      "itemIdFromCategory": "3c66a862-2321-4d86-9a8c-adca10f0d481",
+      "hasStatus": true,
+      "status": "NOT_CHECKED"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Cilindro mestre",
+      "itemIdFromCategory": "158436a6-d442-4b49-9c44-b3e5fca77af9",
+      "hasStatus": true,
+      "status": "OK"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Cilindros de roda",
+      "itemIdFromCategory": "c8a01a8d-d3d0-466a-81b6-875042d02a0c",
+      "hasStatus": true,
+      "status": "OK"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Freio de mão",
+      "itemIdFromCategory": "b49bcf11-0784-446d-bdce-29b69cd6fa79",
+      "hasStatus": true,
+      "status": "NOT_CHECKED"
+    },
+    {
+      "categoryName": "Freios",
+      "itemName": "Mangueiras e tubulações",
+      "itemIdFromCategory": "f8a6931c-f6d3-4e6b-9bb6-dd673ae38ad5",
+      "hasStatus": true,
+      "status": "OK"
+    },
+    {
+      "categoryName": "Suspensão",
+      "itemName": "Amortecedores dianteiros",
+      "itemIdFromCategory": "b5b8edf9-5536-4281-b6a1-1ac237bf36a1",
+      "hasStatus": true,
+      "status": "OK"
+    }
+  ]
+}

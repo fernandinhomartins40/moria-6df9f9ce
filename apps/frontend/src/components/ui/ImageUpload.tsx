@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
+import imageCompression from 'browser-image-compression';
 import { Button } from './button';
 import { Card, CardContent } from './card';
 import { Badge } from './badge';
 import { Progress } from './progress';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './dialog';
 import { ImageCropper } from './ImageCropper';
 import {
   Upload,
@@ -111,67 +113,33 @@ export function ImageUpload({
     const availableSlots = maxImages - images.length;
     const filesToProcess = validFiles.slice(0, availableSlots);
 
-    // Criar entradas para as imagens
+    // Processar primeira imagem com crop se necessário
+    if (filesToProcess.length > 0 && aspectRatio !== null) {
+      const file = filesToProcess[0];
+      const newImage: UploadedImage = {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        file,
+        tempUrl: URL.createObjectURL(file),
+        status: 'uploading',
+        progress: 0
+      };
+
+      setImages(prev => [...prev, newImage]);
+      setCropImage(newImage);
+      return;
+    }
+
+    // Se não precisa crop, processar diretamente
     const newImages: UploadedImage[] = filesToProcess.map(file => ({
       id: `temp-${Date.now()}-${Math.random()}`,
       file,
       tempUrl: URL.createObjectURL(file),
-      status: 'uploading',
-      progress: 0
+      status: 'ready',
+      progress: 100
     }));
 
     setImages(prev => [...prev, ...newImages]);
-
-    // Upload cada arquivo
-    for (const newImage of newImages) {
-      try {
-        // Atualizar progresso
-        setImages(prev => prev.map(img =>
-          img.id === newImage.id
-            ? { ...img, progress: 25 }
-            : img
-        ));
-
-        // Upload
-        const uploadResult = await uploadToAPI(newImage.file!);
-
-        setImages(prev => prev.map(img =>
-          img.id === newImage.id
-            ? {
-                ...img,
-                status: 'uploaded',
-                progress: 50,
-                tempUrl: uploadResult.data.tempPath
-              }
-            : img
-        ));
-
-        // Se tem aspect ratio definido, abrir cropper
-        if (aspectRatio !== null) {
-          setCropImage(prev =>
-            prev ? prev : { ...newImage, tempUrl: uploadResult.data.tempPath }
-          );
-        } else {
-          // Processar diretamente sem crop
-          await processImage(newImage.id, uploadResult.data.tempPath);
-        }
-
-      } catch (error) {
-        console.error('Erro no upload:', error);
-        setImages(prev => prev.map(img =>
-          img.id === newImage.id
-            ? {
-                ...img,
-                status: 'error',
-                error: 'Erro no upload'
-              }
-            : img
-        ));
-      }
-    }
-
-    // Notificar mudanças
-    onImagesChange(images);
+    onImagesChange([...images, ...newImages]);
   }, [images, maxImages, aspectRatio, disabled, onImagesChange]);
 
   // Processar imagem
@@ -211,11 +179,62 @@ export function ImageUpload({
   };
 
   // Finalizar crop
-  const handleCropComplete = async (cropData: CropData) => {
+  const handleCropComplete = async (croppedBlob: Blob) => {
     if (!cropImage) return;
 
-    await processImage(cropImage.id, cropImage.tempUrl!, cropData);
-    setCropImage(null);
+    try {
+      // Comprimir imagem
+      const compressedFile = await imageCompression(croppedBlob as File, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+        initialQuality: 0.8
+      });
+
+      // Criar URL da imagem comprimida
+      const compressedUrl = URL.createObjectURL(compressedFile);
+
+      // Atualizar imagem no estado
+      setImages(prev => prev.map(img =>
+        img.id === cropImage.id
+          ? {
+              ...img,
+              file: compressedFile,
+              tempUrl: compressedUrl,
+              status: 'ready',
+              progress: 100
+            }
+          : img
+      ));
+
+      const updatedImages = images.map(img =>
+        img.id === cropImage.id
+          ? {
+              ...img,
+              file: compressedFile,
+              tempUrl: compressedUrl,
+              status: 'ready' as const,
+              progress: 100
+            }
+          : img
+      );
+
+      onImagesChange(updatedImages);
+      setCropImage(null);
+    } catch (error) {
+      console.error('Erro ao processar imagem:', error);
+      setImages(prev => prev.map(img =>
+        img.id === cropImage.id
+          ? {
+              ...img,
+              status: 'error',
+              error: 'Erro ao processar imagem'
+            }
+          : img
+      ));
+      setCropImage(null);
+    }
   };
 
   // Cancelar crop
@@ -305,20 +324,9 @@ export function ImageUpload({
     }
   };
 
-  // Se estamos no modo crop
-  if (cropImage) {
-    return (
-      <ImageCropper
-        imageUrl={cropImage.tempUrl!}
-        onCropComplete={handleCropComplete}
-        onCancel={handleCropCancel}
-        aspectRatio={aspectRatio}
-      />
-    );
-  }
-
   return (
-    <div className={`space-y-4 ${className}`}>
+    <>
+      <div className={`space-y-4 ${className}`}>
       {/* Área de upload */}
       <Card
         className={`border-2 border-dashed transition-colors cursor-pointer ${
@@ -432,13 +440,34 @@ export function ImageUpload({
         </div>
       )}
 
-      {/* Info */}
-      {images.length > 0 && (
-        <div className="text-sm text-gray-500 text-center">
-          {images.length} de {maxImages} imagens
-          {aspectRatio && ` • Proporção ${aspectRatio === 1 ? '1:1' : `${aspectRatio}:1`}`}
-        </div>
-      )}
-    </div>
+        {/* Info */}
+        {images.length > 0 && (
+          <div className="text-sm text-gray-500 text-center">
+            {images.length} de {maxImages} imagens
+            {aspectRatio && ` • Proporção ${aspectRatio === 1 ? '1:1' : `${aspectRatio}:1`}`}
+          </div>
+        )}
+      </div>
+
+      {/* Dialog de Crop */}
+      <Dialog open={!!cropImage} onOpenChange={(open) => !open && handleCropCancel()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Ajustar Imagem</DialogTitle>
+            <DialogDescription>
+              Recorte e ajuste a imagem antes de fazer upload
+            </DialogDescription>
+          </DialogHeader>
+          {cropImage && (
+            <ImageCropper
+              imageUrl={cropImage.tempUrl!}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+              aspectRatio={aspectRatio}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -9,16 +9,19 @@ import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images } from 'lucide-react';
-import { ImageUpload } from '../ui/ImageUpload';
+import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images, CheckCircle } from 'lucide-react';
+import { ProductImageUpload, ProductImage } from './ProductImageUpload';
+import { useToast } from '../ui/use-toast';
+import { Product as ApiProduct } from '@/api/productService';
 
-interface Product {
+// Interface local para o form (snake_case para compatibilidade com código existente)
+interface ProductFormData {
   id?: string;
   name: string;
   description: string;
   category: string;
   subcategory?: string;
-  price: number;
+  price?: number;
   original_price?: number;
   sale_price?: number;
   discount_price?: number;
@@ -34,9 +37,15 @@ interface Product {
   is_favorite?: boolean;
   specifications: Record<string, string>;
   vehicle_compatibility: string[];
-  created_at?: string;
-  updated_at?: string;
+  // Ofertas
+  offer_type?: 'DIA' | 'SEMANA' | 'MES' | null;
+  offer_start_date?: string;
+  offer_end_date?: string;
+  offer_badge?: string;
 }
+
+// Usar a interface do backend para as props
+type Product = ApiProduct;
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -62,7 +71,9 @@ const CATEGORIES = [
 ];
 
 export function ProductModal({ isOpen, onClose, onSave, product, loading = false }: ProductModalProps) {
-  const [formData, setFormData] = useState<Partial<Product>>({
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<Partial<ProductFormData>>({
     name: '',
     description: '',
     category: '',
@@ -75,15 +86,13 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     min_stock: 5,
     sku: '',
     supplier: '',
-    image_url: '',
     images: [],
     is_active: true,
-    is_favorite: false,
     specifications: {},
     vehicle_compatibility: []
   });
 
-  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -103,29 +112,53 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
   // Preencher form quando produto é editado
   useEffect(() => {
     if (product) {
+      // Mapear campos do backend (camelCase) para o form (snake_case)
       setFormData({
         id: product.id,
         name: product.name || '',
         description: product.description || '',
         category: product.category || '',
         subcategory: product.subcategory || '',
-        price: product.price || product.original_price || 0,
-        original_price: product.original_price || product.price || 0,
-        sale_price: product.sale_price || 0,
-        discount_price: product.discount_price || 0,
-        promo_price: product.promo_price || 0,
-        cost_price: product.cost_price || 0,
+        price: product.salePrice || 0,
+        sale_price: product.salePrice || 0,
+        promo_price: product.promoPrice || 0,
+        cost_price: product.costPrice || 0,
         stock: product.stock || 0,
-        min_stock: product.min_stock || 5,
+        min_stock: product.minStock || 5,
         sku: product.sku || '',
         supplier: product.supplier || '',
-        image_url: product.image_url || '',
         images: product.images || [],
-        is_active: product.is_active !== undefined ? product.is_active : true,
-        is_favorite: product.is_favorite || false,
+        is_active: product.status === 'ACTIVE',
         specifications: product.specifications || {},
-        vehicle_compatibility: product.vehicle_compatibility || []
+        vehicle_compatibility: product.vehicleCompatibility || [],
+        // Ofertas
+        offer_type: (product as any).offerType || null,
+        offer_start_date: (product as any).offerStartDate ? new Date((product as any).offerStartDate).toISOString().slice(0, 16) : '',
+        offer_end_date: (product as any).offerEndDate ? new Date((product as any).offerEndDate).toISOString().slice(0, 16) : '',
+        offer_badge: (product as any).offerBadge || ''
       });
+
+      // Converter imagens existentes para ProductImage para preview
+      if (product.images && product.images.length > 0) {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
+        const existingImages: ProductImage[] = product.images.map((url, index) => {
+          // Se a URL já é completa (http/https), usa direto. Senão, adiciona base URL
+          const fullUrl = url.startsWith('http://') || url.startsWith('https://')
+            ? url
+            : `${baseUrl}${url}`;
+
+          return {
+            id: `existing-${index}`,
+            url: fullUrl,
+            file: null as any, // Não há arquivo para imagens existentes
+            status: 'ready' as const,
+            progress: 100
+          };
+        });
+        setProductImages(existingImages);
+      } else {
+        setProductImages([]);
+      }
     } else {
       // Resetar form para novo produto
       setFormData({
@@ -148,9 +181,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         specifications: {},
         vehicle_compatibility: []
       });
+      setProductImages([]);
     }
     setErrors({});
-    setUploadedImages([]);
     setActiveTab('basic');
   }, [product, isOpen]);
 
@@ -201,27 +234,156 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   const handleSave = async () => {
     if (!validateForm()) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, corrija os erros no formulário.",
+        variant: "destructive",
+      });
       return;
     }
 
+    setIsSaving(true);
+
     try {
-      // Processar imagens prontas para inclusão no produto
-      const imageUrls = uploadedImages
-        .filter(img => img.status === 'ready' && img.processedUrls)
-        .map(img => img.processedUrls.full);
+      // Separar imagens novas (com arquivo) das existentes (só URL)
+      const newImages = productImages.filter(img => img.file && img.status === 'ready');
+      const existingImageUrls = productImages
+        .filter(img => !img.file && img.url)
+        .map(img => img.url);
 
-      // Usar a primeira imagem como image_url principal
-      const productData = {
-        ...formData,
-        images: imageUrls,
-        image_url: imageUrls[0] || formData.image_url || ''
-      };
+      // Validar se há pelo menos uma imagem (nova ou existente)
+      if (newImages.length === 0 && existingImageUrls.length === 0) {
+        setErrors(prev => ({ ...prev, images: 'Adicione pelo menos uma imagem do produto' }));
+        setActiveTab('images');
+        toast({
+          title: "Imagem obrigatória",
+          description: "Adicione pelo menos uma imagem do produto.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
 
-      await onSave(productData);
+      // Criar FormData para upload
+      const uploadData = new FormData();
+
+      // Adicionar arquivos de imagem (apenas novas)
+      newImages.forEach((img) => {
+        if (img.file) {
+          uploadData.append('images', img.file);
+        }
+      });
+
+      // Mapear campos do formData para o formato do backend
+      // Converter valores string para number quando necessário
+      const costPrice = Number(formData.cost_price || formData.price || 0);
+      const salePrice = Number(formData.sale_price || formData.price || 0);
+      const promoPrice = formData.promo_price ? Number(formData.promo_price) : undefined;
+      const stock = Number(formData.stock || 0);
+      const minStock = Number(formData.min_stock || 5);
+
+      // Dados que serão enviados para o backend
+      uploadData.append('name', formData.name.trim());
+      uploadData.append('description', (formData.description || '').trim());
+      uploadData.append('category', formData.category);
+
+      if (formData.subcategory?.trim()) {
+        uploadData.append('subcategory', formData.subcategory.trim());
+      }
+
+      uploadData.append('sku', (formData.sku || `SKU-${Date.now()}`).toUpperCase());
+      uploadData.append('supplier', (formData.supplier || 'Não informado').trim());
+      uploadData.append('costPrice', costPrice.toString());
+      uploadData.append('salePrice', salePrice.toString());
+
+      if (promoPrice) {
+        uploadData.append('promoPrice', promoPrice.toString());
+      }
+
+      uploadData.append('stock', stock.toString());
+      uploadData.append('minStock', minStock.toString());
+      uploadData.append('status', formData.is_active ? 'ACTIVE' : 'DISCONTINUED');
+
+      // Enviar specifications como JSON string
+      if (formData.specifications && Object.keys(formData.specifications).length > 0) {
+        uploadData.append('specifications', JSON.stringify(formData.specifications));
+      }
+
+      // Enviar vehicle_compatibility como JSON string (manter snake_case pois backend espera assim)
+      if (formData.vehicle_compatibility && formData.vehicle_compatibility.length > 0) {
+        uploadData.append('vehicle_compatibility', JSON.stringify(formData.vehicle_compatibility));
+      }
+
+      // Ofertas
+      if (formData.offer_type) {
+        uploadData.append('offerType', formData.offer_type);
+      }
+      if (formData.offer_start_date) {
+        uploadData.append('offerStartDate', new Date(formData.offer_start_date).toISOString());
+      }
+      if (formData.offer_end_date) {
+        uploadData.append('offerEndDate', new Date(formData.offer_end_date).toISOString());
+      }
+      if (formData.offer_badge) {
+        uploadData.append('offerBadge', formData.offer_badge.trim());
+      }
+
+      // Se estiver editando, manter imagens existentes
+      if (formData.id && existingImageUrls.length > 0) {
+        uploadData.append('existingImages', JSON.stringify(existingImageUrls));
+      }
+
+      // Enviar para API usando httpOnly cookie (credentials: 'include')
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
+      const url = formData.id
+        ? `${baseUrl}/products/${formData.id}`
+        : `${baseUrl}/products`;
+      const method = formData.id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        credentials: 'include', // Envia o cookie httpOnly automaticamente
+        body: uploadData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erro ao salvar produto');
+      }
+
+      const result = await response.json();
+
+      // Toast de sucesso
+      toast({
+        title: formData.id ? "Produto atualizado!" : "Produto criado!",
+        description: formData.id
+          ? "As alterações foram salvas com sucesso."
+          : "O produto foi criado e já está disponível.",
+        variant: "default",
+      });
+
+      // Chamar callback de sucesso com dados retornados
+      await onSave(result.data);
+
+      // Fechar modal
       onClose();
     } catch (error) {
-      // Erro já tratado no hook
       console.error('Erro ao salvar produto:', error);
+
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar produto. Tente novamente.';
+
+      setErrors(prev => ({
+        ...prev,
+        general: errorMessage
+      }));
+
+      toast({
+        title: "Erro ao salvar",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -244,7 +406,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Básico
@@ -260,6 +422,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Warehouse className="h-4 w-4" />
               Estoque
+            </TabsTrigger>
+            <TabsTrigger value="offers" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Ofertas
             </TabsTrigger>
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -341,22 +507,21 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
           {/* Aba Imagens */}
           <TabsContent value="images" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Galeria de Imagens</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Adicione até 10 imagens do produto. A primeira imagem será usada como principal.
-                </p>
-              </div>
-
-              <ImageUpload
-                onImagesChange={setUploadedImages}
-                maxImages={10}
-                aspectRatio={1} // Forçar proporção 1:1 para produtos
-                className="w-full"
-                disabled={loading}
-              />
-            </div>
+            <ProductImageUpload
+              images={productImages}
+              onChange={setProductImages}
+              maxImages={10}
+              aspectRatio={1}
+              maxSizeMB={1}
+              maxWidthOrHeight={1200}
+              disabled={loading}
+            />
+            {errors.images && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.images}
+              </p>
+            )}
           </TabsContent>
 
           {/* Aba Preços */}
@@ -516,15 +681,113 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               </div>
             </div>
           </TabsContent>
+
+          {/* Aba Ofertas */}
+          <TabsContent value="offers" className="space-y-4">
+            <div className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-800 mb-2">🎯 Ofertas Especiais (Dia/Semana/Mês)</h4>
+                <p className="text-sm text-yellow-700">
+                  Configure este produto como oferta destacada na página inicial.
+                  As ofertas aparecem com timer de contagem regressiva e badges especiais.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offer_type">Tipo de Oferta</Label>
+                  <Select
+                    value={formData.offer_type || 'NONE'}
+                    onValueChange={(value) => handleInputChange('offer_type', value === 'NONE' ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">Nenhuma oferta</SelectItem>
+                      <SelectItem value="DIA">🔥 Oferta do Dia</SelectItem>
+                      <SelectItem value="SEMANA">⭐ Oferta da Semana</SelectItem>
+                      <SelectItem value="MES">💎 Oferta do Mês</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    {!formData.offer_type && 'Produto sem oferta especial'}
+                    {formData.offer_type === 'DIA' && 'Exibido com timer na seção "Ofertas do Dia"'}
+                    {formData.offer_type === 'SEMANA' && 'Exibido na seção "Ofertas da Semana"'}
+                    {formData.offer_type === 'MES' && 'Exibido na seção "Ofertas do Mês"'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="offer_badge">Badge da Oferta</Label>
+                  <Input
+                    id="offer_badge"
+                    value={formData.offer_badge || ''}
+                    onChange={(e) => handleInputChange('offer_badge', e.target.value)}
+                    placeholder="Ex: LIMITADO, QUEIMA DE ESTOQUE"
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-gray-500">Texto que aparece no badge do card (opcional)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="offer_start_date">Data/Hora Início</Label>
+                  <Input
+                    id="offer_start_date"
+                    type="datetime-local"
+                    value={formData.offer_start_date || ''}
+                    onChange={(e) => handleInputChange('offer_start_date', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">Quando a oferta começa</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="offer_end_date">Data/Hora Fim</Label>
+                  <Input
+                    id="offer_end_date"
+                    type="datetime-local"
+                    value={formData.offer_end_date || ''}
+                    onChange={(e) => handleInputChange('offer_end_date', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">Quando a oferta expira</p>
+                </div>
+              </div>
+
+              {formData.offer_type && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">📝 Lembre-se:</h4>
+                  <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                    <li>Configure o <strong>Preço Promocional</strong> na aba "Preços"</li>
+                    <li>A oferta só aparece se estiver dentro do período (início/fim)</li>
+                    <li>Produtos INATIVOS não aparecem nas ofertas</li>
+                    <li>O desconto é calculado automaticamente (Preço Normal - Preço Promocional)</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+          {errors.general && (
+            <div className="flex-1 text-left">
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.general}
+              </p>
+            </div>
+          )}
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving || loading}>
             Cancelar
           </Button>
-          <Button type="button" onClick={handleSave} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Salvar Alterações' : 'Criar Produto'}
+          <Button type="button" onClick={handleSave} disabled={isSaving || loading}>
+            {(isSaving || loading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving
+              ? (isEditing ? 'Salvando...' : 'Criando...')
+              : (isEditing ? 'Salvar Alterações' : 'Criar Produto')
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
