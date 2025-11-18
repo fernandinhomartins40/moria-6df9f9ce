@@ -1,12 +1,21 @@
-import { useState } from 'react';
-import { Car, Plus, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Car, Search, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
-import { useRevisions } from '../../contexts/RevisionsContext';
-import { Vehicle } from '../../types/revisions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import vehicleService, { CustomerVehicle } from '../../api/vehicleService';
+import { useToast } from '../../hooks/use-toast';
+
+interface Vehicle {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  plate: string;
+  color?: string;
+  mileage?: number;
+}
 
 interface VehicleSelectorProps {
   customerId: string | null;
@@ -19,58 +28,56 @@ export function VehicleSelector({
   selectedVehicle,
   onSelectVehicle
 }: VehicleSelectorProps) {
-  const { vehicles, addVehicle, getVehiclesByCustomer } = useRevisions();
+  const { toast } = useToast();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newVehicle, setNewVehicle] = useState({
-    brand: '',
-    model: '',
-    year: new Date().getFullYear(),
-    plate: '',
-    chassisNumber: '',
-    color: '',
-    mileage: 0
-  });
 
-  const customerVehicles = customerId ? getVehiclesByCustomer(customerId) : [];
+  // Load vehicles when dialog opens and customer is selected
+  useEffect(() => {
+    if (isDialogOpen && customerId) {
+      loadVehicles();
+    }
+  }, [isDialogOpen, customerId]);
 
-  const filteredVehicles = customerVehicles.filter(vehicle =>
+  const loadVehicles = async () => {
+    if (!customerId) return;
+
+    try {
+      setIsLoading(true);
+      const response = await vehicleService.getVehiclesByCustomer(customerId);
+
+      // Transform API vehicles to local format
+      const transformedVehicles: Vehicle[] = response.map((v: CustomerVehicle) => ({
+        id: v.id,
+        brand: v.brand,
+        model: v.model,
+        year: v.year,
+        plate: v.plate,
+        color: v.color,
+        mileage: v.mileage || undefined
+      }));
+
+      setVehicles(transformedVehicles);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      toast({
+        title: 'Erro ao carregar veículos',
+        description: 'Não foi possível carregar os veículos deste cliente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredVehicles = vehicles.filter(vehicle =>
     vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.year.toString().includes(searchTerm)
   );
-
-  const handleCreateVehicle = () => {
-    if (!customerId) {
-      alert('Selecione um cliente primeiro');
-      return;
-    }
-
-    if (!newVehicle.brand || !newVehicle.model || !newVehicle.plate) {
-      alert('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    const vehicle = addVehicle({
-      ...newVehicle,
-      customerId
-    });
-
-    onSelectVehicle(vehicle);
-    setIsDialogOpen(false);
-    setIsCreating(false);
-    setNewVehicle({
-      brand: '',
-      model: '',
-      year: new Date().getFullYear(),
-      plate: '',
-      chassisNumber: '',
-      color: '',
-      mileage: 0
-    });
-  };
 
   if (!customerId) {
     return (
@@ -139,184 +146,68 @@ export function VehicleSelector({
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {isCreating ? 'Cadastrar Novo Veículo' : 'Selecionar Veículo'}
-              </DialogTitle>
+              <DialogTitle>Selecionar Veículo</DialogTitle>
             </DialogHeader>
 
-            {isCreating ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="brand">Marca *</Label>
-                    <Input
-                      id="brand"
-                      value={newVehicle.brand}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, brand: e.target.value })}
-                      placeholder="Ex: Toyota, Ford, Volkswagen"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="model">Modelo *</Label>
-                    <Input
-                      id="model"
-                      value={newVehicle.model}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })}
-                      placeholder="Ex: Corolla, Fiesta, Gol"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="year">Ano *</Label>
-                    <Input
-                      id="year"
-                      type="number"
-                      value={newVehicle.year}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, year: parseInt(e.target.value) })}
-                      min={1900}
-                      max={new Date().getFullYear() + 1}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="plate">Placa *</Label>
-                    <Input
-                      id="plate"
-                      value={newVehicle.plate}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, plate: e.target.value.toUpperCase() })}
-                      placeholder="ABC-1234"
-                      maxLength={8}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="chassisNumber">Número do Chassi</Label>
-                  <Input
-                    id="chassisNumber"
-                    value={newVehicle.chassisNumber}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, chassisNumber: e.target.value })}
-                    placeholder="00000000000000000"
-                    maxLength={17}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="color">Cor</Label>
-                    <Input
-                      id="color"
-                      value={newVehicle.color}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, color: e.target.value })}
-                      placeholder="Ex: Preto, Branco, Prata"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mileage">Quilometragem Atual</Label>
-                    <Input
-                      id="mileage"
-                      type="number"
-                      value={newVehicle.mileage}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, mileage: parseInt(e.target.value) || 0 })}
-                      placeholder="0"
-                      min={0}
-                    />
-                  </div>
-                </div>
-
-                <DialogFooter className="gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsCreating(false);
-                      setNewVehicle({
-                        brand: '',
-                        model: '',
-                        year: new Date().getFullYear(),
-                        plate: '',
-                        chassisNumber: '',
-                        color: '',
-                        mileage: 0
-                      });
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleCreateVehicle}
-                    className="bg-moria-orange hover:bg-moria-orange/90"
-                  >
-                    Cadastrar
-                  </Button>
-                </DialogFooter>
+            <div className="space-y-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por marca, modelo, placa ou ano..."
+                  className="pl-10"
+                  disabled={isLoading}
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Buscar por marca, modelo, placa ou ano..."
-                      className="pl-10"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => setIsCreating(true)}
-                    className="bg-moria-orange hover:bg-moria-orange/90"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo
-                  </Button>
-                </div>
 
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {filteredVehicles.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Car className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Nenhum veículo encontrado</p>
-                      <Button
-                        onClick={() => setIsCreating(true)}
-                        variant="link"
-                        className="text-moria-orange"
-                      >
-                        Cadastrar novo veículo
-                      </Button>
-                    </div>
-                  ) : (
-                    filteredVehicles.map((vehicle) => (
-                      <Card
-                        key={vehicle.id}
-                        className="cursor-pointer hover:border-moria-orange transition-colors"
-                        onClick={() => {
-                          onSelectVehicle(vehicle);
-                          setIsDialogOpen(false);
-                          setSearchTerm('');
-                        }}
-                      >
-                        <CardContent className="p-4">
-                          <p className="font-semibold">
-                            {vehicle.brand} {vehicle.model}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-moria-orange" />
+                    <p className="text-gray-500">Carregando veículos...</p>
+                  </div>
+                ) : filteredVehicles.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Car className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum veículo encontrado</p>
+                    <p className="text-sm mt-2">
+                      {vehicles.length === 0
+                        ? 'Este cliente ainda não possui veículos cadastrados'
+                        : 'Tente buscar com outros termos'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredVehicles.map((vehicle) => (
+                    <Card
+                      key={vehicle.id}
+                      className="cursor-pointer hover:border-moria-orange transition-colors"
+                      onClick={() => {
+                        onSelectVehicle(vehicle);
+                        setIsDialogOpen(false);
+                        setSearchTerm('');
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <p className="font-semibold">
+                          {vehicle.brand} {vehicle.model}
+                        </p>
+                        <p className="text-sm text-gray-600">Ano: {vehicle.year}</p>
+                        <p className="text-sm text-gray-600">Placa: {vehicle.plate}</p>
+                        {vehicle.color && (
+                          <p className="text-sm text-gray-600">Cor: {vehicle.color}</p>
+                        )}
+                        {vehicle.mileage !== undefined && vehicle.mileage > 0 && (
+                          <p className="text-sm text-gray-600">
+                            Km: {vehicle.mileage.toLocaleString()}
                           </p>
-                          <p className="text-sm text-gray-600">Ano: {vehicle.year}</p>
-                          <p className="text-sm text-gray-600">Placa: {vehicle.plate}</p>
-                          {vehicle.color && (
-                            <p className="text-sm text-gray-600">Cor: {vehicle.color}</p>
-                          )}
-                          {vehicle.mileage !== undefined && vehicle.mileage > 0 && (
-                            <p className="text-sm text-gray-600">
-                              Km: {vehicle.mileage.toLocaleString()}
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
-            )}
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>
