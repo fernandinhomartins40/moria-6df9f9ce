@@ -92,18 +92,21 @@ http {
             try_files $uri =404;
         }
 
-        # Assets estáticos com cache longo
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-            root /app/apps/frontend/dist;
-            expires 1y;
-            add_header Cache-Control "public, immutable";
-            access_log off;
-        }
-
         # Frontend (arquivos estáticos)
         location / {
             root /app/apps/frontend/dist;
             index index.html;
+
+            # Assets estáticos com cache longo
+            location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+                root /app/apps/frontend/dist;
+                expires 1y;
+                add_header Cache-Control "public, immutable";
+                access_log off;
+                try_files $uri =404;
+            }
+
+            # SPA fallback - todas as outras rotas retornam index.html
             try_files $uri $uri/ /index.html;
         }
     }
@@ -132,7 +135,7 @@ autostart=true
 autorestart=true
 stdout_logfile=/var/log/backend.stdout.log
 stderr_logfile=/var/log/backend.stderr.log
-environment=NODE_ENV="production",PORT="3001"
+environment=NODE_ENV="production",PORT="3001",CORS_ORIGIN="http://localhost:3090"
 EOF
 
 # Script de inicialização

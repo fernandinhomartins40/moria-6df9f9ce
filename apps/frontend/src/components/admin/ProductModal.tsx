@@ -327,7 +327,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       }
 
       // Enviar para API usando httpOnly cookie (credentials: 'include')
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
       const url = formData.id
         ? `${apiUrl}/products/${formData.id}`
         : `${apiUrl}/products`;

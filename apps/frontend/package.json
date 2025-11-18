@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/pre-build.js",
     "build": "vite build",
+    "postbuild": "node scripts/validate-build.js",
     "build:dev": "vite build --mode development",
+    "build:validate": "npm run build && node scripts/validate-build.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf node_modules dist"

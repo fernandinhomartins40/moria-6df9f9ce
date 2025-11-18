@@ -2,9 +2,13 @@ import { createApp } from './app.js';
 import { environment } from '@config/environment.js';
 import { connectDatabase, disconnectDatabase } from '@config/database.js';
 import { logger } from '@shared/utils/logger.util.js';
+import { validateEnvironment } from '@config/validate-env.js';
 
 async function bootstrap(): Promise<void> {
   try {
+    // Validate environment variables first
+    validateEnvironment();
+
     // Connect to database
     await connectDatabase();
 
