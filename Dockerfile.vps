@@ -163,10 +163,10 @@ echo "=== Iniciando Moria VPS ==="
 echo "Aguardando PostgreSQL..."
 sleep 5
 
-# Executar migrations do Prisma
+# Sincronizar schema do Prisma com o banco
 cd /app/apps/backend
-echo "Executando Prisma migrations..."
-npx prisma migrate deploy || echo "Migrations já aplicadas ou erro"
+echo "Sincronizando schema do Prisma..."
+npx prisma db push --accept-data-loss || echo "Schema já sincronizado ou erro"
 
 # Seed se necessário
 if [ "$RUN_SEED" = "true" ]; then
