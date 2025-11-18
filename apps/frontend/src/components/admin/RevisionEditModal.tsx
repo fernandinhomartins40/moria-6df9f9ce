@@ -53,13 +53,20 @@ export function RevisionEditModal({
       setRecommendations(fullRevision.recommendations || '');
 
       // Convert backend checklist to frontend format
-      const items: RevisionChecklistItem[] = fullRevision.checklistItems?.map((item: any) => ({
-        itemId: item.itemId,
-        status: item.status as ItemStatus,
-        notes: item.notes,
-        photos: item.photos || [],
-      })) || [];
+      console.log('Backend checklistItems:', fullRevision.checklistItems);
+      const items: RevisionChecklistItem[] = fullRevision.checklistItems?.map((item: any) => {
+        console.log('Processing item:', item.itemId, item.status);
+        return {
+          itemId: item.itemId,
+          status: item.status as ItemStatus,
+          notes: item.notes,
+          photos: item.photos || [],
+          checkedAt: item.checkedAt,
+          checkedBy: item.checkedBy,
+        };
+      }) || [];
 
+      console.log('Converted items:', items);
       setRevisionItems(items);
     } catch (error) {
       console.error('Error loading revision:', error);

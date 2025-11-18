@@ -55,6 +55,9 @@ export function RevisionChecklist({ revisionItems, onUpdateItem }: RevisionCheck
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
 
+  console.log('RevisionChecklist received items:', revisionItems);
+  console.log('Categories:', categories);
+
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(categoryId)) {
@@ -170,7 +173,9 @@ export function RevisionChecklist({ revisionItems, onUpdateItem }: RevisionCheck
                       </p>
                     ) : (
                       enabledItems.map(item => {
-                        const itemStatus = getItemStatus(item.id) || {
+                        const foundStatus = getItemStatus(item.id);
+                        console.log(`Item ${item.name} (${item.id}):`, foundStatus ? `Found with status ${foundStatus.status}` : 'Not found, using NOT_CHECKED');
+                        const itemStatus = foundStatus || {
                           itemId: item.id,
                           status: ItemStatus.NOT_CHECKED
                         };
