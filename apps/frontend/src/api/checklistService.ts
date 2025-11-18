@@ -38,7 +38,7 @@ class ChecklistService {
    * Get complete checklist structure (Admin)
    */
   async getChecklistStructure(): Promise<ChecklistStructureResponse> {
-    const response = await apiClient.get('/admin/checklist/structure');
+    const response = await apiClient.get('/checklist/structure');
     return response.data;
   }
 
@@ -46,7 +46,7 @@ class ChecklistService {
    * Get only enabled categories with enabled items (Admin)
    */
   async getEnabledCategories(): Promise<ChecklistCategory[]> {
-    const response = await apiClient.get('/admin/checklist/categories/enabled');
+    const response = await apiClient.get('/checklist/categories/enabled');
     return response.data;
   }
 
@@ -54,7 +54,7 @@ class ChecklistService {
    * Get all categories (Admin)
    */
   async getCategories(): Promise<ChecklistCategory[]> {
-    const response = await apiClient.get('/admin/checklist/categories');
+    const response = await apiClient.get('/checklist/categories');
     return response.data;
   }
 
@@ -62,7 +62,7 @@ class ChecklistService {
    * Get category by ID (Admin)
    */
   async getCategoryById(id: string): Promise<ChecklistCategory> {
-    const response = await apiClient.get(`/admin/checklist/categories/${id}`);
+    const response = await apiClient.get(`/checklist/categories/${id}`);
     return response.data;
   }
 
@@ -75,7 +75,7 @@ class ChecklistService {
     icon?: string;
     order?: number;
   }): Promise<ChecklistCategory> {
-    const response = await apiClient.post('/admin/checklist/categories', data);
+    const response = await apiClient.post('/checklist/categories', data);
     return response.data;
   }
 
@@ -92,7 +92,7 @@ class ChecklistService {
       isEnabled?: boolean;
     }
   ): Promise<ChecklistCategory> {
-    const response = await apiClient.put(`/admin/checklist/categories/${id}`, data);
+    const response = await apiClient.put(`/checklist/categories/${id}`, data);
     return response.data;
   }
 
@@ -100,14 +100,14 @@ class ChecklistService {
    * Delete category (Admin - Admin only)
    */
   async deleteCategory(id: string): Promise<void> {
-    await apiClient.delete(`/admin/checklist/categories/${id}`);
+    await apiClient.delete(`/checklist/categories/${id}`);
   }
 
   /**
    * Get all items (Admin)
    */
   async getItems(): Promise<ChecklistItem[]> {
-    const response = await apiClient.get('/admin/checklist/items');
+    const response = await apiClient.get('/checklist/items');
     return response.data;
   }
 
@@ -115,7 +115,7 @@ class ChecklistService {
    * Get items by category (Admin)
    */
   async getItemsByCategory(categoryId: string): Promise<ChecklistItem[]> {
-    const response = await apiClient.get(`/admin/checklist/categories/${categoryId}/items`);
+    const response = await apiClient.get(`/checklist/categories/${categoryId}/items`);
     return response.data;
   }
 
@@ -128,7 +128,7 @@ class ChecklistService {
     description?: string;
     order?: number;
   }): Promise<ChecklistItem> {
-    const response = await apiClient.post('/admin/checklist/items', data);
+    const response = await apiClient.post('/checklist/items', data);
     return response.data;
   }
 
@@ -144,7 +144,7 @@ class ChecklistService {
       isEnabled?: boolean;
     }
   ): Promise<ChecklistItem> {
-    const response = await apiClient.put(`/admin/checklist/items/${id}`, data);
+    const response = await apiClient.put(`/checklist/items/${id}`, data);
     return response.data;
   }
 
@@ -152,21 +152,21 @@ class ChecklistService {
    * Delete item (Admin - Admin only)
    */
   async deleteItem(id: string): Promise<void> {
-    await apiClient.delete(`/admin/checklist/items/${id}`);
+    await apiClient.delete(`/checklist/items/${id}`);
   }
 
   /**
    * Update categories order (Admin - Manager+)
    */
   async updateCategoriesOrder(categoryIds: string[]): Promise<void> {
-    await apiClient.put('/admin/checklist/categories/reorder', { categoryIds });
+    await apiClient.put('/checklist/categories/reorder', { categoryIds });
   }
 
   /**
    * Update items order (Admin - Manager+)
    */
   async updateItemsOrder(itemIds: string[]): Promise<void> {
-    await apiClient.put('/admin/checklist/items/reorder', { itemIds });
+    await apiClient.put('/checklist/items/reorder', { itemIds });
   }
 }
 
