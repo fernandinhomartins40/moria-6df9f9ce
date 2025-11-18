@@ -83,6 +83,15 @@ http {
             proxy_read_timeout 60s;
         }
 
+        # Servir arquivos de upload (imagens de produtos)
+        location /uploads/ {
+            alias /app/apps/backend/uploads/;
+            expires 30d;
+            add_header Cache-Control "public";
+            add_header Access-Control-Allow-Origin "*";
+            try_files $uri =404;
+        }
+
         # Assets estáticos com cache longo
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
             root /app/apps/frontend/dist;
@@ -136,6 +145,13 @@ echo "=== Iniciando Moria VPS ==="
 # Aguardar PostgreSQL
 echo "Aguardando PostgreSQL..."
 sleep 5
+
+# Garantir permissões corretas para uploads
+echo "Configurando diretórios de upload..."
+mkdir -p /app/apps/backend/uploads/products /app/apps/backend/uploads/temp
+chmod -R 755 /app/apps/backend/uploads
+chown -R root:root /app/apps/backend/uploads
+echo "✓ Diretórios de upload configurados"
 
 # Sincronizar schema do Prisma com o banco
 cd /app/apps/backend
