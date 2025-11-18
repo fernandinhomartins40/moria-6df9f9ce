@@ -35,6 +35,14 @@ router.get('/customers/:customerId/vehicles', adminController.getCustomerVehicle
 router.patch('/customers/:id/level', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerLevel);
 router.patch('/customers/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerStatus);
 
+// ==================== QUOTES ====================
+router.get('/quotes', adminController.getQuotes);
+router.get('/quotes/:id', adminController.getQuoteById);
+router.patch('/quotes/:id/prices', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.updateQuotePrices);
+router.patch('/quotes/:id/approve', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.approveQuote);
+router.patch('/quotes/:id/reject', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.rejectQuote);
+router.patch('/quotes/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.updateQuoteStatus);
+
 // ==================== REVISIONS ====================
 router.get('/revisions/statistics', revisionsController.getStatistics);
 router.get('/revisions/vehicle/:vehicleId/history', revisionsController.getVehicleHistory);

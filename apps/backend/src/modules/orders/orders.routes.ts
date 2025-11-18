@@ -1,11 +1,16 @@
 import { Router } from 'express';
 import { OrdersController } from './orders.controller.js';
+import { GuestOrdersController } from './guest-orders.controller.js';
 import { AuthMiddleware } from '@middlewares/auth.middleware.js';
 
 const router = Router();
 const ordersController = new OrdersController();
+const guestOrdersController = new GuestOrdersController();
 
-// All order routes require authentication
+// ⚠️ PUBLIC ROUTE - Guest order creation (must be BEFORE authentication middleware)
+router.post('/guest', guestOrdersController.createGuestOrder);
+
+// All authenticated order routes require authentication
 router.use(AuthMiddleware.authenticate);
 router.use(AuthMiddleware.requireActive);
 

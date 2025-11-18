@@ -6,7 +6,6 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
-import { ScrollArea } from "./ui/scroll-area";
 import {
   User,
   Phone,
@@ -15,10 +14,13 @@ import {
   Loader2,
   CheckCircle,
   Package,
-  Wrench
+  Wrench,
+  Mail,
+  Home
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CartItem } from "@moria/types";
+import guestOrderService from "../api/guestOrderService";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -27,12 +29,37 @@ interface CheckoutDrawerProps {
 
 interface CheckoutForm {
   name: string;
+  email: string;
   whatsapp: string;
+  address: {
+    zipCode: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  };
+  paymentMethod: string;
 }
 
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart } = useCart();
-  const [form, setForm] = useState<CheckoutForm>({ name: "", whatsapp: "" });
+  const [form, setForm] = useState<CheckoutForm>({
+    name: "",
+    email: "",
+    whatsapp: "",
+    address: {
+      zipCode: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+    },
+    paymentMethod: "pix",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -44,10 +71,8 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   };
 
   const formatWhatsApp = (value: string) => {
-    // Remove tudo que não for número
     const numbers = value.replace(/\D/g, '');
-    
-    // Aplica a máscara (11) 99999-9999
+
     if (numbers.length <= 2) {
       return `(${numbers}`;
     } else if (numbers.length <= 7) {
@@ -57,184 +82,68 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     }
   };
 
-interface ProvisionalUser {
-  id: string;
-  name: string;
-  whatsapp: string;
-  login: string;
-  password: string;
-  isProvisional: boolean;
-  createdAt: string;
-}
-
-interface OrderAndQuoteResult {
-  order: StoreOrder | null;
-  quote: ServiceQuote | null;
-}
-
-interface StoreOrder {
-  id: string;
-  sessionId: string;
-  userId: string;
-  customerName: string;
-  customerWhatsApp: string;
-  items: CartItem[];
-  total: number;
-  type: 'order';
-  status: 'pending';
-  hasLinkedQuote: boolean;
-  createdAt: string;
-  source: 'website';
-}
-
-interface ServiceQuote {
-  id: string;
-  sessionId: string;
-  userId: string;
-  customerName: string;
-  customerWhatsApp: string;
-  items: CartItem[];
-  type: 'quote';
-  status: 'pending';
-  hasLinkedOrder: boolean;
-  createdAt: string;
-  source: 'website';
-}
-
-  const createProvisionalUser = async (name: string, whatsapp: string): Promise<ProvisionalUser> => {
-    // Simula criação de usuário provisório
-    const login = whatsapp.replace(/\D/g, ''); // Remove caracteres não numéricos
-    const password = name.slice(0, 3).toLowerCase(); // 3 primeiras letras do nome
-
-    const user: ProvisionalUser = {
-      id: Date.now().toString(),
-      name,
-      whatsapp,
-      login,
-      password,
-      isProvisional: true,
-      createdAt: new Date().toISOString()
-    };
-
-    // Salva no localStorage (simula backend)
-    const users = JSON.parse(localStorage.getItem('provisional_users') || '[]');
-    users.push(user);
-    localStorage.setItem('provisional_users', JSON.stringify(users));
-
-    return user;
+  const formatZipCode = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 5) {
+      return numbers;
+    }
+    return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`;
   };
 
-  const createOrderAndQuote = async (user: ProvisionalUser): Promise<OrderAndQuoteResult> => {
-    const sessionId = Date.now().toString(); // ID único para vincular pedido e orçamento
-    const products = items.filter(item => item.type !== 'service');
-    const services = items.filter(item => item.type === 'service');
+  const generateWhatsAppMessage = (order: any): string => {
+    const { customer, items, total, hasProducts, hasServices, quoteStatus } = order;
 
-    const results: OrderAndQuoteResult = { order: null, quote: null };
-
-    // Criar pedido apenas se houver produtos
-    if (products.length > 0) {
-      const productTotal = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-      const order: StoreOrder = {
-        id: `P${sessionId}`,
-        sessionId,
-        userId: user.id,
-        customerName: user.name,
-        customerWhatsApp: user.whatsapp,
-        items: products,
-        total: productTotal,
-        type: 'order',
-        status: 'pending',
-        hasLinkedQuote: services.length > 0,
-        createdAt: new Date().toISOString(),
-        source: 'website'
-      };
-
-      const orders = JSON.parse(localStorage.getItem('store_orders') || '[]');
-      orders.push(order);
-      localStorage.setItem('store_orders', JSON.stringify(orders));
-      results.order = order;
-    }
-
-    // Criar orçamento apenas se houver serviços
-    if (services.length > 0) {
-      const quote: ServiceQuote = {
-        id: `O${sessionId}`,
-        sessionId,
-        userId: user.id,
-        customerName: user.name,
-        customerWhatsApp: user.whatsapp,
-        items: services,
-        type: 'quote',
-        status: 'pending',
-        hasLinkedOrder: products.length > 0,
-        createdAt: new Date().toISOString(),
-        source: 'website'
-      };
-
-      const quotes = JSON.parse(localStorage.getItem('store_quotes') || '[]');
-      quotes.push(quote);
-      localStorage.setItem('store_quotes', JSON.stringify(quotes));
-      results.quote = quote;
-    }
-
-    return results;
-  };
-
-  const generateWhatsAppMessage = (results: OrderAndQuoteResult): string => {
-    const { order, quote } = results;
-    
     let message = `🔧 *Moria Peças e Serviços*\n`;
-    message += `👤 *Cliente:* ${order?.customerName || quote?.customerName}\n`;
-    message += `📞 *WhatsApp:* ${order?.customerWhatsApp || quote?.customerWhatsApp}\n`;
-    
-    if (order && quote) {
-      message += `📋 *Pedido:* #${order.id} | *Orçamento:* #${quote.id}\n\n`;
-    } else if (order) {
-      message += `📋 *Pedido:* #${order.id}\n\n`;
-    } else if (quote) {
-      message += `📋 *Orçamento:* #${quote.id}\n\n`;
-    }
+    message += `📋 *Pedido:* #${order.id.slice(0, 8)}\n`;
+    message += `👤 *Cliente:* ${customer.name}\n`;
+    message += `📞 *WhatsApp:* ${customer.phone}\n\n`;
 
-    if (order) {
+    if (hasProducts) {
+      const productItems = items.filter((item: any) => item.type === 'PRODUCT');
       message += `🛒 *PRODUTOS:*\n`;
-      order.items.forEach((item, index) => {
+      productItems.forEach((item: any, index: number) => {
         message += `${index + 1}. ${item.name}\n`;
         message += `   • Quantidade: ${item.quantity}x\n`;
         message += `   • Valor: ${formatPrice(item.price)}\n`;
-        message += `   • Subtotal: ${formatPrice(item.price * item.quantity)}\n\n`;
+        message += `   • Subtotal: ${formatPrice(item.subtotal)}\n\n`;
       });
-      message += `💰 *Total dos Produtos: ${formatPrice(order.total)}*\n\n`;
     }
 
-    if (quote) {
-      message += `🔧 *SERVIÇOS (Orçamento):*\n`;
-      quote.items.forEach((item, index) => {
+    if (hasServices) {
+      const serviceItems = items.filter((item: any) => item.type === 'SERVICE');
+      message += `🔧 *SERVIÇOS:*\n`;
+      serviceItems.forEach((item: any, index: number) => {
         message += `${index + 1}. ${item.name}\n`;
-        if (item.description) {
-          message += `   • Descrição: ${item.description}\n`;
+        message += `   • Quantidade: ${item.quantity}x\n`;
+        if (item.priceQuoted) {
+          message += `   • Valor: ${formatPrice(item.price)}\n`;
+        } else {
+          message += `   • *Aguardando orçamento*\n`;
         }
-        message += `   • Quantidade: ${item.quantity}x\n\n`;
+        message += `\n`;
       });
     }
 
-    if (order && quote) {
-      message += `📋 Este cliente possui produtos para compra e serviços que precisam de orçamento.\n\n`;
-    } else if (quote) {
-      message += `📋 Solicitação de orçamento para os serviços listados acima.\n\n`;
+    if (hasProducts) {
+      message += `💰 *Total: ${formatPrice(total)}*\n\n`;
+    }
+
+    if (quoteStatus === 'PENDING') {
+      message += `⏳ Alguns serviços aguardam orçamento. Em breve retornaremos com os valores.\n\n`;
     }
 
     message += `🕒 *Data:* ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
-    message += `Gostaria de confirmar${order ? ' este pedido' : ''}${order && quote ? ' e receber o orçamento' : quote ? ' o orçamento' : ''}. Aguardo retorno!`;
+    message += `Aguardo confirmação e próximos passos!`;
 
     return message;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!form.name.trim() || !form.whatsapp.trim()) {
-      toast.error("Preencha todos os campos");
+
+    // Validações
+    if (!form.name.trim() || !form.email.trim() || !form.whatsapp.trim()) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
@@ -243,42 +152,82 @@ interface ServiceQuote {
       return;
     }
 
+    if (!form.address.street || !form.address.number || !form.address.neighborhood || !form.address.city || !form.address.state || !form.address.zipCode) {
+      toast.error("Preencha todos os campos de endereço");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // 1. Criar usuário provisório
-      const user = await createProvisionalUser(form.name, form.whatsapp);
-      
-      // 2. Criar pedido e/ou orçamento
-      const results = await createOrderAndQuote(user);
-      
-      // 3. Gerar mensagem do WhatsApp
-      const message = generateWhatsAppMessage(results);
-      const whatsappNumber = "5511999999999"; // Número da loja
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
-      
-      // Simular delay do processamento
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Preparar dados do pedido
+      const orderData = {
+        customerName: form.name,
+        customerEmail: form.email,
+        customerPhone: form.whatsapp.replace(/\D/g, ''),
+        address: {
+          street: form.address.street,
+          number: form.address.number,
+          complement: form.address.complement,
+          neighborhood: form.address.neighborhood,
+          city: form.address.city,
+          state: form.address.state,
+          zipCode: form.address.zipCode.replace(/\D/g, ''),
+          type: 'HOME' as const,
+        },
+        items: items.map(item => ({
+          productId: item.type !== 'service' ? item.id : undefined,
+          serviceId: item.type === 'service' ? item.id : undefined,
+          type: (item.type === 'service' ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+          quantity: item.quantity,
+        })),
+        paymentMethod: form.paymentMethod,
+      };
+
+      // Criar pedido via API
+      const order = await guestOrderService.createGuestOrder(orderData);
+
+      console.log('Order created:', order);
+
       setIsSuccess(true);
-      
-      // 4. Abrir WhatsApp após sucesso
+
+      // Gerar mensagem WhatsApp
+      const message = generateWhatsAppMessage(order);
+      const whatsappNumber = "5511999999999"; // Número da loja - TODO: configurar via env
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+
+      // Abrir WhatsApp após sucesso
       setTimeout(() => {
         window.open(whatsappUrl, '_blank');
-        
-        // Limpar carrinho e fechar diálogos
+
+        // Limpar carrinho e fechar
         setTimeout(() => {
           clearCart();
           closeCart();
           onOpenChange(false);
           setIsSuccess(false);
-          setForm({ name: "", whatsapp: "" });
-          toast.success("Pedido enviado! Você será redirecionado para o WhatsApp.");
+          setForm({
+            name: "",
+            email: "",
+            whatsapp: "",
+            address: {
+              zipCode: "",
+              street: "",
+              number: "",
+              complement: "",
+              neighborhood: "",
+              city: "",
+              state: "",
+            },
+            paymentMethod: "pix",
+          });
+          toast.success("Pedido criado com sucesso! Você será contatado em breve.");
         }, 1000);
       }, 2000);
-      
-    } catch (error) {
-      toast.error("Erro ao processar pedido. Tente novamente.");
+
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      toast.error(error.response?.data?.message || "Erro ao processar pedido. Tente novamente.");
       setIsLoading(false);
     }
   };
@@ -298,7 +247,7 @@ interface ServiceQuote {
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold">Pedido Processado!</h3>
+                <h3 className="text-2xl font-bold">Pedido Criado!</h3>
                 <p className="text-muted-foreground">
                   Redirecionando para o WhatsApp...
                 </p>
@@ -316,7 +265,7 @@ interface ServiceQuote {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl flex flex-col p-0">
+      <SheetContent className="w-full sm:max-w-4xl flex flex-col p-0 overflow-y-auto">
         <SheetHeader className="p-6 pb-4">
           <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-moria-orange" />
@@ -327,99 +276,98 @@ interface ServiceQuote {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full p-6 pt-0">
-            {/* Resumo do Pedido */}
-            <div className="flex flex-col h-full">
-              <h3 className="font-semibold mb-4">Resumo do Pedido</h3>
-              
-              <ScrollArea className="flex-1 pr-4">
-                <div className="space-y-3">
-                {hasProducts && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Package className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Produtos</span>
-                    </div>
-                    {products.map((item) => (
-                      <div key={`product-${item.id}`} className="border rounded-lg p-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{item.name}</h4>
-                            <Badge variant="secondary" className="text-xs mt-1">
-                              {item.category}
-                            </Badge>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-moria-orange">
-                              {item.quantity}x {formatPrice(item.price)}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto p-6 pt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Resumo do Pedido */}
+              <div className="flex flex-col">
+                <h3 className="font-semibold mb-4">Resumo do Pedido</h3>
+
+                <div className="space-y-3 flex-1">
+                  {hasProducts && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">Produtos</span>
+                      </div>
+                      {products.map((item) => (
+                        <div key={`product-${item.id}`} className="border rounded-lg p-3 mb-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{item.name}</h4>
+                              <Badge variant="secondary" className="text-xs mt-1">
+                                {item.category}
+                              </Badge>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatPrice(item.price * item.quantity)}
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-moria-orange">
+                                {item.quantity}x {formatPrice(item.price)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatPrice(item.price * item.quantity)}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {hasServices && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Wrench className="h-4 w-4 text-orange-600" />
-                      <span className="font-medium">Serviços (Orçamento)</span>
+                      ))}
                     </div>
-                    {services.map((item) => (
-                      <div key={`service-${item.id}`} className="border rounded-lg p-3 bg-orange-50">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{item.name}</h4>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {item.description}
-                              </p>
-                            )}
-                            <Badge variant="outline" className="text-xs mt-1">
-                              Orçamento necessário
-                            </Badge>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">
-                              {item.quantity}x
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                </div>
-              </ScrollArea>
+                  )}
 
-              {hasProducts && (
-                <div className="border-t pt-4 mt-4">
-                  <div className="flex justify-between items-center font-bold mb-2">
-                    <span>Total dos Produtos:</span>
-                    <span className="text-lg text-moria-orange">{formatPrice(totalPrice)}</span>
-                  </div>
                   {hasServices && (
-                    <p className="text-xs text-muted-foreground">
-                      * Serviços serão orçados separadamente
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Wrench className="h-4 w-4 text-orange-600" />
+                        <span className="font-medium">Serviços (Orçamento)</span>
+                      </div>
+                      {services.map((item) => (
+                        <div key={`service-${item.id}`} className="border rounded-lg p-3 bg-orange-50 mb-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{item.name}</h4>
+                              {item.description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {item.description}
+                                </p>
+                              )}
+                              <Badge variant="outline" className="text-xs mt-1">
+                                Orçamento necessário
+                              </Badge>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium">
+                                {item.quantity}x
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Formulário */}
-            <div className="flex flex-col h-full">
-              <h3 className="font-semibold mb-4">Seus Dados</h3>
-              
-              <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="flex-1 space-y-4">
+                {hasProducts && (
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex justify-between items-center font-bold mb-2">
+                      <span>Total dos Produtos:</span>
+                      <span className="text-lg text-moria-orange">{formatPrice(totalPrice)}</span>
+                    </div>
+                    {hasServices && (
+                      <p className="text-xs text-muted-foreground">
+                        * Serviços serão orçados separadamente
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Formulário */}
+              <div className="flex flex-col">
+                <h3 className="font-semibold mb-4">Seus Dados</h3>
+
+                <div className="space-y-4 flex-1">
+                  {/* Dados Pessoais */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm">Nome Completo</Label>
+                    <Label htmlFor="name" className="text-sm">Nome Completo *</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -435,7 +383,24 @@ interface ServiceQuote {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="whatsapp" className="text-sm">WhatsApp</Label>
+                    <Label htmlFor="email" className="text-sm">Email *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="pl-10 h-10"
+                        value={form.email}
+                        onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp" className="text-sm">WhatsApp *</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -453,40 +418,141 @@ interface ServiceQuote {
                     </div>
                   </div>
 
+                  <Separator />
+
+                  {/* Endereço */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      <Label className="text-sm font-semibold">Endereço de Entrega</Label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-1">
+                        <Input
+                          placeholder="CEP *"
+                          value={form.address.zipCode}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            address: { ...prev.address, zipCode: formatZipCode(e.target.value) }
+                          }))}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <Input
+                      placeholder="Rua *"
+                      value={form.address.street}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        address: { ...prev.address, street: e.target.value }
+                      }))}
+                      disabled={isLoading}
+                      required
+                    />
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-1">
+                        <Input
+                          placeholder="Número *"
+                          value={form.address.number}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            address: { ...prev.address, number: e.target.value }
+                          }))}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          placeholder="Complemento"
+                          value={form.address.complement}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            address: { ...prev.address, complement: e.target.value }
+                          }))}
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <Input
+                      placeholder="Bairro *"
+                      value={form.address.neighborhood}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        address: { ...prev.address, neighborhood: e.target.value }
+                      }))}
+                      disabled={isLoading}
+                      required
+                    />
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <Input
+                          placeholder="Cidade *"
+                          value={form.address.city}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            address: { ...prev.address, city: e.target.value }
+                          }))}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          placeholder="UF *"
+                          maxLength={2}
+                          value={form.address.state}
+                          onChange={(e) => setForm(prev => ({
+                            ...prev,
+                            address: { ...prev.address, state: e.target.value.toUpperCase() }
+                          }))}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-muted rounded-lg p-3">
                     <h4 className="font-medium text-sm mb-2">Como funciona:</h4>
                     <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>✅ Processamos seu pedido automaticamente</li>
+                      <li>✅ Seu pedido é registrado em nosso sistema</li>
                       <li>📱 Você será redirecionado para o WhatsApp</li>
                       <li>💬 A mensagem será gerada automaticamente</li>
-                      <li>🤝 Nossa equipe entrará em contato</li>
+                      <li>🤝 Nossa equipe entrará em contato em breve</li>
                     </ul>
                   </div>
                 </div>
-
-                <div className="border-t pt-4 mt-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-green-600 hover:bg-green-700 h-11" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Finalizar via WhatsApp
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
-        </div>
+
+          <div className="border-t p-6">
+            <Button
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700 h-11"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Finalizar via WhatsApp
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </SheetContent>
     </Sheet>
   );

@@ -273,13 +273,23 @@ class AdminService {
     return response.data;
   }
 
-  async updateQuoteStatus(id: string, status: string): Promise<Quote> {
-    const response = await apiClient.patch(`/admin/quotes/${id}/status`, { status });
+  async updateQuotePrices(id: string, items: Array<{ id: string; quotedPrice: number }>): Promise<Quote> {
+    const response = await apiClient.patch(`/admin/quotes/${id}/prices`, { items });
     return response.data;
   }
 
-  async respondToQuote(id: string, items: QuoteItem[]): Promise<Quote> {
-    const response = await apiClient.post(`/admin/quotes/${id}/respond`, { items });
+  async approveQuote(id: string): Promise<Quote> {
+    const response = await apiClient.patch(`/admin/quotes/${id}/approve`);
+    return response.data;
+  }
+
+  async rejectQuote(id: string): Promise<Quote> {
+    const response = await apiClient.patch(`/admin/quotes/${id}/reject`);
+    return response.data;
+  }
+
+  async updateQuoteStatus(id: string, status: string): Promise<Quote> {
+    const response = await apiClient.patch(`/admin/quotes/${id}/status`, { status });
     return response.data;
   }
 

@@ -34,7 +34,10 @@
       "Bash(nslookup:*)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(npx prisma migrate:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(find:*)",
+      "Bash(del NUL)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

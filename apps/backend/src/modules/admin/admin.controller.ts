@@ -118,4 +118,73 @@ export class AdminController {
       next(error);
     }
   };
+
+  // ==================== QUOTES (ORÇAMENTOS) ====================
+
+  getQuotes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page = 1, limit = 20, status, search } = req.query;
+      const result = await this.adminService.getQuotes({
+        page: Number(page),
+        limit: Number(limit),
+        status: status as string,
+        search: search as string
+      });
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getQuoteById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const quote = await this.adminService.getQuoteById(id);
+      res.json(quote);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateQuotePrices = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { items } = req.body;
+      const order = await this.adminService.updateQuotePrices(id, items);
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  approveQuote = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const order = await this.adminService.approveQuote(id);
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  rejectQuote = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const order = await this.adminService.rejectQuote(id);
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateQuoteStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const order = await this.adminService.updateQuoteStatus(id, status);
+      res.json(order);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

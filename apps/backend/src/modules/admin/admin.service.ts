@@ -13,6 +13,9 @@ interface OrderItemWithRelations {
   subtotal: Prisma.Decimal;
   type: string;
   name: string;
+  priceQuoted: boolean;
+  quotedPrice: Prisma.Decimal | null;
+  quotedAt: Date | null;
   createdAt: Date;
 }
 
@@ -21,17 +24,24 @@ interface OrderWithRelations {
   customerId: string;
   addressId: string;
   subtotal: Prisma.Decimal;
-  shippingCost: Prisma.Decimal;
+  shippingCost?: Prisma.Decimal;
   total: Prisma.Decimal;
   status: string;
   paymentMethod: string;
-  couponId: string | null;
+  couponId?: string | null;
   discountAmount: Prisma.Decimal;
+  hasProducts: boolean;
+  hasServices: boolean;
+  quoteStatus: string | null;
+  quotedAt: Date | null;
+  quoteApprovedAt: Date | null;
+  quoteNotes: string | null;
   createdAt: Date;
   updatedAt: Date;
   customer: {
     name: string;
     phone: string;
+    email?: string;
   };
   items: OrderItemWithRelations[];
 }
@@ -263,6 +273,161 @@ export class AdminService {
     return vehicles;
   }
 
+  // ==================== QUOTES (ORÇAMENTOS) ====================
+
+  async getQuotes(params: {
+    page: number;
+    limit: number;
+    status?: string;
+    search?: string;
+  }) {
+    const { page, limit, status, search } = params;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.OrderWhereInput = {
+      hasServices: true, // Filtro principal: apenas pedidos com serviços
+    };
+
+    if (status) {
+      where.quoteStatus = status as any;
+    }
+
+    if (search) {
+      where.OR = [
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
+        { customer: { email: { contains: search, mode: 'insensitive' } } },
+        { customer: { phone: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [orders, totalCount] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: { select: { name: true, phone: true, email: true } },
+          items: {
+            where: { type: 'SERVICE' }, // Apenas itens de serviço
+          },
+        },
+      }) as unknown as Promise<OrderWithRelations[]>,
+      prisma.order.count({ where })
+    ]);
+
+    return {
+      quotes: orders.map((order: OrderWithRelations) => this.mapOrderToQuote(order)),
+      totalCount
+    };
+  }
+
+  async getQuoteById(id: string) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: { select: { name: true, phone: true, email: true } },
+        items: {
+          where: { type: 'SERVICE' },
+        },
+      },
+    }) as unknown as OrderWithRelations | null;
+
+    if (!order) {
+      throw new Error('Orçamento não encontrado');
+    }
+
+    if (!order.hasServices) {
+      throw new Error('Este pedido não contém serviços');
+    }
+
+    return this.mapOrderToQuote(order);
+  }
+
+  async updateQuotePrices(id: string, items: Array<{ id: string; quotedPrice: number }>) {
+    // Atualizar preços dos itens
+    await Promise.all(
+      items.map(item =>
+        prisma.orderItem.update({
+          where: { id: item.id },
+          data: {
+            quotedPrice: item.quotedPrice,
+            price: item.quotedPrice,
+            subtotal: item.quotedPrice, // Será multiplicado pela quantidade via raw query
+            priceQuoted: true,
+            quotedAt: new Date(),
+          },
+        })
+      )
+    );
+
+    // Buscar pedido com itens atualizados
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!order) {
+      throw new Error('Pedido não encontrado');
+    }
+
+    // Recalcular total do pedido
+    const newTotal = order.items.reduce((sum, item) => {
+      return sum + (Number(item.price) * item.quantity);
+    }, 0);
+
+    // Atualizar pedido
+    return prisma.order.update({
+      where: { id },
+      data: {
+        total: newTotal,
+        quoteStatus: 'QUOTED',
+        quotedAt: new Date(),
+      },
+      include: { items: true, customer: true },
+    });
+  }
+
+  async approveQuote(id: string) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      throw new Error('Orçamento não encontrado');
+    }
+
+    if (order.quoteStatus !== 'QUOTED') {
+      throw new Error('Orçamento precisa estar no status QUOTED para ser aprovado');
+    }
+
+    return prisma.order.update({
+      where: { id },
+      data: {
+        quoteStatus: 'APPROVED',
+        quoteApprovedAt: new Date(),
+      },
+    });
+  }
+
+  async rejectQuote(id: string) {
+    return prisma.order.update({
+      where: { id },
+      data: {
+        quoteStatus: 'REJECTED',
+      },
+    });
+  }
+
+  async updateQuoteStatus(id: string, status: string) {
+    return prisma.order.update({
+      where: { id },
+      data: {
+        quoteStatus: status as any,
+      },
+    });
+  }
+
   // ==================== HELPER METHODS ====================
 
   private mapOrderItemToResponse(item: OrderItemWithRelations) {
@@ -288,6 +453,33 @@ export class AdminService {
       status: order.status,
       createdAt: order.createdAt.toISOString(),
       source: 'website' as const
+    };
+  }
+
+  private mapOrderToQuote(order: OrderWithRelations) {
+    return {
+      id: order.id,
+      userId: order.customerId,
+      customerName: order.customer.name,
+      customerWhatsApp: order.customer.phone,
+      items: order.items.map((item: OrderItemWithRelations) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+        quotedPrice: item.quotedPrice ? Number(item.quotedPrice) : null,
+        priceQuoted: item.priceQuoted,
+        type: 'service' as const,
+      })),
+      total: Number(order.total),
+      hasProducts: order.hasProducts,
+      hasServices: order.hasServices,
+      status: order.quoteStatus || 'PENDING',
+      createdAt: order.createdAt.toISOString(),
+      quotedAt: order.quotedAt?.toISOString() || null,
+      quoteApprovedAt: order.quoteApprovedAt?.toISOString() || null,
+      quoteNotes: order.quoteNotes || null,
+      source: 'website' as const,
     };
   }
 
