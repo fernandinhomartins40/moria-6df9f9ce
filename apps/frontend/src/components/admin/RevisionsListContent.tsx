@@ -10,27 +10,20 @@ import {
   XCircle,
   FileText,
   UserCog,
-  MoreVertical,
   Edit,
   Trash2,
-  ArrowRightLeft,
+  Play,
   Circle,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '../ui/dropdown-menu';
 import adminService, { AdminRevision } from '../../api/adminService';
 import revisionService from '../../api/revisionService';
 import { RevisionDetailsModal } from './RevisionDetailsModal';
 import { MechanicAssignmentModal } from './MechanicAssignmentModal';
+import { RevisionEditModal } from './RevisionEditModal';
 
 export function RevisionsListContent() {
   const [revisions, setRevisions] = useState<AdminRevision[]>([]);
@@ -44,6 +37,7 @@ export function RevisionsListContent() {
   // Modals
   const [selectedRevision, setSelectedRevision] = useState<AdminRevision | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [mechanicModalOpen, setMechanicModalOpen] = useState(false);
   const [mechanicModalRevisionId, setMechanicModalRevisionId] = useState<string | null>(null);
   const [mechanicModalCurrentMechanicId, setMechanicModalCurrentMechanicId] = useState<
@@ -86,6 +80,11 @@ export function RevisionsListContent() {
     setMechanicModalCurrentMechanicId(revision.assignedMechanicId);
     setMechanicModalCurrentMechanicName(revision.mechanicName);
     setMechanicModalOpen(true);
+  };
+
+  const handleEditRevision = (revision: AdminRevision) => {
+    setSelectedRevision(revision);
+    setEditModalOpen(true);
   };
 
   const handleChangeStatus = async (revisionId: string, newStatus: string) => {
@@ -286,77 +285,88 @@ export function RevisionsListContent() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2">
+                        {/* View Details */}
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleViewDetails(revision)}
+                          title="Ver detalhes"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver
+                          <Eye className="h-4 w-4" />
                         </Button>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleAssignMechanic(revision)}>
-                              {revision.assignedMechanicId ? (
-                                <>
-                                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                                  Trocar Mecânico
-                                </>
-                              ) : (
-                                <>
-                                  <UserCog className="h-4 w-4 mr-2" />
-                                  Atribuir Mecânico
-                                </>
-                              )}
-                            </DropdownMenuItem>
+                        {/* Assign Mechanic */}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleAssignMechanic(revision)}
+                          title={revision.assignedMechanicId ? 'Trocar mecânico' : 'Atribuir mecânico'}
+                        >
+                          <UserCog className="h-4 w-4" />
+                        </Button>
 
-                            <DropdownMenuSeparator />
+                        {/* Edit/Continue (DRAFT or IN_PROGRESS) */}
+                        {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditRevision(revision)}
+                            title={revision.status === 'DRAFT' ? 'Editar rascunho' : 'Continuar revisão'}
+                            className="text-blue-600 hover:text-blue-700 hover:border-blue-600"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
 
-                            {revision.status === 'DRAFT' && (
-                              <DropdownMenuItem
-                                onClick={() => handleChangeStatus(revision.id, 'IN_PROGRESS')}
-                              >
-                                <Clock className="h-4 w-4 mr-2" />
-                                Iniciar
-                              </DropdownMenuItem>
-                            )}
+                        {/* Start (only DRAFT) */}
+                        {revision.status === 'DRAFT' && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleChangeStatus(revision.id, 'IN_PROGRESS')}
+                            title="Iniciar revisão"
+                            className="text-blue-600 hover:text-blue-700 hover:border-blue-600"
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                        )}
 
-                            {revision.status === 'IN_PROGRESS' && (
-                              <DropdownMenuItem
-                                onClick={() => handleChangeStatus(revision.id, 'COMPLETED')}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Concluir
-                              </DropdownMenuItem>
-                            )}
+                        {/* Complete (only IN_PROGRESS) */}
+                        {revision.status === 'IN_PROGRESS' && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleChangeStatus(revision.id, 'COMPLETED')}
+                            title="Concluir revisão"
+                            className="text-green-600 hover:text-green-700 hover:border-green-600"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
 
-                            {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
-                              <DropdownMenuItem
-                                onClick={() => handleChangeStatus(revision.id, 'CANCELLED')}
-                                className="text-red-600"
-                              >
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Cancelar
-                              </DropdownMenuItem>
-                            )}
+                        {/* Cancel (DRAFT or IN_PROGRESS) */}
+                        {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleChangeStatus(revision.id, 'CANCELLED')}
+                            title="Cancelar revisão"
+                            className="text-orange-600 hover:text-orange-700 hover:border-orange-600"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        )}
 
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteRevision(revision.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Delete */}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDeleteRevision(revision.id)}
+                          title="Excluir revisão"
+                          className="text-red-600 hover:text-red-700 hover:border-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -407,6 +417,20 @@ export function RevisionsListContent() {
           }
         }}
         onChangeStatus={handleChangeStatus}
+      />
+
+      <RevisionEditModal
+        revision={selectedRevision}
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedRevision(null);
+        }}
+        onSuccess={() => {
+          loadRevisions();
+          setEditModalOpen(false);
+          setSelectedRevision(null);
+        }}
       />
 
       <MechanicAssignmentModal

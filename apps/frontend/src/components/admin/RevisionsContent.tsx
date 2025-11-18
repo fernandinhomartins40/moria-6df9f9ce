@@ -33,6 +33,11 @@ export function RevisionsContent() {
     setSelectedVehicle(vehicle);
     setMileage(vehicle.mileage || 0);
 
+    console.log('🔍 Debug - Categories:', {
+      total: categories.length,
+      enabled: categories.filter(c => c.isEnabled).length
+    });
+
     // Initialize all enabled items with NOT_CHECKED status
     const items: RevisionChecklistItem[] = [];
     categories.forEach(category => {
@@ -48,11 +53,14 @@ export function RevisionsContent() {
       }
     });
 
+    console.log('🔍 Debug - Checklist Items:', { total: items.length });
+
     setRevisionItems(items);
 
     // Create draft revision via API
     if (selectedCustomer) {
       setIsLoading(true);
+      let payload: any = null;
       try {
         // Transform checklist items to backend format
         const checklistItems = items.map(item => {
@@ -75,7 +83,7 @@ export function RevisionsContent() {
           return checkItem;
         });
 
-        const payload: any = {
+        payload = {
           customerId: selectedCustomer.id,
           vehicleId: vehicle.id,
           date: new Date().toISOString(),
@@ -84,7 +92,20 @@ export function RevisionsContent() {
 
         if (vehicle.mileage) payload.mileage = vehicle.mileage;
 
+        console.log('📤 Enviando criação de revisão:', {
+          customerId: payload.customerId,
+          vehicleId: payload.vehicleId,
+          checklistItemsCount: payload.checklistItems.length,
+          firstItems: payload.checklistItems.slice(0, 3)
+        });
+
         const revision = await revisionService.createRevision(payload);
+
+        console.log('✅ Revisão criada:', {
+          id: revision.id,
+          status: revision.status,
+          checklistItemsReceived: revision.checklistItems?.length || 0
+        });
 
         setCurrentRevisionId(revision.id);
 
@@ -93,7 +114,10 @@ export function RevisionsContent() {
           description: 'Revisão criada com sucesso. Preencha o checklist.',
         });
       } catch (error: any) {
-        console.error('Error creating revision:', error);
+        console.error('❌ Erro ao criar revisão:', error);
+        if (payload) {
+          console.error('Payload enviado:', payload);
+        }
         toast({
           title: 'Erro ao criar revisão',
           description: error.response?.data?.message || 'Erro ao criar revisão. Tente novamente.',
@@ -165,7 +189,14 @@ export function RevisionsContent() {
   };
 
   const handleSave = async (status: 'draft' | 'in_progress' | 'completed') => {
+    console.log('💾 handleSave chamado:', {
+      status,
+      currentRevisionId,
+      hasRevisionId: !!currentRevisionId
+    });
+
     if (!currentRevisionId) {
+      console.error('❌ Nenhuma revisão em andamento!');
       toast({
         title: 'Erro',
         description: 'Nenhuma revisão em andamento',
