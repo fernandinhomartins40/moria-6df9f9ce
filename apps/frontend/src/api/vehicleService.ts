@@ -35,7 +35,7 @@ class VehicleService {
    * Get vehicles by customer ID (Admin)
    */
   async getVehiclesByCustomer(customerId: string): Promise<CustomerVehicle[]> {
-    const response = await apiClient.get(`/customer-vehicles?customerId=${customerId}`);
+    const response = await apiClient.get(`/admin/customers/${customerId}/vehicles`);
     return response.data;
   }
 

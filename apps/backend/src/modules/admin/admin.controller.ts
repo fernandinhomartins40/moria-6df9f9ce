@@ -106,4 +106,16 @@ export class AdminController {
       next(error);
     }
   };
+
+  // ==================== CUSTOMER VEHICLES ====================
+
+  getCustomerVehicles = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { customerId } = req.params;
+      const vehicles = await this.adminService.getCustomerVehicles(customerId);
+      res.json(vehicles);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

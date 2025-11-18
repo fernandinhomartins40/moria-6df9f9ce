@@ -252,6 +252,17 @@ export class AdminService {
     return this.mapCustomerToResponse(customer);
   }
 
+  // ==================== CUSTOMER VEHICLES ====================
+
+  async getCustomerVehicles(customerId: string) {
+    const vehicles = await prisma.customerVehicle.findMany({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return vehicles;
+  }
+
   // ==================== HELPER METHODS ====================
 
   private mapOrderItemToResponse(item: OrderItemWithRelations) {
