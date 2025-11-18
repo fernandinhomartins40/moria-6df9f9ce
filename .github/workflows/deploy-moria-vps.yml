@@ -81,7 +81,7 @@ jobs:
             NODE_ENV=production
 
             # Application
-            PORT=3090
+            PORT=3001
 
             # PostgreSQL
             POSTGRES_USER=moria

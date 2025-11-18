@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: moria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moria2024secure}
+      POSTGRES_DB: ${POSTGRES_DB:-moria}
+      TZ: America/Sao_Paulo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - moria-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moria} -d ${POSTGRES_DB:-moria}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Moria Application (Backend + Frontend + Nginx)
+  moria-vps:
+    build:
+      context: .
+      dockerfile: Dockerfile.vps
+      args:
+        - BUILD_TIMESTAMP=${BUILD_TIMESTAMP:-0}
+    container_name: moria-vps
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-moria}:${POSTGRES_PASSWORD:-moria2024secure}@postgres:5432/${POSTGRES_DB:-moria}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-moria-production-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-8h}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://www.moriapecas.com.br}
+      FRONTEND_URL: ${FRONTEND_URL:-https://www.moriapecas.com.br}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.moriapecas.com.br,http://www.moriapecas.com.br,https://moriapecas.com.br,http://moriapecas.com.br}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RUN_SEED: ${RUN_SEED:-false}
+      TZ: America/Sao_Paulo
+    ports:
+      - "3090:3090"
+    volumes:
+      - uploads_data:/app/apps/backend/uploads
+    networks:
+      - moria-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+networks:
+  moria-network:
+    driver: bridge

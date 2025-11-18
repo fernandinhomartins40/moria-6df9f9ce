@@ -1,0 +1,183 @@
+# Dockerfile para produção VPS - Backend + Frontend + Nginx
+FROM node:18-alpine AS base
+WORKDIR /app
+RUN apk add --no-cache libc6-compat openssl curl nginx supervisor
+
+# ===== Backend Build =====
+FROM base AS backend-deps
+WORKDIR /app/apps/backend
+COPY apps/backend/package*.json ./
+RUN npm ci
+
+FROM base AS backend-build
+WORKDIR /app/apps/backend
+COPY --from=backend-deps /app/apps/backend/node_modules ./node_modules
+COPY apps/backend/ ./
+RUN npx prisma generate && npm run build
+
+# ===== Frontend Build =====
+FROM base AS frontend-deps
+WORKDIR /app/apps/frontend
+COPY apps/frontend/package*.json ./
+RUN npm ci
+
+FROM base AS frontend-build
+WORKDIR /app/apps/frontend
+COPY --from=frontend-deps /app/apps/frontend/node_modules ./node_modules
+COPY apps/frontend/ ./
+RUN npm run build
+
+# ===== Production Image =====
+FROM base AS production
+
+# Criar diretórios
+RUN mkdir -p /var/log/supervisor /var/run/nginx /app/apps/backend /app/apps/frontend
+
+# Copiar backend compilado
+WORKDIR /app/apps/backend
+COPY --from=backend-build /app/apps/backend/dist ./dist
+COPY --from=backend-build /app/apps/backend/prisma ./prisma
+COPY --from=backend-build /app/apps/backend/node_modules ./node_modules
+COPY --from=backend-build /app/apps/backend/package*.json ./
+
+# Copiar frontend compilado
+WORKDIR /app/apps/frontend
+COPY --from=frontend-build /app/apps/frontend/dist ./dist
+
+# Configuração do Nginx
+RUN mkdir -p /etc/nginx/conf.d
+COPY <<'EOF' /etc/nginx/nginx.conf
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    client_max_body_size 10M;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+    server {
+        listen 3090;
+        server_name _;
+
+        # Health check
+        location /health {
+            proxy_pass http://127.0.0.1:3001/health;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+        }
+
+        # API Backend
+        location /api/ {
+            proxy_pass http://127.0.0.1:3001/api/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header Content-Type $content_type;
+            proxy_set_header Content-Length $content_length;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_request_buffering off;
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+
+        # Frontend (arquivos estáticos)
+        location / {
+            root /app/apps/frontend/dist;
+            index index.html;
+            try_files $uri $uri/ /index.html;
+
+            # Cache para assets
+            location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+                expires 1y;
+                add_header Cache-Control "public, immutable";
+            }
+        }
+    }
+}
+EOF
+
+# Configuração do Supervisor
+COPY <<'EOF' /etc/supervisor/conf.d/supervisord.conf
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:nginx]
+command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/nginx/stdout.log
+stderr_logfile=/var/log/nginx/stderr.log
+
+[program:backend]
+command=node /app/apps/backend/dist/server.js
+directory=/app/apps/backend
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/backend.stdout.log
+stderr_logfile=/var/log/backend.stderr.log
+environment=NODE_ENV="production",PORT="3001"
+EOF
+
+# Script de inicialização
+COPY <<'EOF' /app/start.sh
+#!/bin/sh
+set -e
+
+echo "=== Iniciando Moria VPS ==="
+
+# Aguardar PostgreSQL
+echo "Aguardando PostgreSQL..."
+sleep 5
+
+# Executar migrations do Prisma
+cd /app/apps/backend
+echo "Executando Prisma migrations..."
+npx prisma migrate deploy || echo "Migrations já aplicadas ou erro"
+
+# Seed se necessário
+if [ "$RUN_SEED" = "true" ]; then
+    echo "Executando seed..."
+    npx prisma db seed || echo "Seed já executado ou erro"
+fi
+
+# Iniciar supervisor
+echo "Iniciando serviços..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+EOF
+
+RUN chmod +x /app/start.sh
+
+WORKDIR /app
+EXPOSE 3090
+
+CMD ["/app/start.sh"]
