@@ -262,7 +262,22 @@ export class ChecklistService {
   /**
    * Get complete checklist structure (for use in revisions)
    */
-  async getChecklistStructure(): Promise<CategoryWithItems[]> {
-    return this.getEnabledCategories(true);
+  async getChecklistStructure() {
+    const categories = await this.getEnabledCategories(true);
+
+    const totalCategories = categories.length;
+    const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
+    const enabledCategories = categories.filter(cat => cat.isEnabled).length;
+    const enabledItems = categories.reduce((sum, cat) =>
+      sum + cat.items.filter(item => item.isEnabled).length, 0
+    );
+
+    return {
+      categories,
+      totalCategories,
+      totalItems,
+      enabledCategories,
+      enabledItems
+    };
   }
 }

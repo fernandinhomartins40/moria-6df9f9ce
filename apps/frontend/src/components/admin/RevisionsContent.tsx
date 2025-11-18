@@ -61,26 +61,30 @@ export function RevisionsContent() {
           );
           const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
 
-          return {
+          const checkItem: any = {
             categoryId: categoryData?.id || '',
             categoryName: categoryData?.name || '',
             itemId: item.itemId,
             itemName: itemData?.name || '',
             status: item.status,
-            notes: item.notes || undefined,
-            photos: item.photos && item.photos.length > 0 ? item.photos : undefined
           };
+
+          if (item.notes) checkItem.notes = item.notes;
+          if (item.photos && item.photos.length > 0) checkItem.photos = item.photos;
+
+          return checkItem;
         });
 
-        const revision = await revisionService.createRevision({
+        const payload: any = {
           customerId: selectedCustomer.id,
           vehicleId: vehicle.id,
           date: new Date().toISOString(),
-          mileage: vehicle.mileage || 0,
           checklistItems,
-          generalNotes: '',
-          recommendations: ''
-        });
+        };
+
+        if (vehicle.mileage) payload.mileage = vehicle.mileage;
+
+        const revision = await revisionService.createRevision(payload);
 
         setCurrentRevisionId(revision.id);
 
@@ -136,15 +140,18 @@ export function RevisionsContent() {
           );
           const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
 
-          return {
+          const checkItem: any = {
             categoryId: categoryData?.id || '',
             categoryName: categoryData?.name || '',
             itemId: item.itemId,
             itemName: itemData?.name || '',
             status: item.status,
-            notes: item.notes || undefined,
-            photos: item.photos && item.photos.length > 0 ? item.photos : undefined
           };
+
+          if (item.notes) checkItem.notes = item.notes;
+          if (item.photos && item.photos.length > 0) checkItem.photos = item.photos;
+
+          return checkItem;
         });
 
         await revisionService.updateRevision(currentRevisionId, {
@@ -176,27 +183,33 @@ export function RevisionsContent() {
         );
         const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
 
-        return {
+        const checkItem: any = {
           categoryId: categoryData?.id || '',
           categoryName: categoryData?.name || '',
           itemId: item.itemId,
           itemName: itemData?.name || '',
           status: item.status,
-          notes: item.notes || undefined,
-          photos: item.photos && item.photos.length > 0 ? item.photos : undefined
         };
+
+        if (item.notes) checkItem.notes = item.notes;
+        if (item.photos && item.photos.length > 0) checkItem.photos = item.photos;
+
+        return checkItem;
       });
 
       // Map status to backend format
       const backendStatus = status === 'draft' ? 'DRAFT' : status === 'in_progress' ? 'IN_PROGRESS' : 'COMPLETED';
 
-      await revisionService.updateRevision(currentRevisionId, {
-        mileage,
-        generalNotes,
-        recommendations,
+      const updatePayload: any = {
         status: backendStatus,
         checklistItems
-      });
+      };
+
+      if (mileage) updatePayload.mileage = mileage;
+      if (generalNotes) updatePayload.generalNotes = generalNotes;
+      if (recommendations) updatePayload.recommendations = recommendations;
+
+      await revisionService.updateRevision(currentRevisionId, updatePayload);
 
       toast({
         title: status === 'completed' ? 'Revisão finalizada!' : 'Revisão salva!',

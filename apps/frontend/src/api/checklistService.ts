@@ -39,7 +39,7 @@ class ChecklistService {
    */
   async getChecklistStructure(): Promise<ChecklistStructureResponse> {
     const response = await apiClient.get('/checklist/structure');
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
