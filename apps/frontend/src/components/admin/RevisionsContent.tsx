@@ -67,8 +67,8 @@ export function RevisionsContent() {
             itemId: item.itemId,
             itemName: itemData?.name || '',
             status: item.status,
-            notes: item.notes || '',
-            photos: item.photos || []
+            notes: item.notes || undefined,
+            photos: item.photos && item.photos.length > 0 ? item.photos : undefined
           };
         });
 
@@ -142,8 +142,8 @@ export function RevisionsContent() {
             itemId: item.itemId,
             itemName: itemData?.name || '',
             status: item.status,
-            notes: item.notes || '',
-            photos: item.photos || []
+            notes: item.notes || undefined,
+            photos: item.photos && item.photos.length > 0 ? item.photos : undefined
           };
         });
 
@@ -182,8 +182,8 @@ export function RevisionsContent() {
           itemId: item.itemId,
           itemName: itemData?.name || '',
           status: item.status,
-          notes: item.notes || '',
-          photos: item.photos || []
+          notes: item.notes || undefined,
+          photos: item.photos && item.photos.length > 0 ? item.photos : undefined
         };
       });
 
