@@ -1275,17 +1275,24 @@ async function main() {
     const revisionStatuses: RevisionStatus[] = ['DRAFT', 'IN_PROGRESS', 'COMPLETED'];
     const status = revisionStatuses[Math.floor(Math.random() * revisionStatuses.length)];
 
-    // Gera checklist items aleatório
-    const checklistItems = checklistCategories.map(category => ({
-      categoryId: category.id,
-      categoryName: category.name,
-      items: category.items.map(item => ({
-        itemId: item.id,
-        itemName: item.name,
-        status: ['OK', 'OK', 'OK', 'ATTENTION', 'NOT_CHECKED'][Math.floor(Math.random() * 5)],
-        notes: Math.random() > 0.8 ? 'Requer atenção' : null,
-      })),
-    }));
+    // Gera checklist items no formato correto (array plano)
+    const checklistItems: any[] = [];
+    checklistCategories.forEach(category => {
+      category.items.forEach(item => {
+        const statusOptions = ['OK', 'OK', 'OK', 'ATTENTION', 'NOT_CHECKED', 'CRITICAL'];
+        const randomStatus = statusOptions[Math.floor(Math.random() * statusOptions.length)];
+        const hasNotes = Math.random() > 0.7;
+
+        checklistItems.push({
+          categoryId: category.id,
+          categoryName: category.name,
+          itemId: item.id,
+          itemName: item.name,
+          status: randomStatus,
+          ...(hasNotes && { notes: `Observação sobre ${item.name.toLowerCase()}` }),
+        });
+      });
+    });
 
     const daysAgo = Math.floor(Math.random() * 180);
     const revisionDate = new Date();
