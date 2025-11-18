@@ -107,17 +107,19 @@ http {
             proxy_read_timeout 60s;
         }
 
+        # Assets estáticos com cache longo
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            root /app/apps/frontend/dist;
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+
         # Frontend (arquivos estáticos)
         location / {
             root /app/apps/frontend/dist;
             index index.html;
             try_files $uri $uri/ /index.html;
-
-            # Cache para assets
-            location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
-                expires 1y;
-                add_header Cache-Control "public, immutable";
-            }
         }
     }
 }
