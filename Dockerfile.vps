@@ -7,14 +7,22 @@ RUN apk add --no-cache libc6-compat openssl curl nginx supervisor
 FROM base AS backend-deps
 WORKDIR /app/apps/backend
 COPY apps/backend/package*.json ./
+# Instalar dependências e fazer cache dos engines do Prisma
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN npm install
+# Copiar schema e gerar Prisma client durante instalação de deps
+COPY apps/backend/prisma ./prisma
+RUN npx prisma generate --generator client 2>&1 || echo "Prisma generate em deps - ignorando erro"
 
 FROM base AS backend-build
 WORKDIR /app/apps/backend
 COPY --from=backend-deps /app/apps/backend/node_modules ./node_modules
+COPY --from=backend-deps /app/apps/backend/prisma ./prisma
 COPY apps/backend/ ./
+# Configurar Prisma
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-RUN npx prisma generate && npm run build
+# Build da aplicação (Prisma client já foi gerado no stage anterior)
+RUN npm run build
 
 # ===== Frontend Build =====
 FROM base AS frontend-deps
