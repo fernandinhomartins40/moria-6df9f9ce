@@ -1,37 +1,26 @@
 # Dockerfile para produção VPS - Backend + Frontend + Nginx
-FROM node:18-alpine AS base
+FROM node:18-slim AS base
 WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl curl nginx supervisor
+# Instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    openssl \
+    curl \
+    nginx \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
 # ===== Backend Build =====
 FROM base AS backend-deps
 WORKDIR /app/apps/backend
 COPY apps/backend/package*.json ./
-# Instalar dependências
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN npm install
-# Copiar schema e gerar Prisma client durante instalação de deps
-COPY apps/backend/prisma ./prisma
-# Tentar múltiplas vezes gerar o cliente Prisma
-RUN npx prisma generate --generator client || \
-    (echo "Tentativa 1 falhou, aguardando..." && sleep 3 && npx prisma generate --generator client) || \
-    (echo "Tentativa 2 falhou, aguardando..." && sleep 5 && npx prisma generate --generator client) || \
-    (echo "Tentativa 3 falhou, aguardando..." && sleep 10 && npx prisma generate --generator client)
 
 FROM base AS backend-build
 WORKDIR /app/apps/backend
 COPY --from=backend-deps /app/apps/backend/node_modules ./node_modules
-COPY --from=backend-deps /app/apps/backend/prisma ./prisma
 COPY apps/backend/ ./
-# Configurar Prisma
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-# Verificar se Prisma client foi gerado e gerar novamente se necessário
-RUN if [ ! -d "node_modules/.prisma/client" ]; then \
-    echo "Prisma client não encontrado, gerando..."; \
-    npx prisma generate --generator client; \
-    fi
-# Build da aplicação
-RUN npm run build
+# Gerar Prisma client e fazer build
+RUN npx prisma generate && npm run build
 
 # ===== Frontend Build =====
 FROM base AS frontend-deps
