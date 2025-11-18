@@ -178,9 +178,11 @@ jobs:
 
             echo "=== Todos os arquivos críticos validados ==="
 
-            # Parar containers antigos PRIMEIRO para liberar porta 3090
-            echo "Parando containers antigos..."
-            docker-compose -f docker-compose.vps.yml down || true
+            # Parar e remover containers antigos PRIMEIRO
+            echo "Parando e removendo containers antigos..."
+            docker-compose -f docker-compose.vps.yml down --remove-orphans || true
+            docker rm -f moria-vps 2>/dev/null || true
+            docker rm -f moria-postgres 2>/dev/null || true
 
             # Build da imagem sem cache (BUILD_TIMESTAMP vem do export acima)
             echo "Construindo nova imagem..."
@@ -188,7 +190,7 @@ jobs:
 
             # Iniciar container
             echo "Iniciando container..."
-            docker-compose -f docker-compose.vps.yml up -d
+            docker-compose -f docker-compose.vps.yml up -d --remove-orphans
 
             # Aguardar containers iniciarem
             echo "Aguardando containers iniciarem..."
