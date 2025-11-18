@@ -93,18 +93,13 @@ export class FavoritesService {
       customerId,
     };
 
-    const include = includeProduct
-      ? {
-          customer: false,
-        }
-      : undefined;
-
     const [favorites, totalCount] = await Promise.all([
       prisma.favorite.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: validLimit,
+        ...(includeProduct && { include: { customer: false } }),
       }),
       prisma.favorite.count({ where }),
     ]);

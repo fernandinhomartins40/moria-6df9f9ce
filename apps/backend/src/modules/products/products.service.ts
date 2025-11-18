@@ -270,23 +270,40 @@ export class ProductsService {
       status = ProductStatus.OUT_OF_STOCK;
     }
 
+    const updateData: Prisma.ProductUpdateInput = {
+      ...(dto.name && { name: dto.name }),
+      ...(dto.description && { description: dto.description }),
+      ...(dto.category && { category: dto.category }),
+      ...(dto.subcategory !== undefined && { subcategory: dto.subcategory }),
+      ...(dto.sku && { sku: dto.sku }),
+      ...(dto.supplier && { supplier: dto.supplier }),
+      ...(dto.costPrice !== undefined && { costPrice: dto.costPrice }),
+      ...(dto.salePrice !== undefined && { salePrice: dto.salePrice }),
+      ...(dto.promoPrice !== undefined && { promoPrice: dto.promoPrice }),
+      ...(dto.stock !== undefined && { stock: dto.stock }),
+      ...(dto.minStock !== undefined && { minStock: dto.minStock }),
+      ...(dto.images && { images: dto.images }),
+      ...(dto.metaDescription !== undefined && { metaDescription: dto.metaDescription }),
+      ...(dto.metaKeywords !== undefined && { metaKeywords: dto.metaKeywords }),
+      ...(slug && { slug }),
+      ...(status && { status }),
+      // Ofertas
+      ...(dto.offerType !== undefined && { offerType: dto.offerType }),
+      ...(dto.offerStartDate !== undefined && { offerStartDate: dto.offerStartDate }),
+      ...(dto.offerEndDate !== undefined && { offerEndDate: dto.offerEndDate }),
+      ...(dto.offerBadge !== undefined && { offerBadge: dto.offerBadge }),
+    };
+
+    // Handle specifications separately due to Prisma JSON type
+    if (dto.specifications !== undefined) {
+      updateData.specifications = dto.specifications
+        ? dto.specifications as Prisma.InputJsonValue
+        : Prisma.JsonNull;
+    }
+
     const product = await prisma.product.update({
       where: { id },
-      data: {
-        ...dto,
-        ...(slug && { slug }),
-        ...(status && { status }),
-        ...(dto.subcategory === null && { subcategory: null }),
-        ...(dto.promoPrice === null && { promoPrice: null }),
-        ...(dto.specifications === null && { specifications: Prisma.JsonNull }),
-        ...(dto.metaDescription === null && { metaDescription: null }),
-        ...(dto.metaKeywords === null && { metaKeywords: null }),
-        // Ofertas - allow null to clear
-        ...(dto.offerType === null && { offerType: null }),
-        ...(dto.offerStartDate === null && { offerStartDate: null }),
-        ...(dto.offerEndDate === null && { offerEndDate: null }),
-        ...(dto.offerBadge === null && { offerBadge: null }),
-      },
+      data: updateData,
     });
 
     logger.info(`Product updated: ${product.name} (ID: ${product.id})`);

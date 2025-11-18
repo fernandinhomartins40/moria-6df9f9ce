@@ -81,7 +81,7 @@ export class ServicesController {
   /**
    * GET /services/categories/list
    */
-  getCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const categories = await this.servicesService.getCategories();
 

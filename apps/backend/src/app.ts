@@ -53,7 +53,7 @@ export function createApp(): Express {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Request logging
-  app.use((req, res, next) => {
+  app.use((req, _res, next) => {
     logger.info(`${req.method} ${req.path}`, {
       ip: req.ip,
       userAgent: req.get('user-agent'),
@@ -62,7 +62,7 @@ export function createApp(): Express {
   });
 
   // Health check
-  app.get('/health', (req: Request, res: Response) => {
+  app.get('/health', (_req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       message: 'Server is running',
@@ -95,7 +95,7 @@ export function createApp(): Express {
   app.use('/admin', adminRoutes);
 
   // 404 handler
-  app.use((req: Request, res: Response) => {
+  app.use((_req: Request, res: Response) => {
     res.status(404).json({
       success: false,
       error: 'Route not found',

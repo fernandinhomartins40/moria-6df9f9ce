@@ -19,6 +19,9 @@ export const checklistItemCheckSchema = z.object({
 });
 
 export const createRevisionSchema = z.object({
+  customerId: z
+    .string({ required_error: 'Customer ID is required' })
+    .uuid('Customer ID must be a valid UUID'),
   vehicleId: z
     .string({ required_error: 'Vehicle ID is required' })
     .uuid('Vehicle ID must be a valid UUID'),

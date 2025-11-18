@@ -277,7 +277,7 @@ export class VehiclesController {
   /**
    * GET /vehicles/hierarchy
    */
-  getVehicleHierarchy = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getVehicleHierarchy = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const hierarchy = await this.vehiclesService.getVehicleHierarchy();
 

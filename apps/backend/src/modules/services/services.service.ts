@@ -141,7 +141,7 @@ export class ServicesService {
         category: dto.category,
         estimatedTime: dto.estimatedTime,
         basePrice: dto.basePrice,
-        specifications: dto.specifications || null,
+        specifications: dto.specifications ? dto.specifications as Prisma.InputJsonValue : Prisma.JsonNull,
         status: dto.status || ServiceStatus.ACTIVE,
         slug,
         metaDescription: dto.metaDescription,
@@ -175,15 +175,27 @@ export class ServicesService {
       slug = await this.ensureUniqueSlug(dto.slug, id);
     }
 
+    const updateData: Prisma.ServiceUpdateInput = {
+      ...(dto.name && { name: dto.name }),
+      ...(dto.description && { description: dto.description }),
+      ...(dto.category && { category: dto.category }),
+      ...(dto.estimatedTime !== undefined && { estimatedTime: dto.estimatedTime }),
+      ...(dto.status && { status: dto.status }),
+      ...(slug && { slug }),
+      ...(dto.basePrice !== undefined && { basePrice: dto.basePrice }),
+      ...(dto.metaDescription !== undefined && { metaDescription: dto.metaDescription }),
+    };
+
+    // Handle specifications separately due to Prisma JSON type
+    if (dto.specifications !== undefined) {
+      updateData.specifications = dto.specifications
+        ? dto.specifications as Prisma.InputJsonValue
+        : Prisma.JsonNull;
+    }
+
     const service = await prisma.service.update({
       where: { id },
-      data: {
-        ...dto,
-        ...(slug && { slug }),
-        ...(dto.basePrice === null && { basePrice: null }),
-        ...(dto.specifications === null && { specifications: null }),
-        ...(dto.metaDescription === null && { metaDescription: null }),
-      },
+      data: updateData,
     });
 
     logger.info(`Service updated: ${service.name} (ID: ${service.id})`);
