@@ -8,6 +8,7 @@ import {
   DEFAULT_CHECKLIST_CATEGORIES,
   DEFAULT_CHECKLIST_ITEMS
 } from '../types/revisions';
+import checklistService from '../api/checklistService';
 
 interface RevisionsContextData {
   // Customers
@@ -62,40 +63,76 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const [categories, setCategories] = useState<ChecklistCategory[]>(() => {
-    const stored = localStorage.getItem('moria_checklist_categories');
-    if (stored) {
-      return JSON.parse(stored);
-    }
+  const [categories, setCategories] = useState<ChecklistCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
-    // Initialize with default categories
-    const defaultCategories: ChecklistCategory[] = DEFAULT_CHECKLIST_CATEGORIES.map((cat, index) => {
-      const categoryId = `cat-${Date.now()}-${index}`;
-      const categoryName = cat.name;
-      const defaultItems = DEFAULT_CHECKLIST_ITEMS[categoryName] || [];
+  // Load categories from backend
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const data = await checklistService.getChecklistStructure();
 
-      return {
-        ...cat,
-        id: categoryId,
-        createdAt: new Date(),
-        items: defaultItems.map((item, itemIndex) => ({
-          ...item,
-          id: `item-${Date.now()}-${index}-${itemIndex}`,
-          categoryId: categoryId,
-          createdAt: new Date()
-        }))
-      };
-    });
+        // Transform backend data to match frontend types
+        const transformedCategories: ChecklistCategory[] = data.categories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          icon: cat.icon,
+          order: cat.order,
+          isDefault: cat.isDefault,
+          isEnabled: cat.isEnabled,
+          createdAt: new Date(cat.createdAt),
+          items: cat.items.map(item => ({
+            id: item.id,
+            categoryId: item.categoryId,
+            name: item.name,
+            description: item.description,
+            order: item.order,
+            isDefault: item.isDefault,
+            isEnabled: item.isEnabled,
+            createdAt: new Date(item.createdAt)
+          }))
+        }));
 
-    return defaultCategories;
-  });
+        setCategories(transformedCategories);
+      } catch (error) {
+        console.error('Error loading checklist categories:', error);
+
+        // Fallback to default categories if API fails
+        const defaultCategories: ChecklistCategory[] = DEFAULT_CHECKLIST_CATEGORIES.map((cat, index) => {
+          const categoryId = `cat-${Date.now()}-${index}`;
+          const categoryName = cat.name;
+          const defaultItems = DEFAULT_CHECKLIST_ITEMS[categoryName] || [];
+
+          return {
+            ...cat,
+            id: categoryId,
+            createdAt: new Date(),
+            items: defaultItems.map((item, itemIndex) => ({
+              ...item,
+              id: `item-${Date.now()}-${index}-${itemIndex}`,
+              categoryId: categoryId,
+              createdAt: new Date()
+            }))
+          };
+        });
+
+        setCategories(defaultCategories);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const [revisions, setRevisions] = useState<Revision[]>(() => {
     const stored = localStorage.getItem('moria_revisions');
     return stored ? JSON.parse(stored) : [];
   });
 
-  // Save to localStorage
+  // Save to localStorage (except categories, which come from backend)
   useEffect(() => {
     localStorage.setItem('moria_customers', JSON.stringify(customers));
   }, [customers]);
@@ -103,10 +140,6 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('moria_vehicles', JSON.stringify(vehicles));
   }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('moria_checklist_categories', JSON.stringify(categories));
-  }, [categories]);
 
   useEffect(() => {
     localStorage.setItem('moria_revisions', JSON.stringify(revisions));
