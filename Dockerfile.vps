@@ -174,7 +174,33 @@ npx prisma generate 2>&1
 
 # Sempre executar seed (ele verifica se já foi executado)
 echo "Executando seed do banco de dados..."
-npx prisma db seed 2>&1 || echo "⚠️ Seed falhou ou já foi executado"
+if npx prisma db seed 2>&1; then
+  echo "✅ Seed executado com sucesso"
+
+  # Verificar se admins foram criados
+  echo "Verificando admins criados..."
+  node -e "
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    prisma.admin.count().then(count => {
+      console.log('Total de admins no banco:', count);
+      if (count === 0) {
+        console.error('❌ ERRO: Nenhum admin foi criado!');
+        process.exit(1);
+      }
+      return prisma.admin.findMany({ select: { email: true, name: true, role: true, status: true } });
+    }).then(admins => {
+      console.log('Admins encontrados:', JSON.stringify(admins, null, 2));
+      prisma.\$disconnect();
+    }).catch(err => {
+      console.error('Erro ao verificar admins:', err);
+      prisma.\$disconnect();
+      process.exit(1);
+    });
+  "
+else
+  echo "⚠️ Seed falhou - continuando mesmo assim"
+fi
 
 # Iniciar supervisor
 echo "Iniciando serviços..."
