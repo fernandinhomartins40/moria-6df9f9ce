@@ -130,6 +130,11 @@ export interface AdminRevision {
   checklistItems: any;
   generalNotes: string | null;
   recommendations: string | null;
+  assignedMechanicId: string | null;
+  mechanicName: string | null;
+  mechanicNotes: string | null;
+  assignedAt: string | null;
+  transferHistory: any[] | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -146,6 +151,12 @@ export interface AdminRevision {
     name: string;
     email: string;
     phone: string;
+  };
+  assignedMechanic?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
   };
 }
 

@@ -73,15 +73,20 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
   // Preencher form quando serviço é editado
   useEffect(() => {
     if (service) {
+      // Converter estimatedTime de string para número
+      const estimatedTimeNum = typeof service.estimatedTime === 'string'
+        ? parseInt(service.estimatedTime) || 60
+        : service.estimatedTime || 60;
+
       setFormData({
         id: service.id,
         name: service.name || '',
         description: service.description || '',
         category: service.category || '',
         basePrice: service.basePrice || 0,
-        estimatedTime: service.estimatedTime || 60,
+        estimatedTime: estimatedTimeNum,
         specifications: service.specifications || {},
-        isActive: service.isActive !== undefined ? service.isActive : true
+        isActive: service.status === 'ACTIVE' || service.isActive !== undefined ? service.isActive : true
       });
     } else {
       // Resetar form para novo serviço
@@ -137,7 +142,15 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
     }
 
     try {
-      await onSave(formData);
+      // Converter isActive para status
+      const dataToSave = {
+        ...formData,
+        status: formData.isActive ? 'ACTIVE' : 'INACTIVE',
+        estimatedTime: String(formData.estimatedTime || 60)
+      };
+      delete dataToSave.isActive;
+
+      await onSave(dataToSave);
       onClose();
     } catch (error) {
       // Erro já tratado no hook

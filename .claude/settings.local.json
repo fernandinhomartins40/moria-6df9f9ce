@@ -27,7 +27,13 @@
       "Bash(timeout:*)",
       "Bash(npm run dev:frontend:*)",
       "Bash(npm run:*)",
-      "Bash(POSTGRES_PORT=5433 docker-compose up -d postgres)"
+      "Bash(POSTGRES_PORT=5433 docker-compose up -d postgres)",
+      "Bash(cmd /c taskkill:*)",
+      "Bash(gh run list:*)",
+      "Bash(ssh:*)",
+      "Bash(nslookup:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate:*)"
     ],
     "deny": [],
     "ask": []

@@ -67,12 +67,15 @@ export function AdminServicesSection({
 
   // Filtrar serviços
   const filteredServices = useMemo(() => {
-    let filtered = services;
+    let filtered = services.map(service => ({
+      ...service,
+      isActive: service.status === 'ACTIVE'
+    }));
 
     // Filtro por termo de busca
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(service => 
+      filtered = filtered.filter(service =>
         service.name?.toLowerCase().includes(term) ||
         service.category?.toLowerCase().includes(term) ||
         service.description?.toLowerCase().includes(term)

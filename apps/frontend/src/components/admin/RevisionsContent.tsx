@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, FileText, AlertCircle } from 'lucide-react';
+import { Save, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -12,9 +12,12 @@ import { RevisionChecklist } from '../revisions/RevisionChecklist';
 import { ChecklistManager } from '../revisions/ChecklistManager';
 import { useRevisions } from '../../contexts/RevisionsContext';
 import { Customer, Vehicle, RevisionChecklistItem, ItemStatus } from '../../types/revisions';
+import revisionService from '../../api/revisionService';
+import { useToast } from '../../hooks/use-toast';
 
 export function RevisionsContent() {
-  const { categories, addRevision, updateRevision } = useRevisions();
+  const { categories } = useRevisions(); // Only use categories from context
+  const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [currentRevisionId, setCurrentRevisionId] = useState<string | null>(null);
@@ -22,9 +25,11 @@ export function RevisionsContent() {
   const [generalNotes, setGeneralNotes] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [revisionItems, setRevisionItems] = useState<RevisionChecklistItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Initialize checklist items when vehicle is selected
-  const handleSelectVehicle = (vehicle: Vehicle) => {
+  const handleSelectVehicle = async (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     setMileage(vehicle.mileage || 0);
 
@@ -45,17 +50,54 @@ export function RevisionsContent() {
 
     setRevisionItems(items);
 
-    // Create draft revision
+    // Create draft revision via API
     if (selectedCustomer) {
-      const revision = addRevision({
-        customerId: selectedCustomer.id,
-        vehicleId: vehicle.id,
-        date: new Date(),
-        mileage: vehicle.mileage || 0,
-        status: 'draft',
-        checklistItems: items
-      });
-      setCurrentRevisionId(revision.id);
+      setIsLoading(true);
+      try {
+        // Transform checklist items to backend format
+        const checklistItems = items.map(item => {
+          const categoryData = categories.find(cat =>
+            cat.items.some(catItem => catItem.id === item.itemId)
+          );
+          const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
+
+          return {
+            categoryId: categoryData?.id || '',
+            categoryName: categoryData?.name || '',
+            itemId: item.itemId,
+            itemName: itemData?.name || '',
+            status: item.status,
+            notes: item.notes || '',
+            photos: item.photos || []
+          };
+        });
+
+        const revision = await revisionService.createRevision({
+          customerId: selectedCustomer.id,
+          vehicleId: vehicle.id,
+          date: new Date().toISOString(),
+          mileage: vehicle.mileage || 0,
+          checklistItems,
+          generalNotes: '',
+          recommendations: ''
+        });
+
+        setCurrentRevisionId(revision.id);
+
+        toast({
+          title: 'Revisão criada',
+          description: 'Revisão criada com sucesso. Preencha o checklist.',
+        });
+      } catch (error: any) {
+        console.error('Error creating revision:', error);
+        toast({
+          title: 'Erro ao criar revisão',
+          description: error.response?.data?.message || 'Erro ao criar revisão. Tente novamente.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -67,7 +109,7 @@ export function RevisionsContent() {
     setCurrentRevisionId(null);
   };
 
-  const handleUpdateItem = (itemId: string, updates: Partial<RevisionChecklistItem>) => {
+  const handleUpdateItem = async (itemId: string, updates: Partial<RevisionChecklistItem>) => {
     setRevisionItems(prev => {
       const existingIndex = prev.findIndex(item => item.itemId === itemId);
       if (existingIndex >= 0) {
@@ -79,51 +121,109 @@ export function RevisionsContent() {
       }
     });
 
-    // Auto-save to revision
+    // Auto-save to revision via API
     if (currentRevisionId) {
-      const existingIndex = revisionItems.findIndex(item => item.itemId === itemId);
-      const updatedItems = existingIndex >= 0
-        ? revisionItems.map((item, idx) => idx === existingIndex ? { ...item, ...updates } : item)
-        : [...revisionItems, { itemId, status: ItemStatus.NOT_CHECKED, ...updates }];
+      try {
+        const existingIndex = revisionItems.findIndex(item => item.itemId === itemId);
+        const updatedItems = existingIndex >= 0
+          ? revisionItems.map((item, idx) => idx === existingIndex ? { ...item, ...updates } : item)
+          : [...revisionItems, { itemId, status: ItemStatus.NOT_CHECKED, ...updates }];
 
-      updateRevision(currentRevisionId, {
-        checklistItems: updatedItems,
-        updatedAt: new Date()
-      });
+        // Transform to backend format
+        const checklistItems = updatedItems.map(item => {
+          const categoryData = categories.find(cat =>
+            cat.items.some(catItem => catItem.id === item.itemId)
+          );
+          const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
+
+          return {
+            categoryId: categoryData?.id || '',
+            categoryName: categoryData?.name || '',
+            itemId: item.itemId,
+            itemName: itemData?.name || '',
+            status: item.status,
+            notes: item.notes || '',
+            photos: item.photos || []
+          };
+        });
+
+        await revisionService.updateRevision(currentRevisionId, {
+          checklistItems
+        });
+      } catch (error) {
+        console.error('Erro ao auto-salvar item:', error);
+        // Silent fail for auto-save
+      }
     }
   };
 
-  const handleSave = (status: 'draft' | 'in_progress' | 'completed') => {
+  const handleSave = async (status: 'draft' | 'in_progress' | 'completed') => {
     if (!currentRevisionId) {
-      alert('Nenhuma revisão em andamento');
+      toast({
+        title: 'Erro',
+        description: 'Nenhuma revisão em andamento',
+        variant: 'destructive',
+      });
       return;
     }
 
-    updateRevision(currentRevisionId, {
-      mileage,
-      generalNotes,
-      recommendations,
-      status,
-      checklistItems: revisionItems,
-      updatedAt: new Date(),
-      ...(status === 'completed' && { completedAt: new Date() })
-    });
+    setIsSaving(true);
+    try {
+      // Transform checklist items to backend format
+      const checklistItems = revisionItems.map(item => {
+        const categoryData = categories.find(cat =>
+          cat.items.some(catItem => catItem.id === item.itemId)
+        );
+        const itemData = categoryData?.items.find(catItem => catItem.id === item.itemId);
 
-    alert(
-      status === 'completed'
-        ? 'Revisão finalizada com sucesso!'
-        : 'Revisão salva com sucesso!'
-    );
+        return {
+          categoryId: categoryData?.id || '',
+          categoryName: categoryData?.name || '',
+          itemId: item.itemId,
+          itemName: itemData?.name || '',
+          status: item.status,
+          notes: item.notes || '',
+          photos: item.photos || []
+        };
+      });
 
-    if (status === 'completed') {
-      // Reset form
-      setSelectedCustomer(null);
-      setSelectedVehicle(null);
-      setMileage(0);
-      setGeneralNotes('');
-      setRecommendations('');
-      setRevisionItems([]);
-      setCurrentRevisionId(null);
+      // Map status to backend format
+      const backendStatus = status === 'draft' ? 'DRAFT' : status === 'in_progress' ? 'IN_PROGRESS' : 'COMPLETED';
+
+      await revisionService.updateRevision(currentRevisionId, {
+        mileage,
+        generalNotes,
+        recommendations,
+        status: backendStatus,
+        checklistItems
+      });
+
+      toast({
+        title: status === 'completed' ? 'Revisão finalizada!' : 'Revisão salva!',
+        description: status === 'completed'
+          ? 'Revisão finalizada com sucesso!'
+          : 'Revisão salva com sucesso!',
+      });
+
+      if (status === 'completed') {
+        // Reset form
+        setSelectedCustomer(null);
+        setSelectedVehicle(null);
+        setMileage(0);
+        setGeneralNotes('');
+        setRecommendations('');
+        setRevisionItems([]);
+        setCurrentRevisionId(null);
+      }
+    } catch (error: any) {
+      console.error('Erro ao salvar revisão:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: error.response?.data?.message || 'Erro ao salvar revisão. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -163,23 +263,27 @@ export function RevisionsContent() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleSave('draft')}
+                  disabled={isSaving}
                 >
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   Salvar Rascunho
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => handleSave('in_progress')}
+                  disabled={isSaving}
                 >
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                   Salvar em Andamento
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => handleSave('completed')}
                   className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={progress.percentage < 100}
+                  disabled={progress.percentage < 100 || isSaving}
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   Finalizar Revisão
                 </Button>
               </div>
@@ -264,21 +368,25 @@ export function RevisionsContent() {
           <Button
             variant="outline"
             onClick={() => handleSave('draft')}
+            disabled={isSaving}
           >
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Salvar Rascunho
           </Button>
           <Button
             variant="outline"
             onClick={() => handleSave('in_progress')}
+            disabled={isSaving}
           >
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Salvar em Andamento
           </Button>
           <Button
             onClick={() => handleSave('completed')}
             className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={progress.percentage < 100}
+            disabled={progress.percentage < 100 || isSaving}
           >
-            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Finalizar Revisão
           </Button>
         </div>

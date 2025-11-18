@@ -103,6 +103,9 @@ model Admin {
   updatedAt   DateTime    @updatedAt
   lastLoginAt DateTime?
 
+  // Relations
+  assignedRevisions Revision[]
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -614,17 +617,26 @@ model Revision {
   generalNotes    String?        @db.Text
   recommendations String?        @db.Text
 
+  // Mecânico responsável
+  assignedMechanicId String?
+  mechanicName       String? // Cache do nome para performance
+  mechanicNotes      String?  @db.Text
+  assignedAt         DateTime?
+  transferHistory    Json? // Array de histórico de transferências
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
   // Relations
-  customer Customer        @relation(fields: [customerId], references: [id])
-  vehicle  CustomerVehicle @relation(fields: [vehicleId], references: [id])
+  customer         Customer        @relation(fields: [customerId], references: [id])
+  vehicle          CustomerVehicle @relation(fields: [vehicleId], references: [id])
+  assignedMechanic Admin?          @relation(fields: [assignedMechanicId], references: [id])
 
   @@index([customerId])
   @@index([vehicleId])
   @@index([status])
   @@index([date])
+  @@index([assignedMechanicId])
   @@map("revisions")
 }

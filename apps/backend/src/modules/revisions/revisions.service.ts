@@ -641,4 +641,356 @@ export class RevisionsService {
       },
     });
   }
+
+  // ==================== MECHANIC MANAGEMENT ====================
+
+  /**
+   * Assign mechanic to revision (Admin)
+   */
+  async assignMechanic(
+    revisionId: string,
+    mechanicId: string
+  ): Promise<Revision> {
+    const mechanic = await prisma.admin.findUnique({
+      where: { id: mechanicId },
+    });
+
+    if (!mechanic) {
+      throw ApiError.notFound('Mechanic not found');
+    }
+
+    if (mechanic.status !== 'ACTIVE') {
+      throw ApiError.badRequest('Mechanic is not active');
+    }
+
+    const revision = await prisma.revision.findUnique({
+      where: { id: revisionId },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    // Build transfer history
+    const transferHistory: any[] = (revision.transferHistory as any[]) || [];
+    if (revision.assignedMechanicId) {
+      transferHistory.push({
+        from: revision.assignedMechanicId,
+        fromName: revision.mechanicName,
+        to: mechanicId,
+        toName: mechanic.name,
+        transferredAt: new Date().toISOString(),
+        reason: 'Manual assignment',
+      });
+    }
+
+    const updated = await prisma.revision.update({
+      where: { id: revisionId },
+      data: {
+        assignedMechanicId: mechanicId,
+        mechanicName: mechanic.name,
+        assignedAt: new Date(),
+        transferHistory,
+        status: revision.status === 'DRAFT' ? 'IN_PROGRESS' : revision.status,
+        updatedAt: new Date(),
+      },
+      include: {
+        vehicle: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        assignedMechanic: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    logger.info(
+      `Mechanic ${mechanic.name} (${mechanicId}) assigned to revision ${revisionId}`
+    );
+
+    return updated;
+  }
+
+  /**
+   * Transfer revision to another mechanic (Admin)
+   */
+  async transferMechanic(
+    revisionId: string,
+    newMechanicId: string,
+    reason?: string
+  ): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id: revisionId },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (!revision.assignedMechanicId) {
+      throw ApiError.badRequest('Revision has no assigned mechanic to transfer from');
+    }
+
+    if (revision.assignedMechanicId === newMechanicId) {
+      throw ApiError.badRequest('Cannot transfer to the same mechanic');
+    }
+
+    const newMechanic = await prisma.admin.findUnique({
+      where: { id: newMechanicId },
+    });
+
+    if (!newMechanic) {
+      throw ApiError.notFound('New mechanic not found');
+    }
+
+    if (newMechanic.status !== 'ACTIVE') {
+      throw ApiError.badRequest('New mechanic is not active');
+    }
+
+    const transferHistory: any[] = (revision.transferHistory as any[]) || [];
+    transferHistory.push({
+      from: revision.assignedMechanicId,
+      fromName: revision.mechanicName,
+      to: newMechanicId,
+      toName: newMechanic.name,
+      transferredAt: new Date().toISOString(),
+      reason: reason || 'Transfer requested',
+    });
+
+    const updated = await prisma.revision.update({
+      where: { id: revisionId },
+      data: {
+        assignedMechanicId: newMechanicId,
+        mechanicName: newMechanic.name,
+        assignedAt: new Date(),
+        transferHistory,
+        updatedAt: new Date(),
+      },
+      include: {
+        vehicle: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        assignedMechanic: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    logger.info(
+      `Revision ${revisionId} transferred from ${revision.mechanicName} to ${newMechanic.name}. Reason: ${reason || 'Not specified'}`
+    );
+
+    return updated;
+  }
+
+  /**
+   * Get revisions by mechanic (Admin)
+   */
+  async getRevisionsByMechanic(
+    mechanicId: string,
+    filters: RevisionFilters = {}
+  ): Promise<PaginatedResponse<Revision>> {
+    const mechanic = await prisma.admin.findUnique({
+      where: { id: mechanicId },
+    });
+
+    if (!mechanic) {
+      throw ApiError.notFound('Mechanic not found');
+    }
+
+    const { page, limit } = PaginationUtil.validateParams({
+      page: filters.page,
+      limit: filters.limit,
+    });
+
+    const where: any = { assignedMechanicId: mechanicId };
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.vehicleId) {
+      where.vehicleId = filters.vehicleId;
+    }
+
+    if (filters.customerId) {
+      where.customerId = filters.customerId;
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      where.date = {};
+      if (filters.dateFrom) {
+        where.date.gte = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        where.date.lte = filters.dateTo;
+      }
+    }
+
+    const [revisions, totalCount] = await Promise.all([
+      prisma.revision.findMany({
+        where,
+        skip: PaginationUtil.calculateSkip(page, limit),
+        take: limit,
+        orderBy: { date: 'desc' },
+        include: {
+          vehicle: {
+            select: {
+              id: true,
+              brand: true,
+              model: true,
+              year: true,
+              plate: true,
+              color: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      }),
+      prisma.revision.count({ where }),
+    ]);
+
+    return PaginationUtil.buildResponse(revisions, page, limit, totalCount);
+  }
+
+  /**
+   * Unassign mechanic from revision (Admin)
+   */
+  async unassignMechanic(revisionId: string): Promise<Revision> {
+    const revision = await prisma.revision.findUnique({
+      where: { id: revisionId },
+    });
+
+    if (!revision) {
+      throw ApiError.notFound('Revision not found');
+    }
+
+    if (!revision.assignedMechanicId) {
+      throw ApiError.badRequest('Revision has no assigned mechanic');
+    }
+
+    const updated = await prisma.revision.update({
+      where: { id: revisionId },
+      data: {
+        assignedMechanicId: null,
+        mechanicName: null,
+        assignedAt: null,
+        updatedAt: new Date(),
+      },
+      include: {
+        vehicle: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    logger.info(`Mechanic unassigned from revision ${revisionId}`);
+
+    return updated;
+  }
+
+  /**
+   * Get mechanic workload statistics (Admin)
+   */
+  async getMechanicWorkloadStats(mechanicId: string): Promise<any> {
+    const mechanic = await prisma.admin.findUnique({
+      where: { id: mechanicId },
+    });
+
+    if (!mechanic) {
+      throw ApiError.notFound('Mechanic not found');
+    }
+
+    const [total, draft, inProgress, completed, cancelled] = await Promise.all([
+      prisma.revision.count({ where: { assignedMechanicId: mechanicId } }),
+      prisma.revision.count({
+        where: { assignedMechanicId: mechanicId, status: 'DRAFT' },
+      }),
+      prisma.revision.count({
+        where: { assignedMechanicId: mechanicId, status: 'IN_PROGRESS' },
+      }),
+      prisma.revision.count({
+        where: { assignedMechanicId: mechanicId, status: 'COMPLETED' },
+      }),
+      prisma.revision.count({
+        where: { assignedMechanicId: mechanicId, status: 'CANCELLED' },
+      }),
+    ]);
+
+    return {
+      mechanicId,
+      mechanicName: mechanic.name,
+      total,
+      active: draft + inProgress,
+      byStatus: {
+        draft,
+        inProgress,
+        completed,
+        cancelled,
+      },
+    };
+  }
+
+  /**
+   * Get all mechanics workload (Admin)
+   */
+  async getAllMechanicsWorkload(): Promise<any[]> {
+    const mechanics = await prisma.admin.findMany({
+      where: {
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+      },
+    });
+
+    const workloads = await Promise.all(
+      mechanics.map(async (mechanic) => {
+        const stats = await this.getMechanicWorkloadStats(mechanic.id);
+        return {
+          ...mechanic,
+          workload: stats,
+        };
+      })
+    );
+
+    return workloads.sort((a, b) => b.workload.active - a.workload.active);
+  }
 }

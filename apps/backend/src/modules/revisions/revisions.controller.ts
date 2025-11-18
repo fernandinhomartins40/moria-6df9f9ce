@@ -259,4 +259,138 @@ export class RevisionsController {
       next(error);
     }
   };
+
+  // ==================== MECHANIC MANAGEMENT ====================
+
+  /**
+   * POST /revisions/:id/assign-mechanic
+   * Assign mechanic to revision
+   */
+  assignMechanic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const { mechanicId } = req.body;
+      const revision = await this.revisionsService.assignMechanic(
+        req.params.id,
+        mechanicId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: revision,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /revisions/:id/transfer-mechanic
+   * Transfer revision to another mechanic
+   */
+  transferMechanic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const { newMechanicId, reason } = req.body;
+      const revision = await this.revisionsService.transferMechanic(
+        req.params.id,
+        newMechanicId,
+        reason
+      );
+
+      res.status(200).json({
+        success: true,
+        data: revision,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /revisions/:id/unassign-mechanic
+   * Unassign mechanic from revision
+   */
+  unassignMechanic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const revision = await this.revisionsService.unassignMechanic(req.params.id);
+
+      res.status(200).json({
+        success: true,
+        data: revision,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /revisions/mechanic/:mechanicId
+   * Get revisions by mechanic
+   */
+  getRevisionsByMechanic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const filters: any = {};
+
+      if (req.query.status) {
+        filters.status = req.query.status as string;
+      }
+
+      if (req.query.page) {
+        filters.page = parseInt(req.query.page as string, 10);
+      }
+
+      if (req.query.limit) {
+        filters.limit = parseInt(req.query.limit as string, 10);
+      }
+
+      const result = await this.revisionsService.getRevisionsByMechanic(
+        req.params.mechanicId,
+        filters
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result.data,
+        meta: result.meta,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /revisions/mechanics/workload
+   * Get all mechanics workload
+   */
+  getAllMechanicsWorkload = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const workloads = await this.revisionsService.getAllMechanicsWorkload();
+
+      res.status(200).json({
+        success: true,
+        data: workloads,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

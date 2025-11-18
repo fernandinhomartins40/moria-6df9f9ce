@@ -49,6 +49,17 @@ export const createRevisionSchema = z.object({
     .trim()
     .optional()
     .transform(val => val || undefined),
+  assignedMechanicId: z
+    .string()
+    .uuid('Mechanic ID must be a valid UUID')
+    .optional()
+    .transform(val => val || undefined),
+  mechanicNotes: z
+    .string()
+    .max(5000, 'Mechanic notes must not exceed 5000 characters')
+    .trim()
+    .optional()
+    .transform(val => val || undefined),
 });
 
 export type CreateRevisionDto = z.infer<typeof createRevisionSchema>;

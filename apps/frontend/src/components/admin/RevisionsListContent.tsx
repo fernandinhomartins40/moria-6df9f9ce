@@ -1,23 +1,61 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Car, User, Filter, Eye, CheckCircle, Clock, XCircle, FileText } from 'lucide-react';
+import {
+  Calendar,
+  Car,
+  User,
+  Filter,
+  Eye,
+  CheckCircle,
+  Clock,
+  XCircle,
+  FileText,
+  UserCog,
+  MoreVertical,
+  Edit,
+  Trash2,
+  ArrowRightLeft,
+  Circle,
+} from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { Select } from '../ui/select';
 import { Badge } from '../ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '../ui/dropdown-menu';
 import adminService, { AdminRevision } from '../../api/adminService';
+import revisionService from '../../api/revisionService';
+import { RevisionDetailsModal } from './RevisionDetailsModal';
+import { MechanicAssignmentModal } from './MechanicAssignmentModal';
 
 export function RevisionsListContent() {
   const [revisions, setRevisions] = useState<AdminRevision[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [mechanicFilter, setMechanicFilter] = useState<string>('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Modals
+  const [selectedRevision, setSelectedRevision] = useState<AdminRevision | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [mechanicModalOpen, setMechanicModalOpen] = useState(false);
+  const [mechanicModalRevisionId, setMechanicModalRevisionId] = useState<string | null>(null);
+  const [mechanicModalCurrentMechanicId, setMechanicModalCurrentMechanicId] = useState<
+    string | null
+  >(null);
+  const [mechanicModalCurrentMechanicName, setMechanicModalCurrentMechanicName] = useState<
+    string | null
+  >(null);
+
   useEffect(() => {
     loadRevisions();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, mechanicFilter]);
 
   const loadRevisions = async () => {
     try {
@@ -38,9 +76,51 @@ export function RevisionsListContent() {
     }
   };
 
+  const handleViewDetails = (revision: AdminRevision) => {
+    setSelectedRevision(revision);
+    setDetailsModalOpen(true);
+  };
+
+  const handleAssignMechanic = (revision: AdminRevision) => {
+    setMechanicModalRevisionId(revision.id);
+    setMechanicModalCurrentMechanicId(revision.assignedMechanicId);
+    setMechanicModalCurrentMechanicName(revision.mechanicName);
+    setMechanicModalOpen(true);
+  };
+
+  const handleChangeStatus = async (revisionId: string, newStatus: string) => {
+    try {
+      if (newStatus === 'IN_PROGRESS') {
+        await revisionService.startRevision(revisionId);
+      } else if (newStatus === 'COMPLETED') {
+        await revisionService.completeRevision(revisionId);
+      } else if (newStatus === 'CANCELLED') {
+        await revisionService.cancelRevision(revisionId);
+      }
+      loadRevisions();
+    } catch (error) {
+      console.error('Error changing status:', error);
+      alert('Erro ao mudar status. Tente novamente.');
+    }
+  };
+
+  const handleDeleteRevision = async (revisionId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta revisão? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      await revisionService.deleteRevision(revisionId);
+      loadRevisions();
+    } catch (error) {
+      console.error('Error deleting revision:', error);
+      alert('Erro ao excluir revisão. Tente novamente.');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      DRAFT: { color: 'bg-gray-100 text-gray-800', label: 'Rascunho', icon: FileText },
+      DRAFT: { color: 'bg-gray-100 text-gray-800', label: 'Rascunho', icon: Circle },
       IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', label: 'Em Andamento', icon: Clock },
       COMPLETED: { color: 'bg-green-100 text-green-800', label: 'Concluída', icon: CheckCircle },
       CANCELLED: { color: 'bg-red-100 text-red-800', label: 'Cancelada', icon: XCircle },
@@ -58,17 +138,22 @@ export function RevisionsListContent() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   };
 
-  const filteredRevisions = revisions.filter(revision => {
+  const filteredRevisions = revisions.filter((revision) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
       revision.customer?.name.toLowerCase().includes(search) ||
       revision.vehicle?.plate.toLowerCase().includes(search) ||
       revision.vehicle?.model.toLowerCase().includes(search) ||
-      revision.vehicle?.brand.toLowerCase().includes(search)
+      revision.vehicle?.brand.toLowerCase().includes(search) ||
+      revision.mechanicName?.toLowerCase().includes(search)
     );
   });
 
@@ -76,7 +161,7 @@ export function RevisionsListContent() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-moria-orange mx-auto"></div>
           <p className="mt-4 text-gray-600">Carregando revisões...</p>
         </div>
       </div>
@@ -85,21 +170,19 @@ export function RevisionsListContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Revisões Veiculares</h2>
-          <p className="text-gray-600">Gerencie todas as revisões realizadas</p>
-        </div>
-      </div>
-
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Input
-                placeholder="Buscar por cliente, veículo ou placa..."
+                placeholder="Buscar por cliente, veículo, placa ou mecânico..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -108,154 +191,239 @@ export function RevisionsListContent() {
             <div>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moria-orange"
               >
-                <option value="">Todos os Status</option>
+                <option value="">Todos os status</option>
                 <option value="DRAFT">Rascunho</option>
                 <option value="IN_PROGRESS">Em Andamento</option>
                 <option value="COMPLETED">Concluída</option>
                 <option value="CANCELLED">Cancelada</option>
               </select>
             </div>
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                onClick={loadRevisions}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Atualizar
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Revisions List */}
-      <div className="grid gap-4">
-        {filteredRevisions.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-12">
-                <Car className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhuma revisão encontrada
-                </h3>
-                <p className="text-gray-600">
-                  {searchTerm || statusFilter
-                    ? 'Tente ajustar os filtros de busca'
-                    : 'Não há revisões cadastradas no sistema'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredRevisions.map((revision) => (
-            <Card key={revision.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
-                    {/* Customer and Vehicle Info */}
-                    <div className="flex items-start gap-6">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm text-gray-600">Cliente</p>
-                          <p className="font-medium">{revision.customer?.name || 'N/A'}</p>
+      {/* Revisions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Revisões ({filteredRevisions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredRevisions.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-600">Nenhuma revisão encontrada</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredRevisions.map((revision) => (
+                <Card key={revision.id} className="hover:border-moria-orange transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Main Info */}
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Customer */}
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {revision.customer?.name || 'N/A'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {revision.customer?.phone || ''}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Vehicle */}
+                        <div className="flex items-center gap-2">
+                          <Car className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {revision.vehicle?.brand} {revision.vehicle?.model}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {revision.vehicle?.plate || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Mechanic */}
+                        <div className="flex items-center gap-2">
+                          <UserCog className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            {revision.mechanicName ? (
+                              <>
+                                <p className="text-sm font-medium truncate">
+                                  {revision.mechanicName}
+                                </p>
+                                <p className="text-xs text-gray-500">Mecânico</p>
+                              </>
+                            ) : (
+                              <p className="text-sm text-gray-500">Não atribuído</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Date & Status */}
+                        <div className="flex items-center gap-3 justify-between">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600">
+                              {formatDate(revision.date)}
+                            </span>
+                          </div>
+                          {getStatusBadge(revision.status)}
                         </div>
                       </div>
+
+                      {/* Actions */}
                       <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm text-gray-600">Veículo</p>
-                          <p className="font-medium">
-                            {revision.vehicle?.brand} {revision.vehicle?.model} {revision.vehicle?.year}
-                          </p>
-                          <p className="text-sm text-gray-600">Placa: {revision.vehicle?.plate}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm text-gray-600">Data</p>
-                          <p className="font-medium">{formatDate(revision.date)}</p>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(revision)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleAssignMechanic(revision)}>
+                              {revision.assignedMechanicId ? (
+                                <>
+                                  <ArrowRightLeft className="h-4 w-4 mr-2" />
+                                  Trocar Mecânico
+                                </>
+                              ) : (
+                                <>
+                                  <UserCog className="h-4 w-4 mr-2" />
+                                  Atribuir Mecânico
+                                </>
+                              )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            {revision.status === 'DRAFT' && (
+                              <DropdownMenuItem
+                                onClick={() => handleChangeStatus(revision.id, 'IN_PROGRESS')}
+                              >
+                                <Clock className="h-4 w-4 mr-2" />
+                                Iniciar
+                              </DropdownMenuItem>
+                            )}
+
+                            {revision.status === 'IN_PROGRESS' && (
+                              <DropdownMenuItem
+                                onClick={() => handleChangeStatus(revision.id, 'COMPLETED')}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Concluir
+                              </DropdownMenuItem>
+                            )}
+
+                            {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
+                              <DropdownMenuItem
+                                onClick={() => handleChangeStatus(revision.id, 'CANCELLED')}
+                                className="text-red-600"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteRevision(revision.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
-                    {/* Additional Info */}
-                    <div className="flex items-center gap-6 text-sm">
-                      {revision.mileage && (
-                        <div>
-                          <span className="text-gray-600">Quilometragem: </span>
-                          <span className="font-medium">{revision.mileage.toLocaleString('pt-BR')} km</span>
-                        </div>
-                      )}
-                      {revision.completedAt && (
-                        <div>
-                          <span className="text-gray-600">Concluída em: </span>
-                          <span className="font-medium">{formatDate(revision.completedAt)}</span>
-                        </div>
-                      )}
-                    </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-gray-600">
+                Página {page} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                    {/* Notes Preview */}
-                    {revision.generalNotes && (
-                      <div className="text-sm text-gray-600 line-clamp-2">
-                        <span className="font-medium">Observações: </span>
-                        {revision.generalNotes}
-                      </div>
-                    )}
-                  </div>
+      {/* Modals */}
+      <RevisionDetailsModal
+        revision={selectedRevision}
+        isOpen={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setSelectedRevision(null);
+        }}
+        onAssignMechanic={(revisionId) => {
+          const revision = revisions.find((r) => r.id === revisionId);
+          if (revision) {
+            handleAssignMechanic(revision);
+          }
+        }}
+        onChangeStatus={handleChangeStatus}
+      />
 
-                  {/* Status and Actions */}
-                  <div className="flex flex-col items-end gap-3">
-                    {getStatusBadge(revision.status)}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // TODO: Navigate to revision details
-                        console.log('View revision:', revision.id);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Detalhes
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Anterior
-          </Button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              Página {page} de {totalPages}
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Próxima
-          </Button>
-        </div>
-      )}
+      <MechanicAssignmentModal
+        isOpen={mechanicModalOpen}
+        onClose={() => {
+          setMechanicModalOpen(false);
+          setMechanicModalRevisionId(null);
+          setMechanicModalCurrentMechanicId(null);
+          setMechanicModalCurrentMechanicName(null);
+        }}
+        revisionId={mechanicModalRevisionId}
+        currentMechanicId={mechanicModalCurrentMechanicId}
+        currentMechanicName={mechanicModalCurrentMechanicName}
+        onSuccess={() => {
+          loadRevisions();
+        }}
+      />
     </div>
   );
 }

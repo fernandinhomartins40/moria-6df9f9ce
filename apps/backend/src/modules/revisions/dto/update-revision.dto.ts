@@ -40,6 +40,26 @@ export const updateRevisionSchema = z.object({
     .nullable()
     .optional()
     .transform(val => val || undefined),
+  assignedMechanicId: z
+    .string()
+    .uuid('Mechanic ID must be a valid UUID')
+    .nullable()
+    .optional()
+    .transform(val => val || undefined),
+  mechanicName: z
+    .string()
+    .max(255, 'Mechanic name must not exceed 255 characters')
+    .trim()
+    .nullable()
+    .optional()
+    .transform(val => val || undefined),
+  mechanicNotes: z
+    .string()
+    .max(5000, 'Mechanic notes must not exceed 5000 characters')
+    .trim()
+    .nullable()
+    .optional()
+    .transform(val => val || undefined),
 });
 
 export type UpdateRevisionDto = z.infer<typeof updateRevisionSchema>;

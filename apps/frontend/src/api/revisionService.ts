@@ -16,6 +16,7 @@ export interface UpdateRevisionRequest {
   checklistItems?: any[];
   generalNotes?: string;
   recommendations?: string;
+  assignedMechanicId?: string;
   mechanicName?: string;
   mechanicNotes?: string;
 }
@@ -30,8 +31,11 @@ export interface RevisionResponse {
   checklistItems: any;
   generalNotes: string | null;
   recommendations: string | null;
+  assignedMechanicId: string | null;
   mechanicName: string | null;
   mechanicNotes: string | null;
+  assignedAt: string | null;
+  transferHistory: any[] | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -138,6 +142,60 @@ class RevisionService {
   async getUpcomingReminders(): Promise<any[]> {
     const response = await apiClient.get('/customer-revisions/reminders/upcoming');
     return response.data;
+  }
+
+  // ==================== MECHANIC MANAGEMENT ====================
+
+  /**
+   * Assign mechanic to revision (Admin)
+   */
+  async assignMechanic(revisionId: string, mechanicId: string): Promise<RevisionResponse> {
+    const response = await apiClient.post(`/admin/revisions/${revisionId}/assign-mechanic`, {
+      mechanicId
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Transfer revision to another mechanic (Admin)
+   */
+  async transferMechanic(
+    revisionId: string,
+    newMechanicId: string,
+    reason?: string
+  ): Promise<RevisionResponse> {
+    const response = await apiClient.post(`/admin/revisions/${revisionId}/transfer-mechanic`, {
+      newMechanicId,
+      reason
+    });
+    return response.data.data;
+  }
+
+  /**
+   * Unassign mechanic from revision (Admin)
+   */
+  async unassignMechanic(revisionId: string): Promise<RevisionResponse> {
+    const response = await apiClient.delete(`/admin/revisions/${revisionId}/unassign-mechanic`);
+    return response.data.data;
+  }
+
+  /**
+   * Get revisions by mechanic (Admin)
+   */
+  async getRevisionsByMechanic(
+    mechanicId: string,
+    params?: { page?: number; limit?: number; status?: string }
+  ): Promise<{ data: RevisionResponse[]; meta: any }> {
+    const response = await apiClient.get(`/admin/revisions/mechanic/${mechanicId}`, { params });
+    return response.data;
+  }
+
+  /**
+   * Get all mechanics workload (Admin)
+   */
+  async getMechanicsWorkload(): Promise<any[]> {
+    const response = await apiClient.get('/admin/revisions/mechanics/workload');
+    return response.data.data;
   }
 }
 
