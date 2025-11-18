@@ -7,7 +7,7 @@ RUN apk add --no-cache libc6-compat openssl curl nginx supervisor
 FROM base AS backend-deps
 WORKDIR /app/apps/backend
 COPY apps/backend/package*.json ./
-RUN npm ci
+RUN npm install
 
 FROM base AS backend-build
 WORKDIR /app/apps/backend
@@ -19,7 +19,7 @@ RUN npx prisma generate && npm run build
 FROM base AS frontend-deps
 WORKDIR /app/apps/frontend
 COPY apps/frontend/package*.json ./
-RUN npm ci
+RUN npm install
 
 FROM base AS frontend-build
 WORKDIR /app/apps/frontend
