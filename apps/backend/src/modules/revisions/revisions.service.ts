@@ -77,6 +77,14 @@ export class RevisionsService {
               phone: true,
             },
           },
+          assignedMechanic: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
         },
       }),
       prisma.revision.count({ where }),
@@ -454,6 +462,14 @@ export class RevisionsService {
             name: true,
             email: true,
             phone: true,
+          },
+        },
+        assignedMechanic: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
           },
         },
       },
@@ -872,6 +888,14 @@ export class RevisionsService {
               name: true,
               email: true,
               phone: true,
+            },
+          },
+          assignedMechanic: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
             },
           },
         },

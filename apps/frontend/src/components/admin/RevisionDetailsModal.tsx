@@ -39,6 +39,23 @@ interface RevisionDetailsModalProps {
   onChangeStatus?: (revisionId: string, status: string) => void;
 }
 
+// Debug de dados da revisão
+const logRevisionData = (revision: AdminRevision | null, isOpen: boolean) => {
+  if (revision && isOpen) {
+    console.log('📋 Revision Data:', {
+      id: revision.id,
+      status: revision.status,
+      checklistItems: revision.checklistItems,
+      checklistLength: Array.isArray(revision.checklistItems) ? revision.checklistItems.length : 0,
+      checklistType: typeof revision.checklistItems,
+      assignedMechanic: revision.assignedMechanic,
+      mechanicName: revision.mechanicName,
+      customer: revision.customer,
+      vehicle: revision.vehicle,
+    });
+  }
+};
+
 const statusConfig = {
   DRAFT: {
     label: 'Rascunho',
@@ -100,6 +117,11 @@ export function RevisionDetailsModal({
 }: RevisionDetailsModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'checklist' | 'history'>('details');
 
+  // Log de debug quando o modal abre
+  useEffect(() => {
+    logRevisionData(revision, isOpen);
+  }, [revision, isOpen]);
+
   if (!revision) return null;
 
   const StatusIcon = statusConfig[revision.status as keyof typeof statusConfig]?.icon || Circle;
@@ -122,14 +144,31 @@ export function RevisionDetailsModal({
     }
   };
 
-  // Group checklist items by category
-  const groupedChecklist = (revision.checklistItems || []).reduce((acc: any, item: any) => {
-    if (!acc[item.categoryName]) {
-      acc[item.categoryName] = [];
-    }
-    acc[item.categoryName].push(item);
-    return acc;
-  }, {});
+  // Group checklist items by category with validation
+  const groupedChecklist = Array.isArray(revision.checklistItems)
+    ? revision.checklistItems
+        .filter(item => {
+          // Validar que o item tem os campos essenciais
+          const isValid = item &&
+                         typeof item === 'object' &&
+                         item.categoryName &&
+                         item.itemName &&
+                         item.status;
+
+          if (!isValid && item) {
+            console.warn('⚠️ Item inválido no checklist:', item);
+          }
+
+          return isValid;
+        })
+        .reduce((acc: any, item: any) => {
+          if (!acc[item.categoryName]) {
+            acc[item.categoryName] = [];
+          }
+          acc[item.categoryName].push(item);
+          return acc;
+        }, {})
+    : {};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -342,7 +381,20 @@ export function RevisionDetailsModal({
           {activeTab === 'checklist' && (
             <div className="space-y-4">
               {Object.keys(groupedChecklist).length === 0 ? (
-                <p className="text-center text-gray-500 py-8">Nenhum item no checklist</p>
+                <div className="text-center py-12">
+                  <AlertCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-600 font-medium text-lg mb-2">Nenhum item no checklist</p>
+                  <p className="text-sm text-gray-400 max-w-md mx-auto">
+                    {revision.checklistItems && Array.isArray(revision.checklistItems) && revision.checklistItems.length > 0
+                      ? 'Esta revisão foi criada mas o checklist não foi preenchido corretamente'
+                      : 'Esta revisão ainda não possui dados de checklist'}
+                  </p>
+                  {revision.status === 'DRAFT' && (
+                    <p className="text-sm text-moria-orange mt-3">
+                      Status: Rascunho - Aguardando preenchimento
+                    </p>
+                  )}
+                </div>
               ) : (
                 Object.entries(groupedChecklist).map(([categoryName, items]: [string, any]) => (
                   <Card key={categoryName}>
