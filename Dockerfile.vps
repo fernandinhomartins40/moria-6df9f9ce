@@ -25,6 +25,8 @@ FROM base AS frontend-build
 WORKDIR /app/apps/frontend
 COPY --from=frontend-deps /app/apps/frontend/node_modules ./node_modules
 COPY apps/frontend/ ./
+# Set API URL for production build - uses relative path since nginx proxies /api
+ENV VITE_API_BASE_URL=/api
 RUN npm run build
 
 # ===== Production Image =====
