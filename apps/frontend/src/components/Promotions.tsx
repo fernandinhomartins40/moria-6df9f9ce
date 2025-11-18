@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Clock, Timer, TrendingDown, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import offerService, { Offer } from "../api/offerService";
+import { getImageUrl } from "@/utils/imageUrl";
 
 interface PromotionalProduct {
   id: string;
@@ -49,9 +50,8 @@ function useCountdown(targetDate: Date) {
 
 // Helper para converter Offer em PromotionalProduct
 const convertOfferToPromotional = (offer: Offer): PromotionalProduct => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
   const imageUrl = offer.images && offer.images.length > 0
-    ? (offer.images[0].startsWith('http') ? offer.images[0] : `${baseUrl}${offer.images[0]}`)
+    ? getImageUrl(offer.images[0])
     : '';
 
   return {

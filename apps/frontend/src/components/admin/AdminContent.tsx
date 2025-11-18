@@ -1406,9 +1406,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
                     return imageUrl;
                   }
-                  // Se é caminho relativo, adiciona base URL e converte para thumb
+                  // Se é caminho relativo, converte para thumb
                   const thumbPath = imageUrl.replace('-full.jpg', '-thumb.jpg');
-                  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003'}${thumbPath}`;
+                  // Em produção, imagens são servidas do mesmo origin
+                  if (import.meta.env.PROD) {
+                    return thumbPath;
+                  }
+                  // Em dev, adiciona host da API
+                  return `http://localhost:3001${thumbPath}`;
                 };
 
                 const thumbnailUrl = product.images && product.images.length > 0

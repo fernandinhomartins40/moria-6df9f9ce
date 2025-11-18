@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Star, Plus, Heart, Loader2, AlertCircle, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import productService, { Product as ApiProduct } from "@/api/productService";
+import { getImageUrl } from "@/utils/imageUrl";
 
 export function Products() {
   const { addItem, openCart } = useCart();
@@ -98,16 +99,9 @@ export function Products() {
   // Obter primeira imagem ou placeholder
   const getProductImage = (product: ApiProduct) => {
     if (product.images && product.images.length > 0) {
-      const imageUrl = product.images[0];
-      // Se a URL já é completa (http/https), retorna direto
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        return imageUrl;
-      }
-      // Se é caminho relativo, adiciona base URL
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
-      return `${baseUrl}${imageUrl}`;
+      return getImageUrl(product.images[0]);
     }
-    return '/placeholder-product.jpg'; // Placeholder caso não tenha imagem
+    return '/placeholder-product.jpg';
   };
 
   // Rating fictício (pode ser implementado no futuro)

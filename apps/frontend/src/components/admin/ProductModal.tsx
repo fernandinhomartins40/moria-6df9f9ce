@@ -13,6 +13,7 @@ import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images,
 import { ProductImageUpload, ProductImage } from './ProductImageUpload';
 import { useToast } from '../ui/use-toast';
 import { Product as ApiProduct } from '@/api/productService';
+import { getImageUrl } from '@/utils/imageUrl';
 
 // Interface local para o form (snake_case para compatibilidade com código existente)
 interface ProductFormData {
@@ -140,21 +141,13 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
       // Converter imagens existentes para ProductImage para preview
       if (product.images && product.images.length > 0) {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
-        const existingImages: ProductImage[] = product.images.map((url, index) => {
-          // Se a URL já é completa (http/https), usa direto. Senão, adiciona base URL
-          const fullUrl = url.startsWith('http://') || url.startsWith('https://')
-            ? url
-            : `${baseUrl}${url}`;
-
-          return {
-            id: `existing-${index}`,
-            url: fullUrl,
-            file: null as any, // Não há arquivo para imagens existentes
-            status: 'ready' as const,
-            progress: 100
-          };
-        });
+        const existingImages: ProductImage[] = product.images.map((url, index) => ({
+          id: `existing-${index}`,
+          url: getImageUrl(url),
+          file: null as any, // Não há arquivo para imagens existentes
+          status: 'ready' as const,
+          progress: 100
+        }));
         setProductImages(existingImages);
       } else {
         setProductImages([]);
@@ -334,10 +327,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       }
 
       // Enviar para API usando httpOnly cookie (credentials: 'include')
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
       const url = formData.id
-        ? `${baseUrl}/products/${formData.id}`
-        : `${baseUrl}/products`;
+        ? `${apiUrl}/products/${formData.id}`
+        : `${apiUrl}/products`;
       const method = formData.id ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
