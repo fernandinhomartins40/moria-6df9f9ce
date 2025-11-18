@@ -47,25 +47,44 @@ export function RevisionEditModal({
     try {
       // Load full revision details
       const fullRevision = await revisionService.getRevisionById(revision.id);
+      console.log('Full revision from API:', fullRevision);
+      console.log('Type of checklistItems:', typeof fullRevision.checklistItems);
+      console.log('Backend checklistItems:', fullRevision.checklistItems);
 
       setMileage(fullRevision.mileage || 0);
       setGeneralNotes(fullRevision.generalNotes || '');
       setRecommendations(fullRevision.recommendations || '');
 
       // Convert backend checklist to frontend format
-      console.log('Backend checklistItems:', fullRevision.checklistItems);
-      const items: RevisionChecklistItem[] = fullRevision.checklistItems?.map((item: any) => {
-        console.log('Processing item:', item.itemId, item.status);
-        return {
-          itemId: item.itemId,
-          status: item.status as ItemStatus,
-          notes: item.notes,
-          photos: item.photos || [],
-          checkedAt: item.checkedAt,
-          checkedBy: item.checkedBy,
-        };
-      }) || [];
+      // Handle both array and object formats
+      let checklistArray = fullRevision.checklistItems;
 
+      // If checklistItems is an object, try to extract the array
+      if (checklistArray && typeof checklistArray === 'object' && !Array.isArray(checklistArray)) {
+        console.log('checklistItems is object, attempting to extract array');
+        // Try common patterns for nested data
+        if ('data' in checklistArray) {
+          checklistArray = checklistArray.data;
+        } else if ('items' in checklistArray) {
+          checklistArray = checklistArray.items;
+        }
+      }
+
+      const items: RevisionChecklistItem[] = Array.isArray(checklistArray)
+        ? checklistArray.map((item: any) => {
+            console.log('Processing item:', item.itemId, item.status);
+            return {
+              itemId: item.itemId,
+              status: item.status as ItemStatus,
+              notes: item.notes,
+              photos: item.photos || [],
+              checkedAt: item.checkedAt,
+              checkedBy: item.checkedBy,
+            };
+          })
+        : [];
+
+      console.log('Converted items count:', items.length);
       console.log('Converted items:', items);
       setRevisionItems(items);
     } catch (error) {

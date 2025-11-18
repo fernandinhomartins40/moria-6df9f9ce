@@ -95,7 +95,7 @@ class RevisionService {
    */
   async getRevisionById(id: string): Promise<RevisionResponse> {
     const response = await apiClient.get(`/admin/revisions/${id}`);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -125,7 +125,7 @@ class RevisionService {
    */
   async getCustomerRevisionById(id: string): Promise<RevisionResponse> {
     const response = await apiClient.get(`/customer-revisions/${id}`);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
