@@ -12,13 +12,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar código fonte
+# IMPORTANTE: Build deve ser feito ANTES de buildar o Docker
 COPY . .
 
 # Criar diretórios
 RUN mkdir -p /var/log/supervisor /var/run/nginx
 
-# Nota: node_modules, prisma generate e build serão feitos FORA do Docker
-# no VPS host antes de buildar a imagem, para evitar problemas de rede
+# Validar que builds existem
+RUN test -f /app/apps/frontend/dist/index.html || (echo "ERROR: Frontend não foi buildado! Execute: cd apps/frontend && npm run build" && exit 1)
+RUN test -f /app/apps/backend/dist/server.js || (echo "ERROR: Backend não foi buildado! Execute: cd apps/backend && npm run build" && exit 1)
+
+# Nota: node_modules, prisma generate e build DEVEM ser feitos FORA do Docker
+# no host antes de buildar a imagem, para evitar problemas de rede
 
 # Configuração do Nginx
 RUN mkdir -p /etc/nginx/conf.d
