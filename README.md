@@ -230,6 +230,45 @@ npm run preview
 npm run lint
 ```
 
+## 📦 Gestão de Volumes e Imagens
+
+O projeto utiliza **Docker Named Volumes** para persistir imagens de produtos entre deploys.
+
+### Scripts de Gerenciamento
+
+```bash
+# Verificar status dos volumes e contagem de imagens
+./scripts/verify-volumes.sh
+
+# Criar backup das imagens de produtos
+./scripts/backup-uploads.sh
+
+# Restaurar imagens de um backup
+./scripts/restore-uploads.sh ./backups/uploads_backup_XXXXX.tar.gz
+```
+
+### ⚠️ Comandos Proibidos em Produção
+
+**NUNCA execute:**
+```bash
+# ❌ Remove volumes e PERDE todas as imagens!
+docker-compose -f docker-compose.vps.yml down -v
+docker volume rm moria-6df9f9ce_uploads_data
+docker volume prune
+```
+
+### ✅ Comandos Seguros
+
+```bash
+# ✅ Para containers preservando volumes
+docker-compose -f docker-compose.vps.yml down
+
+# ✅ Reinicia sem afetar dados
+docker-compose -f docker-compose.vps.yml restart
+```
+
+📚 **Documentação completa**: [docs/VOLUMES-E-IMAGENS.md](docs/VOLUMES-E-IMAGENS.md)
+
 ## 📝 Próximos Passos
 
 1. **Implementar Backend**

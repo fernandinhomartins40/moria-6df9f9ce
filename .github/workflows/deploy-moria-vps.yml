@@ -70,10 +70,25 @@ jobs:
             # Diretório da aplicação
             APP_DIR="/root/moria"
 
-            # Parar containers existentes
+            # Parar containers existentes (SEM -v para preservar volumes)
             echo "Parando containers existentes..."
             cd $APP_DIR
             docker-compose -f docker-compose.vps.yml down || true
+
+            # Verificar e garantir que volumes críticos existam
+            echo "=== Verificando volumes Docker ==="
+            if ! docker volume ls | grep -q "moria.*uploads_data"; then
+              echo "⚠️ Volume uploads_data não existe, será criado no próximo docker-compose up"
+            else
+              echo "✓ Volume uploads_data encontrado"
+              docker volume inspect $(docker volume ls --format '{{.Name}}' | grep "moria.*uploads_data") | grep Mountpoint || true
+            fi
+
+            if ! docker volume ls | grep -q "moria.*postgres_data"; then
+              echo "⚠️ Volume postgres_data não existe, será criado no próximo docker-compose up"
+            else
+              echo "✓ Volume postgres_data encontrado"
+            fi
 
             echo "Verificando código sincronizado..."
             ls -la
@@ -178,7 +193,8 @@ jobs:
             echo "=== Todos os arquivos críticos validados ==="
 
             # Parar e remover containers antigos PRIMEIRO
-            echo "Parando e removendo containers antigos..."
+            # IMPORTANTE: NUNCA usar 'down -v' pois remove volumes e perderíamos as imagens!
+            echo "Parando e removendo containers antigos (preservando volumes)..."
             docker-compose -f docker-compose.vps.yml down --remove-orphans || true
             docker rm -f moria-vps 2>/dev/null || true
             docker rm -f moria-postgres 2>/dev/null || true
@@ -427,9 +443,24 @@ jobs:
                 curl -Ik https://moriapecas.com.br | head -5
 
                 echo ""
+                echo "=== Verificando volume de uploads ==="
+                UPLOAD_FILES=$(docker exec moria-vps find /app/apps/backend/uploads/products -type f 2>/dev/null | wc -l || echo "0")
+                echo "📁 Arquivos em uploads/products: $UPLOAD_FILES"
+
+                if [ "$UPLOAD_FILES" -gt 0 ]; then
+                  echo "✅ Volume de uploads contém $UPLOAD_FILES arquivo(s)"
+                  echo "Exemplos de arquivos:"
+                  docker exec moria-vps ls -lh /app/apps/backend/uploads/products | head -5 || true
+                else
+                  echo "⚠️ Nenhum arquivo encontrado em uploads/products"
+                  echo "Isso é normal para novo deploy. Imagens serão preservadas após upload."
+                fi
+
+                echo ""
                 echo "✅ Deploy concluído - aplicação está rodando!"
                 echo "📍 Domínio: https://moriapecas.com.br"
                 echo "📍 IP:Porta: http://72.60.10.108:3090"
+                echo "📦 Volume uploads_data: PERSISTENTE entre deploys"
                 exit 0
               fi
               echo "Tentativa $i/15 falhou, aguardando 10s..."

@@ -4,7 +4,7 @@ import heroImage from "@/assets/hero-garage.jpg";
 
 export function Hero() {
   return (
-    <section id="inicio" className="relative min-h-screen flex items-center">
+    <section id="inicio" className="relative min-h-[70vh] flex items-center">
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
