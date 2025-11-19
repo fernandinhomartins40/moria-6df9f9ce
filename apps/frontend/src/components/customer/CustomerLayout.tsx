@@ -70,6 +70,8 @@ export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLa
 
   const handleLogout = () => {
     logout();
+    // Redireciona para a home após logout
+    window.location.href = '/';
   };
 
   return (

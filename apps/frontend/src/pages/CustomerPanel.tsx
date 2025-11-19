@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { CustomerLayout } from "../components/customer/CustomerLayout";
 import { CustomerDashboard } from "../components/customer/CustomerDashboard";
@@ -10,11 +10,7 @@ import "../styles/cliente.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "../components/ui/drawer";
-import { Gift, MessageCircle, Percent, Clock, User, Mail, Phone, Lock, LogIn, UserPlus } from "lucide-react";
+import { Gift, MessageCircle, Percent, Clock } from "lucide-react";
 
 // Simple components for remaining tabs
 function CustomerCoupons() {
@@ -161,171 +157,29 @@ function CustomerSupport() {
   );
 }
 
-// Login Component with Drawer
+// Login Component - Simplified without drawer
 function CustomerLogin() {
-  const { login, register, isLoading } = useAuth();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("login");
-  
-  // Login form state
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: ""
-  });
-  
-  // Register form state
-  const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    cpf: ""
-  });
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await login(loginData.email, loginData.password);
-    if (success) {
-      setIsDrawerOpen(false);
-    } else {
-      alert("Email ou senha incorretos. Tente: joao@email.com / 123456");
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await register(registerData);
-    if (success) {
-      setIsDrawerOpen(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Área do Cliente</CardTitle>
           <CardDescription>
-            Acesse sua conta para gerenciar pedidos e favoritos
+            Você precisa estar logado para acessar esta página
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button 
+        <CardContent className="text-center space-y-4">
+          <p className="text-muted-foreground">
+            Clique no ícone de usuário no cabeçalho para fazer login ou criar uma conta.
+          </p>
+          <Button
             className="w-full"
-            onClick={() => setIsDrawerOpen(true)}
+            onClick={() => window.location.href = '/'}
           >
-            <LogIn className="w-4 h-4 mr-2" />
-            Entrar ou Cadastrar
+            Voltar para a Página Inicial
           </Button>
         </CardContent>
       </Card>
-
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-sm">
-            <DrawerHeader>
-              <DrawerTitle>Área do Cliente</DrawerTitle>
-              <DrawerDescription>
-                Entre na sua conta ou crie uma nova
-              </DrawerDescription>
-            </DrawerHeader>
-            
-            <div className="p-4 pb-8">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Entrar</TabsTrigger>
-                  <TabsTrigger value="register">Cadastrar</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="login" className="space-y-4 mt-4">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="password">Senha</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Entrando..." : "Entrar"}
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground">
-                      Teste: joao@email.com / 123456
-                    </p>
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="register" className="space-y-4 mt-4">
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Nome Completo</Label>
-                      <Input
-                        id="name"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reg-email">Email</Label>
-                      <Input
-                        id="reg-email"
-                        type="email"
-                        value={registerData.email}
-                        onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Telefone</Label>
-                      <Input
-                        id="phone"
-                        value={registerData.phone}
-                        onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reg-password">Senha</Label>
-                      <Input
-                        id="reg-password"
-                        type="password"
-                        value={registerData.password}
-                        onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cpf">CPF (opcional)</Label>
-                      <Input
-                        id="cpf"
-                        value={registerData.cpf}
-                        onChange={(e) => setRegisterData({...registerData, cpf: e.target.value})}
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Cadastrando..." : "Cadastrar"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
     </div>
   );
 }
