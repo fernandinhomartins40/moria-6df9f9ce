@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Car, Search, Loader2 } from 'lucide-react';
+import { Car, Search, Loader2, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { CreateVehicleModal } from '../admin/CreateVehicleModal';
 import vehicleService, { CustomerVehicle } from '../../api/vehicleService';
 import { useToast } from '../../hooks/use-toast';
 
@@ -32,6 +33,7 @@ export function VehicleSelector({
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Load vehicles when dialog opens and customer is selected
@@ -78,6 +80,27 @@ export function VehicleSelector({
     vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.year.toString().includes(searchTerm)
   );
+
+  const handleCreateSuccess = (vehicle: any) => {
+    // Transform to local format
+    const newVehicle: Vehicle = {
+      id: vehicle.id,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: vehicle.year,
+      plate: vehicle.plate,
+      color: vehicle.color,
+      mileage: vehicle.mileage
+    };
+
+    // Select the newly created vehicle
+    onSelectVehicle(newVehicle);
+    setIsDialogOpen(false);
+    setIsCreateModalOpen(false);
+
+    // Reload vehicles list
+    loadVehicles();
+  };
 
   if (!customerId) {
     return (
@@ -146,7 +169,17 @@ export function VehicleSelector({
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Selecionar Veículo</DialogTitle>
+              <DialogTitle className="flex items-center justify-between">
+                Selecionar Veículo
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-moria-orange hover:bg-moria-orange/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Veículo
+                </Button>
+              </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -210,6 +243,15 @@ export function VehicleSelector({
             </div>
           </DialogContent>
         </Dialog>
+
+        {customerId && (
+          <CreateVehicleModal
+            customerId={customerId}
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSuccess={handleCreateSuccess}
+          />
+        )}
       </CardContent>
     </Card>
   );

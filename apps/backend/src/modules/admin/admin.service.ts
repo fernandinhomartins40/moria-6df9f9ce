@@ -262,6 +262,47 @@ export class AdminService {
     return this.mapCustomerToResponse(customer);
   }
 
+  async createCustomer(data: {
+    name: string;
+    email: string;
+    phone: string;
+    cpf?: string;
+  }) {
+    // Verificar se já existe cliente com mesmo email ou CPF
+    if (data.email) {
+      const existingByEmail = await prisma.customer.findUnique({
+        where: { email: data.email }
+      });
+      if (existingByEmail) {
+        throw new Error('Já existe um cliente com este email');
+      }
+    }
+
+    if (data.cpf) {
+      const existingByCpf = await prisma.customer.findFirst({
+        where: { cpf: data.cpf }
+      });
+      if (existingByCpf) {
+        throw new Error('Já existe um cliente com este CPF');
+      }
+    }
+
+    // Criar cliente sem senha (provisional user)
+    const customer = await prisma.customer.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        cpf: data.cpf || null,
+        password: '', // Cliente criado pelo admin não tem senha inicialmente
+        level: CustomerLevel.BRONZE,
+        status: CustomerStatus.ACTIVE,
+      }
+    });
+
+    return this.mapCustomerToResponse(customer);
+  }
+
   // ==================== CUSTOMER VEHICLES ====================
 
   async getCustomerVehicles(customerId: string) {
@@ -271,6 +312,50 @@ export class AdminService {
     });
 
     return vehicles;
+  }
+
+  async createVehicleForCustomer(customerId: string, data: {
+    brand: string;
+    model: string;
+    year: number;
+    plate: string;
+    color: string;
+    mileage?: number;
+    chassisNumber?: string;
+  }) {
+    // Verificar se o cliente existe
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId }
+    });
+
+    if (!customer) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    // Verificar se já existe veículo com a mesma placa
+    const existingVehicle = await prisma.customerVehicle.findFirst({
+      where: { plate: data.plate }
+    });
+
+    if (existingVehicle) {
+      throw new Error('Já existe um veículo cadastrado com esta placa');
+    }
+
+    // Criar veículo
+    const vehicle = await prisma.customerVehicle.create({
+      data: {
+        customerId,
+        brand: data.brand,
+        model: data.model,
+        year: data.year,
+        plate: data.plate,
+        color: data.color,
+        mileage: data.mileage || null,
+        chassisNumber: data.chassisNumber || null,
+      }
+    });
+
+    return vehicle;
   }
 
   // ==================== QUOTES (ORÇAMENTOS) ====================

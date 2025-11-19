@@ -107,6 +107,28 @@ export class AdminController {
     }
   };
 
+  createCustomer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { name, email, phone, cpf } = req.body;
+
+      if (!name || !email || !phone) {
+        res.status(400).json({ error: 'Nome, email e telefone são obrigatórios' });
+        return;
+      }
+
+      const customer = await this.adminService.createCustomer({
+        name,
+        email,
+        phone,
+        cpf
+      });
+
+      res.status(201).json(customer);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // ==================== CUSTOMER VEHICLES ====================
 
   getCustomerVehicles = async (req: Request, res: Response, next: NextFunction) => {
@@ -114,6 +136,32 @@ export class AdminController {
       const { customerId } = req.params;
       const vehicles = await this.adminService.getCustomerVehicles(customerId);
       res.json(vehicles);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createVehicleForCustomer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { customerId } = req.params;
+      const { brand, model, year, plate, color, mileage, chassisNumber } = req.body;
+
+      if (!brand || !model || !year || !plate || !color) {
+        res.status(400).json({ error: 'Marca, modelo, ano, placa e cor são obrigatórios' });
+        return;
+      }
+
+      const vehicle = await this.adminService.createVehicleForCustomer(customerId, {
+        brand,
+        model,
+        year: Number(year),
+        plate,
+        color,
+        mileage: mileage ? Number(mileage) : undefined,
+        chassisNumber
+      });
+
+      res.status(201).json(vehicle);
     } catch (error) {
       next(error);
     }

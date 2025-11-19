@@ -33,7 +33,7 @@ export interface Quote {
   customerWhatsApp: string;
   items: QuoteItem[];
   total: number;
-  status: 'pending' | 'responded' | 'accepted' | 'rejected';
+  status: 'PENDING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'pending' | 'responded' | 'accepted' | 'rejected';
   createdAt: string;
   updatedAt: string;
 }
@@ -42,7 +42,8 @@ export interface QuoteItem {
   id: string;
   name: string;
   quantity: number;
-  price?: number;
+  price?: number | null;
+  quotedPrice?: number | null;
 }
 
 export interface AdminService {
@@ -254,6 +255,33 @@ class AdminService {
   async updateOrderStatus(id: string, status: string): Promise<StoreOrder> {
     const response = await apiClient.patch(`/admin/orders/${id}/status`, { status });
     return response.data;
+  }
+
+  async createAdminOrder(data: {
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    address: {
+      street: string;
+      number: string;
+      complement?: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      type: 'HOME' | 'WORK' | 'OTHER';
+    };
+    items: Array<{
+      productId?: string;
+      serviceId?: string;
+      type: 'PRODUCT' | 'SERVICE';
+      quantity: number;
+    }>;
+    paymentMethod: string;
+    couponCode?: string;
+  }): Promise<StoreOrder> {
+    const response = await apiClient.post('/orders/guest', data);
+    return response.data.data;
   }
 
   // ==================== QUOTES ====================
@@ -476,6 +504,29 @@ class AdminService {
 
   async updateCustomerStatus(id: string, status: string): Promise<ProvisionalUser> {
     const response = await apiClient.patch(`/admin/customers/${id}/status`, { status });
+    return response.data;
+  }
+
+  async createCustomer(data: {
+    name: string;
+    email: string;
+    phone: string;
+    cpf?: string;
+  }): Promise<ProvisionalUser> {
+    const response = await apiClient.post('/admin/customers', data);
+    return response.data;
+  }
+
+  async createVehicleForCustomer(customerId: string, data: {
+    brand: string;
+    model: string;
+    year: number;
+    plate: string;
+    color: string;
+    mileage?: number;
+    chassisNumber?: string;
+  }): Promise<any> {
+    const response = await apiClient.post(`/admin/customers/${customerId}/vehicles`, data);
     return response.data;
   }
 

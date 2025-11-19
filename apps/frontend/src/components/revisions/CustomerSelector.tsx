@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { CreateCustomerModal } from '../admin/CreateCustomerModal';
 import adminService, { ProvisionalUser } from '../../api/adminService';
 import { useToast } from '../../hooks/use-toast';
 
@@ -27,15 +28,15 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Load customers from API when dialog opens
   useEffect(() => {
-    if (isDialogOpen && !isCreating) {
+    if (isDialogOpen) {
       loadCustomers();
     }
-  }, [isDialogOpen, isCreating]);
+  }, [isDialogOpen]);
 
   const loadCustomers = async () => {
     try {
@@ -70,6 +71,25 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
     customer.phone.includes(searchTerm) ||
     customer.cpf?.includes(searchTerm)
   );
+
+  const handleCreateSuccess = (customer: any) => {
+    // Transform to local format
+    const newCustomer: Customer = {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.whatsapp,
+      cpf: customer.cpf
+    };
+
+    // Select the newly created customer
+    onSelectCustomer(newCustomer);
+    setIsDialogOpen(false);
+    setIsCreateModalOpen(false);
+
+    // Reload customers list
+    loadCustomers();
+  };
 
   return (
     <Card>
@@ -113,7 +133,17 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Selecionar Cliente</DialogTitle>
+              <DialogTitle className="flex items-center justify-between">
+                Selecionar Cliente
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-moria-orange hover:bg-moria-orange/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Cliente
+                </Button>
+              </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -170,6 +200,12 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
             </div>
           </DialogContent>
         </Dialog>
+
+        <CreateCustomerModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleCreateSuccess}
+        />
       </CardContent>
     </Card>
   );

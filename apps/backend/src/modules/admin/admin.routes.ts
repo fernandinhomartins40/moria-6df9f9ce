@@ -31,7 +31,9 @@ router.patch('/orders/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.
 // ==================== CUSTOMERS ====================
 router.get('/customers', adminController.getCustomers);
 router.get('/customers/:id', adminController.getCustomerById);
+router.post('/customers', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.createCustomer);
 router.get('/customers/:customerId/vehicles', adminController.getCustomerVehicles);
+router.post('/customers/:customerId/vehicles', AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), adminController.createVehicleForCustomer);
 router.patch('/customers/:id/level', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerLevel);
 router.patch('/customers/:id/status', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), adminController.updateCustomerStatus);
 
