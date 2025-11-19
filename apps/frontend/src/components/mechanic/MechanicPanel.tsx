@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@hooks/useAuth';
-import { adminService } from '@api/adminService';
+import { useAuth } from '@/hooks/useAuth';
+import { adminService } from '@/api/adminService';
 import MechanicRevisionCard from './MechanicRevisionCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
