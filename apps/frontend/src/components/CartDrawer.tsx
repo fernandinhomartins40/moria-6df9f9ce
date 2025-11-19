@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
-import { ScrollArea } from "./ui/scroll-area";
 import { CheckoutDrawer } from "./CheckoutDrawer";
 import { Trash2, Plus, Minus, MessageCircle, ShoppingBag, X, Wrench, Package } from "lucide-react";
 
@@ -28,7 +27,7 @@ export function CartDrawer() {
     <Sheet open={isOpen} onOpenChange={() => closeCart()}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b z-10">
+        <div className="flex-shrink-0 bg-white border-b z-10">
           <SheetHeader className="p-6 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -54,7 +53,7 @@ export function CartDrawer() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="text-center space-y-4">
@@ -75,7 +74,7 @@ export function CartDrawer() {
           ) : (
             <>
               {/* Items List */}
-              <ScrollArea className="flex-1">
+              <div className="flex-1 overflow-y-auto scrollbar-thin">
                 <div className="p-6 space-y-4">
                   {items.map((item) => {
                     const isService = item.type === 'service';
@@ -168,10 +167,10 @@ export function CartDrawer() {
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Footer */}
-              <div className="sticky bottom-0 bg-white border-t">
+              <div className="flex-shrink-0 bg-white border-t">
                 <div className="p-4 space-y-3">
                   {/* Summary */}
                   <div className="bg-muted rounded-lg p-3 space-y-2">

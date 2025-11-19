@@ -16,7 +16,8 @@ import {
   Package,
   Wrench,
   Mail,
-  Home
+  Home,
+  Search
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CartItem } from "@moria/types";
@@ -62,6 +63,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -88,6 +90,44 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
       return numbers;
     }
     return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`;
+  };
+
+  const fetchAddressByCep = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+
+    if (cleanCep.length !== 8) {
+      return;
+    }
+
+    setIsLoadingCep(true);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+
+      setForm(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          street: data.logradouro || '',
+          neighborhood: data.bairro || '',
+          city: data.localidade || '',
+          state: data.uf || '',
+        }
+      }));
+
+      toast.success("Endereço encontrado!");
+    } catch (error) {
+      toast.error("Erro ao buscar CEP. Tente novamente.");
+      console.error('Error fetching CEP:', error);
+    } finally {
+      setIsLoadingCep(false);
+    }
   };
 
   const generateWhatsAppMessage = (order: any): string => {
@@ -168,21 +208,27 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         address: {
           street: form.address.street,
           number: form.address.number,
-          complement: form.address.complement,
+          complement: form.address.complement || undefined,
           neighborhood: form.address.neighborhood,
           city: form.address.city,
           state: form.address.state,
           zipCode: form.address.zipCode.replace(/\D/g, ''),
           type: 'HOME' as const,
         },
-        items: items.map(item => ({
-          productId: item.type !== 'service' ? item.id : undefined,
-          serviceId: item.type === 'service' ? item.id : undefined,
-          type: (item.type === 'service' ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
-          quantity: item.quantity,
-        })),
+        items: items.map(item => {
+          const isService = item.type === 'service';
+          return {
+            productId: !isService ? item.id : undefined,
+            serviceId: isService ? item.id : undefined,
+            type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+            quantity: item.quantity,
+          };
+        }),
         paymentMethod: form.paymentMethod,
       };
+
+      // Log dos dados enviados para debug
+      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
 
       // Criar pedido via API
       const order = await guestOrderService.createGuestOrder(orderData);
@@ -227,7 +273,26 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
     } catch (error: any) {
       console.error('Error creating order:', error);
-      toast.error(error.response?.data?.message || "Erro ao processar pedido. Tente novamente.");
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      // Mensagens de erro mais específicas
+      let errorMessage = "Erro ao processar pedido. Tente novamente.";
+
+      if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || "Dados inválidos. Verifique os campos.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "Produto ou serviço não encontrado.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Erro no servidor. Tente novamente mais tarde.";
+      } else if (error.message === 'Network Error') {
+        errorMessage = "Erro de conexão. Verifique sua internet.";
+      }
+
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   };
@@ -265,8 +330,8 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-4xl flex flex-col p-0 overflow-y-auto">
-        <SheetHeader className="p-6 pb-4">
+      <SheetContent className="w-full sm:max-w-4xl flex flex-col p-0">
+        <SheetHeader className="p-6 pb-4 flex-shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-moria-orange" />
             Finalizar Pedido
@@ -276,14 +341,15 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 pt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Resumo do Pedido */}
               <div className="flex flex-col">
                 <h3 className="font-semibold mb-4">Resumo do Pedido</h3>
 
-                <div className="space-y-3 flex-1">
+                {/* Container com scroll para itens - ALTURA FIXA */}
+                <div className="overflow-y-auto space-y-3 pr-2 scrollbar-thin border rounded-lg p-2" style={{ height: '350px' }}>
                   {hasProducts && (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
@@ -427,19 +493,42 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                       <Label className="text-sm font-semibold">Endereço de Entrega</Label>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="col-span-1">
-                        <Input
-                          placeholder="CEP *"
-                          value={form.address.zipCode}
-                          onChange={(e) => setForm(prev => ({
-                            ...prev,
-                            address: { ...prev.address, zipCode: formatZipCode(e.target.value) }
-                          }))}
-                          disabled={isLoading}
-                          required
-                        />
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-1">
+                          <div className="relative">
+                            <Input
+                              placeholder="CEP *"
+                              value={form.address.zipCode}
+                              onChange={(e) => {
+                                const formatted = formatZipCode(e.target.value);
+                                setForm(prev => ({
+                                  ...prev,
+                                  address: { ...prev.address, zipCode: formatted }
+                                }));
+
+                                // Buscar endereço automaticamente quando tiver 8 dígitos
+                                if (formatted.replace(/\D/g, '').length === 8) {
+                                  fetchAddressByCep(formatted);
+                                }
+                              }}
+                              disabled={isLoading || isLoadingCep}
+                              maxLength={9}
+                              required
+                              className="pr-10"
+                            />
+                            {isLoadingCep && (
+                              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-moria-orange" />
+                            )}
+                            {!isLoadingCep && form.address.zipCode.replace(/\D/g, '').length === 8 && (
+                              <Search className="absolute right-3 top-3 h-4 w-4 text-green-600" />
+                            )}
+                          </div>
+                        </div>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Digite o CEP para preencher o endereço automaticamente
+                      </p>
                     </div>
 
                     <Input
@@ -533,7 +622,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
             </div>
           </div>
 
-          <div className="border-t p-6">
+          <div className="border-t p-6 flex-shrink-0">
             <Button
               type="submit"
               className="w-full bg-green-600 hover:bg-green-700 h-11"
