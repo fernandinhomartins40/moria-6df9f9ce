@@ -129,6 +129,35 @@ export class AdminController {
     }
   };
 
+  // ==================== CUSTOMER ADDRESSES ====================
+
+  createCustomerAddress = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { customerId } = req.params;
+      const { street, number, complement, neighborhood, city, state, zipCode, type } = req.body;
+
+      if (!street || !number || !neighborhood || !city || !state || !zipCode) {
+        res.status(400).json({ error: 'Rua, número, bairro, cidade, estado e CEP são obrigatórios' });
+        return;
+      }
+
+      const address = await this.adminService.createCustomerAddress(customerId, {
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+        zipCode,
+        type: type || 'HOME'
+      });
+
+      res.status(201).json(address);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // ==================== CUSTOMER VEHICLES ====================
 
   getCustomerVehicles = async (req: Request, res: Response, next: NextFunction) => {

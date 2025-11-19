@@ -40,10 +40,15 @@ import {
 import { RevisionsContent } from "./RevisionsContent";
 import { RevisionsListContent } from "./RevisionsListContent";
 import { ProductModal } from "./ProductModal";
+import { OrderDetailsModal } from "./OrderDetailsModal";
+import { QuoteModal } from "./QuoteModal";
+import { NotificationCenter } from "./NotificationCenter";
+import { CreateOrderModal } from "./CreateOrderModal";
 import adminService from "@/api/adminService";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import serviceService from "@/api/serviceService";
 import couponService from "@/api/couponService";
+import { exportToCSV, exportToExcel, formatCurrencyForExport, formatDateForExport } from "@/utils/exportUtils";
 
 interface StoreOrder {
   id: string;
@@ -155,8 +160,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [revisionView, setRevisionView] = useState<'list' | 'create'>('list');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<StoreOrder | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -519,8 +529,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <AlertCircle className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Alertas</p>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-xs text-gray-500">Nenhum alerta</p>
+                <p className="text-2xl font-bold">
+                  {stats.pendingOrders + stats.pendingQuotes + stats.lowStockProducts}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {stats.lowStockProducts} estoque baixo
+                </p>
               </div>
             </div>
           </CardContent>
@@ -627,8 +641,58 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quarta linha - Central de Notificações */}
+      <NotificationCenter
+        pendingOrders={stats.pendingOrders}
+        pendingQuotes={stats.pendingQuotes}
+        lowStockProducts={stats.lowStockProducts}
+        onActionClick={(notification) => {
+          // Implementar navegação baseada na notificação
+          console.log('Ação de notificação:', notification);
+        }}
+      />
     </div>
   );
+
+  const getQuoteStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; color: string }> = {
+      PENDING: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+      QUOTED: { label: 'Orçado', color: 'bg-blue-100 text-blue-800' },
+      APPROVED: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+      REJECTED: { label: 'Rejeitado', color: 'bg-red-100 text-red-800' },
+      // Mapeamento antigo para compatibilidade
+      pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+      analyzing: { label: 'Em Análise', color: 'bg-purple-100 text-purple-800' },
+      quoted: { label: 'Orçado', color: 'bg-blue-100 text-blue-800' },
+      responded: { label: 'Orçado', color: 'bg-blue-100 text-blue-800' },
+      approved: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+      accepted: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+      rejected: { label: 'Rejeitado', color: 'bg-red-100 text-red-800' },
+    };
+    return statusMap[status] || statusMap.PENDING;
+  };
+
+  const handleExportQuotes = (format: 'csv' | 'excel') => {
+    const data = {
+      headers: ['ID', 'Cliente', 'WhatsApp', 'Serviços', 'Status', 'Data'],
+      rows: filteredQuotes.map(quote => [
+        quote.id,
+        quote.customerName,
+        quote.customerWhatsApp,
+        quote.items.map(i => i.name).join(', '),
+        quote.status,
+        formatDateForExport(quote.createdAt)
+      ]),
+      filename: `orcamentos_${new Date().toISOString().split('T')[0]}`
+    };
+
+    if (format === 'csv') {
+      exportToCSV(data);
+    } else {
+      exportToExcel(data);
+    }
+  };
 
   const renderQuotes = () => (
     <Card>
@@ -637,6 +701,24 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           <div>
             <CardTitle>Todos os Orçamentos</CardTitle>
             <CardDescription>Solicitações de orçamento para serviços</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportQuotes('csv')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportQuotes('excel')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -686,11 +768,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-orange-100 text-orange-800" variant="secondary">
-                      {quote.status === 'pending' ? 'Pendente' : 
-                       quote.status === 'analyzing' ? 'Em Análise' :
-                       quote.status === 'quoted' ? 'Orçado' :
-                       quote.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                    <Badge className={getQuoteStatusBadge(quote.status).color} variant="secondary">
+                      {getQuoteStatusBadge(quote.status).label}
                     </Badge>
                   </div>
 
@@ -711,7 +790,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         <Wrench className="h-4 w-4 mr-1 text-orange-600" />
                         Serviços ({quote.items.length})
                       </span>
-                      <span className="text-orange-600">Aguardando Orçamento</span>
+                      {quote.status === 'QUOTED' || quote.status === 'quoted' || quote.status === 'APPROVED' || quote.status === 'approved' ? (
+                        <span className="font-semibold text-green-600">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total || 0)}
+                        </span>
+                      ) : (
+                        <span className="text-orange-600">Aguardando Orçamento</span>
+                      )}
                     </div>
                     <div className="ml-5 text-sm text-gray-600">
                       {quote.items.map((item, index: number) => (
@@ -736,6 +821,38 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                   <Separator className="mb-4" />
 
                   <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedQuote(quote);
+                        setIsQuoteModalOpen(true);
+                      }}
+                      className={
+                        quote.status === 'APPROVED' || quote.status === 'approved'
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : quote.status === 'QUOTED' || quote.status === 'quoted'
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : 'bg-moria-orange hover:bg-moria-orange/90'
+                      }
+                    >
+                      {quote.status === 'APPROVED' || quote.status === 'approved' ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Visualizar
+                        </>
+                      ) : quote.status === 'QUOTED' || quote.status === 'quoted' ? (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Gerenciar
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Precificar
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1125,6 +1242,27 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     );
   };
 
+  const handleExportOrders = (format: 'csv' | 'excel') => {
+    const data = {
+      headers: ['ID', 'Cliente', 'WhatsApp', 'Total', 'Status', 'Data'],
+      rows: filteredOrders.map(order => [
+        order.id,
+        order.customerName,
+        order.customerWhatsApp,
+        formatCurrencyForExport(order.total),
+        order.status,
+        formatDateForExport(order.createdAt)
+      ]),
+      filename: `pedidos_${new Date().toISOString().split('T')[0]}`
+    };
+
+    if (format === 'csv') {
+      exportToCSV(data);
+    } else {
+      exportToExcel(data);
+    }
+  };
+
   const renderOrders = () => (
     <Card>
       <CardHeader>
@@ -1132,6 +1270,33 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           <div>
             <CardTitle>Todos os Pedidos</CardTitle>
             <CardDescription>Gerencie pedidos e orçamentos</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setIsCreateOrderModalOpen(true)}
+              className="bg-moria-orange hover:bg-orange-600"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Pedido
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportOrders('csv')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportOrders('excel')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -1226,6 +1391,17 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <Separator className="mb-4" />
 
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setIsOrderModalOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Detalhes
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -2419,6 +2595,32 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         onSave={handleSaveProduct}
         product={editingProduct}
         loading={isSavingProduct}
+      />
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={isOrderModalOpen}
+        onClose={() => {
+          setIsOrderModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        onUpdate={loadData}
+      />
+      <QuoteModal
+        quote={selectedQuote}
+        isOpen={isQuoteModalOpen}
+        onClose={() => {
+          setIsQuoteModalOpen(false);
+          setSelectedQuote(null);
+        }}
+        onUpdate={loadData}
+      />
+      <CreateOrderModal
+        isOpen={isCreateOrderModalOpen}
+        onClose={() => setIsCreateOrderModalOpen(false)}
+        onSuccess={() => {
+          loadData();
+          setIsCreateOrderModalOpen(false);
+        }}
       />
     </>
   );

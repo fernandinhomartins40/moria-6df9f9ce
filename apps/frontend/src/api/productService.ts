@@ -101,8 +101,15 @@ class ProductService {
     category?: string;
     search?: string;
   }): Promise<ProductListResponse> {
-    const response = await apiClient.get<ProductListResponse>('/products', { params });
-    return response.data;
+    const response = await apiClient.get('/products', { params });
+    // Mapear resposta da API para o formato esperado
+    const apiResponse = response.data;
+    return {
+      products: apiResponse.data || [],
+      totalCount: apiResponse.meta?.totalCount || 0,
+      page: apiResponse.meta?.page || 1,
+      limit: apiResponse.meta?.limit || 10
+    };
   }
 
   async createProduct(productData: Partial<Product>): Promise<{ success: boolean; data: Product }> {

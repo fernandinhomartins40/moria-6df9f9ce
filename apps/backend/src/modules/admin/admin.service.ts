@@ -221,13 +221,16 @@ export class AdminService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: {
+          addresses: true
+        }
       }),
       prisma.customer.count({ where })
     ]);
 
     return {
-      customers: customers.map((customer: Customer) => this.mapCustomerToResponse(customer)),
+      customers: customers.map((customer: any) => this.mapCustomerToResponse(customer)),
       totalCount
     };
   }
@@ -568,7 +571,7 @@ export class AdminService {
     };
   }
 
-  private mapCustomerToResponse(customer: Customer) {
+  private mapCustomerToResponse(customer: any) {
     return {
       id: customer.id,
       name: customer.name,
@@ -578,7 +581,67 @@ export class AdminService {
       level: customer.level,
       status: customer.status,
       createdAt: customer.createdAt.toISOString(),
-      updatedAt: customer.updatedAt.toISOString()
+      updatedAt: customer.updatedAt.toISOString(),
+      addresses: customer.addresses?.map((addr: any) => ({
+        id: addr.id,
+        street: addr.street,
+        number: addr.number,
+        complement: addr.complement,
+        neighborhood: addr.neighborhood,
+        city: addr.city,
+        state: addr.state,
+        zipCode: addr.zipCode,
+        type: addr.type
+      })) || []
+    };
+  }
+
+  // ==================== CUSTOMER ADDRESSES ====================
+
+  async createCustomerAddress(customerId: string, data: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    type: 'HOME' | 'WORK' | 'OTHER';
+  }) {
+    // Verificar se cliente existe
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId }
+    });
+
+    if (!customer) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    // Criar endereço
+    const address = await prisma.address.create({
+      data: {
+        customerId,
+        street: data.street,
+        number: data.number,
+        complement: data.complement || null,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zipCode.replace(/\D/g, ''),
+        type: data.type
+      }
+    });
+
+    return {
+      id: address.id,
+      street: address.street,
+      number: address.number,
+      complement: address.complement,
+      neighborhood: address.neighborhood,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      type: address.type
     };
   }
 }

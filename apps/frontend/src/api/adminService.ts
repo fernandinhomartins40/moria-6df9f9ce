@@ -517,6 +517,30 @@ class AdminService {
     return response.data;
   }
 
+  async createCustomerAddress(customerId: string, data: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    type: 'HOME' | 'WORK' | 'OTHER';
+  }): Promise<{
+    id: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    type: string;
+  }> {
+    const response = await apiClient.post(`/admin/customers/${customerId}/addresses`, data);
+    return response.data;
+  }
+
   async createVehicleForCustomer(customerId: string, data: {
     brand: string;
     model: string;

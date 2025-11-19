@@ -7,23 +7,50 @@ import { CreateGuestOrderDto } from './dto/create-guest-order.dto.js';
 
 export class GuestOrdersService {
   /**
-   * Find or create customer by email
+   * Find or create customer by email or phone
    */
   private async findOrCreateCustomer(data: {
     name: string;
     email: string;
     phone: string;
   }) {
-    // Check if customer exists
-    let customer = await prisma.customer.findUnique({
-      where: { email: data.email },
+    const cleanPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
+
+    // Check if customer exists by email OR phone
+    let customer = await prisma.customer.findFirst({
+      where: {
+        OR: [
+          { email: data.email },
+          { phone: cleanPhone },
+        ],
+      },
     });
 
-    // If not, create new customer with temporary password
-    if (!customer) {
+    // If customer exists, update info if needed
+    if (customer) {
+      // Update customer info if any field is different
+      const needsUpdate =
+        customer.name !== data.name ||
+        customer.email !== data.email ||
+        customer.phone !== cleanPhone;
+
+      if (needsUpdate) {
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: {
+            name: data.name,
+            email: data.email,
+            phone: cleanPhone,
+          },
+        });
+        logger.info(`Customer updated: ${customer.id} (${customer.email}) - Phone: ${cleanPhone}`);
+      } else {
+        logger.info(`Existing customer found: ${customer.id} (${customer.email}) - Phone: ${cleanPhone}`);
+      }
+    } else {
+      // Create new customer with temporary password
       const temporaryPassword = this.generateTemporaryPassword(data.name);
       const hashedPassword = await HashUtil.hashPassword(temporaryPassword);
-      const cleanPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
 
       customer = await prisma.customer.create({
         data: {
