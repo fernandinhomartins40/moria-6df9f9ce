@@ -2,8 +2,8 @@ import { prisma } from '@config/database.js';
 import { CustomerStatus, CustomerLevel, OrderStatus, QuoteStatus, OrderItemType, OrderSource } from '@prisma/client';
 import { ApiError } from '@shared/utils/error.util.js';
 import { logger } from '@shared/utils/logger.util.js';
+import { HashUtil } from '@shared/utils/hash.util.js';
 import { CreateGuestOrderDto } from './dto/create-guest-order.dto.js';
-import * as crypto from 'crypto';
 
 export class GuestOrdersService {
   /**
@@ -21,30 +21,32 @@ export class GuestOrdersService {
 
     // If not, create new customer with temporary password
     if (!customer) {
-      const temporaryPassword = this.generateTemporaryPassword();
+      const temporaryPassword = this.generateTemporaryPassword(data.name);
+      const hashedPassword = await HashUtil.hashPassword(temporaryPassword);
+      const cleanPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
 
       customer = await prisma.customer.create({
         data: {
           email: data.email,
           name: data.name,
-          phone: data.phone,
-          password: temporaryPassword, // In production, this should be hashed
+          phone: cleanPhone,
+          password: hashedPassword,
           status: CustomerStatus.ACTIVE,
           level: CustomerLevel.BRONZE,
         },
       });
 
-      logger.info(`New customer created: ${customer.id} (${customer.email})`);
+      logger.info(`New customer created: ${customer.id} (${customer.email}) - Phone: ${cleanPhone} - Password: ${temporaryPassword}`);
     }
 
     return customer;
   }
 
   /**
-   * Generate a temporary password
+   * Generate a temporary password from first 3 letters of name
    */
-  private generateTemporaryPassword(): string {
-    return crypto.randomBytes(8).toString('hex');
+  private generateTemporaryPassword(name: string): string {
+    return name.trim().toLowerCase().substring(0, 3);
   }
 
   /**

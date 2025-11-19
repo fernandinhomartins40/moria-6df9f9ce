@@ -22,7 +22,7 @@ interface AuthContextType {
   customer: Customer | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateProfile: (data: Partial<Customer>) => Promise<{ success: boolean; error?: string }>;
@@ -90,11 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ identifier, password });
       // O token agora vem em um httpOnly cookie, não precisamos armazenar
 
       setState({

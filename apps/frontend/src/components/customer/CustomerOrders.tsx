@@ -43,10 +43,11 @@ export function CustomerOrders() {
   const loadOrders = async () => {
     setIsLoading(true);
     try {
-      const orderList = await getOrders();
-      setOrders(orderList);
+      const result = await getOrders();
+      setOrders(result.data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
+      setOrders([]);
     } finally {
       setIsLoading(false);
     }

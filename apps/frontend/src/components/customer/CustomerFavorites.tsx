@@ -35,7 +35,7 @@ export function CustomerFavorites() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (favorites.length > 0) {
+    if (favorites && favorites.length > 0) {
       loadProductData();
     } else {
       setFavoriteProducts([]);

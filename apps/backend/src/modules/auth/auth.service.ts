@@ -17,14 +17,25 @@ export class AuthService {
    * Login customer
    */
   async login(dto: LoginDto): Promise<AuthResponse> {
-    // Find customer by email
-    const customer = await prisma.customer.findUnique({
-      where: { email: dto.email },
+    // Find customer by phone or email
+    // Check if identifier is email (contains @) or phone
+    const isEmail = dto.identifier.includes('@');
+    const searchValue = isEmail ? dto.identifier.toLowerCase() : dto.identifier.replace(/\D/g, '');
+
+    logger.info(`Login attempt - isEmail: ${isEmail}, original: ${dto.identifier}, searchValue: ${searchValue}`);
+
+    const customer = await prisma.customer.findFirst({
+      where: isEmail
+        ? { email: searchValue }
+        : { phone: searchValue }
     });
 
     if (!customer) {
-      throw ApiError.unauthorized('Invalid email or password');
+      logger.info(`Customer not found with ${isEmail ? 'email' : 'phone'}: ${searchValue}`);
+      throw ApiError.unauthorized('Invalid phone/email or password');
     }
+
+    logger.info(`Customer found: ${customer.email}, phone: ${customer.phone}`);
 
     // Check if customer is blocked
     if (customer.status === CustomerStatus.BLOCKED) {
@@ -38,7 +49,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw ApiError.unauthorized('Invalid email or password');
+      throw ApiError.unauthorized('Invalid phone/email or password');
     }
 
     // Update last login

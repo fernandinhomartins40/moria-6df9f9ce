@@ -42,7 +42,8 @@ export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLa
     { id: 'support', label: 'Suporte', icon: MessageCircle, description: 'Atendimento ao cliente' },
   ];
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return 'CL';
     return name
       .split(' ')
       .map(word => word.charAt(0))

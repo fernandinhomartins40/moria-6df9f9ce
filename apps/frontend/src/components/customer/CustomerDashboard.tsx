@@ -32,8 +32,8 @@ export function CustomerDashboard() {
     const loadDashboardData = async () => {
       try {
         // Load orders
-        const orderList = await getOrders();
-        setOrders(orderList.slice(0, 3)); // Show only last 3 orders
+        const result = await getOrders();
+        setOrders((result.data || []).slice(0, 3)); // Show only last 3 orders
 
         // Load favorites count
         try {
@@ -140,7 +140,7 @@ export function CustomerDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">
-                Olá, {customer.name.split(' ')[0]}! 👋
+                Olá, {customer.name?.split(' ')[0] || 'Cliente'}! 👋
               </CardTitle>
               <CardDescription className="text-lg">
                 Bem-vindo ao seu painel do cliente

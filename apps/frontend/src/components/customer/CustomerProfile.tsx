@@ -119,7 +119,7 @@ export function CustomerProfile() {
   };
 
   const handleDeleteAddress = async (addressId: string) => {
-    if (customer.addresses.length <= 1) {
+    if ((customer?.addresses?.length || 0) <= 1) {
       toast.error("Você deve ter pelo menos um endereço");
       return;
     }
@@ -221,11 +221,11 @@ export function CustomerProfile() {
                   onClick={() => {
                     if (isEditing) {
                       setProfileForm({
-                        name: customer.name,
-                        email: customer.email,
-                        phone: customer.phone,
-                        cpf: customer.cpf || '',
-                        birthDate: customer.birthDate || '',
+                        name: customer?.name || '',
+                        email: customer?.email || '',
+                        phone: customer?.phone || '',
+                        cpf: customer?.cpf || '',
+                        birthDate: customer?.birthDate || '',
                       });
                     }
                     setIsEditing(!isEditing);
@@ -364,7 +364,7 @@ export function CustomerProfile() {
             </CardHeader>
 
             <CardContent>
-              {customer.addresses.length === 0 ? (
+              {!customer?.addresses || customer.addresses.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <MapPin className="mx-auto h-12 w-12 text-muted-foreground/50" />
                   <p className="mt-2">Nenhum endereço cadastrado</p>
@@ -420,7 +420,7 @@ export function CustomerProfile() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDeleteAddress(address.id)}
-                                disabled={customer.addresses.length <= 1}
+                                disabled={(customer?.addresses?.length || 0) <= 1}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
