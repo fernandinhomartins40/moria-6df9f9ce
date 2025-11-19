@@ -209,6 +209,7 @@ export class AdminAuthService {
       role?: AdminRole;
       status?: AdminStatus;
       search?: string;
+      email?: string;
     }
   ): Promise<{
     admins: Omit<Admin, 'password'>[];
@@ -226,6 +227,11 @@ export class AdminAuthService {
 
     if (filters?.status) {
       where.status = filters.status;
+    }
+
+    if (filters?.email) {
+      // Email filter - case insensitive search
+      where.email = { contains: filters.email.toLowerCase(), mode: 'insensitive' };
     }
 
     if (filters?.search) {

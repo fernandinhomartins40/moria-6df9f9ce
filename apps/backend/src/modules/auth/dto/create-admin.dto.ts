@@ -6,7 +6,7 @@ import { AdminRole } from '@prisma/client';
  * Only ADMIN and SUPER_ADMIN can create new admin users
  */
 export const createAdminSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().email('Invalid email format').toLowerCase(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   role: z.nativeEnum(AdminRole, {

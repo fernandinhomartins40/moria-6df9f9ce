@@ -157,6 +157,10 @@ export class AdminAuthController {
         filters.status = req.query.status as AdminStatus;
       }
 
+      if (req.query.email) {
+        filters.email = req.query.email as string;
+      }
+
       if (req.query.search) {
         filters.search = req.query.search as string;
       }
