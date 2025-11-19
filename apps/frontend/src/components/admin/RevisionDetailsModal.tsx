@@ -10,7 +10,6 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import {
-  X,
   User,
   Car,
   Calendar,
@@ -174,29 +173,22 @@ export function RevisionDetailsModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                <FileText className="h-6 w-6 text-moria-orange" />
-                Revisão #{revision.id.slice(0, 8)}
-              </DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge
-                  className={`${
-                    statusConfig[revision.status as keyof typeof statusConfig]?.color
-                  } flex items-center gap-1`}
-                >
-                  <StatusIcon className="h-3 w-3" />
-                  {statusConfig[revision.status as keyof typeof statusConfig]?.label}
-                </Badge>
-                <span className="text-sm text-gray-500">
-                  Criada em {formatDateShort(revision.createdAt)}
-                </span>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+          <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+            <FileText className="h-6 w-6 text-moria-orange" />
+            Revisão #{revision.id.slice(0, 8)}
+          </DialogTitle>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge
+              className={`${
+                statusConfig[revision.status as keyof typeof statusConfig]?.color
+              } flex items-center gap-1`}
+            >
+              <StatusIcon className="h-3 w-3" />
+              {statusConfig[revision.status as keyof typeof statusConfig]?.label}
+            </Badge>
+            <span className="text-sm text-gray-500">
+              Criada em {formatDateShort(revision.createdAt)}
+            </span>
           </div>
         </DialogHeader>
 

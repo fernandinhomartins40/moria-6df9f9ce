@@ -3,8 +3,6 @@ import { useRevisions } from '../../contexts/RevisionsContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
-import { ScrollArea } from '../ui/scroll-area';
 import {
   Car,
   Calendar,
@@ -116,12 +114,15 @@ export function RevisionDetailsDialog({ revision, isOpen, onClose }: RevisionDet
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Detalhes da Revisão</DialogTitle>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <FileText className="h-6 w-6 text-moria-orange" />
+            Detalhes da Revisão
+          </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+        <div className="space-y-6 py-4">
           <div className="space-y-6">
             {/* Vehicle Info */}
             <Card>
@@ -278,7 +279,7 @@ export function RevisionDetailsDialog({ revision, isOpen, onClose }: RevisionDet
               </CardContent>
             </Card>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

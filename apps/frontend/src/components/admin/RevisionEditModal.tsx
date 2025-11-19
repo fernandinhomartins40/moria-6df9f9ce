@@ -5,6 +5,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Separator } from '../ui/separator';
 import { RevisionChecklist } from '../revisions/RevisionChecklist';
 import { useRevisions } from '../../contexts/RevisionsContext';
 import { RevisionChecklistItem, ItemStatus } from '../../types/revisions';
@@ -182,68 +184,73 @@ export function RevisionEditModal({
 
   const progress = getProgress();
 
-  if (!isOpen || !revision) return null;
+  if (!revision) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div>
-            <h2 className="text-2xl font-bold">
-              {revision.status === 'DRAFT' ? 'Editar Rascunho' : 'Continuar Revisão'}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {revision.customer?.name} - {revision.vehicle?.brand} {revision.vehicle?.model} ({revision.vehicle?.plate})
-            </p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold">
+                {revision.status === 'DRAFT' ? 'Editar Rascunho' : 'Continuar Revisão'}
+              </DialogTitle>
+              <DialogDescription className="mt-2">
+                {revision.customer?.name} - {revision.vehicle?.brand} {revision.vehicle?.model} ({revision.vehicle?.plate})
+              </DialogDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+        </DialogHeader>
 
         {/* Progress */}
         {progress.total > 0 && (
-          <div className="px-6 py-3 bg-gray-50 border-b">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Progresso: {progress.checked} de {progress.total} itens verificados ({progress.percentage}%)
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSave('draft')}
-                  disabled={isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar Rascunho
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSave('in_progress')}
-                  disabled={isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar em Andamento
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleSave('completed')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={progress.percentage < 100 || isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                  Finalizar Revisão
-                </Button>
+          <>
+            <Separator />
+            <div className="py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">
+                  Progresso: {progress.checked} de {progress.total} itens verificados ({progress.percentage}%)
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSave('draft')}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                    Salvar Rascunho
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSave('in_progress')}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                    Salvar em Andamento
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleSave('completed')}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={progress.percentage < 100 || isSaving}
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                    Finalizar Revisão
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+            <Separator />
+          </>
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6 py-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -299,8 +306,7 @@ export function RevisionEditModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 bg-gray-50 border-t">
+        <DialogFooter className="flex gap-2">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
@@ -328,8 +334,8 @@ export function RevisionEditModal({
             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Finalizar Revisão
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
