@@ -1026,13 +1026,12 @@ export class RevisionsService {
    */
   async getAllMechanicsWorkload(): Promise<any[]> {
     const mechanics = await prisma.admin.findMany({
-      where: {
-        status: 'ACTIVE',
-      },
       select: {
         id: true,
         name: true,
+        email: true,
         role: true,
+        status: true,
       },
     });
 
