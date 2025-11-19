@@ -14,7 +14,7 @@ export const createGuestOrderItemSchema = z.object({
 export const createGuestOrderAddressSchema = z.object({
   street: z.string().min(3),
   number: z.string().min(1),
-  complement: z.string().optional(),
+  complement: z.string().nullable().optional(),
   neighborhood: z.string().min(2),
   city: z.string().min(2),
   state: z.string().min(2).max(2),
