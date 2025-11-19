@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Loader2 } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -188,27 +188,20 @@ export function RevisionEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold">
-                {revision.status === 'DRAFT' ? 'Editar Rascunho' : 'Continuar Revisão'}
-              </DialogTitle>
-              <DialogDescription className="mt-2">
-                {revision.customer?.name} - {revision.vehicle?.brand} {revision.vehicle?.model} ({revision.vehicle?.plate})
-              </DialogDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="text-2xl font-bold">
+            {revision.status === 'DRAFT' ? 'Editar Rascunho' : 'Continuar Revisão'}
+          </DialogTitle>
+          <DialogDescription className="mt-2">
+            {revision.customer?.name} - {revision.vehicle?.brand} {revision.vehicle?.model} ({revision.vehicle?.plate})
+          </DialogDescription>
         </DialogHeader>
 
         {/* Progress */}
         {progress.total > 0 && (
-          <>
-            <Separator />
+          <div className="px-6">
+            <Separator className="my-4" />
             <div className="py-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
@@ -246,11 +239,11 @@ export function RevisionEditModal({
               </div>
             </div>
             <Separator />
-          </>
+          </div>
         )}
 
-        {/* Content */}
-        <div className="space-y-6 py-4">
+        {/* Content - Scrollable Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -306,7 +299,7 @@ export function RevisionEditModal({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="px-6 py-4 border-t bg-gray-50/50 flex-shrink-0 flex gap-2">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>

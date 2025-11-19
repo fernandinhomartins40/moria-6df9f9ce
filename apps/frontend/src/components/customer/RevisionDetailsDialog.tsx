@@ -114,15 +114,15 @@ export function RevisionDetailsDialog({ revision, isOpen, onClose }: RevisionDet
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <FileText className="h-6 w-6 text-moria-orange" />
             Detalhes da Revisão
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <div className="space-y-6">
             {/* Vehicle Info */}
             <Card>
