@@ -278,7 +278,7 @@ export function Promotions() {
                     <p className="text-moria-black/70">Kits promocionais com desconto progressivo</p>
                   </div>
                 </div>
-                {monthlyOffers.length > 0 && (
+                {!loading && monthlyOffers.length > 0 && (
                   <Badge className="bg-moria-black text-gold-accent font-bold text-lg px-4 py-2">
                     ATÉ {Math.max(...monthlyOffers.map(p => p.discount))}% OFF
                   </Badge>
