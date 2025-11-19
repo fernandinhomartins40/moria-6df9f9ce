@@ -17,8 +17,8 @@ export const createGuestOrderAddressSchema = z.object({
   complement: z.string().optional(),
   neighborhood: z.string().min(2),
   city: z.string().min(2),
-  state: z.string().length(2),
-  zipCode: z.string().regex(/^\d{5}-?\d{3}$/),
+  state: z.string().min(2).max(2),
+  zipCode: z.string().min(8).transform(val => val.replace(/\D/g, '')),
   type: z.nativeEnum(AddressType).default(AddressType.HOME),
 });
 

@@ -495,112 +495,213 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <ShoppingCart className="h-5 w-5 text-moria-orange" />
             Criar Novo Pedido
           </DialogTitle>
-          <DialogDescription>
-            Etapa {step} de 4: {
-              step === 1 ? 'Dados do Cliente' :
-              step === 2 ? 'Itens do Pedido' :
-              step === 3 ? 'Endereço de Entrega' :
-              'Pagamento'
-            }
-          </DialogDescription>
+
+          {/* Indicador de progresso visual */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between">
+              {[
+                { num: 1, label: 'Cliente', icon: User },
+                { num: 2, label: 'Itens', icon: Package },
+                { num: 3, label: 'Endereço', icon: MapPin },
+                { num: 4, label: 'Pagamento', icon: CreditCard }
+              ].map((item, index) => (
+                <div key={item.num} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center">
+                    <div className={`
+                      h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all
+                      ${step > item.num
+                        ? 'bg-green-500 text-white'
+                        : step === item.num
+                        ? 'bg-moria-orange text-white ring-2 ring-moria-orange/30'
+                        : 'bg-gray-200 text-gray-500'}
+                    `}>
+                      {step > item.num ? '✓' : item.num}
+                    </div>
+                    <span className={`text-[10px] mt-1 ${step === item.num ? 'font-semibold text-moria-orange' : 'text-muted-foreground'}`}>
+                      {item.label}
+                    </span>
+                  </div>
+                  {index < 3 && (
+                    <div className={`h-0.5 flex-1 mx-1.5 rounded ${step > item.num ? 'bg-green-500' : 'bg-gray-200'}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 pb-6">
+        <ScrollArea className="flex-1 px-6">
+          <div className="py-4 space-y-4">
             {/* ETAPA 1: Cliente */}
             {step === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Buscar Cliente Existente</Label>
-                  <div className="relative mt-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Digite nome, email ou telefone..."
-                      className="pl-10"
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                    />
-                  </div>
-
-                  {isLoadingCustomers && (
-                    <div className="mt-2 text-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    </div>
-                  )}
-
-                  {customerSearch.length >= 2 && !isLoadingCustomers && customers.length > 0 && (
-                    <div className="mt-2 border rounded-lg max-h-48 overflow-y-auto">
-                      {customers.map(customer => (
-                        <button
-                          key={customer.id}
-                          className="w-full p-3 text-left hover:bg-muted flex items-center justify-between border-b last:border-b-0"
-                          onClick={() => handleSelectCustomer(customer)}
-                        >
-                          <div>
-                            <p className="font-medium">{customer.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {customer.email} • {customer.whatsapp || customer.phone || 'Sem telefone'}
-                            </p>
+              <div className="space-y-3">
+                {/* Cliente selecionado - Card de destaque */}
+                {selectedCustomer && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm">
+                          {customerName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-green-800 text-sm">{customerName}</p>
+                            <Badge className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0">
+                              Selecionado
+                            </Badge>
                           </div>
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      ))}
+                          <p className="text-xs text-green-700">{customerEmail} • {customerPhone || 'Sem tel.'}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCustomer(null);
+                          setCustomerName('');
+                          setCustomerEmail('');
+                          setCustomerPhone('');
+                          setUseExistingAddress(false);
+                          setSelectedAddressId('');
+                        }}
+                        className="h-7 w-7 p-0 text-green-700 hover:text-green-900 hover:bg-green-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+                    {selectedCustomer.addresses && selectedCustomer.addresses.length > 0 && (
+                      <p className="text-[10px] text-green-600 mt-1.5 pl-10">
+                        {selectedCustomer.addresses.length} endereço(s) cadastrado(s)
+                      </p>
+                    )}
+                  </div>
+                )}
 
-                <Separator />
-
-                <div>
-                  <Label className="text-lg font-semibold">
-                    {selectedCustomer ? 'Dados do Cliente Selecionado' : 'Dados do Novo Cliente'}
-                  </Label>
-                  {selectedCustomer && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Cliente encontrado no sistema
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
+                {/* Busca de cliente */}
+                {!selectedCustomer && (
                   <div>
-                    <Label htmlFor="customerName">Nome Completo *</Label>
+                    <Label>Buscar Cliente Existente</Label>
+                    <div className="relative mt-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Digite nome, email ou telefone..."
+                        className="pl-10"
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                      />
+                    </div>
+
+                    {isLoadingCustomers && (
+                      <div className="mt-2 text-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        <p className="text-sm text-muted-foreground mt-1">Buscando clientes...</p>
+                      </div>
+                    )}
+
+                    {customerSearch.length >= 2 && !isLoadingCustomers && customers.length > 0 && (
+                      <div className="mt-2 border rounded-lg max-h-48 overflow-y-auto">
+                        {customers.map(customer => (
+                          <button
+                            key={customer.id}
+                            className="w-full p-3 text-left hover:bg-moria-orange/10 hover:border-l-4 hover:border-l-moria-orange flex items-center justify-between border-b last:border-b-0 transition-all"
+                            onClick={() => handleSelectCustomer(customer)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium text-sm">
+                                {customer.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-medium">{customer.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {customer.email} • {customer.whatsapp || customer.phone || 'Sem telefone'}
+                                </p>
+                              </div>
+                            </div>
+                            <Plus className="h-4 w-4 text-moria-orange" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {customerSearch.length >= 2 && !isLoadingCustomers && customers.length === 0 && (
+                      <div className="mt-2 p-4 text-center border rounded-lg bg-gray-50">
+                        <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-muted-foreground">Nenhum cliente encontrado</p>
+                        <p className="text-xs text-muted-foreground">Preencha os dados abaixo para criar um novo</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <Separator className="my-3" />
+
+                {/* Formulário de dados do cliente */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    {selectedCustomer ? (
+                      <>
+                        <User className="h-4 w-4 text-green-600" />
+                        Dados do Cliente
+                      </>
+                    ) : (
+                      <>
+                        <User className="h-4 w-4 text-moria-orange" />
+                        Novo Cliente
+                      </>
+                    )}
+                  </Label>
+                  {/* Indicador de campos preenchidos */}
+                  <div className="flex items-center gap-1">
+                    <div className={`h-1.5 w-1.5 rounded-full ${customerName ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`h-1.5 w-1.5 rounded-full ${customerEmail ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`h-1.5 w-1.5 rounded-full ${customerPhone ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span className="text-[10px] text-muted-foreground ml-1">
+                      {[customerName, customerEmail, customerPhone].filter(Boolean).length}/3
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <Label htmlFor="customerName" className="text-xs">Nome Completo *</Label>
                     <Input
                       id="customerName"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="João Silva"
-                      className="mt-1"
+                      className={`mt-1 h-9 text-sm ${customerName ? 'border-green-300 bg-green-50/30' : ''}`}
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="customerEmail">Email *</Label>
-                    <Input
-                      id="customerEmail"
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="joao@email.com"
-                      className="mt-1"
-                    />
-                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="customerEmail" className="text-xs">Email *</Label>
+                      <Input
+                        id="customerEmail"
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="joao@email.com"
+                        className={`mt-1 h-9 text-sm ${customerEmail ? 'border-green-300 bg-green-50/30' : ''}`}
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="customerPhone">WhatsApp *</Label>
-                    <Input
-                      id="customerPhone"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      className="mt-1"
-                    />
+                    <div>
+                      <Label htmlFor="customerPhone" className="text-xs">WhatsApp *</Label>
+                      <Input
+                        id="customerPhone"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="(11) 99999-9999"
+                        className={`mt-1 h-9 text-sm ${customerPhone ? 'border-green-300 bg-green-50/30' : ''}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -608,57 +709,51 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
             {/* ETAPA 2: Itens */}
             {step === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-lg font-semibold">Adicionar Itens ao Pedido</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Busque e adicione produtos ou serviços ao pedido
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Adicionar Itens</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'itens'} no carrinho
+                  </span>
                 </div>
 
                 <Tabs defaultValue="products" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="products">
-                      <Package className="h-4 w-4 mr-2" />
+                  <TabsList className="grid w-full grid-cols-2 h-8">
+                    <TabsTrigger value="products" className="text-xs">
+                      <Package className="h-3 w-3 mr-1" />
                       Produtos
                     </TabsTrigger>
-                    <TabsTrigger value="services">
-                      <Wrench className="h-4 w-4 mr-2" />
+                    <TabsTrigger value="services" className="text-xs">
+                      <Wrench className="h-3 w-3 mr-1" />
                       Serviços
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="products" className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Buscar produtos por nome ou categoria..."
-                          className="pl-10"
-                          value={productSearch}
-                          onChange={(e) => setProductSearch(e.target.value)}
-                        />
-                      </div>
-                      {!isLoadingProducts && (
-                        <div className="flex items-center justify-between text-sm">
-                          <p className="text-muted-foreground">
-                            {filteredProducts.length} {filteredProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
-                          </p>
-                          {productSearch && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setProductSearch('')}
-                              className="h-7 text-xs"
-                            >
-                              Limpar busca
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                  <TabsContent value="products" className="space-y-2 mt-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                      <Input
+                        placeholder="Buscar produtos..."
+                        className="pl-8 h-8 text-sm"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                      />
                     </div>
+                    {!isLoadingProducts && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{filteredProducts.length} produtos</span>
+                        {productSearch && (
+                          <button
+                            onClick={() => setProductSearch('')}
+                            className="text-moria-orange hover:underline"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    )}
 
-                    <ScrollArea className="h-64 border rounded-lg">
+                    <ScrollArea className="h-44 border rounded-lg">
                       {isLoadingProducts ? (
                         <div className="text-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin mx-auto" />
@@ -740,37 +835,31 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                     </ScrollArea>
                   </TabsContent>
 
-                  <TabsContent value="services" className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Buscar serviços por nome ou categoria..."
-                          className="pl-10"
-                          value={serviceSearch}
-                          onChange={(e) => setServiceSearch(e.target.value)}
-                        />
-                      </div>
-                      {!isLoadingServices && (
-                        <div className="flex items-center justify-between text-sm">
-                          <p className="text-muted-foreground">
-                            {filteredServices.length} {filteredServices.length === 1 ? 'serviço encontrado' : 'serviços encontrados'}
-                          </p>
-                          {serviceSearch && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setServiceSearch('')}
-                              className="h-7 text-xs"
-                            >
-                              Limpar busca
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                  <TabsContent value="services" className="space-y-2 mt-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                      <Input
+                        placeholder="Buscar serviços..."
+                        className="pl-8 h-8 text-sm"
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                      />
                     </div>
+                    {!isLoadingServices && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{filteredServices.length} serviços</span>
+                        {serviceSearch && (
+                          <button
+                            onClick={() => setServiceSearch('')}
+                            className="text-moria-orange hover:underline"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    )}
 
-                    <ScrollArea className="h-64 border rounded-lg">
+                    <ScrollArea className="h-44 border rounded-lg">
                       {isLoadingServices ? (
                         <div className="text-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin mx-auto" />
@@ -833,45 +922,41 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                   </TabsContent>
                 </Tabs>
 
-                <Separator />
+                <Separator className="my-3" />
 
-                <div>
-                  <Label className="text-lg font-semibold">
-                    Itens Selecionados ({selectedItems.length})
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm font-semibold">
+                    Carrinho ({selectedItems.length})
                   </Label>
+                  {selectedItems.length > 0 && (
+                    <span className="text-sm font-bold text-moria-orange">
+                      {formatCurrency(calculateSubtotal())}
+                    </span>
+                  )}
                 </div>
 
                 {selectedItems.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedItems.map(item => (
-                      <div key={item.id} className="p-3 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {item.type === 'PRODUCT' ? '📦 Produto' : '🔧 Serviço'} •
+                  <ScrollArea className="h-32 border rounded-lg">
+                    <div className="p-2 space-y-1.5">
+                      {selectedItems.map(item => (
+                        <div key={item.id} className="p-2 bg-gray-50 rounded flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">
                               {formatCurrency(item.price)} cada
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleQuantityChange(item.id, -1)}
                               disabled={item.quantity <= 1}
+                              className="h-6 w-6 p-0"
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="h-2.5 w-2.5" />
                             </Button>
-                            <span className="w-12 text-center font-medium">
+                            <span className="w-6 text-center text-sm font-medium">
                               {item.quantity}
                             </span>
                             <Button
@@ -879,24 +964,30 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                               size="sm"
                               onClick={() => handleQuantityChange(item.id, 1)}
                               disabled={item.type === 'PRODUCT' && item.stock ? item.quantity >= item.stock : false}
+                              className="h-6 w-6 p-0"
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-2.5 w-2.5" />
                             </Button>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Subtotal</p>
-                            <p className="font-bold text-lg">
-                              {formatCurrency(item.price * item.quantity)}
-                            </p>
-                          </div>
+                          <span className="font-bold text-sm w-20 text-right">
+                            {formatCurrency(item.price * item.quantity)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                    <p>Nenhum item adicionado ao pedido</p>
+                  <div className="text-center py-4 text-muted-foreground border border-dashed rounded-lg">
+                    <ShoppingCart className="h-8 w-8 mx-auto mb-1 opacity-20" />
+                    <p className="text-sm">Carrinho vazio</p>
                   </div>
                 )}
               </div>
@@ -904,157 +995,155 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
             {/* ETAPA 3: Endereço */}
             {step === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-lg font-semibold">Endereço de Entrega</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCustomer?.addresses && selectedCustomer.addresses.length > 0
-                      ? `${customerName} possui ${selectedCustomer.addresses.length} endereço(s) cadastrado(s)`
-                      : `${customerName} não possui endereços cadastrados`}
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Endereço de Entrega</Label>
+                  {selectedCustomer?.addresses && selectedCustomer.addresses.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {selectedCustomer.addresses.length} cadastrado(s)
+                    </span>
+                  )}
                 </div>
 
                 {selectedCustomer?.addresses && selectedCustomer.addresses.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Selecionar Endereço</Label>
-                    <Select
-                      value={useExistingAddress ? selectedAddressId : 'new'}
-                      onValueChange={(value) => {
-                        if (value === 'new') {
-                          setUseExistingAddress(false);
-                          setSelectedAddressId('');
-                        } else {
-                          setUseExistingAddress(true);
-                          setSelectedAddressId(value);
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um endereço" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedCustomer.addresses.map(addr => (
-                          <SelectItem key={addr.id} value={addr.id}>
-                            {addr.street}, {addr.number} - {addr.neighborhood}, {addr.city}/{addr.state}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="new">+ Cadastrar Novo Endereço</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={useExistingAddress ? selectedAddressId : 'new'}
+                    onValueChange={(value) => {
+                      if (value === 'new') {
+                        setUseExistingAddress(false);
+                        setSelectedAddressId('');
+                      } else {
+                        setUseExistingAddress(true);
+                        setSelectedAddressId(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Selecione um endereço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCustomer.addresses.map(addr => (
+                        <SelectItem key={addr.id} value={addr.id} className="text-sm">
+                          {addr.street}, {addr.number} - {addr.city}/{addr.state}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new" className="text-sm">+ Novo Endereço</SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
 
                 {(!selectedCustomer?.addresses || selectedCustomer.addresses.length === 0) && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      Este cliente não possui endereços cadastrados. Preencha os dados abaixo para criar o pedido.
-                    </p>
+                  <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                    Cliente sem endereço cadastrado. Preencha abaixo.
                   </div>
                 )}
 
                 {(!useExistingAddress || !selectedCustomer?.addresses || selectedCustomer.addresses.length === 0) && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="zipCode">CEP *</Label>
-                      <div className="flex gap-2 mt-1">
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor="zipCode" className="text-xs">CEP *</Label>
                         <Input
                           id="zipCode"
                           value={address.zipCode}
                           onChange={(e) => setAddress({ ...address, zipCode: e.target.value })}
                           placeholder="00000-000"
                           maxLength={9}
+                          className="mt-1 h-9 text-sm"
                         />
+                      </div>
+                      <div className="flex items-end">
                         <Button
                           variant="outline"
                           onClick={() => searchCep(address.zipCode)}
                           disabled={isSearchingCep}
+                          className="h-9"
                         >
                           {isSearchingCep ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <Search className="h-4 w-4" />
+                            <Search className="h-3.5 w-3.5" />
                           )}
                         </Button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="col-span-2">
-                        <Label htmlFor="street">Rua *</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="col-span-3">
+                        <Label htmlFor="street" className="text-xs">Rua *</Label>
                         <Input
                           id="street"
                           value={address.street}
                           onChange={(e) => setAddress({ ...address, street: e.target.value })}
-                          className="mt-1"
+                          className="mt-1 h-9 text-sm"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="number">Número *</Label>
+                        <Label htmlFor="number" className="text-xs">Nº *</Label>
                         <Input
                           id="number"
                           value={address.number}
                           onChange={(e) => setAddress({ ...address, number: e.target.value })}
-                          className="mt-1"
+                          className="mt-1 h-9 text-sm"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="complement">Complemento</Label>
-                      <Input
-                        id="complement"
-                        value={address.complement}
-                        onChange={(e) => setAddress({ ...address, complement: e.target.value })}
-                        placeholder="Apto, bloco, etc..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label htmlFor="neighborhood">Bairro *</Label>
+                        <Label htmlFor="complement" className="text-xs">Complemento</Label>
+                        <Input
+                          id="complement"
+                          value={address.complement}
+                          onChange={(e) => setAddress({ ...address, complement: e.target.value })}
+                          placeholder="Apto, bloco..."
+                          className="mt-1 h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="neighborhood" className="text-xs">Bairro *</Label>
                         <Input
                           id="neighborhood"
                           value={address.neighborhood}
                           onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="city">Cidade *</Label>
-                        <Input
-                          id="city"
-                          value={address.city}
-                          onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                          className="mt-1"
+                          className="mt-1 h-9 text-sm"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <Label htmlFor="state">Estado *</Label>
+                        <Label htmlFor="city" className="text-xs">Cidade *</Label>
+                        <Input
+                          id="city"
+                          value={address.city}
+                          onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                          className="mt-1 h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="state" className="text-xs">UF *</Label>
                         <Input
                           id="state"
                           value={address.state}
                           onChange={(e) => setAddress({ ...address, state: e.target.value.toUpperCase() })}
                           placeholder="SP"
                           maxLength={2}
-                          className="mt-1"
+                          className="mt-1 h-9 text-sm"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="addressType">Tipo</Label>
+                        <Label htmlFor="addressType" className="text-xs">Tipo</Label>
                         <Select
                           value={address.type}
                           onValueChange={(value: 'HOME' | 'WORK' | 'OTHER') => setAddress({ ...address, type: value })}
                         >
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger className="mt-1 h-9 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="HOME">Residencial</SelectItem>
-                            <SelectItem value="WORK">Comercial</SelectItem>
+                            <SelectItem value="HOME">Casa</SelectItem>
+                            <SelectItem value="WORK">Trabalho</SelectItem>
                             <SelectItem value="OTHER">Outro</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1070,9 +1159,9 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                         />
                         <label
                           htmlFor="saveAddress"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className="text-xs leading-none"
                         >
-                          Salvar este endereço no cadastro do cliente
+                          Salvar endereço no cadastro do cliente
                         </label>
                       </div>
                     )}
@@ -1083,71 +1172,114 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
             {/* ETAPA 4: Pagamento */}
             {step === 4 && (
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-lg font-semibold">Forma de Pagamento *</Label>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    {[
-                      { value: 'DINHEIRO', label: 'Dinheiro' },
-                      { value: 'CARTAO_CREDITO', label: 'Cartão de Crédito' },
-                      { value: 'CARTAO_DEBITO', label: 'Cartão de Débito' },
-                      { value: 'PIX', label: 'Pix' },
-                      { value: 'TRANSFERENCIA', label: 'Transferência' },
-                      { value: 'BOLETO', label: 'Boleto' }
-                    ].map(method => (
-                      <Button
-                        key={method.value}
-                        variant={paymentMethod === method.value ? 'default' : 'outline'}
-                        className="w-full"
-                        onClick={() => setPaymentMethod(method.value)}
-                      >
-                        {method.label}
-                      </Button>
-                    ))}
-                  </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Forma de Pagamento *</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'DINHEIRO', label: 'Dinheiro', icon: '💵' },
+                    { value: 'CARTAO_CREDITO', label: 'Crédito', icon: '💳' },
+                    { value: 'CARTAO_DEBITO', label: 'Débito', icon: '💳' },
+                    { value: 'PIX', label: 'Pix', icon: '📱' },
+                    { value: 'TRANSFERENCIA', label: 'Transf.', icon: '🏦' },
+                    { value: 'BOLETO', label: 'Boleto', icon: '📄' }
+                  ].map(method => (
+                    <Button
+                      key={method.value}
+                      variant={paymentMethod === method.value ? 'default' : 'outline'}
+                      className={`w-full h-auto py-2 flex flex-col items-center gap-0.5 transition-all ${
+                        paymentMethod === method.value
+                          ? 'bg-moria-orange hover:bg-orange-600 ring-1 ring-moria-orange/30'
+                          : 'hover:border-moria-orange hover:bg-moria-orange/5'
+                      }`}
+                      onClick={() => setPaymentMethod(method.value)}
+                    >
+                      <span className="text-sm">{method.icon}</span>
+                      <span className="text-[10px]">{method.label}</span>
+                    </Button>
+                  ))}
                 </div>
 
                 <div>
-                  <Label htmlFor="couponCode">Cupom de Desconto (opcional)</Label>
+                  <Label htmlFor="couponCode" className="text-xs">Cupom (opcional)</Label>
                   <Input
                     id="couponCode"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="DESCONTO10"
-                    className="mt-1"
+                    className="mt-1 h-9 text-sm"
                   />
                 </div>
 
-                <Separator />
+                <Separator className="my-2" />
 
-                <div className="bg-muted p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg">Resumo do Pedido</h3>
+                {/* Resumo completo do pedido */}
+                <div className="bg-gray-50 p-3 rounded-lg border">
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-1.5">
+                    <ShoppingCart className="h-4 w-4" />
+                    Resumo do Pedido
+                  </h3>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cliente:</span>
-                      <span className="font-medium">{customerName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Itens:</span>
-                      <span className="font-medium">{selectedItems.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pagamento:</span>
-                      <span className="font-medium">
-                        {paymentMethod ?
-                          paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) :
-                          'Não selecionado'}
-                      </span>
+                    {/* Cliente e Endereço */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 bg-white rounded text-xs">
+                        <p className="text-[10px] text-muted-foreground">Cliente</p>
+                        <p className="font-medium truncate">{customerName}</p>
+                      </div>
+                      <div className="p-2 bg-white rounded text-xs">
+                        <p className="text-[10px] text-muted-foreground">Endereço</p>
+                        {useExistingAddress && selectedCustomer?.addresses ? (
+                          (() => {
+                            const addr = selectedCustomer.addresses.find(a => a.id === selectedAddressId);
+                            return addr ? (
+                              <p className="truncate">{addr.city}/{addr.state}</p>
+                            ) : null;
+                          })()
+                        ) : (
+                          <p className="truncate">{address.city}/{address.state}</p>
+                        )}
+                      </div>
                     </div>
 
-                    <Separator className="my-2" />
+                    {/* Itens */}
+                    <div className="p-2 bg-white rounded">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] text-muted-foreground">
+                          {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'itens'}
+                        </p>
+                      </div>
+                      <ScrollArea className="h-16">
+                        <div className="space-y-0.5">
+                          {selectedItems.map(item => (
+                            <div key={item.id} className="flex justify-between text-xs">
+                              <span className="truncate flex-1">
+                                {item.quantity}x {item.name}
+                              </span>
+                              <span className="font-medium ml-2">
+                                {formatCurrency(item.price * item.quantity)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold">Total:</span>
-                      <span className="text-2xl font-bold text-moria-orange">
-                        {formatCurrency(calculateSubtotal())}
-                      </span>
+                    {/* Pagamento e Total */}
+                    <div className="flex items-center justify-between p-2 bg-moria-orange/10 rounded">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Pagamento</p>
+                        <p className={`text-xs font-medium ${paymentMethod ? 'text-moria-orange' : 'text-red-500'}`}>
+                          {paymentMethod ?
+                            paymentMethod.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
+                            'Selecione'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground">Total</p>
+                        <span className="text-lg font-bold text-moria-orange">
+                          {formatCurrency(calculateSubtotal())}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1157,32 +1289,34 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
         </ScrollArea>
 
         {/* Botões de Navegação */}
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50/50">
           <Button
             variant="outline"
             onClick={step === 1 ? handleClose : handlePreviousStep}
+            size="sm"
           >
             {step === 1 ? 'Cancelar' : 'Voltar'}
           </Button>
 
           {step < 4 ? (
-            <Button onClick={handleNextStep}>
-              Próxima Etapa
+            <Button onClick={handleNextStep} size="sm">
+              Próximo
             </Button>
           ) : (
             <Button
               onClick={handleCreateOrder}
               disabled={isCreating}
               className="bg-moria-orange hover:bg-orange-600"
+              size="sm"
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando Pedido...
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Criando...
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
                   Criar Pedido
                 </>
               )}

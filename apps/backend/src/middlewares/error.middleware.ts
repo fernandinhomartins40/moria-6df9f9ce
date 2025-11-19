@@ -12,13 +12,16 @@ export class ErrorMiddleware {
     res: Response,
     next: NextFunction
   ): void {
-    // Log error
+    // Log error with full details
     logger.error('Error occurred:', {
+      name: error.name,
       message: error.message,
       stack: error.stack,
       url: req.url,
       method: req.method,
+      body: req.body,
       ip: req.ip,
+      headers: req.headers,
     });
 
     // Handle ApiError
@@ -46,7 +49,7 @@ export class ErrorMiddleware {
 
     // Handle Prisma errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      const prismaError = this.handlePrismaError(error);
+      const prismaError = ErrorMiddleware.handlePrismaError(error);
       res.status(prismaError.statusCode).json({
         success: false,
         error: prismaError.message,
@@ -69,7 +72,12 @@ export class ErrorMiddleware {
       error: environment.isDevelopment
         ? error.message
         : 'Internal server error',
-      ...(environment.isDevelopment && { stack: error.stack }),
+      // Include error name in production for better debugging
+      errorType: error.name,
+      ...(environment.isDevelopment && {
+        stack: error.stack,
+        fullError: error
+      }),
     });
   }
 

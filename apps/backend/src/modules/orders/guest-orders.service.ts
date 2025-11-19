@@ -16,34 +16,58 @@ export class GuestOrdersService {
   }) {
     const cleanPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
 
-    // Check if customer exists by email OR phone
-    let customer = await prisma.customer.findFirst({
-      where: {
-        OR: [
-          { email: data.email },
-          { phone: cleanPhone },
-        ],
-      },
+    // First, try to find customer by email (primary identifier)
+    let customer = await prisma.customer.findUnique({
+      where: { email: data.email },
     });
 
-    // If customer exists, update info if needed
+    // If not found by email, try to find by phone
+    if (!customer && cleanPhone) {
+      customer = await prisma.customer.findFirst({
+        where: { phone: cleanPhone },
+      });
+    }
+
+    // If customer exists, update name and phone only (not email to avoid conflicts)
     if (customer) {
-      // Update customer info if any field is different
+      // Only update if the customer was found by email (safe to update phone)
+      // or if we need to update the name
       const needsUpdate =
         customer.name !== data.name ||
-        customer.email !== data.email ||
         customer.phone !== cleanPhone;
 
-      if (needsUpdate) {
+      if (needsUpdate && customer.email === data.email) {
+        // Safe to update - found by email
         customer = await prisma.customer.update({
           where: { id: customer.id },
           data: {
             name: data.name,
-            email: data.email,
             phone: cleanPhone,
           },
         });
         logger.info(`Customer updated: ${customer.id} (${customer.email}) - Phone: ${cleanPhone}`);
+      } else if (needsUpdate && customer.email !== data.email) {
+        // Found by phone but email is different - check if email is available
+        const emailExists = await prisma.customer.findUnique({
+          where: { email: data.email },
+        });
+
+        if (emailExists) {
+          // Email belongs to another customer - use that customer instead
+          customer = emailExists;
+          logger.info(`Using existing customer by email: ${customer.id} (${customer.email})`);
+        } else {
+          // Email is available - update the customer found by phone
+          customer = await prisma.customer.update({
+            where: { id: customer.id },
+            data: {
+              name: data.name,
+              email: data.email,
+              phone: cleanPhone,
+            },
+          });
+          logger.info(`Customer updated with new email: ${customer.id} (${customer.email}) - Phone: ${cleanPhone}`);
+        }
       } else {
         logger.info(`Existing customer found: ${customer.id} (${customer.email}) - Phone: ${cleanPhone}`);
       }
