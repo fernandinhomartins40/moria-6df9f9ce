@@ -15,7 +15,7 @@ interface Revision {
   vehicleModel: string;
   vehiclePlate: string;
   vehicleYear: number;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   estimatedCompletionDate: string;
   scheduledDate: string;
@@ -49,14 +49,14 @@ const PRIORITY_LABELS = {
 };
 
 const STATUS_COLORS = {
-  PENDING: 'yellow',
+  DRAFT: 'yellow',
   IN_PROGRESS: 'blue',
   COMPLETED: 'green',
   CANCELLED: 'red',
 };
 
 const STATUS_LABELS = {
-  PENDING: 'Pendente',
+  DRAFT: 'Pendente',
   IN_PROGRESS: 'Em Andamento',
   COMPLETED: 'Concluída',
   CANCELLED: 'Cancelada',
@@ -84,11 +84,11 @@ export default function MechanicRevisionsView() {
         limit: 100,
       });
 
-      const myRevisions = response.data.revisions || [];
+      const myRevisions = response.data || [];
       setRevisions(myRevisions);
 
       // Calcular estatísticas
-      const pending = myRevisions.filter((r: Revision) => r.status === 'PENDING').length;
+      const pending = myRevisions.filter((r: Revision) => r.status === 'DRAFT').length;
       const inProgress = myRevisions.filter((r: Revision) => r.status === 'IN_PROGRESS').length;
       const today = new Date().toDateString();
       const completedToday = myRevisions.filter(
@@ -124,7 +124,7 @@ export default function MechanicRevisionsView() {
     fetchMyRevisions();
   };
 
-  const pendingRevisions = revisions.filter((r) => r.status === 'PENDING');
+  const pendingRevisions = revisions.filter((r) => r.status === 'DRAFT');
   const inProgressRevisions = revisions.filter((r) => r.status === 'IN_PROGRESS');
   const completedRevisions = revisions.filter((r) => r.status === 'COMPLETED');
 
