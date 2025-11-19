@@ -140,6 +140,8 @@ export function AdvancedFilters({
     if (!products.length) return { min: 0, max: 1000 };
 
     const prices = products.map(p => p.salePrice || p.price || 0).filter(p => p > 0);
+    if (!prices.length) return { min: 0, max: 1000 };
+
     return {
       min: Math.floor(Math.min(...prices)),
       max: Math.ceil(Math.max(...prices))
