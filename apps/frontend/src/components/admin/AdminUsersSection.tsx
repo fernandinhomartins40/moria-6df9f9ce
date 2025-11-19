@@ -62,12 +62,13 @@ export default function AdminUsersSection() {
       if (filterStatus) filters.status = filterStatus;
 
       const response = await adminService.getAdminUsers(filters);
-      setUsers(response.data.admins);
+      setUsers(response.data || []);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error('Erro ao carregar usuários', {
         description: err.response?.data?.message || 'Erro desconhecido',
       });
+      setUsers([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
