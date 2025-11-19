@@ -18,19 +18,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_PASSWORD }}" > ~/.ssh/vps_password
+          chmod 600 ~/.ssh/vps_password
+
       - name: Sync code to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: moriapecas.com.br
-          username: root
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: 22
-          source: "."
-          target: "/root/moria"
-          rm: false
-          strip_components: 0
-          overwrite: true
-          timeout: 300s
+        run: |
+          # Instalar sshpass para autenticação com senha
+          sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+          # Criar diretório no VPS
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "mkdir -p /root/moria"
+
+          # Verificar estrutura do projeto antes do rsync
+          echo "=== Verificando estrutura localmente antes do rsync ==="
+          ls -la apps/backend/src/modules/ | head -20
+          ls -la apps/backend/src/middleware/ || echo "⚠️ middleware não encontrado"
+
+          # Sincronizar código via rsync
+          sshpass -f ~/.ssh/vps_password rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='*.db' \
+            --exclude='*.db-*' \
+            --exclude='apps/backend/uploads' \
+            --exclude='.env' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ root@moriapecas.com.br:/root/moria/
+
+          # Verificar se código foi copiado
+          echo "=== Verificando estrutura na VPS após rsync ==="
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@moriapecas.com.br "ls -la /root/moria/apps/backend/src/modules/ | head -20"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
