@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Loader2, Power, PowerOff } from 'lucide-react';
 import { toast } from 'sonner';
 import adminService from '@/api/adminService';
 import { useAdminPermissions } from '@/hooks/useAdminPermissions';
@@ -110,6 +110,26 @@ export default function AdminUsersSection() {
     fetchUsers();
   };
 
+  const handleToggleStatus = async (userId: string, currentStatus: string, userName: string) => {
+    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const action = newStatus === 'ACTIVE' ? 'ativar' : 'desativar';
+
+    if (!window.confirm(`Tem certeza que deseja ${action} o usuário ${userName}?`)) {
+      return;
+    }
+
+    try {
+      await adminService.updateAdminUser(userId, { status: newStatus });
+      toast.success(`Usuário ${action === 'ativar' ? 'ativado' : 'desativado'} com sucesso`);
+      fetchUsers();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(`Erro ao ${action} usuário`, {
+        description: err.response?.data?.message || 'Erro desconhecido',
+      });
+    }
+  };
+
   if (!permissions.canManageAdmins) {
     return (
       <div className="p-8 text-center">
@@ -215,13 +235,27 @@ export default function AdminUsersSection() {
                   <TableCell>
                     <div className="flex gap-2 justify-center">
                       {permissions.canUpdateAdmins && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleStatus(user.id, user.status, user.name)}
+                            title={user.status === 'ACTIVE' ? 'Desativar usuário' : 'Ativar usuário'}
+                          >
+                            {user.status === 'ACTIVE' ? (
+                              <PowerOff className="h-4 w-4 text-orange-500" />
+                            ) : (
+                              <Power className="h-4 w-4 text-green-500" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                       {permissions.canDeleteAdmins && (
                         <Button

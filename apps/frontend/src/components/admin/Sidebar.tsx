@@ -16,11 +16,13 @@ import {
   Wrench,
   Gift,
   ClipboardCheck,
-  User
+  User,
+  UserCog
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 interface SidebarProps {
   activeTab: string;
@@ -38,12 +40,14 @@ const menuItems = [
   { id: "coupons", label: "Cupons", icon: Gift },
   { id: "promotions", label: "Promoções", icon: TrendingUp },
   { id: "reports", label: "Relatórios", icon: BarChart3 },
+  { id: "users", label: "Usuários", icon: UserCog, requiresPermission: 'canManageAdmins' },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { admin, logout } = useAdminAuth();
+  const permissions = useAdminPermissions();
 
   const handleLogout = () => {
     logout();
@@ -108,17 +112,22 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
+          // Filter menu items by permissions
+          if (item.requiresPermission && !(permissions as any)[item.requiresPermission]) {
+            return null;
+          }
+
           const IconComponent = item.icon;
           const isActive = activeTab === item.id;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
                 "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
-                isActive 
-                  ? "bg-moria-orange text-white shadow-lg" 
+                isActive
+                  ? "bg-moria-orange text-white shadow-lg"
                   : "text-gray-300 hover:bg-gray-700 hover:text-white",
                 isCollapsed && "justify-center px-2"
               )}
@@ -127,7 +136,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               {!isCollapsed && (
                 <span className="font-medium">{item.label}</span>
               )}
-              
+
               {isActive && !isCollapsed && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full" />
               )}

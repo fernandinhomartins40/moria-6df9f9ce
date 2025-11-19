@@ -43,6 +43,7 @@ function getPageTitle(tab: string): string {
     coupons: "Cupons",
     promotions: "Promoções",
     reports: "Relatórios",
+    users: "Gestão de Usuários",
     settings: "Configurações"
   };
   return titles[tab] || "Dashboard";
@@ -60,6 +61,7 @@ function getPageDescription(tab: string): string {
     coupons: "Crie e gerencie cupons de desconto para os clientes",
     promotions: "Configure ofertas especiais e campanhas",
     reports: "Relatórios de vendas e análises detalhadas",
+    users: "Gerencie usuários administrativos, mecânicos e permissões do sistema",
     settings: "Configurações do sistema e preferências"
   };
   return descriptions[tab] || "Painel administrativo da Moria Peças e Serviços";
