@@ -15,6 +15,7 @@ interface UseServicesResult {
     limit?: number;
     category?: string;
     search?: string;
+    status?: string;
   }) => Promise<void>;
   refreshServices: () => Promise<void>;
 }
@@ -32,10 +33,11 @@ export const useServices = (): UseServicesResult => {
     limit?: number;
     category?: string;
     search?: string;
+    status?: string;
   }) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await serviceService.getServices(params);
       setServices(response.services);
