@@ -84,7 +84,7 @@ export default function MechanicPanel() {
         limit: 100,
       });
 
-      const myRevisions = response.data.revisions;
+      const myRevisions = response.data.revisions || [];
       setRevisions(myRevisions);
 
       // Calcular estatísticas
@@ -109,6 +109,8 @@ export default function MechanicPanel() {
       toast.error('Erro ao carregar revisões', {
         description: err.response?.data?.message || 'Erro desconhecido',
       });
+      // Set empty array on error to prevent undefined filter errors
+      setRevisions([]);
     } finally {
       setLoading(false);
     }
