@@ -19,7 +19,7 @@ interface AdminAuthContextType {
   admin: Admin | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; redirectTo?: string }>;
   logout: () => void;
   hasRole: (role: string | string[]) => boolean;
   hasMinRole: (minRole: string) => boolean;
@@ -100,13 +100,18 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         // O token agora é enviado apenas via httpOnly cookie pelo backend
         // Não precisamos mais armazenar no localStorage (segurança contra XSS)
 
+        const adminData = data.data.admin;
+
         setState({
-          admin: data.data.admin,
+          admin: adminData,
           isAuthenticated: true,
           isLoading: false,
         });
 
-        return { success: true };
+        // Determine redirect based on role
+        const redirectTo = adminData.role === 'STAFF' ? '/mechanic-panel' : '/store-panel';
+
+        return { success: true, redirectTo };
       } else {
         setState(prev => ({ ...prev, isLoading: false }));
         return { success: false, error: data.error || 'Falha no login' };

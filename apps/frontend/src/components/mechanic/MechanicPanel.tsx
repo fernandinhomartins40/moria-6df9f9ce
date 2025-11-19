@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import adminService from '@/api/adminService';
 import MechanicRevisionCard from './MechanicRevisionCard';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ export default function MechanicPanel() {
     total: 0,
   });
 
-  const { admin } = useAuth();
+  const { admin } = useAdminAuth();
 
   const fetchMyRevisions = async () => {
     try {

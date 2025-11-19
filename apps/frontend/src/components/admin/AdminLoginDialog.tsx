@@ -33,12 +33,13 @@ export function AdminLoginDialog() {
         description: result.error || "Erro ao fazer login. Verifique suas credenciais.",
       });
     } else {
-      // Login bem-sucedido, navegar para o painel do lojista
+      // Login bem-sucedido, navegar para o painel apropriado baseado no role
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao painel administrativo.",
       });
-      navigate("/store-panel");
+      // Redireciona para a rota apropriada baseada no role do usuário
+      navigate(result.redirectTo || "/store-panel");
     }
   };
 

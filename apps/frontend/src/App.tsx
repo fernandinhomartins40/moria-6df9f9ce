@@ -11,6 +11,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import StorePanel from "./pages/StorePanel";
+import MechanicPanelPage from "./pages/MechanicPanelPage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import CustomerPanel from "./pages/CustomerPanel";
@@ -36,6 +37,7 @@ const App = () => (
                     <Route path="/customer" element={<CustomerPanel />} />
                     <Route path="/my-account" element={<MyAccount />} />
                     <Route path="/store-panel" element={<StorePanel />} />
+                    <Route path="/mechanic-panel" element={<MechanicPanelPage />} />
                     <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
