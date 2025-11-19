@@ -37,7 +37,11 @@
       "Bash(git log:*)",
       "Bash(find:*)",
       "Bash(del NUL)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git config:*)",
+      "Bash(GIT_CURL_VERBOSE=1 GIT_TRACE=1 git push:*)",
+      "Bash(nul)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []
