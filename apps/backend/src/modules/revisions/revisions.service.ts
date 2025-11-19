@@ -14,11 +14,13 @@ export interface RevisionFilters {
   dateTo?: Date;
   page?: number;
   limit?: number;
+  mechanicId?: string; // ✅ NEW: Filter by assigned mechanic
 }
 
 export class RevisionsService {
   /**
    * Get all revisions (Admin) - without customer filter unless specified
+   * ✅ SECURITY FIX: Supports filtering by mechanicId for STAFF role
    */
   async getAllRevisions(
     filters: RevisionFilters = {}
@@ -29,6 +31,11 @@ export class RevisionsService {
     });
 
     const where: any = {};
+
+    // ✅ NEW: Filter by assigned mechanic (for STAFF role)
+    if (filters.mechanicId) {
+      where.assignedMechanicId = filters.mechanicId;
+    }
 
     if (filters.customerId) {
       where.customerId = filters.customerId;
@@ -450,8 +457,13 @@ export class RevisionsService {
 
   /**
    * Get revision by ID (Admin - no customer check)
+   * ✅ SECURITY FIX: STAFF can only access their own assigned revisions
    */
-  async getRevisionByIdAdmin(id: string): Promise<Revision> {
+  async getRevisionByIdAdmin(
+    id: string,
+    adminRole?: string,
+    adminId?: string
+  ): Promise<Revision> {
     const revision = await prisma.revision.findUnique({
       where: { id },
       include: {
@@ -479,15 +491,26 @@ export class RevisionsService {
       throw ApiError.notFound('Revision not found');
     }
 
+    // ✅ SECURITY FIX: STAFF can only access their own revisions
+    if (
+      adminRole === 'STAFF' &&
+      revision.assignedMechanicId !== adminId
+    ) {
+      throw ApiError.forbidden('You can only access your own assigned revisions');
+    }
+
     return revision;
   }
 
   /**
    * Update revision (Admin - no customer check)
+   * ✅ SECURITY FIX: STAFF can only update their own assigned revisions
    */
   async updateRevisionAdmin(
     id: string,
-    dto: UpdateRevisionDto
+    dto: UpdateRevisionDto,
+    adminRole?: string,
+    adminId?: string
   ): Promise<Revision> {
     const revision = await prisma.revision.findUnique({
       where: { id },
@@ -495,6 +518,14 @@ export class RevisionsService {
 
     if (!revision) {
       throw ApiError.notFound('Revision not found');
+    }
+
+    // ✅ SECURITY FIX: STAFF can only update their own revisions
+    if (
+      adminRole === 'STAFF' &&
+      revision.assignedMechanicId !== adminId
+    ) {
+      throw ApiError.forbidden('You can only update your own assigned revisions');
     }
 
     return prisma.revision.update({

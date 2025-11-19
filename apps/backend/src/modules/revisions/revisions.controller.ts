@@ -14,6 +14,7 @@ export class RevisionsController {
   /**
    * GET /revisions
    * Get all revisions (Admin only - removes customer filter)
+   * ✅ SECURITY FIX: STAFF (mechanics) only see their assigned revisions
    */
   getRevisions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -22,6 +23,11 @@ export class RevisionsController {
       }
 
       const filters: any = {};
+
+      // ✅ CRITICAL SECURITY FIX: Filter by mechanic for STAFF role
+      if (req.admin.role === 'STAFF') {
+        filters.mechanicId = req.admin.adminId;
+      }
 
       // Allow filtering by customer
       if (req.query.customerId) {
@@ -67,6 +73,7 @@ export class RevisionsController {
   /**
    * GET /revisions/:id
    * Get revision by ID (Admin)
+   * ✅ SECURITY FIX: Validate ownership for STAFF
    */
   getRevisionById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -74,7 +81,11 @@ export class RevisionsController {
         throw new Error('Admin not authenticated');
       }
 
-      const revision = await this.revisionsService.getRevisionByIdAdmin(req.params.id);
+      const revision = await this.revisionsService.getRevisionByIdAdmin(
+        req.params.id,
+        req.admin.role,
+        req.admin.adminId
+      );
 
       res.status(200).json({
         success: true,
@@ -113,6 +124,7 @@ export class RevisionsController {
   /**
    * PUT /revisions/:id
    * Update revision (Admin)
+   * ✅ SECURITY FIX: Validate ownership for STAFF
    */
   updateRevision = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -123,7 +135,9 @@ export class RevisionsController {
       const dto = updateRevisionSchema.parse(req.body);
       const revision = await this.revisionsService.updateRevisionAdmin(
         req.params.id,
-        dto
+        dto,
+        req.admin.role,
+        req.admin.adminId
       );
 
       res.status(200).json({

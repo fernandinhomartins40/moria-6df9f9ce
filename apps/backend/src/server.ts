@@ -3,6 +3,7 @@ import { environment } from '@config/environment.js';
 import { connectDatabase, disconnectDatabase } from '@config/database.js';
 import { logger } from '@shared/utils/logger.util.js';
 import { validateEnvironment } from '@config/validate-env.js';
+import { setupPrismaRLS } from '@middlewares/prisma-rls.middleware.js';
 
 async function bootstrap(): Promise<void> {
   try {
@@ -11,6 +12,10 @@ async function bootstrap(): Promise<void> {
 
     // Connect to database
     await connectDatabase();
+
+    // Setup Prisma Row-Level Security middleware
+    await setupPrismaRLS();
+    logger.info('✅ Prisma RLS middleware initialized');
 
     // Create Express app
     const app = createApp();

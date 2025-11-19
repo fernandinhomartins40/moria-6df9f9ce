@@ -1,9 +1,10 @@
-import { Admin, AdminStatus } from '@prisma/client';
+import { Admin, AdminStatus, AdminRole } from '@prisma/client';
 import { prisma } from '@config/database.js';
 import { HashUtil } from '@shared/utils/hash.util.js';
 import { JwtUtil } from '@shared/utils/jwt.util.js';
 import { ApiError } from '@shared/utils/error.util.js';
 import { AdminLoginDto } from './dto/admin-login.dto.js';
+import { CreateAdminDto } from './dto/create-admin.dto.js';
 import { logger } from '@shared/utils/logger.util.js';
 
 export interface AdminAuthResponse {
@@ -114,5 +115,256 @@ export class AdminAuthService {
 
     const { password, ...adminWithoutPassword } = admin;
     return adminWithoutPassword;
+  }
+
+  /**
+   * Create new admin user
+   * Only ADMIN and SUPER_ADMIN can create new admin users
+   * SUPER_ADMIN can create any role, ADMIN cannot create SUPER_ADMIN
+   */
+  async createAdmin(
+    creatorAdminId: string,
+    dto: CreateAdminDto
+  ): Promise<Omit<Admin, 'password'>> {
+    try {
+      logger.info(`Admin creation attempt by: ${creatorAdminId}`);
+
+      // 1. Verificar permissões do criador
+      const creator = await prisma.admin.findUnique({
+        where: { id: creatorAdminId },
+      });
+
+      if (!creator) {
+        throw ApiError.notFound('Creator admin not found');
+      }
+
+      // Apenas ADMIN e SUPER_ADMIN podem criar usuários
+      if (creator.role !== AdminRole.ADMIN && creator.role !== AdminRole.SUPER_ADMIN) {
+        logger.warn(
+          `Admin creation denied - insufficient privileges: ${creator.email}`
+        );
+        throw ApiError.forbidden(
+          'Only ADMIN and SUPER_ADMIN can create new users'
+        );
+      }
+
+      // Apenas SUPER_ADMIN pode criar outros SUPER_ADMIN
+      if (
+        dto.role === AdminRole.SUPER_ADMIN &&
+        creator.role !== AdminRole.SUPER_ADMIN
+      ) {
+        logger.warn(
+          `Admin creation denied - cannot create SUPER_ADMIN: ${creator.email}`
+        );
+        throw ApiError.forbidden('Only SUPER_ADMIN can create other SUPER_ADMIN users');
+      }
+
+      // 2. Validar email único
+      const existingAdmin = await prisma.admin.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingAdmin) {
+        logger.warn(`Admin creation failed - email already exists: ${dto.email}`);
+        throw ApiError.conflict('Email already in use');
+      }
+
+      // 3. Hash da senha
+      logger.info('Hashing password...');
+      const hashedPassword = await HashUtil.hashPassword(dto.password);
+
+      // 4. Criar admin
+      logger.info(`Creating admin with role: ${dto.role}`);
+      const admin = await prisma.admin.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          name: dto.name,
+          role: dto.role,
+          status: AdminStatus.ACTIVE,
+        },
+      });
+
+      const { password, ...adminWithoutPassword } = admin;
+
+      logger.info(
+        `Admin created successfully: ${admin.email} (${admin.role}) by ${creator.email}`
+      );
+
+      return adminWithoutPassword;
+    } catch (error) {
+      logger.error('Admin creation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all admin users (paginated)
+   * Only ADMIN and SUPER_ADMIN can list users
+   */
+  async getAllAdmins(
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      role?: AdminRole;
+      status?: AdminStatus;
+      search?: string;
+    }
+  ): Promise<{
+    admins: Omit<Admin, 'password'>[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (filters?.role) {
+      where.role = filters.role;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { email: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [admins, totalCount] = await Promise.all([
+      prisma.admin.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLoginAt: true,
+          permissions: true,
+        },
+      }),
+      prisma.admin.count({ where }),
+    ]);
+
+    return {
+      admins,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  }
+
+  /**
+   * Update admin user
+   * SUPER_ADMIN can update anyone
+   * ADMIN can update STAFF and MANAGER (not ADMIN or SUPER_ADMIN)
+   */
+  async updateAdmin(
+    updaterAdminId: string,
+    targetAdminId: string,
+    data: {
+      name?: string;
+      role?: AdminRole;
+      status?: AdminStatus;
+    }
+  ): Promise<Omit<Admin, 'password'>> {
+    try {
+      // Verificar permissões do atualizador
+      const updater = await prisma.admin.findUnique({
+        where: { id: updaterAdminId },
+      });
+
+      if (!updater) {
+        throw ApiError.notFound('Updater admin not found');
+      }
+
+      if (updater.role !== AdminRole.ADMIN && updater.role !== AdminRole.SUPER_ADMIN) {
+        throw ApiError.forbidden('Insufficient privileges');
+      }
+
+      // Buscar admin alvo
+      const targetAdmin = await prisma.admin.findUnique({
+        where: { id: targetAdminId },
+      });
+
+      if (!targetAdmin) {
+        throw ApiError.notFound('Target admin not found');
+      }
+
+      // ADMIN não pode atualizar outros ADMIN ou SUPER_ADMIN
+      if (
+        updater.role === AdminRole.ADMIN &&
+        (targetAdmin.role === AdminRole.ADMIN || targetAdmin.role === AdminRole.SUPER_ADMIN)
+      ) {
+        throw ApiError.forbidden('Cannot update admin with equal or higher role');
+      }
+
+      // Atualizar
+      const updated = await prisma.admin.update({
+        where: { id: targetAdminId },
+        data,
+      });
+
+      const { password, ...adminWithoutPassword } = updated;
+
+      logger.info(
+        `Admin ${targetAdminId} updated by ${updater.email}: ${JSON.stringify(data)}`
+      );
+
+      return adminWithoutPassword;
+    } catch (error) {
+      logger.error('Admin update error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete (soft) admin user - set status to INACTIVE
+   */
+  async deleteAdmin(
+    deleterAdminId: string,
+    targetAdminId: string
+  ): Promise<void> {
+    try {
+      // Verificar permissões
+      const deleter = await prisma.admin.findUnique({
+        where: { id: deleterAdminId },
+      });
+
+      if (!deleter) {
+        throw ApiError.notFound('Deleter admin not found');
+      }
+
+      if (deleter.role !== AdminRole.SUPER_ADMIN) {
+        throw ApiError.forbidden('Only SUPER_ADMIN can delete users');
+      }
+
+      // Não pode deletar a si mesmo
+      if (deleterAdminId === targetAdminId) {
+        throw ApiError.badRequest('Cannot delete yourself');
+      }
+
+      // Soft delete
+      await prisma.admin.update({
+        where: { id: targetAdminId },
+        data: { status: AdminStatus.INACTIVE },
+      });
+
+      logger.info(`Admin ${targetAdminId} deleted (soft) by ${deleter.email}`);
+    } catch (error) {
+      logger.error('Admin deletion error:', error);
+      throw error;
+    }
   }
 }

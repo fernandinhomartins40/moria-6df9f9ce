@@ -622,6 +622,110 @@ class AdminService {
   async deleteRevision(id: string): Promise<void> {
     await apiClient.delete(`/admin/revisions/${id}`);
   }
+
+  async startRevision(id: string): Promise<AdminRevision> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/start`);
+    return response.data.data;
+  }
+
+  async completeRevision(id: string): Promise<AdminRevision> {
+    const response = await apiClient.patch(`/admin/revisions/${id}/complete`);
+    return response.data.data;
+  }
+
+  async updateRevision(id: string, data: {
+    mechanicNotes?: string;
+    checklistItems?: any;
+    recommendations?: string;
+  }): Promise<AdminRevision> {
+    const response = await apiClient.put(`/admin/revisions/${id}`, data);
+    return response.data.data;
+  }
+
+  // ==================== ADMIN USERS MANAGEMENT ====================
+
+  /**
+   * Create new admin user
+   * Only ADMIN and SUPER_ADMIN
+   */
+  async createAdminUser(data: {
+    email: string;
+    password: string;
+    name: string;
+    role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+  }): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+    createdAt: string;
+  }> {
+    const response = await apiClient.post('/auth/admin/users', data);
+    return response.data.data;
+  }
+
+  /**
+   * Get all admin users
+   */
+  async getAdminUsers(params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    status?: string;
+    search?: string;
+  }): Promise<{
+    data: Array<{
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      status: string;
+      createdAt: string;
+      lastLoginAt?: string;
+    }>;
+    meta: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+    };
+  }> {
+    const response = await apiClient.get('/auth/admin/users', { params });
+    return {
+      data: response.data.data,
+      meta: response.data.meta,
+    };
+  }
+
+  /**
+   * Update admin user
+   */
+  async updateAdminUser(
+    id: string,
+    data: {
+      name?: string;
+      role?: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+      status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+    }
+  ): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+  }> {
+    const response = await apiClient.put(`/auth/admin/users/${id}`, data);
+    return response.data.data;
+  }
+
+  /**
+   * Delete (soft) admin user
+   * Only SUPER_ADMIN
+   */
+  async deleteAdminUser(id: string): Promise<void> {
+    await apiClient.delete(`/auth/admin/users/${id}`);
+  }
 }
 
 export default new AdminService();

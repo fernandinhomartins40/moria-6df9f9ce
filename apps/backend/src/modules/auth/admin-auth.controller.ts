@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminAuthService } from './admin-auth.service.js';
 import { adminLoginSchema } from './dto/admin-login.dto.js';
+import { createAdminSchema } from './dto/create-admin.dto.js';
 import { logger } from '@shared/utils/logger.util.js';
+import { AdminRole, AdminStatus } from '@prisma/client';
 
 export class AdminAuthController {
   private adminAuthService: AdminAuthService;
@@ -106,6 +108,116 @@ export class AdminAuthController {
         success: true,
         message: 'Logged out successfully',
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /auth/admin/create
+   * Create new admin user (only ADMIN and SUPER_ADMIN)
+   */
+  createAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const dto = createAdminSchema.parse(req.body);
+      const admin = await this.adminAuthService.createAdmin(req.admin.adminId, dto);
+
+      res.status(201).json({
+        success: true,
+        data: admin,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /auth/admin/users
+   * Get all admin users (only ADMIN and SUPER_ADMIN)
+   */
+  getAllAdmins = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const filters: any = {};
+
+      if (req.query.role) {
+        filters.role = req.query.role as AdminRole;
+      }
+
+      if (req.query.status) {
+        filters.status = req.query.status as AdminStatus;
+      }
+
+      if (req.query.search) {
+        filters.search = req.query.search as string;
+      }
+
+      const result = await this.adminAuthService.getAllAdmins(page, limit, filters);
+
+      res.status(200).json({
+        success: true,
+        data: result.admins,
+        meta: {
+          page: result.page,
+          limit: result.limit,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /auth/admin/users/:id
+   * Update admin user (only ADMIN and SUPER_ADMIN)
+   */
+  updateAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const targetAdminId = req.params.id;
+      const admin = await this.adminAuthService.updateAdmin(
+        req.admin.adminId,
+        targetAdminId,
+        req.body
+      );
+
+      res.status(200).json({
+        success: true,
+        data: admin,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /auth/admin/users/:id
+   * Delete (soft) admin user (only SUPER_ADMIN)
+   */
+  deleteAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const targetAdminId = req.params.id;
+      await this.adminAuthService.deleteAdmin(req.admin.adminId, targetAdminId);
+
+      res.status(204).send();
     } catch (error) {
       next(error);
     }

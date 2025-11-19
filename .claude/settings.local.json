@@ -45,7 +45,8 @@
       "Bash(git revert:*)",
       "Bash(cmd /c \"if exist nul del nul\")",
       "Bash(/tmp/login-test.json)",
-      "Bash(del cookies.txt)"
+      "Bash(del cookies.txt)",
+      "Bash(docker volume:*)"
     ],
     "deny": [],
     "ask": []

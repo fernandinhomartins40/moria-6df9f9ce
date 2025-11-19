@@ -128,11 +128,30 @@ model Admin {
 
   // Relations
   assignedRevisions Revision[]
+  auditLogs        AuditLog[]
 
   @@index([email])
   @@index([role])
   @@index([status])
   @@map("admins")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String   // CREATE, UPDATE, DELETE, ASSIGN, etc
+  resource   String   // Revision, Order, Product, etc
+  resourceId String?
+  changes    Json?    // Antes/depois
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Customer {

@@ -7,6 +7,7 @@ import path from 'path';
 import 'express-async-errors';
 import { corsOptions } from '@config/cors.js';
 import { ErrorMiddleware } from '@middlewares/error.middleware.js';
+import { rlsContextMiddleware } from '@middlewares/prisma-rls.middleware.js';
 import { logger } from '@shared/utils/logger.util.js';
 import authRoutes from '@modules/auth/auth.routes.js';
 import addressesRoutes from '@modules/addresses/addresses.routes.js';
@@ -61,6 +62,10 @@ export function createApp(): Express {
     });
     next();
   });
+
+  // Row-Level Security (RLS) context middleware
+  // Sets PostgreSQL session variables for database-level access control
+  app.use(rlsContextMiddleware);
 
   // Health check
   app.get('/health', (_req: Request, res: Response) => {
