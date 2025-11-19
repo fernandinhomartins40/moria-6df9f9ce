@@ -150,7 +150,7 @@ class RevisionService {
    * Assign mechanic to revision (Admin)
    */
   async assignMechanic(revisionId: string, mechanicId: string): Promise<RevisionResponse> {
-    const response = await apiClient.post(`/admin/revisions/${revisionId}/assign-mechanic`, {
+    const response = await apiClient.post(`/revisions/${revisionId}/assign-mechanic`, {
       mechanicId
     });
     return response.data.data;
@@ -164,7 +164,7 @@ class RevisionService {
     newMechanicId: string,
     reason?: string
   ): Promise<RevisionResponse> {
-    const response = await apiClient.post(`/admin/revisions/${revisionId}/transfer-mechanic`, {
+    const response = await apiClient.post(`/revisions/${revisionId}/transfer-mechanic`, {
       newMechanicId,
       reason
     });
@@ -175,7 +175,7 @@ class RevisionService {
    * Unassign mechanic from revision (Admin)
    */
   async unassignMechanic(revisionId: string): Promise<RevisionResponse> {
-    const response = await apiClient.delete(`/admin/revisions/${revisionId}/unassign-mechanic`);
+    const response = await apiClient.delete(`/revisions/${revisionId}/unassign-mechanic`);
     return response.data.data;
   }
 
@@ -186,7 +186,7 @@ class RevisionService {
     mechanicId: string,
     params?: { page?: number; limit?: number; status?: string }
   ): Promise<{ data: RevisionResponse[]; meta: any }> {
-    const response = await apiClient.get(`/admin/revisions/mechanic/${mechanicId}`, { params });
+    const response = await apiClient.get(`/revisions/mechanic/${mechanicId}`, { params });
     return response.data;
   }
 
@@ -194,7 +194,7 @@ class RevisionService {
    * Get all mechanics workload (Admin)
    */
   async getMechanicsWorkload(): Promise<any[]> {
-    const response = await apiClient.get('/admin/revisions/mechanics/workload');
+    const response = await apiClient.get('/revisions/mechanics/workload');
     return response.data.data;
   }
 }
