@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, Gift, Percent, Calendar, Settings } from 'lucide-react';
 
 interface Coupon {
@@ -204,21 +205,23 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5" />
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Gift className="h-5 w-5 text-moria-orange" />
             {isEditing ? 'Editar Cupom' : 'Novo Cupom'}
           </DialogTitle>
-          <DialogDescription>
-            {isEditing 
+          <DialogDescription className="text-sm">
+            {isEditing
               ? 'Edite as informações do cupom abaixo'
               : 'Preencha as informações do novo cupom'
             }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <ScrollArea className="flex-1 px-6">
+          <div className="py-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Gift className="h-4 w-4" />
@@ -476,17 +479,21 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
               </div>
             )}
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Salvar Alterações' : 'Criar Cupom'}
-          </Button>
-        </DialogFooter>
+        <div className="px-6 py-3 border-t bg-gray-50/50">
+          <div className="flex items-center justify-between gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading} size="sm">
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleSave} disabled={loading} size="sm" className="bg-moria-orange hover:bg-orange-600">
+              {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              {isEditing ? 'Salvar Alterações' : 'Criar Cupom'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

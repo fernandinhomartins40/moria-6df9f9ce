@@ -398,12 +398,12 @@ Estou à disposição para esclarecer dúvidas! 😊`;
               onClick={handleSaveQuote}
               disabled={isUpdating || total === 0}
               size="sm"
-              className="flex-1 h-8 text-xs"
+              className="flex-1 bg-moria-orange hover:bg-orange-600"
             >
               {isUpdating ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
-                <Save className="h-3 w-3 mr-1" />
+                <Save className="h-3.5 w-3.5 mr-1.5" />
               )}
               {isUpdating ? "Salvando..." : "Salvar"}
             </Button>
@@ -411,9 +411,9 @@ Estou à disposição para esclarecer dúvidas! 😊`;
               onClick={handleSendWhatsApp}
               disabled={total === 0}
               size="sm"
-              className="flex-1 bg-green-600 hover:bg-green-700 h-8 text-xs"
+              className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              <MessageCircle className="h-3 w-3 mr-1" />
+              <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
               WhatsApp
             </Button>
           </div>
@@ -424,13 +424,13 @@ Estou à disposição para esclarecer dúvidas! 😊`;
               disabled={isUpdating || quote.status === 'APPROVED' || quote.status === 'accepted'}
               variant="outline"
               size="sm"
-              className="flex-1 border-green-600 text-green-700 hover:bg-green-50 h-8 text-xs"
+              className="flex-1 border-green-600 text-green-700 hover:bg-green-50"
               title={quote.status === 'PENDING' || quote.status === 'pending' ? 'Salvar e aprovar orçamento' : 'Aprovar orçamento'}
             >
               {isUpdating ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
-                <CheckCircle className="h-3 w-3 mr-1" />
+                <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
               )}
               {isUpdating ? "Aprovando..." : (quote.status === 'PENDING' || quote.status === 'pending' ? "Salvar e Aprovar" : "Aprovar")}
             </Button>
@@ -439,16 +439,16 @@ Estou à disposição para esclarecer dúvidas! 😊`;
               disabled={isUpdating || quote.status === 'REJECTED' || quote.status === 'rejected'}
               variant="outline"
               size="sm"
-              className="flex-1 border-red-600 text-red-700 hover:bg-red-50 h-8 text-xs"
+              className="flex-1 border-red-600 text-red-700 hover:bg-red-50"
             >
               {isUpdating ? (
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
-                <XCircle className="h-3 w-3 mr-1" />
+                <XCircle className="h-3.5 w-3.5 mr-1.5" />
               )}
               {isUpdating ? "Rejeitando..." : "Rejeitar"}
             </Button>
-            <Button variant="outline" onClick={onClose} size="sm" className="h-8 text-xs">
+            <Button variant="outline" onClick={onClose} size="sm">
               Fechar
             </Button>
           </div>

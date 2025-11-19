@@ -9,6 +9,7 @@ import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images, CheckCircle } from 'lucide-react';
 import { ProductImageUpload, ProductImage } from './ProductImageUpload';
 import { useToast } from '../ui/use-toast';
@@ -384,22 +385,24 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Package className="h-5 w-5 text-moria-orange" />
             {isEditing ? 'Editar Produto' : 'Novo Produto'}
           </DialogTitle>
-          <DialogDescription>
-            {isEditing 
+          <DialogDescription className="text-sm">
+            {isEditing
               ? 'Edite as informações do produto abaixo'
               : 'Preencha as informações do novo produto'
             }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+        <ScrollArea className="flex-1 px-6">
+          <div className="py-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Básico
@@ -761,28 +764,32 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
               )}
             </div>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter>
+        <div className="px-6 py-3 border-t bg-gray-50/50">
           {errors.general && (
-            <div className="flex-1 text-left">
+            <div className="mb-2">
               <p className="text-sm text-red-500 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
                 {errors.general}
               </p>
             </div>
           )}
-          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving || loading}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={isSaving || loading}>
-            {(isSaving || loading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSaving
-              ? (isEditing ? 'Salvando...' : 'Criando...')
-              : (isEditing ? 'Salvar Alterações' : 'Criar Produto')
-            }
-          </Button>
-        </DialogFooter>
+          <div className="flex items-center justify-between gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving || loading} size="sm">
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleSave} disabled={isSaving || loading} size="sm" className="bg-moria-orange hover:bg-orange-600">
+              {(isSaving || loading) && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              {isSaving
+                ? (isEditing ? 'Salvando...' : 'Criando...')
+                : (isEditing ? 'Salvar Alterações' : 'Criar Produto')
+              }
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
