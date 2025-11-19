@@ -137,7 +137,7 @@ autostart=true
 autorestart=true
 stdout_logfile=/var/log/backend.stdout.log
 stderr_logfile=/var/log/backend.stderr.log
-environment=NODE_ENV="production",PORT="3001",CORS_ORIGIN="http://localhost:3090"
+environment=NODE_ENV="production",PORT="3001"
 EOF
 
 # Script de inicialização
