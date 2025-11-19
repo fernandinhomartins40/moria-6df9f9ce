@@ -280,7 +280,7 @@ export function Promotions() {
                 </div>
                 {!loading && monthlyOffers.length > 0 && (
                   <Badge className="bg-moria-black text-gold-accent font-bold text-lg px-4 py-2">
-                    ATÉ {Math.max(...monthlyOffers.map(p => p.discount), 0)}% OFF
+                    ATÉ {monthlyOffers.length > 0 ? Math.max(...monthlyOffers.map(p => p.discount)) : 0}% OFF
                   </Badge>
                 )}
               </div>

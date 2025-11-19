@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { RevisionsProvider } from "./contexts/RevisionsContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import StorePanel from "./pages/StorePanel";
@@ -17,33 +18,35 @@ import CustomerPanel from "./pages/CustomerPanel";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AdminAuthProvider>
-        <CartProvider>
-          <RevisionsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/customer" element={<CustomerPanel />} />
-                  <Route path="/store-panel" element={<StorePanel />} />
-                  <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
-                  <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </RevisionsProvider>
-        </CartProvider>
-      </AdminAuthProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <CartProvider>
+            <RevisionsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/customer" element={<CustomerPanel />} />
+                    <Route path="/store-panel" element={<StorePanel />} />
+                    <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
+                    <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </RevisionsProvider>
+          </CartProvider>
+        </AdminAuthProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
