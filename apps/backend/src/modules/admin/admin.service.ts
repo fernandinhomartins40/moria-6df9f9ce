@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { CustomerLevel, CustomerStatus, OrderStatus, Prisma, Customer } from '@prisma/client';
+import { CustomerLevel, CustomerStatus, OrderStatus, Prisma } from '@prisma/client';
 
 // ==================== TYPES ====================
 
