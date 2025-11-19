@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, Clock, Phone, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { adminService } from '@/api/adminService';
+import adminService from '@/api/adminService';
 import MechanicChecklistForm from './MechanicChecklistForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

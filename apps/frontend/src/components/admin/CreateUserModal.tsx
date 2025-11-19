@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { adminService } from '@/api/adminService';
+import adminService from '@/api/adminService';
 import { useAdminPermissions } from '@/hooks/useAdminPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

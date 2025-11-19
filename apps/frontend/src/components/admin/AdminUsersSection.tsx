@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { adminService } from '@/api/adminService';
+import adminService from '@/api/adminService';
 import { useAdminPermissions } from '@/hooks/useAdminPermissions';
 import CreateUserModal from './CreateUserModal';
 import EditUserModal from './EditUserModal';
