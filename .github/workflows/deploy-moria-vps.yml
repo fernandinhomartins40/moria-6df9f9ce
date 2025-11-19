@@ -183,35 +183,59 @@ jobs:
             docker rm -f moria-vps 2>/dev/null || true
             docker rm -f moria-postgres 2>/dev/null || true
 
+            # Remover imagens antigas do moria para forçar rebuild completo
+            echo "Removendo imagens antigas do moria..."
+            docker rmi moria-vps 2>/dev/null || true
+            docker rmi $(docker images -q 'moria*') 2>/dev/null || true
+
             # ===== BUILD NO HOST (FORA DO DOCKER) =====
             echo "=== Instalando dependências e fazendo build no host ==="
 
             # Backend
             cd $APP_DIR/apps/backend
             echo "Instalando dependências do backend..."
-            npm install
+            npm install || { echo "❌ Erro ao instalar dependências do backend"; exit 1; }
+
             echo "Gerando Prisma client..."
-            npx prisma generate
+            npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
+
             echo "Compilando backend..."
-            npm run build
+            npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
+
+            # Verificar se o build foi criado
+            if [ ! -f "dist/server.js" ]; then
+              echo "❌ Erro: dist/server.js não foi criado!"
+              exit 1
+            fi
+            echo "✅ Backend compilado com sucesso"
 
             # Frontend
             cd $APP_DIR/apps/frontend
             echo "Instalando dependências do frontend..."
-            npm install
+            npm install || { echo "❌ Erro ao instalar dependências do frontend"; exit 1; }
+
             echo "Compilando frontend..."
-            VITE_API_BASE_URL=/api npm run build
+            VITE_API_BASE_URL=/api npm run build || { echo "❌ Erro ao compilar frontend"; exit 1; }
+
+            # Verificar se o build foi criado
+            if [ ! -f "dist/index.html" ]; then
+              echo "❌ Erro: dist/index.html não foi criado!"
+              exit 1
+            fi
+            echo "✅ Frontend compilado com sucesso"
 
             cd $APP_DIR
-            echo "✅ Build concluído no host"
+            echo "✅ Build concluído no host com sucesso"
 
             # Build da imagem Docker (agora apenas copia os arquivos já compilados)
             echo "Construindo imagem Docker..."
-            docker-compose -f docker-compose.vps.yml build --no-cache --pull
+            docker-compose -f docker-compose.vps.yml build --no-cache --pull || { echo "❌ Erro ao construir imagem Docker"; exit 1; }
+            echo "✅ Imagem Docker construída com sucesso"
 
             # Iniciar container
-            echo "Iniciando container..."
-            docker-compose -f docker-compose.vps.yml up -d --remove-orphans
+            echo "Iniciando containers..."
+            docker-compose -f docker-compose.vps.yml up -d --remove-orphans || { echo "❌ Erro ao iniciar containers"; exit 1; }
+            echo "✅ Containers iniciados"
 
             # Aguardar containers iniciarem
             echo "Aguardando containers iniciarem..."
@@ -333,16 +357,10 @@ jobs:
                     proxy_set_header Upgrade $http_upgrade;
                     proxy_set_header Connection 'upgrade';
                     proxy_set_header Host $host;
-                    proxy_set_header Content-Type $content_type;
-                    proxy_set_header Content-Length $content_length;
                     proxy_cache_bypass $http_upgrade;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto $scheme;
-
-                    # Preservar body do request
-                    proxy_request_buffering off;
-                    client_body_buffer_size 128k;
 
                     proxy_connect_timeout 60s;
                     proxy_send_timeout 60s;
