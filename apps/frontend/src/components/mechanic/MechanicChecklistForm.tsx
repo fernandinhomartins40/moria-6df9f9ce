@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Textarea,
-  Button,
-  Checkbox,
-  useToast,
-  Divider,
-} from '@chakra-ui/react';
+import { toast } from 'sonner';
 import { adminService } from '@api/adminService';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 interface MechanicChecklistFormProps {
   revisionId: string;
@@ -38,8 +32,6 @@ export default function MechanicChecklistForm({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const toast = useToast();
-
   const handleCheckboxChange = (itemId: string, isChecked: boolean) => {
     setCheckedItems((prev) => ({
       ...prev,
@@ -52,8 +44,8 @@ export default function MechanicChecklistForm({
       setLoading(true);
 
       const completedItems = Object.entries(checkedItems)
-        .filter(([_, isChecked]) => isChecked)
-        .map(([id, _]) => CHECKLIST_ITEMS.find((item) => item.id === id)?.label || id);
+        .filter(([, isChecked]) => isChecked)
+        .map(([id]) => CHECKLIST_ITEMS.find((item) => item.id === id)?.label || id);
 
       const mechanicNotes = `
 CHECKLIST DE REVISÃO:
@@ -68,21 +60,13 @@ ${notes || 'Nenhuma observação adicional.'}
         mechanicNotes,
       });
 
-      toast({
-        title: 'Progresso salvo com sucesso',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast.success('Progresso salvo com sucesso');
 
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar progresso',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao salvar progresso', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -94,56 +78,57 @@ ${notes || 'Nenhuma observação adicional.'}
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <Box>
-      <VStack align="stretch" spacing={4}>
-        <Box>
-          <Text fontWeight="semibold" mb={2}>
-            Checklist de Revisão
-          </Text>
-          <Text fontSize="sm" color="gray.600" mb={3}>
+    <div>
+      <div className="space-y-4">
+        <div>
+          <p className="font-semibold mb-2">Checklist de Revisão</p>
+          <p className="text-sm text-gray-600 mb-3">
             Progresso: {completedCount} de {totalCount} itens ({Math.round(progressPercent)}%)
-          </Text>
+          </p>
 
-          <VStack align="stretch" spacing={2}>
+          <div className="space-y-2">
             {CHECKLIST_ITEMS.map((item) => (
-              <Checkbox
-                key={item.id}
-                isChecked={checkedItems[item.id] || false}
-                onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
-                colorScheme="green"
-              >
-                <Text fontSize="sm">{item.label}</Text>
-              </Checkbox>
+              <div key={item.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={item.id}
+                  checked={checkedItems[item.id] || false}
+                  onCheckedChange={(checked) =>
+                    handleCheckboxChange(item.id, checked === true)
+                  }
+                />
+                <label
+                  htmlFor={item.id}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {item.label}
+                </label>
+              </div>
             ))}
-          </VStack>
-        </Box>
+          </div>
+        </div>
 
-        <Divider />
+        <Separator />
 
-        <Box>
-          <Text fontWeight="semibold" mb={2}>
-            Observações Adicionais
-          </Text>
+        <div>
+          <p className="font-semibold mb-2">Observações Adicionais</p>
           <Textarea
             placeholder="Adicione observações sobre a revisão, peças trocadas, problemas encontrados, etc."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
-            resize="vertical"
+            className="resize-y"
           />
-        </Box>
+        </div>
 
-        <HStack justify="flex-end">
+        <div className="flex justify-end">
           <Button
-            colorScheme="blue"
             onClick={handleSaveProgress}
-            isLoading={loading}
-            isDisabled={completedCount === 0 && !notes}
+            disabled={loading || (completedCount === 0 && !notes)}
           >
-            Salvar Progresso
+            {loading ? 'Salvando...' : 'Salvar Progresso'}
           </Button>
-        </HStack>
-      </VStack>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

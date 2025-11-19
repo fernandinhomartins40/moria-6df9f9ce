@@ -1,29 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  IconButton,
-  useToast,
-  Spinner,
-  Text,
-  HStack,
-  Input,
-  Select,
-  VStack,
-  useDisclosure,
-} from '@chakra-ui/react';
-import { EditIcon, DeleteIcon, AddIcon } from '@chakra-ui/icons';
+import { Edit, Trash2, Plus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { adminService } from '@api/adminService';
 import { useAdminPermissions } from '@hooks/useAdminPermissions';
 import CreateUserModal from './CreateUserModal';
 import EditUserModal from './EditUserModal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 interface AdminUser {
   id: string;
@@ -42,16 +28,16 @@ const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
 };
 
-const ROLE_COLORS = {
-  STAFF: 'blue',
-  MANAGER: 'green',
-  ADMIN: 'orange',
-  SUPER_ADMIN: 'red',
+const ROLE_COLORS: Record<string, string> = {
+  STAFF: 'bg-blue-100 text-blue-800',
+  MANAGER: 'bg-green-100 text-green-800',
+  ADMIN: 'bg-orange-100 text-orange-800',
+  SUPER_ADMIN: 'bg-red-100 text-red-800',
 };
 
-const STATUS_COLORS = {
-  ACTIVE: 'green',
-  INACTIVE: 'gray',
+const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  INACTIVE: 'bg-gray-100 text-gray-800',
 };
 
 export default function AdminUsersSection() {
@@ -61,26 +47,15 @@ export default function AdminUsersSection() {
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const toast = useToast();
   const permissions = useAdminPermissions();
-
-  const {
-    isOpen: isCreateOpen,
-    onOpen: onCreateOpen,
-    onClose: onCreateClose,
-  } = useDisclosure();
-
-  const {
-    isOpen: isEditOpen,
-    onOpen: onEditOpen,
-    onClose: onEditClose,
-  } = useDisclosure();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const filters: any = {};
+      const filters: Record<string, string> = {};
 
       if (searchEmail) filters.email = searchEmail;
       if (filterRole) filters.role = filterRole;
@@ -88,13 +63,10 @@ export default function AdminUsersSection() {
 
       const response = await adminService.getAdminUsers(filters);
       setUsers(response.data.admins);
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar usuários',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao carregar usuários', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -107,7 +79,7 @@ export default function AdminUsersSection() {
 
   const handleEdit = (user: AdminUser) => {
     setSelectedUser(user);
-    onEditOpen();
+    setIsEditOpen(true);
   };
 
   const handleDelete = async (userId: string, userName: string) => {
@@ -117,84 +89,75 @@ export default function AdminUsersSection() {
 
     try {
       await adminService.deleteAdminUser(userId);
-      toast({
-        title: 'Usuário excluído com sucesso',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast.success('Usuário excluído com sucesso');
       fetchUsers();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao excluir usuário',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao excluir usuário', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     }
   };
 
   const handleCreateSuccess = () => {
-    onCreateClose();
+    setIsCreateOpen(false);
     fetchUsers();
   };
 
   const handleEditSuccess = () => {
-    onEditClose();
+    setIsEditOpen(false);
     setSelectedUser(null);
     fetchUsers();
   };
 
   if (!permissions.canManageAdmins) {
     return (
-      <Box p={8} textAlign="center">
-        <Text color="red.500">Você não tem permissão para acessar esta seção.</Text>
-      </Box>
+      <div className="p-8 text-center">
+        <p className="text-red-500">Você não tem permissão para acessar esta seção.</p>
+      </div>
     );
   }
 
   return (
-    <Box>
+    <div>
       {/* Header with filters */}
-      <VStack spacing={4} mb={6} align="stretch">
-        <HStack justify="space-between">
-          <Text fontSize="2xl" fontWeight="bold">
-            Gestão de Usuários
-          </Text>
+      <div className="space-y-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Gestão de Usuários</h2>
           {permissions.canCreateAdmins && (
-            <Button leftIcon={<AddIcon />} colorScheme="blue" onClick={onCreateOpen}>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
               Novo Usuário
             </Button>
           )}
-        </HStack>
+        </div>
 
-        <HStack spacing={4}>
+        <div className="flex gap-4">
           <Input
             placeholder="Buscar por email..."
             value={searchEmail}
             onChange={(e) => setSearchEmail(e.target.value)}
-            maxW="300px"
+            className="max-w-xs"
           />
-          <Select
-            placeholder="Filtrar por cargo"
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            maxW="200px"
-          >
-            <option value="STAFF">Mecânico</option>
-            <option value="MANAGER">Gerente</option>
-            <option value="ADMIN">Administrador</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
+          <Select value={filterRole} onValueChange={setFilterRole}>
+            <SelectTrigger className="max-w-[200px]">
+              <SelectValue placeholder="Filtrar por cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="STAFF">Mecânico</SelectItem>
+              <SelectItem value="MANAGER">Gerente</SelectItem>
+              <SelectItem value="ADMIN">Administrador</SelectItem>
+              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+            </SelectContent>
           </Select>
-          <Select
-            placeholder="Filtrar por status"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            maxW="200px"
-          >
-            <option value="ACTIVE">Ativo</option>
-            <option value="INACTIVE">Inativo</option>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="max-w-[200px]">
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ACTIVE">Ativo</SelectItem>
+              <SelectItem value="INACTIVE">Inativo</SelectItem>
+            </SelectContent>
           </Select>
           {(searchEmail || filterRole || filterStatus) && (
             <Button
@@ -208,82 +171,80 @@ export default function AdminUsersSection() {
               Limpar Filtros
             </Button>
           )}
-        </HStack>
-      </VStack>
+        </div>
+      </div>
 
       {/* Users Table */}
       {loading ? (
-        <Box textAlign="center" py={10}>
-          <Spinner size="xl" />
-        </Box>
+        <div className="text-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        </div>
       ) : users.length === 0 ? (
-        <Box textAlign="center" py={10}>
-          <Text color="gray.500">Nenhum usuário encontrado.</Text>
-        </Box>
+        <div className="text-center py-10">
+          <p className="text-gray-500">Nenhum usuário encontrado.</p>
+        </div>
       ) : (
-        <Box overflowX="auto" borderWidth="1px" borderRadius="lg">
-          <Table variant="simple">
-            <Thead bg="gray.50">
-              <Tr>
-                <Th>Nome</Th>
-                <Th>Email</Th>
-                <Th>Cargo</Th>
-                <Th>Status</Th>
-                <Th>Criado em</Th>
-                <Th textAlign="center">Ações</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Criado em</TableHead>
+                <TableHead className="text-center">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user) => (
-                <Tr key={user.id}>
-                  <Td fontWeight="medium">{user.name}</Td>
-                  <Td>{user.email}</Td>
-                  <Td>
-                    <Badge colorScheme={ROLE_COLORS[user.role]}>
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge className={ROLE_COLORS[user.role]}>
                       {ROLE_LABELS[user.role]}
                     </Badge>
-                  </Td>
-                  <Td>
-                    <Badge colorScheme={STATUS_COLORS[user.status]}>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={STATUS_COLORS[user.status]}>
                       {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
                     </Badge>
-                  </Td>
-                  <Td>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</Td>
-                  <Td>
-                    <HStack spacing={2} justify="center">
+                  </TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-center">
                       {permissions.canUpdateAdmins && (
-                        <IconButton
-                          aria-label="Editar usuário"
-                          icon={<EditIcon />}
-                          size="sm"
-                          colorScheme="blue"
+                        <Button
                           variant="ghost"
+                          size="sm"
                           onClick={() => handleEdit(user)}
-                        />
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       )}
                       {permissions.canDeleteAdmins && (
-                        <IconButton
-                          aria-label="Excluir usuário"
-                          icon={<DeleteIcon />}
-                          size="sm"
-                          colorScheme="red"
+                        <Button
                           variant="ghost"
+                          size="sm"
                           onClick={() => handleDelete(user.id, user.name)}
-                        />
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       )}
-                    </HStack>
-                  </Td>
-                </Tr>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Tbody>
+            </TableBody>
           </Table>
-        </Box>
+        </div>
       )}
 
       {/* Modals */}
       <CreateUserModal
         isOpen={isCreateOpen}
-        onClose={onCreateClose}
+        onClose={() => setIsCreateOpen(false)}
         onSuccess={handleCreateSuccess}
       />
 
@@ -291,13 +252,13 @@ export default function AdminUsersSection() {
         <EditUserModal
           isOpen={isEditOpen}
           onClose={() => {
-            onEditClose();
+            setIsEditOpen(false);
             setSelectedUser(null);
           }}
           onSuccess={handleEditSuccess}
           user={selectedUser}
         />
       )}
-    </Box>
+    </div>
   );
 }

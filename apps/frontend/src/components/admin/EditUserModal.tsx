@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  VStack,
-  useToast,
-  FormErrorMessage,
-  Text,
-  Divider,
-} from '@chakra-ui/react';
+import { toast } from 'sonner';
 import { adminService } from '@api/adminService';
 import { useAdminPermissions } from '@hooks/useAdminPermissions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -52,7 +46,6 @@ export default function EditUserModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const toast = useToast();
   const permissions = useAdminPermissions();
 
   useEffect(() => {
@@ -106,7 +99,7 @@ export default function EditUserModal({
     try {
       setLoading(true);
 
-      const updateData: any = {
+      const updateData: Record<string, string> = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
@@ -120,21 +113,13 @@ export default function EditUserModal({
 
       await adminService.updateAdminUser(user.id, updateData);
 
-      toast({
-        title: 'Usuário atualizado com sucesso',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast.success('Usuário atualizado com sucesso');
 
       onSuccess();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar usuário',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao atualizar usuário', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -142,116 +127,129 @@ export default function EditUserModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Editar Usuário</ModalHeader>
-        <ModalCloseButton />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Editar Usuário</DialogTitle>
+        </DialogHeader>
 
-        <ModalBody>
-          <VStack spacing={4}>
-            <FormControl isInvalid={!!errors.name}>
-              <FormLabel>Nome Completo</FormLabel>
-              <Input
-                placeholder="João Silva"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-              <FormErrorMessage>{errors.name}</FormErrorMessage>
-            </FormControl>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome Completo</Label>
+            <Input
+              id="name"
+              placeholder="João Silva"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+          </div>
 
-            <FormControl isInvalid={!!errors.email}>
-              <FormLabel>Email</FormLabel>
-              <Input
-                type="email"
-                placeholder="joao@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-              <FormErrorMessage>{errors.email}</FormErrorMessage>
-            </FormControl>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="joao@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+          </div>
 
-            <FormControl isInvalid={!!errors.role}>
-              <FormLabel>Cargo</FormLabel>
-              <Select
-                value={formData.role}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    role: e.target.value as any,
-                  })
-                }
-              >
-                <option value="STAFF">Mecânico (STAFF)</option>
-                <option value="MANAGER">Gerente (MANAGER)</option>
-                <option value="ADMIN">Administrador (ADMIN)</option>
+          <div className="space-y-2">
+            <Label htmlFor="role">Cargo</Label>
+            <Select
+              value={formData.role}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  role: value as 'STAFF' | 'MANAGER' | 'ADMIN' | 'SUPER_ADMIN',
+                })
+              }
+            >
+              <SelectTrigger id="role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="STAFF">Mecânico (STAFF)</SelectItem>
+                <SelectItem value="MANAGER">Gerente (MANAGER)</SelectItem>
+                <SelectItem value="ADMIN">Administrador (ADMIN)</SelectItem>
                 {permissions.canCreateSuperAdmin && (
-                  <option value="SUPER_ADMIN">Super Admin (SUPER_ADMIN)</option>
+                  <SelectItem value="SUPER_ADMIN">Super Admin (SUPER_ADMIN)</SelectItem>
                 )}
-              </Select>
-              <FormErrorMessage>{errors.role}</FormErrorMessage>
-            </FormControl>
+              </SelectContent>
+            </Select>
+            {errors.role && <p className="text-sm text-red-500">{errors.role}</p>}
+          </div>
 
-            <FormControl isInvalid={!!errors.status}>
-              <FormLabel>Status</FormLabel>
-              <Select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as any,
-                  })
-                }
-              >
-                <option value="ACTIVE">Ativo</option>
-                <option value="INACTIVE">Inativo</option>
-              </Select>
-              <FormErrorMessage>{errors.status}</FormErrorMessage>
-            </FormControl>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  status: value as 'ACTIVE' | 'INACTIVE',
+                })
+              }
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Ativo</SelectItem>
+                <SelectItem value="INACTIVE">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
+          </div>
 
-            <Divider />
+          <Separator />
 
-            <Text fontSize="sm" color="gray.600" alignSelf="flex-start">
-              <strong>Alterar Senha (opcional)</strong>
-              <br />
-              Deixe em branco para manter a senha atual
-            </Text>
+          <div className="text-sm text-gray-600">
+            <p className="font-semibold">Alterar Senha (opcional)</p>
+            <p className="text-xs">Deixe em branco para manter a senha atual</p>
+          </div>
 
-            <FormControl isInvalid={!!errors.password}>
-              <FormLabel>Nova Senha</FormLabel>
-              <Input
-                type="password"
-                placeholder="Mínimo 8 caracteres"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <FormErrorMessage>{errors.password}</FormErrorMessage>
-            </FormControl>
+          <div className="space-y-2">
+            <Label htmlFor="password">Nova Senha</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Mínimo 8 caracteres"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+            {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+          </div>
 
-            <FormControl isInvalid={!!errors.confirmPassword}>
-              <FormLabel>Confirmar Nova Senha</FormLabel>
-              <Input
-                type="password"
-                placeholder="Digite a senha novamente"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-              />
-              <FormErrorMessage>{errors.confirmPassword}</FormErrorMessage>
-            </FormControl>
-          </VStack>
-        </ModalBody>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Digite a senha novamente"
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+            />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+            )}
+          </div>
+        </div>
 
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={onClose}>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button colorScheme="blue" onClick={handleSubmit} isLoading={loading}>
-            Salvar Alterações
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

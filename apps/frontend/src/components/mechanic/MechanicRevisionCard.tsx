@@ -1,28 +1,12 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Badge,
-  Button,
-  Collapse,
-  Divider,
-  useToast,
-  IconButton,
-  Tooltip,
-  useDisclosure,
-} from '@chakra-ui/react';
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CheckCircleIcon,
-  TimeIcon,
-  PhoneIcon,
-  InfoIcon,
-} from '@chakra-ui/icons';
+import { ChevronDown, ChevronUp, CheckCircle, Clock, Phone, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { adminService } from '@api/adminService';
 import MechanicChecklistForm from './MechanicChecklistForm';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Revision {
   id: string;
@@ -51,11 +35,11 @@ interface MechanicRevisionCardProps {
   isCompleted?: boolean;
 }
 
-const PRIORITY_COLORS = {
-  LOW: 'gray',
-  MEDIUM: 'blue',
-  HIGH: 'orange',
-  URGENT: 'red',
+const PRIORITY_COLORS: Record<string, string> = {
+  LOW: 'bg-gray-100 text-gray-800',
+  MEDIUM: 'bg-blue-100 text-blue-800',
+  HIGH: 'bg-orange-100 text-orange-800',
+  URGENT: 'bg-red-100 text-red-800',
 };
 
 const PRIORITY_LABELS = {
@@ -70,30 +54,21 @@ export default function MechanicRevisionCard({
   onUpdate,
   isCompleted = false,
 }: MechanicRevisionCardProps) {
-  const { isOpen, onToggle } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const toast = useToast();
 
   const handleStartRevision = async () => {
     try {
       setLoading(true);
       await adminService.startRevision(revision.id);
 
-      toast({
-        title: 'Revisão iniciada',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast.success('Revisão iniciada');
 
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao iniciar revisão',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao iniciar revisão', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -109,21 +84,13 @@ export default function MechanicRevisionCard({
       setLoading(true);
       await adminService.completeRevision(revision.id);
 
-      toast({
-        title: 'Revisão concluída',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      toast.success('Revisão concluída');
 
       onUpdate();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao concluir revisão',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao concluir revisão', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -146,147 +113,118 @@ export default function MechanicRevisionCard({
   };
 
   return (
-    <Box
-      borderWidth="1px"
-      borderRadius="lg"
-      p={4}
-      bg={isCompleted ? 'gray.50' : 'white'}
-      borderColor={isCompleted ? 'gray.300' : 'gray.200'}
-      _hover={{ shadow: 'md' }}
-      transition="all 0.2s"
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className={`border rounded-lg p-4 transition-all ${
+        isCompleted ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200 hover:shadow-md'
+      }`}
     >
-      <VStack align="stretch" spacing={3}>
+      <div className="space-y-3">
         {/* Header */}
-        <HStack justify="space-between" align="start">
-          <VStack align="start" spacing={1}>
-            <HStack>
-              <Text fontWeight="bold" fontSize="lg">
-                {revision.vehicleModel}
-              </Text>
-              <Badge colorScheme={PRIORITY_COLORS[revision.priority]}>
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold">{revision.vehicleModel}</h3>
+              <Badge className={PRIORITY_COLORS[revision.priority]}>
                 {PRIORITY_LABELS[revision.priority]}
               </Badge>
-            </HStack>
-            <Text color="gray.600" fontSize="sm">
+            </div>
+            <p className="text-sm text-gray-600">
               Placa: {revision.vehiclePlate} • Ano: {revision.vehicleYear}
-            </Text>
-          </VStack>
+            </p>
+          </div>
 
-          <IconButton
-            aria-label="Expandir detalhes"
-            icon={isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            size="sm"
-            variant="ghost"
-            onClick={onToggle}
-          />
-        </HStack>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm">
+              {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+        </div>
 
         {/* Customer Info */}
-        <HStack spacing={4}>
-          <HStack>
-            <InfoIcon color="blue.500" />
-            <Text fontSize="sm">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-blue-500" />
+            <p className="text-sm">
               <strong>Cliente:</strong> {revision.customer.name}
-            </Text>
-          </HStack>
-          <Tooltip label="Abrir WhatsApp">
-            <Button
-              size="sm"
-              leftIcon={<PhoneIcon />}
-              colorScheme="green"
-              variant="outline"
-              onClick={openWhatsApp}
-            >
-              Contato
-            </Button>
-          </Tooltip>
-        </HStack>
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={openWhatsApp}>
+            <Phone className="h-4 w-4 mr-2" />
+            Contato
+          </Button>
+        </div>
 
         {/* Dates */}
-        <HStack spacing={4} fontSize="sm" color="gray.600">
-          <HStack>
-            <TimeIcon />
-            <Text>
+        <div className="flex gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <p>
               <strong>Agendado:</strong> {formatDate(revision.scheduledDate)}
-            </Text>
-          </HStack>
+            </p>
+          </div>
           {revision.startedAt && (
-            <Text>
+            <p>
               <strong>Iniciado:</strong> {formatDate(revision.startedAt)}
-            </Text>
+            </p>
           )}
           {revision.completedAt && (
-            <Text>
+            <p>
               <strong>Concluído:</strong> {formatDate(revision.completedAt)}
-            </Text>
+            </p>
           )}
-        </HStack>
+        </div>
 
         {/* Action Buttons */}
         {!isCompleted && (
-          <HStack spacing={2}>
+          <div className="flex gap-2">
             {revision.status === 'PENDING' && (
-              <Button
-                colorScheme="blue"
-                size="sm"
-                onClick={handleStartRevision}
-                isLoading={loading}
-              >
+              <Button onClick={handleStartRevision} disabled={loading}>
                 Iniciar Revisão
               </Button>
             )}
             {revision.status === 'IN_PROGRESS' && (
-              <Button
-                colorScheme="green"
-                size="sm"
-                leftIcon={<CheckCircleIcon />}
-                onClick={handleCompleteRevision}
-                isLoading={loading}
-              >
+              <Button onClick={handleCompleteRevision} disabled={loading}>
+                <CheckCircle className="h-4 w-4 mr-2" />
                 Marcar como Concluída
               </Button>
             )}
-          </HStack>
+          </div>
         )}
 
         {/* Collapsible Details */}
-        <Collapse in={isOpen} animateOpacity>
-          <VStack align="stretch" spacing={3} pt={3}>
-            <Divider />
+        <CollapsibleContent className="space-y-3 pt-3">
+          <Separator />
 
-            {/* Notes */}
-            {revision.notes && (
-              <Box>
-                <Text fontWeight="semibold" fontSize="sm" mb={1}>
-                  Observações do Cliente:
-                </Text>
-                <Text fontSize="sm" color="gray.700" bg="gray.50" p={3} borderRadius="md">
-                  {revision.notes}
-                </Text>
-              </Box>
-            )}
+          {/* Notes */}
+          {revision.notes && (
+            <div>
+              <p className="text-sm font-semibold mb-1">Observações do Cliente:</p>
+              <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md">
+                {revision.notes}
+              </div>
+            </div>
+          )}
 
-            {revision.mechanicNotes && (
-              <Box>
-                <Text fontWeight="semibold" fontSize="sm" mb={1}>
-                  Suas Anotações:
-                </Text>
-                <Text fontSize="sm" color="gray.700" bg="blue.50" p={3} borderRadius="md">
-                  {revision.mechanicNotes}
-                </Text>
-              </Box>
-            )}
+          {revision.mechanicNotes && (
+            <div>
+              <p className="text-sm font-semibold mb-1">Suas Anotações:</p>
+              <div className="text-sm text-gray-700 bg-blue-50 p-3 rounded-md">
+                {revision.mechanicNotes}
+              </div>
+            </div>
+          )}
 
-            {/* Checklist Form (only for in-progress revisions) */}
-            {revision.status === 'IN_PROGRESS' && !isCompleted && (
-              <>
-                <Divider />
-                <MechanicChecklistForm revisionId={revision.id} onUpdate={onUpdate} />
-              </>
-            )}
-          </VStack>
-        </Collapse>
-      </VStack>
-    </Box>
+          {/* Checklist Form (only for in-progress revisions) */}
+          {revision.status === 'IN_PROGRESS' && !isCompleted && (
+            <>
+              <Separator />
+              <MechanicChecklistForm revisionId={revision.id} onUpdate={onUpdate} />
+            </>
+          )}
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 }

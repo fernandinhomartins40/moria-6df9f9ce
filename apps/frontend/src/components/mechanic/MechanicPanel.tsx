@@ -1,30 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Heading,
-  VStack,
-  HStack,
-  Text,
-  Spinner,
-  useToast,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Badge,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  Button,
-} from '@chakra-ui/react';
+import { AlertCircle, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@hooks/useAuth';
 import { adminService } from '@api/adminService';
 import MechanicRevisionCard from './MechanicRevisionCard';
-import { CheckCircleIcon, ClockIcon, WarningIcon } from '@chakra-ui/icons';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Revision {
   id: string;
@@ -90,7 +73,6 @@ export default function MechanicPanel() {
   });
 
   const { admin } = useAuth();
-  const toast = useToast();
 
   const fetchMyRevisions = async () => {
     try {
@@ -122,13 +104,10 @@ export default function MechanicPanel() {
         completedToday,
         total: myRevisions.length,
       });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar revisões',
-        description: error.response?.data?.message || 'Erro desconhecido',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error('Erro ao carregar revisões', {
+        description: err.response?.data?.message || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -149,119 +128,103 @@ export default function MechanicPanel() {
 
   if (loading) {
     return (
-      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
-        <Spinner size="xl" />
-      </Box>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" py={8}>
-      <Container maxW="container.xl">
-        <VStack spacing={6} align="stretch">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto max-w-7xl px-4">
+        <div className="space-y-6">
           {/* Header */}
-          <Box>
-            <Heading size="lg" mb={2}>
-              Painel do Mecânico
-            </Heading>
-            <Text color="gray.600">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Painel do Mecânico</h1>
+            <p className="text-gray-600">
               Olá, {admin?.name || 'Mecânico'}! Aqui estão suas revisões atribuídas.
-            </Text>
-          </Box>
+            </p>
+          </div>
 
           {/* Statistics Cards */}
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4}>
-            <Stat
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              borderColor="gray.200"
-            >
-              <StatLabel display="flex" alignItems="center">
-                <WarningIcon mr={2} color="yellow.500" />
-                Pendentes
-              </StatLabel>
-              <StatNumber fontSize="3xl">{stats.pending}</StatNumber>
-              <StatHelpText>Aguardando início</StatHelpText>
-            </Stat>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.pending}</div>
+                <p className="text-xs text-gray-600">Aguardando início</p>
+              </CardContent>
+            </Card>
 
-            <Stat
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              borderColor="gray.200"
-            >
-              <StatLabel display="flex" alignItems="center">
-                <ClockIcon mr={2} color="blue.500" />
-                Em Andamento
-              </StatLabel>
-              <StatNumber fontSize="3xl">{stats.inProgress}</StatNumber>
-              <StatHelpText>Trabalhos ativos</StatHelpText>
-            </Stat>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
+                <Clock className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.inProgress}</div>
+                <p className="text-xs text-gray-600">Trabalhos ativos</p>
+              </CardContent>
+            </Card>
 
-            <Stat
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              borderColor="gray.200"
-            >
-              <StatLabel display="flex" alignItems="center">
-                <CheckCircleIcon mr={2} color="green.500" />
-                Concluídas Hoje
-              </StatLabel>
-              <StatNumber fontSize="3xl">{stats.completedToday}</StatNumber>
-              <StatHelpText>Trabalhos finalizados</StatHelpText>
-            </Stat>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Concluídas Hoje</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.completedToday}</div>
+                <p className="text-xs text-gray-600">Trabalhos finalizados</p>
+              </CardContent>
+            </Card>
 
-            <Stat
-              bg="white"
-              p={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              borderColor="gray.200"
-            >
-              <StatLabel>Total de Revisões</StatLabel>
-              <StatNumber fontSize="3xl">{stats.total}</StatNumber>
-              <StatHelpText>Todas as atribuídas</StatHelpText>
-            </Stat>
-          </SimpleGrid>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total de Revisões</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.total}</div>
+                <p className="text-xs text-gray-600">Todas as atribuídas</p>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Tabs with Revisions */}
-          <Box bg="white" borderRadius="lg" borderWidth="1px" p={6}>
-            <Tabs colorScheme="blue">
-              <TabList>
-                <Tab>
-                  Pendentes
-                  <Badge ml={2} colorScheme="yellow">
-                    {stats.pending}
-                  </Badge>
-                </Tab>
-                <Tab>
-                  Em Andamento
-                  <Badge ml={2} colorScheme="blue">
-                    {stats.inProgress}
-                  </Badge>
-                </Tab>
-                <Tab>
-                  Concluídas
-                  <Badge ml={2} colorScheme="green">
-                    {completedRevisions.length}
-                  </Badge>
-                </Tab>
-              </TabList>
+          <Card>
+            <CardContent className="p-6">
+              <Tabs defaultValue="pending">
+                <TabsList>
+                  <TabsTrigger value="pending">
+                    Pendentes
+                    <Badge variant="secondary" className="ml-2">
+                      {stats.pending}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="in-progress">
+                    Em Andamento
+                    <Badge variant="secondary" className="ml-2">
+                      {stats.inProgress}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="completed">
+                    Concluídas
+                    <Badge variant="secondary" className="ml-2">
+                      {completedRevisions.length}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabPanels>
                 {/* Pendentes */}
-                <TabPanel>
+                <TabsContent value="pending" className="mt-6">
                   {pendingRevisions.length === 0 ? (
-                    <Box textAlign="center" py={10}>
-                      <Text color="gray.500">Nenhuma revisão pendente.</Text>
-                    </Box>
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">Nenhuma revisão pendente.</p>
+                    </div>
                   ) : (
-                    <VStack spacing={4} align="stretch">
+                    <div className="space-y-4">
                       {pendingRevisions.map((revision) => (
                         <MechanicRevisionCard
                           key={revision.id}
@@ -269,18 +232,18 @@ export default function MechanicPanel() {
                           onUpdate={handleRevisionUpdate}
                         />
                       ))}
-                    </VStack>
+                    </div>
                   )}
-                </TabPanel>
+                </TabsContent>
 
                 {/* Em Andamento */}
-                <TabPanel>
+                <TabsContent value="in-progress" className="mt-6">
                   {inProgressRevisions.length === 0 ? (
-                    <Box textAlign="center" py={10}>
-                      <Text color="gray.500">Nenhuma revisão em andamento.</Text>
-                    </Box>
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">Nenhuma revisão em andamento.</p>
+                    </div>
                   ) : (
-                    <VStack spacing={4} align="stretch">
+                    <div className="space-y-4">
                       {inProgressRevisions.map((revision) => (
                         <MechanicRevisionCard
                           key={revision.id}
@@ -288,18 +251,18 @@ export default function MechanicPanel() {
                           onUpdate={handleRevisionUpdate}
                         />
                       ))}
-                    </VStack>
+                    </div>
                   )}
-                </TabPanel>
+                </TabsContent>
 
                 {/* Concluídas */}
-                <TabPanel>
+                <TabsContent value="completed" className="mt-6">
                   {completedRevisions.length === 0 ? (
-                    <Box textAlign="center" py={10}>
-                      <Text color="gray.500">Nenhuma revisão concluída ainda.</Text>
-                    </Box>
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">Nenhuma revisão concluída ainda.</p>
+                    </div>
                   ) : (
-                    <VStack spacing={4} align="stretch">
+                    <div className="space-y-4">
                       {completedRevisions.map((revision) => (
                         <MechanicRevisionCard
                           key={revision.id}
@@ -308,21 +271,21 @@ export default function MechanicPanel() {
                           isCompleted
                         />
                       ))}
-                    </VStack>
+                    </div>
                   )}
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </Box>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
           {/* Refresh Button */}
-          <HStack justify="center">
-            <Button onClick={fetchMyRevisions} isLoading={loading}>
-              Atualizar Lista
+          <div className="flex justify-center">
+            <Button onClick={fetchMyRevisions} disabled={loading}>
+              {loading ? 'Atualizando...' : 'Atualizar Lista'}
             </Button>
-          </HStack>
-        </VStack>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
