@@ -7,6 +7,7 @@ import { Textarea } from "../ui/textarea";
 import { Separator } from "../ui/separator";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { ScrollArea } from "../ui/scroll-area";
 import {
   Package,
   User,
@@ -137,40 +138,41 @@ Qualquer dúvida estou à disposição!`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Detalhes do Pedido #{currentOrder.id}
+            <span className="flex items-center gap-2 text-lg">
+              <Package className="h-5 w-5 text-moria-orange" />
+              Pedido #{currentOrder.id.slice(0, 8)}
             </span>
-            <Badge className={statusInfo.color} variant="secondary">
+            <Badge className={`${statusInfo.color} text-xs`} variant="secondary">
               <StatusIcon className="h-3 w-3 mr-1" />
               {statusInfo.label}
             </Badge>
           </DialogTitle>
-          <DialogDescription>
+          <p className="text-xs text-muted-foreground mt-1">
             Realizado em {new Date(currentOrder.createdAt).toLocaleDateString('pt-BR')} às{' '}
             {new Date(currentOrder.createdAt).toLocaleTimeString('pt-BR')}
-          </DialogDescription>
+          </p>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <ScrollArea className="flex-1 px-6">
+          <div className="py-4 space-y-4">
           {/* Ações de Status */}
-          <div className="bg-muted p-4 rounded-lg">
-            <Label className="text-sm font-medium mb-2 block">Mudar Status do Pedido</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="bg-muted p-3 rounded-lg">
+            <Label className="text-xs font-semibold mb-2 block">Mudar Status</Label>
+            <div className="grid grid-cols-3 gap-1.5">
               <Button
                 size="sm"
                 variant={currentOrder.status === 'CONFIRMED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('CONFIRMED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full"
+                className="w-full h-8 text-xs"
               >
                 {updatingButton === 'CONFIRMED' ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <CheckCircle className="h-3 w-3 mr-1" />
                 )}
                 Confirmar
               </Button>
@@ -179,54 +181,54 @@ Qualquer dúvida estou à disposição!`;
                 variant={currentOrder.status === 'PREPARING' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('PREPARING')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full"
+                className="w-full h-8 text-xs"
               >
                 {updatingButton === 'PREPARING' ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <Package className="h-4 w-4 mr-1" />
+                  <Package className="h-3 w-3 mr-1" />
                 )}
-                Preparando
+                Preparar
               </Button>
               <Button
                 size="sm"
                 variant={currentOrder.status === 'SHIPPED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('SHIPPED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full"
+                className="w-full h-8 text-xs"
               >
                 {updatingButton === 'SHIPPED' ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <Truck className="h-4 w-4 mr-1" />
+                  <Truck className="h-3 w-3 mr-1" />
                 )}
-                Enviado
+                Enviar
               </Button>
               <Button
                 size="sm"
                 variant={currentOrder.status === 'DELIVERED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('DELIVERED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full"
+                className="w-full h-8 text-xs"
               >
                 {updatingButton === 'DELIVERED' ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <CheckCircle className="h-3 w-3 mr-1" />
                 )}
-                Entregue
+                Entregar
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleUpdateStatus('CANCELLED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full col-span-2 sm:col-span-1"
+                className="w-full h-8 text-xs col-span-2"
               >
                 {updatingButton === 'CANCELLED' ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 ) : (
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="h-3 w-3 mr-1" />
                 )}
                 Cancelar
               </Button>
@@ -235,23 +237,23 @@ Qualquer dúvida estou à disposição!`;
 
           {/* Informações do Cliente */}
           <div>
-            <h3 className="font-semibold mb-3 flex items-center">
-              <User className="h-4 w-4 mr-2" />
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-moria-orange" />
               Informações do Cliente
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+            </Label>
+            <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
+                <User className="h-3 w-3 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Nome</p>
-                  <p className="font-medium">{currentOrder.customerName}</p>
+                  <p className="text-[10px] text-muted-foreground">Nome</p>
+                  <p className="text-sm font-medium">{currentOrder.customerName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Phone className="h-3 w-3 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">WhatsApp</p>
-                  <p className="font-medium">{currentOrder.customerWhatsApp}</p>
+                  <p className="text-[10px] text-muted-foreground">WhatsApp</p>
+                  <p className="text-sm font-medium">{currentOrder.customerWhatsApp}</p>
                 </div>
               </div>
             </div>
@@ -259,104 +261,107 @@ Qualquer dúvida estou à disposição!`;
 
           {/* Itens do Pedido */}
           <div>
-            <h3 className="font-semibold mb-3 flex items-center">
-              <Package className="h-4 w-4 mr-2" />
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-moria-orange" />
               Itens do Pedido ({currentOrder.items.length})
-            </h3>
-            <div className="space-y-2">
+            </Label>
+            <div className="space-y-1.5">
               {currentOrder.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Quantidade: {item.quantity} {item.type === 'service' ? '(Serviço)' : '(Produto)'}
+                <div key={index} className="flex justify-between items-center p-2 bg-gray-50 border rounded">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity}x {item.type === 'service' ? '(Serviço)' : '(Produto)'}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">{formatCurrency(item.price * item.quantity)}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-right ml-2">
+                    <p className="text-sm font-bold">{formatCurrency(item.price * item.quantity)}</p>
+                    <p className="text-[10px] text-muted-foreground">
                       {formatCurrency(item.price)} cada
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-            <Separator className="my-3" />
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span>Total do Pedido</span>
-              <span className="text-moria-orange">{formatCurrency(currentOrder.total)}</span>
+            <div className="flex justify-between items-center mt-3 p-2 bg-moria-orange/10 rounded">
+              <span className="text-sm font-semibold">Total do Pedido</span>
+              <span className="text-base font-bold text-moria-orange">{formatCurrency(currentOrder.total)}</span>
             </div>
           </div>
 
           {/* Rastreamento e Notas */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold flex items-center">
-                <Truck className="h-4 w-4 mr-2" />
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-semibold flex items-center gap-1.5">
+                <Truck className="h-3.5 w-3.5 text-moria-orange" />
                 Rastreamento e Observações
-              </h3>
+              </Label>
               {!isEditingTracking && (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setIsEditingTracking(true)}
+                  className="h-7 text-xs"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
+                  <Edit className="h-3 w-3 mr-1" />
                   Editar
                 </Button>
               )}
             </div>
 
-            <div className="space-y-4 p-4 bg-muted rounded-lg">
-              <div>
-                <Label htmlFor="trackingCode">Código de Rastreamento</Label>
-                <Input
-                  id="trackingCode"
-                  placeholder="Ex: BR123456789BR"
-                  value={trackingCode}
-                  onChange={(e) => setTrackingCode(e.target.value)}
-                  disabled={!isEditingTracking}
-                  className="mt-1"
-                />
+            <div className="space-y-3 p-3 bg-muted rounded-lg">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="trackingCode" className="text-xs">Código de Rastreamento</Label>
+                  <Input
+                    id="trackingCode"
+                    placeholder="Ex: BR123456789BR"
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value)}
+                    disabled={!isEditingTracking}
+                    className="mt-1 h-9 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="estimatedDelivery" className="text-xs">Data Estimada de Entrega</Label>
+                  <Input
+                    id="estimatedDelivery"
+                    type="date"
+                    value={estimatedDelivery}
+                    onChange={(e) => setEstimatedDelivery(e.target.value)}
+                    disabled={!isEditingTracking}
+                    className="mt-1 h-9 text-sm"
+                  />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="estimatedDelivery">Data Estimada de Entrega</Label>
-                <Input
-                  id="estimatedDelivery"
-                  type="date"
-                  value={estimatedDelivery}
-                  onChange={(e) => setEstimatedDelivery(e.target.value)}
-                  disabled={!isEditingTracking}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="internalNotes">Notas Internas (não visível ao cliente)</Label>
+                <Label htmlFor="internalNotes" className="text-xs">Notas Internas (não visível ao cliente)</Label>
                 <Textarea
                   id="internalNotes"
                   placeholder="Adicione observações sobre este pedido..."
                   value={internalNotes}
                   onChange={(e) => setInternalNotes(e.target.value)}
                   disabled={!isEditingTracking}
-                  className="mt-1"
-                  rows={3}
+                  className="mt-1 text-sm"
+                  rows={2}
                 />
               </div>
 
               {isEditingTracking && (
                 <div className="flex gap-2">
-                  <Button onClick={handleSaveTracking} className="flex-1">
-                    <Save className="h-4 w-4 mr-1" />
+                  <Button onClick={handleSaveTracking} size="sm" className="flex-1 h-8 text-xs">
+                    <Save className="h-3 w-3 mr-1" />
                     Salvar
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setIsEditingTracking(false)}
-                    className="flex-1"
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
                   >
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="h-3 w-3 mr-1" />
                     Cancelar
                   </Button>
                 </div>
@@ -366,80 +371,83 @@ Qualquer dúvida estou à disposição!`;
 
           {/* Timeline de Status */}
           <div>
-            <h3 className="font-semibold mb-3 flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-moria-orange" />
               Histórico do Pedido
-            </h3>
-            <div className="space-y-3 p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+            </Label>
+            <div className="space-y-2 p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium">Pedido Criado</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs font-medium">Pedido Criado</p>
+                  <p className="text-[10px] text-muted-foreground">
                     {new Date(currentOrder.createdAt).toLocaleDateString('pt-BR')} às{' '}
                     {new Date(currentOrder.createdAt).toLocaleTimeString('pt-BR')}
                   </p>
                 </div>
               </div>
               {currentOrder.status !== 'PENDING' && (
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-3 w-3 text-blue-600" />
                   <div>
-                    <p className="text-sm font-medium">Pedido Confirmado</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium">Pedido Confirmado</p>
+                    <p className="text-[10px] text-muted-foreground">
                       {new Date(currentOrder.updatedAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                 </div>
               )}
               {['PREPARING', 'SHIPPED', 'DELIVERED'].includes(currentOrder.status) && (
-                <div className="flex items-center gap-3">
-                  <Package className="h-4 w-4 text-orange-600" />
+                <div className="flex items-center gap-2">
+                  <Package className="h-3 w-3 text-orange-600" />
                   <div>
-                    <p className="text-sm font-medium">Em Preparação</p>
+                    <p className="text-xs font-medium">Em Preparação</p>
                   </div>
                 </div>
               )}
               {['SHIPPED', 'DELIVERED'].includes(currentOrder.status) && (
-                <div className="flex items-center gap-3">
-                  <Truck className="h-4 w-4 text-purple-600" />
+                <div className="flex items-center gap-2">
+                  <Truck className="h-3 w-3 text-purple-600" />
                   <div>
-                    <p className="text-sm font-medium">Pedido Enviado</p>
+                    <p className="text-xs font-medium">Pedido Enviado</p>
                   </div>
                 </div>
               )}
               {currentOrder.status === 'DELIVERED' && (
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
                   <div>
-                    <p className="text-sm font-medium">Pedido Entregue</p>
+                    <p className="text-xs font-medium">Pedido Entregue</p>
                   </div>
                 </div>
               )}
               {currentOrder.status === 'CANCELLED' && (
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-3 w-3 text-red-600" />
                   <div>
-                    <p className="text-sm font-medium">Pedido Cancelado</p>
+                    <p className="text-xs font-medium">Pedido Cancelado</p>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Ações Finais */}
-          <div className="flex gap-2 pt-4 border-t">
-            <Button
-              onClick={handleSendWhatsApp}
-              className="flex-1 bg-green-600 hover:bg-green-700"
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Enviar Atualização via WhatsApp
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              Fechar
-            </Button>
-          </div>
+        </div>
+        </ScrollArea>
+
+        {/* Footer com ações */}
+        <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50/50">
+          <Button
+            onClick={handleSendWhatsApp}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+          >
+            <MessageCircle className="h-3 w-3 mr-1.5" />
+            WhatsApp
+          </Button>
+          <Button variant="outline" onClick={onClose} size="sm" className="h-8 text-xs">
+            Fechar
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

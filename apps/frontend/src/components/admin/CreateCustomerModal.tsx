@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { ScrollArea } from '../ui/scroll-area';
 import adminService from '../../api/adminService';
 import { useToast } from '../../hooks/use-toast';
 
@@ -160,105 +161,113 @@ export function CreateCustomerModal({ isOpen, onClose, onSuccess }: CreateCustom
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <User className="h-5 w-5 text-moria-orange" />
             Cadastrar Novo Cliente
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Nome Completo <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="João da Silva"
-              disabled={isCreating}
-              className={errors.name ? 'border-red-500' : ''}
-            />
-            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-          </div>
+        <ScrollArea className="flex-1 px-6">
+          <form onSubmit={handleSubmit} className="py-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="name" className="text-xs">
+                Nome Completo <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="João da Silva"
+                disabled={isCreating}
+                className={`mt-1 h-9 text-sm ${errors.name ? 'border-red-500' : ''}`}
+              />
+              {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              Email <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="joao.silva@email.com"
-              disabled={isCreating}
-              className={errors.email ? 'border-red-500' : ''}
-            />
-            {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-          </div>
+            <div>
+              <Label htmlFor="email" className="text-xs">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="joao.silva@email.com"
+                disabled={isCreating}
+                className={`mt-1 h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
+              />
+              {errors.email && <p className="text-xs text-red-500 mt-0.5">{errors.email}</p>}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">
-              Telefone/WhatsApp <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="phone"
-              value={formatPhone(formData.phone)}
-              onChange={handlePhoneChange}
-              placeholder="(11) 99999-9999"
-              disabled={isCreating}
-              className={errors.phone ? 'border-red-500' : ''}
-              maxLength={15}
-            />
-            {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
-          </div>
+            <div>
+              <Label htmlFor="phone" className="text-xs">
+                Telefone/WhatsApp <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="phone"
+                value={formatPhone(formData.phone)}
+                onChange={handlePhoneChange}
+                placeholder="(11) 99999-9999"
+                disabled={isCreating}
+                className={`mt-1 h-9 text-sm ${errors.phone ? 'border-red-500' : ''}`}
+                maxLength={15}
+              />
+              {errors.phone && <p className="text-xs text-red-500 mt-0.5">{errors.phone}</p>}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cpf">CPF (opcional)</Label>
-            <Input
-              id="cpf"
-              value={formatCPF(formData.cpf)}
-              onChange={handleCPFChange}
-              placeholder="000.000.000-00"
-              disabled={isCreating}
-              className={errors.cpf ? 'border-red-500' : ''}
-              maxLength={14}
-            />
-            {errors.cpf && <p className="text-sm text-red-500">{errors.cpf}</p>}
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isCreating}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isCreating}
-              className="flex-1 bg-moria-orange hover:bg-moria-orange/90"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Criar Cliente
-                </>
-              )}
-            </Button>
+            <div>
+              <Label htmlFor="cpf" className="text-xs">CPF (opcional)</Label>
+              <Input
+                id="cpf"
+                value={formatCPF(formData.cpf)}
+                onChange={handleCPFChange}
+                placeholder="000.000.000-00"
+                disabled={isCreating}
+                className={`mt-1 h-9 text-sm ${errors.cpf ? 'border-red-500' : ''}`}
+                maxLength={14}
+              />
+              {errors.cpf && <p className="text-xs text-red-500 mt-0.5">{errors.cpf}</p>}
+            </div>
           </div>
         </form>
+        </ScrollArea>
+
+        {/* Footer com ações */}
+        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t bg-gray-50/50">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isCreating}
+            size="sm"
+            className="h-8 text-xs"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isCreating}
+            size="sm"
+            className="bg-moria-orange hover:bg-moria-orange/90 h-8 text-xs"
+            onClick={handleSubmit}
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Criando...
+              </>
+            ) : (
+              <>
+                <Save className="h-3 w-3 mr-1" />
+                Criar Cliente
+              </>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

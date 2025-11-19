@@ -6,6 +6,7 @@ import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Separator } from "../ui/separator";
 import { Label } from "../ui/label";
+import { ScrollArea } from "../ui/scroll-area";
 import {
   Wrench,
   User,
@@ -252,43 +253,44 @@ Estou à disposição para esclarecer dúvidas! 😊`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-orange-600" />
-              Orçamento #{quote.id}
+            <span className="flex items-center gap-2 text-lg">
+              <Wrench className="h-5 w-5 text-moria-orange" />
+              Orçamento #{quote.id.slice(0, 8)}
             </span>
-            <Badge className={statusBadge.color} variant="secondary">
+            <Badge className={`${statusBadge.color} text-xs`} variant="secondary">
               {statusBadge.label}
             </Badge>
           </DialogTitle>
-          <DialogDescription>
+          <p className="text-xs text-muted-foreground mt-1">
             Solicitado em {new Date(quote.createdAt).toLocaleDateString('pt-BR')} às{' '}
             {new Date(quote.createdAt).toLocaleTimeString('pt-BR')}
-          </DialogDescription>
+          </p>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <ScrollArea className="flex-1 px-6">
+          <div className="py-4 space-y-4">
           {/* Informações do Cliente */}
           <div>
-            <h3 className="font-semibold mb-3 flex items-center">
-              <User className="h-4 w-4 mr-2" />
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-moria-orange" />
               Informações do Cliente
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+            </Label>
+            <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
+                <User className="h-3 w-3 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Nome</p>
-                  <p className="font-medium">{quote.customerName}</p>
+                  <p className="text-[10px] text-muted-foreground">Nome</p>
+                  <p className="text-sm font-medium">{quote.customerName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Phone className="h-3 w-3 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">WhatsApp</p>
-                  <p className="font-medium">{quote.customerWhatsApp}</p>
+                  <p className="text-[10px] text-muted-foreground">WhatsApp</p>
+                  <p className="text-sm font-medium">{quote.customerWhatsApp}</p>
                 </div>
               </div>
             </div>
@@ -296,29 +298,29 @@ Estou à disposição para esclarecer dúvidas! 😊`;
 
           {/* Serviços Solicitados */}
           <div>
-            <h3 className="font-semibold mb-3 flex items-center">
-              <Wrench className="h-4 w-4 mr-2" />
-              Serviços Solicitados
-            </h3>
-            <div className="space-y-3">
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+              <Wrench className="h-3.5 w-3.5 text-moria-orange" />
+              Serviços Solicitados ({items.length})
+            </Label>
+            <div className="space-y-2">
               {items.map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                <div key={item.id} className="p-3 bg-gray-50 border rounded">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         Quantidade: {item.quantity}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="sm:col-span-2">
-                      <Label htmlFor={`price-${item.id}`}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor={`price-${item.id}`} className="text-xs">
                         Preço Unitário
                       </Label>
                       <div className="relative mt-1">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <DollarSign className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
                         <Input
                           id={`price-${item.id}`}
                           type="number"
@@ -327,14 +329,14 @@ Estou à disposição para esclarecer dúvidas! 😊`;
                           placeholder="0.00"
                           value={item.quotedPrice || ''}
                           onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                          className="pl-10"
+                          className="pl-7 h-9 text-sm"
                           disabled={isUpdating}
                         />
                       </div>
                     </div>
                     <div>
-                      <Label>Subtotal</Label>
-                      <div className="mt-1 p-2 bg-muted rounded-md text-center font-bold text-lg">
+                      <Label className="text-xs">Subtotal</Label>
+                      <div className="mt-1 h-9 flex items-center justify-center bg-muted rounded-md font-bold text-sm">
                         {formatCurrency(item.quotedPrice * item.quantity)}
                       </div>
                     </div>
@@ -343,35 +345,33 @@ Estou à disposição para esclarecer dúvidas! 😊`;
               ))}
             </div>
 
-            <Separator className="my-4" />
-
-            <div className="flex justify-between items-center p-4 bg-moria-orange/10 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-moria-orange" />
-                <span className="text-lg font-semibold">Total do Orçamento</span>
+            <div className="flex justify-between items-center mt-3 p-2 bg-moria-orange/10 rounded">
+              <div className="flex items-center gap-1.5">
+                <Calculator className="h-3.5 w-3.5 text-moria-orange" />
+                <span className="text-sm font-semibold">Total do Orçamento</span>
               </div>
-              <span className="text-2xl font-bold text-moria-orange">
+              <span className="text-base font-bold text-moria-orange">
                 {formatCurrency(total)}
               </span>
             </div>
           </div>
 
           {/* Observações e Validade */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <Label htmlFor="observations">Observações (visível ao cliente)</Label>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Label htmlFor="observations" className="text-xs">Observações (visível ao cliente)</Label>
               <Textarea
                 id="observations"
                 placeholder="Ex: Inclui mão de obra especializada. Peças com garantia de 90 dias..."
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
-                className="mt-1"
-                rows={4}
+                className="mt-1 text-sm"
+                rows={3}
                 disabled={isUpdating}
               />
             </div>
             <div>
-              <Label htmlFor="validity">Validade (dias)</Label>
+              <Label htmlFor="validity" className="text-xs">Validade (dias)</Label>
               <Input
                 id="validity"
                 type="number"
@@ -379,71 +379,76 @@ Estou à disposição para esclarecer dúvidas! 😊`;
                 max="30"
                 value={validityDays}
                 onChange={(e) => setValidityDays(parseInt(e.target.value) || 7)}
-                className="mt-1"
+                className="mt-1 h-9 text-sm"
                 disabled={isUpdating}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] text-muted-foreground mt-1">
                 Válido até: {new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
               </p>
             </div>
           </div>
 
-          {/* Ações */}
-          <div className="space-y-3 pt-4 border-t">
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveQuote}
-                disabled={isUpdating || total === 0}
-                className="flex-1"
-              >
-                {isUpdating ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {isUpdating ? "Salvando..." : "Salvar Orçamento"}
-              </Button>
-              <Button
-                onClick={handleSendWhatsApp}
-                disabled={total === 0}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Enviar via WhatsApp
-              </Button>
-            </div>
+        </div>
+        </ScrollArea>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={handleApprove}
-                disabled={isUpdating || quote.status === 'APPROVED' || quote.status === 'accepted'}
-                variant="outline"
-                className="flex-1 border-green-600 text-green-700 hover:bg-green-50"
-                title={quote.status === 'PENDING' || quote.status === 'pending' ? 'Salvar e aprovar orçamento' : 'Aprovar orçamento'}
-              >
-                {isUpdating ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                {isUpdating ? "Aprovando..." : (quote.status === 'PENDING' || quote.status === 'pending' ? "Salvar e Aprovar" : "Aprovar Orçamento")}
-              </Button>
-              <Button
-                onClick={handleReject}
-                disabled={isUpdating || quote.status === 'REJECTED' || quote.status === 'rejected'}
-                variant="outline"
-                className="flex-1 border-red-600 text-red-700 hover:bg-red-50"
-              >
-                {isUpdating ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <XCircle className="h-4 w-4 mr-2" />
-                )}
-                {isUpdating ? "Rejeitando..." : "Rejeitar"}
-              </Button>
-            </div>
+        {/* Footer com ações */}
+        <div className="px-6 py-3 border-t bg-gray-50/50 space-y-2">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSaveQuote}
+              disabled={isUpdating || total === 0}
+              size="sm"
+              className="flex-1 h-8 text-xs"
+            >
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3 mr-1" />
+              )}
+              {isUpdating ? "Salvando..." : "Salvar"}
+            </Button>
+            <Button
+              onClick={handleSendWhatsApp}
+              disabled={total === 0}
+              size="sm"
+              className="flex-1 bg-green-600 hover:bg-green-700 h-8 text-xs"
+            >
+              <MessageCircle className="h-3 w-3 mr-1" />
+              WhatsApp
+            </Button>
+          </div>
 
-            <Button variant="ghost" onClick={onClose} className="w-full">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleApprove}
+              disabled={isUpdating || quote.status === 'APPROVED' || quote.status === 'accepted'}
+              variant="outline"
+              size="sm"
+              className="flex-1 border-green-600 text-green-700 hover:bg-green-50 h-8 text-xs"
+              title={quote.status === 'PENDING' || quote.status === 'pending' ? 'Salvar e aprovar orçamento' : 'Aprovar orçamento'}
+            >
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <CheckCircle className="h-3 w-3 mr-1" />
+              )}
+              {isUpdating ? "Aprovando..." : (quote.status === 'PENDING' || quote.status === 'pending' ? "Salvar e Aprovar" : "Aprovar")}
+            </Button>
+            <Button
+              onClick={handleReject}
+              disabled={isUpdating || quote.status === 'REJECTED' || quote.status === 'rejected'}
+              variant="outline"
+              size="sm"
+              className="flex-1 border-red-600 text-red-700 hover:bg-red-50 h-8 text-xs"
+            >
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <XCircle className="h-3 w-3 mr-1" />
+              )}
+              {isUpdating ? "Rejeitando..." : "Rejeitar"}
+            </Button>
+            <Button variant="outline" onClick={onClose} size="sm" className="h-8 text-xs">
               Fechar
             </Button>
           </div>

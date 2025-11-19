@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { ScrollArea } from '../ui/scroll-area';
 import adminService from '../../api/adminService';
 import { useToast } from '../../hooks/use-toast';
 
@@ -211,18 +212,19 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <Car className="h-5 w-5 text-moria-orange" />
             Cadastrar Novo Veículo
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="brand">
+        <ScrollArea className="flex-1 px-6">
+          <form onSubmit={handleSubmit} className="py-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="brand" className="text-xs">
                 Marca <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -231,13 +233,13 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                 placeholder="Ex: Fiat, Ford, Chevrolet"
                 disabled={isCreating}
-                className={errors.brand ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.brand ? 'border-red-500' : ''}`}
               />
-              {errors.brand && <p className="text-sm text-red-500">{errors.brand}</p>}
+              {errors.brand && <p className="text-xs text-red-500 mt-0.5">{errors.brand}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="model">
+            <div>
+              <Label htmlFor="model" className="text-xs">
                 Modelo <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -246,15 +248,13 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 placeholder="Ex: Uno, Fiesta, Onix"
                 disabled={isCreating}
-                className={errors.model ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.model ? 'border-red-500' : ''}`}
               />
-              {errors.model && <p className="text-sm text-red-500">{errors.model}</p>}
+              {errors.model && <p className="text-xs text-red-500 mt-0.5">{errors.model}</p>}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="year">
+            <div>
+              <Label htmlFor="year" className="text-xs">
                 Ano <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -264,15 +264,15 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                 placeholder="2020"
                 disabled={isCreating}
-                className={errors.year ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.year ? 'border-red-500' : ''}`}
                 min="1900"
                 max={new Date().getFullYear() + 1}
               />
-              {errors.year && <p className="text-sm text-red-500">{errors.year}</p>}
+              {errors.year && <p className="text-xs text-red-500 mt-0.5">{errors.year}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="plate">
+            <div>
+              <Label htmlFor="plate" className="text-xs">
                 Placa <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -281,16 +281,14 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={handlePlateChange}
                 placeholder="ABC-1234 ou ABC1D23"
                 disabled={isCreating}
-                className={errors.plate ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.plate ? 'border-red-500' : ''}`}
                 maxLength={8}
               />
-              {errors.plate && <p className="text-sm text-red-500">{errors.plate}</p>}
+              {errors.plate && <p className="text-xs text-red-500 mt-0.5">{errors.plate}</p>}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="color">
+            <div>
+              <Label htmlFor="color" className="text-xs">
                 Cor <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -299,13 +297,13 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                 placeholder="Ex: Branco, Preto, Prata"
                 disabled={isCreating}
-                className={errors.color ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.color ? 'border-red-500' : ''}`}
               />
-              {errors.color && <p className="text-sm text-red-500">{errors.color}</p>}
+              {errors.color && <p className="text-xs text-red-500 mt-0.5">{errors.color}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="mileage">Quilometragem (opcional)</Label>
+            <div>
+              <Label htmlFor="mileage" className="text-xs">Quilometragem (opcional)</Label>
               <Input
                 id="mileage"
                 type="number"
@@ -313,15 +311,15 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
                 onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
                 placeholder="50000"
                 disabled={isCreating}
-                className={errors.mileage ? 'border-red-500' : ''}
+                className={`mt-1 h-9 text-sm ${errors.mileage ? 'border-red-500' : ''}`}
                 min="0"
               />
-              {errors.mileage && <p className="text-sm text-red-500">{errors.mileage}</p>}
+              {errors.mileage && <p className="text-xs text-red-500 mt-0.5">{errors.mileage}</p>}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="chassisNumber">Número do Chassi (opcional)</Label>
+          <div>
+            <Label htmlFor="chassisNumber" className="text-xs">Número do Chassi (opcional)</Label>
             <Input
               id="chassisNumber"
               value={formData.chassisNumber}
@@ -329,38 +327,44 @@ export function CreateVehicleModal({ customerId, isOpen, onClose, onSuccess }: C
               placeholder="9BWZZZ377VT004251"
               disabled={isCreating}
               maxLength={17}
+              className="mt-1 h-9 text-sm"
             />
           </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isCreating}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isCreating}
-              className="flex-1 bg-moria-orange hover:bg-moria-orange/90"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Criar Veículo
-                </>
-              )}
-            </Button>
-          </div>
         </form>
+        </ScrollArea>
+
+        {/* Footer com ações */}
+        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t bg-gray-50/50">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isCreating}
+            size="sm"
+            className="h-8 text-xs"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isCreating}
+            size="sm"
+            className="bg-moria-orange hover:bg-moria-orange/90 h-8 text-xs"
+            onClick={handleSubmit}
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Criando...
+              </>
+            ) : (
+              <>
+                <Save className="h-3 w-3 mr-1" />
+                Criar Veículo
+              </>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
