@@ -14,6 +14,10 @@ export function useAdminPermissions() {
       canEditUser: false,
       canDeleteUser: false,
       canViewUsers: false,
+      canManageAdmins: false,
+      canCreateAdmins: false,
+      canUpdateAdmins: false,
+      canDeleteAdmins: false,
 
       // Products
       canCreateProduct: false,
@@ -58,6 +62,10 @@ export function useAdminPermissions() {
     canEditUser: hasMinRole('ADMIN'),
     canDeleteUser: isSuperAdmin,
     canViewUsers: hasMinRole('ADMIN'),
+    canManageAdmins: hasMinRole('ADMIN'), // Can view and manage admin users section
+    canCreateAdmins: hasMinRole('ADMIN'), // Can create new admin users
+    canUpdateAdmins: hasMinRole('ADMIN'), // Can update admin users
+    canDeleteAdmins: hasMinRole('ADMIN'), // Can delete admin users
 
     // Products
     canCreateProduct: hasMinRole('MANAGER'),
