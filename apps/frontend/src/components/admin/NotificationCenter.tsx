@@ -10,8 +10,33 @@ import {
   AlertTriangle,
   CheckCircle,
   X,
-  MessageCircle
+  MessageCircle,
+  FileText,
+  ShoppingCart
 } from "lucide-react";
+import adminService from "../../api/adminService";
+import { toast } from "../ui/use-toast";
+
+// API Notification Types
+type NotificationType =
+  | 'NEW_QUOTE_REQUEST'
+  | 'QUOTE_RESPONDED'
+  | 'QUOTE_APPROVED'
+  | 'QUOTE_REJECTED'
+  | 'ORDER_STATUS_UPDATED'
+  | 'ORDER_CREATED';
+
+interface ApiNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: any;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Notification {
   id: string;
@@ -23,27 +48,115 @@ interface Notification {
   priority: 'low' | 'medium' | 'high';
   actionUrl?: string;
   actionLabel?: string;
+  data?: any;
 }
 
 interface NotificationCenterProps {
-  pendingOrders: number;
-  pendingQuotes: number;
-  lowStockProducts: number;
+  pendingOrders?: number;
+  pendingQuotes?: number;
+  lowStockProducts?: number;
   onActionClick?: (notification: Notification) => void;
+  useRealNotifications?: boolean; // Flag to use real API notifications
 }
 
 export function NotificationCenter({
-  pendingOrders,
-  pendingQuotes,
-  lowStockProducts,
-  onActionClick
+  pendingOrders = 0,
+  pendingQuotes = 0,
+  lowStockProducts = 0,
+  onActionClick,
+  useRealNotifications = false
 }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    generateNotifications();
-  }, [pendingOrders, pendingQuotes, lowStockProducts]);
+    if (useRealNotifications) {
+      loadRealNotifications();
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(loadRealNotifications, 30000);
+      return () => clearInterval(interval);
+    } else {
+      generateNotifications();
+    }
+  }, [pendingOrders, pendingQuotes, lowStockProducts, useRealNotifications]);
+
+  // Load notifications from API
+  const loadRealNotifications = async () => {
+    try {
+      setLoading(true);
+      const apiNotifications = await adminService.getNotifications();
+      const mappedNotifications = apiNotifications.map(mapApiNotificationToNotification);
+      setNotifications(mappedNotifications);
+      setUnreadCount(mappedNotifications.filter(n => !n.read).length);
+    } catch (error: any) {
+      console.error("Erro ao carregar notificações:", error);
+      // Don't show error toast on background polls to avoid annoying the user
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Map API notification to internal notification format
+  const mapApiNotificationToNotification = (apiNotif: ApiNotification): Notification => {
+    let type: Notification['type'] = 'system';
+    let priority: Notification['priority'] = 'medium';
+    let actionUrl: string | undefined;
+    let actionLabel: string | undefined;
+
+    // Determine type, priority, and actions based on notification type
+    switch (apiNotif.type) {
+      case 'NEW_QUOTE_REQUEST':
+        type = 'quote';
+        priority = 'high';
+        actionUrl = '/quotes';
+        actionLabel = 'Ver Orçamento';
+        break;
+      case 'QUOTE_RESPONDED':
+        type = 'quote';
+        priority = 'medium';
+        actionUrl = '/quotes';
+        actionLabel = 'Ver Orçamento';
+        break;
+      case 'QUOTE_APPROVED':
+        type = 'quote';
+        priority = 'high';
+        actionUrl = '/orders';
+        actionLabel = 'Ver Pedido';
+        break;
+      case 'QUOTE_REJECTED':
+        type = 'quote';
+        priority = 'low';
+        actionUrl = '/quotes';
+        actionLabel = 'Ver Orçamento';
+        break;
+      case 'ORDER_CREATED':
+        type = 'order';
+        priority = 'high';
+        actionUrl = '/orders';
+        actionLabel = 'Ver Pedido';
+        break;
+      case 'ORDER_STATUS_UPDATED':
+        type = 'order';
+        priority = 'medium';
+        actionUrl = '/orders';
+        actionLabel = 'Ver Pedido';
+        break;
+    }
+
+    return {
+      id: apiNotif.id,
+      type,
+      title: apiNotif.title,
+      message: apiNotif.message,
+      timestamp: new Date(apiNotif.createdAt),
+      read: apiNotif.read,
+      priority,
+      actionUrl,
+      actionLabel,
+      data: apiNotif.data,
+    };
+  };
 
   const generateNotifications = () => {
     const newNotifications: Notification[] = [];
@@ -97,18 +210,58 @@ export function NotificationCenter({
     setUnreadCount(newNotifications.filter(n => !n.read).length);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n =>
-      n.id === id ? { ...n, read: true } : n
-    ));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (id: string) => {
+    if (useRealNotifications) {
+      try {
+        await adminService.markNotificationAsRead(id);
+        setNotifications(notifications.map(n =>
+          n.id === id ? { ...n, read: true } : n
+        ));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error: any) {
+        console.error("Erro ao marcar notificação como lida:", error);
+      }
+    } else {
+      setNotifications(notifications.map(n =>
+        n.id === id ? { ...n, read: true } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
   };
 
   const dismissNotification = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-    const notification = notifications.find(n => n.id === id);
-    if (notification && !notification.read) {
-      setUnreadCount(prev => Math.max(0, prev - 1));
+    // For real notifications, just mark as read (don't delete)
+    if (useRealNotifications) {
+      markAsRead(id);
+    } else {
+      setNotifications(notifications.filter(n => n.id !== id));
+      const notification = notifications.find(n => n.id === id);
+      if (notification && !notification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (useRealNotifications) {
+      try {
+        await adminService.markAllNotificationsAsRead();
+        setNotifications(notifications.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+        toast({
+          title: "Notificações marcadas como lidas",
+        });
+      } catch (error: any) {
+        console.error("Erro ao marcar todas como lidas:", error);
+        toast({
+          title: "Erro ao marcar notificações",
+          description: "Tente novamente mais tarde",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
     }
   };
 
@@ -151,9 +304,21 @@ export function NotificationCenter({
               </Badge>
             )}
           </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllAsRead}
+              disabled={loading}
+            >
+              Marcar todas como lidas
+            </Button>
+          )}
         </div>
         <CardDescription>
-          Acompanhe as atividades importantes da sua loja
+          {useRealNotifications
+            ? "Acompanhe as atividades importantes da sua loja"
+            : "Resumo das atividades recentes"}
         </CardDescription>
       </CardHeader>
       <CardContent>

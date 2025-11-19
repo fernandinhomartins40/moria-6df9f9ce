@@ -22,6 +22,7 @@ import customerVehiclesRoutes from '@modules/customer-vehicles/customer-vehicles
 import checklistRoutes from '@modules/checklist/checklist.routes.js';
 import revisionsRoutes from '@modules/revisions/revisions.routes.js';
 import adminRoutes from '@modules/admin/admin.routes.js';
+import customerRoutes from '@modules/customer/customer.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -93,6 +94,9 @@ export function createApp(): Express {
 
   // Admin Routes
   app.use('/admin', adminRoutes);
+
+  // Customer Routes
+  app.use('/customers', customerRoutes);
 
   // 404 handler
   app.use((_req: Request, res: Response) => {

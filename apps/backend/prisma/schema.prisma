@@ -55,6 +55,7 @@ enum ServiceStatus {
 enum OrderStatus {
   PENDING
   CONFIRMED
+  IN_PRODUCTION
   PREPARING
   SHIPPED
   DELIVERED
@@ -91,6 +92,20 @@ enum QuoteStatus {
   QUOTED
   APPROVED
   REJECTED
+}
+
+enum NotificationType {
+  NEW_QUOTE_REQUEST
+  QUOTE_RESPONDED
+  QUOTE_APPROVED
+  QUOTE_REJECTED
+  ORDER_STATUS_UPDATED
+  ORDER_CREATED
+}
+
+enum NotificationRecipientType {
+  ADMIN
+  CUSTOMER
 }
 
 // ============================================================================
@@ -659,4 +674,24 @@ model Revision {
   @@index([date])
   @@index([assignedMechanicId])
   @@map("revisions")
+}
+
+// Notificações
+model Notification {
+  id            String                    @id @default(uuid())
+  recipientType NotificationRecipientType
+  recipientId   String // ID do Admin ou Customer
+  type          NotificationType
+  title         String
+  message       String                    @db.Text
+  data          Json? // Dados contextuais (orderId, quoteId, etc)
+  read          Boolean                   @default(false)
+  readAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipientId, recipientType, read])
+  @@index([createdAt])
+  @@map("notifications")
 }

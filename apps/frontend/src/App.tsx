@@ -14,6 +14,7 @@ import StorePanel from "./pages/StorePanel";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import CustomerPanel from "./pages/CustomerPanel";
+import MyAccount from "./pages/MyAccount";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/customer" element={<CustomerPanel />} />
+                    <Route path="/my-account" element={<MyAccount />} />
                     <Route path="/store-panel" element={<StorePanel />} />
                     <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />

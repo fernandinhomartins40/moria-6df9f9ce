@@ -264,4 +264,34 @@ export class AdminController {
       next(error);
     }
   };
+
+  createQuote = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { customerId, customerData, items, observations, validityDays, address, sendToClient } = req.body;
+
+      if (!items || items.length === 0) {
+        res.status(400).json({ error: 'Itens são obrigatórios' });
+        return;
+      }
+
+      if (!customerId && !customerData) {
+        res.status(400).json({ error: 'É necessário fornecer um cliente existente ou dados de novo cliente' });
+        return;
+      }
+
+      const quote = await this.adminService.createQuote({
+        customerId,
+        customerData,
+        items,
+        observations,
+        validityDays,
+        address,
+        sendToClient
+      });
+
+      res.status(201).json(quote);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

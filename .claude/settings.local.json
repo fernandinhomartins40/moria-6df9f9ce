@@ -41,7 +41,11 @@
       "Bash(git config:*)",
       "Bash(GIT_CURL_VERBOSE=1 GIT_TRACE=1 git push:*)",
       "Bash(nul)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(git revert:*)",
+      "Bash(cmd /c \"if exist nul del nul\")",
+      "Bash(/tmp/login-test.json)",
+      "Bash(del cookies.txt)"
     ],
     "deny": [],
     "ask": []

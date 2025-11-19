@@ -1,5 +1,7 @@
 import { prisma } from '../../config/database.js';
-import { CustomerLevel, CustomerStatus, OrderStatus, Prisma } from '@prisma/client';
+import { CustomerLevel, CustomerStatus, OrderStatus, Prisma, OrderItemType, Admin } from '@prisma/client';
+import notificationService from '@modules/notifications/notification.service.js';
+import { HashUtil } from '@shared/utils/hash.util.js';
 
 // ==================== TYPES ====================
 
@@ -465,7 +467,7 @@ export class AdminService {
     }, 0);
 
     // Atualizar pedido
-    return prisma.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id },
       data: {
         total: newTotal,
@@ -474,6 +476,11 @@ export class AdminService {
       },
       include: { items: true, customer: true },
     });
+
+    // Notificar cliente que orçamento foi respondido
+    await notificationService.notifyQuoteResponded(id);
+
+    return updatedOrder;
   }
 
   async approveQuote(id: string) {
@@ -489,13 +496,20 @@ export class AdminService {
       throw new Error('Orçamento precisa estar no status QUOTED para ser aprovado');
     }
 
-    return prisma.order.update({
+    // ✅ MUDANÇA CRÍTICA: Ao aprovar orçamento, muda status para IN_PRODUCTION
+    const updatedOrder = await prisma.order.update({
       where: { id },
       data: {
         quoteStatus: 'APPROVED',
         quoteApprovedAt: new Date(),
+        status: 'IN_PRODUCTION', // ✅ Orçamento aprovado vira pedido em produção!
       },
     });
+
+    // Notificar aprovação
+    await notificationService.notifyQuoteApproved(id);
+
+    return updatedOrder;
   }
 
   async rejectQuote(id: string) {
@@ -643,5 +657,186 @@ export class AdminService {
       zipCode: address.zipCode,
       type: address.type
     };
+  }
+
+  // ==================== CREATE QUOTE ====================
+
+  async createQuote(data: {
+    customerId?: string;
+    customerData?: {
+      name: string;
+      email: string;
+      phone: string;
+      cpf?: string;
+    };
+    items: Array<{
+      serviceId: string;
+      quantity: number;
+      quotedPrice: number;
+      observations?: string;
+    }>;
+    observations?: string;
+    validityDays: number;
+    address?: {
+      street: string;
+      number: string;
+      complement?: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      type: 'HOME' | 'WORK' | 'OTHER';
+    };
+    sendToClient: boolean;
+  }) {
+    let customerId = data.customerId;
+
+    // Se não tem customerId, criar novo cliente
+    if (!customerId && data.customerData) {
+      const existingCustomer = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            { email: data.customerData.email },
+            { phone: data.customerData.phone }
+          ]
+        }
+      });
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        // Gerar senha temporária
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await HashUtil.hashPassword(tempPassword);
+
+        const newCustomer = await prisma.customer.create({
+          data: {
+            name: data.customerData.name,
+            email: data.customerData.email,
+            phone: data.customerData.phone,
+            cpf: data.customerData.cpf || null,
+            password: hashedPassword,
+            level: 'BRONZE',
+            status: 'ACTIVE'
+          }
+        });
+        customerId = newCustomer.id;
+      }
+    }
+
+    if (!customerId) {
+      throw new Error('Cliente não encontrado ou não pôde ser criado');
+    }
+
+    // Buscar dados dos serviços
+    const serviceIds = data.items.map(item => item.serviceId);
+    const services = await prisma.service.findMany({
+      where: { id: { in: serviceIds } }
+    });
+
+    // Mapear serviços por ID
+    const servicesMap = new Map(services.map(s => [s.id, s]));
+
+    // Calcular total
+    const total = data.items.reduce((sum, item) => {
+      return sum + (item.quotedPrice * item.quantity);
+    }, 0);
+
+    // Criar endereço se fornecido
+    let addressId: string | null = null;
+    if (data.address) {
+      const newAddress = await prisma.address.create({
+        data: {
+          customerId,
+          street: data.address.street,
+          number: data.address.number,
+          complement: data.address.complement || null,
+          neighborhood: data.address.neighborhood,
+          city: data.address.city,
+          state: data.address.state,
+          zipCode: data.address.zipCode.replace(/\D/g, ''),
+          type: data.address.type
+        }
+      });
+      addressId = newAddress.id;
+    }
+
+    // Criar Order (orçamento)
+    const orderData: any = {
+      customerId,
+      status: 'PENDING',
+      quoteStatus: data.sendToClient ? 'QUOTED' : 'ANALYZING',
+      quotedAt: data.sendToClient ? new Date() : null,
+      quoteNotes: data.observations || null,
+      hasProducts: false,
+      hasServices: true,
+      subtotal: total,
+      discountAmount: 0,
+      total: total,
+      paymentMethod: 'A_DEFINIR',
+      items: {
+          create: data.items.map(item => {
+            const service = servicesMap.get(item.serviceId);
+            return {
+              type: OrderItemType.SERVICE,
+              serviceId: item.serviceId,
+              name: service?.name || 'Serviço',
+              quantity: item.quantity,
+              price: item.quotedPrice,
+              subtotal: item.quotedPrice * item.quantity,
+              quotedPrice: item.quotedPrice,
+              priceQuoted: true
+            };
+          })
+        }
+    };
+
+    if (addressId) {
+      orderData.addressId = addressId;
+    }
+
+    const order = await prisma.order.create({
+      data: orderData,
+      include: {
+        items: true,
+        customer: {
+          select: {
+            name: true,
+            phone: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Enviar notificação
+    if (data.sendToClient) {
+      // Se já está orçado, notificar cliente que orçamento está pronto
+      await notificationService.notifyQuoteResponded(order.id);
+    }
+    // Sempre notificar admins sobre novo orçamento criado
+    const admins = await prisma.admin.findMany({
+      where: { status: 'ACTIVE' }
+    });
+
+    await Promise.all(
+      admins.map((admin: Admin) =>
+        notificationService.create({
+          recipientType: 'ADMIN',
+          recipientId: admin.id,
+          type: 'NEW_QUOTE_REQUEST',
+          title: 'Novo Orçamento Criado',
+          message: `Orçamento #${order.id.slice(0, 8)} criado`,
+          data: {
+            quoteId: order.id,
+            customerId: order.customerId,
+            status: order.quoteStatus
+          }
+        })
+      )
+    );
+
+    // Retornar no formato Quote
+    return this.mapOrderToQuote(order as any);
   }
 }

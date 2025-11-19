@@ -44,6 +44,7 @@ import { OrderDetailsModal } from "./OrderDetailsModal";
 import { QuoteModal } from "./QuoteModal";
 import { NotificationCenter } from "./NotificationCenter";
 import { CreateOrderModal } from "./CreateOrderModal";
+import { CreateQuoteModal } from "./CreateQuoteModal";
 import adminService from "@/api/adminService";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import serviceService from "@/api/serviceService";
@@ -161,6 +162,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [revisionView, setRevisionView] = useState<'list' | 'create'>('list');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false);
+  const [isCreateQuoteModalOpen, setIsCreateQuoteModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<StoreOrder | null>(null);
@@ -250,7 +252,9 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter(quote => quote.status === statusFilter);
+      filtered = filtered.filter(quote =>
+        quote.status.toUpperCase() === statusFilter.toUpperCase()
+      );
     }
 
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -658,6 +662,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const getQuoteStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; color: string }> = {
       PENDING: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+      ANALYZING: { label: 'Em Análise', color: 'bg-purple-100 text-purple-800' },
       QUOTED: { label: 'Orçado', color: 'bg-blue-100 text-blue-800' },
       APPROVED: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
       REJECTED: { label: 'Rejeitado', color: 'bg-red-100 text-red-800' },
@@ -703,6 +708,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
             <CardDescription>Solicitações de orçamento para serviços</CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => setIsCreateQuoteModalOpen(true)}
+              className="bg-moria-orange hover:bg-orange-600"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Orçamento
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -790,10 +803,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         <Wrench className="h-4 w-4 mr-1 text-orange-600" />
                         Serviços ({quote.items.length})
                       </span>
-                      {quote.status === 'QUOTED' || quote.status === 'quoted' || quote.status === 'APPROVED' || quote.status === 'approved' ? (
+                      {['QUOTED', 'quoted', 'APPROVED', 'approved'].includes(quote.status) ? (
                         <span className="font-semibold text-green-600">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total || 0)}
                         </span>
+                      ) : ['ANALYZING', 'analyzing'].includes(quote.status) ? (
+                        <span className="text-purple-600">Em Análise</span>
                       ) : (
                         <span className="text-orange-600">Aguardando Orçamento</span>
                       )}
@@ -829,22 +844,29 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                         setIsQuoteModalOpen(true);
                       }}
                       className={
-                        quote.status === 'APPROVED' || quote.status === 'approved'
+                        ['APPROVED', 'approved'].includes(quote.status)
                           ? 'bg-green-600 hover:bg-green-700'
-                          : quote.status === 'QUOTED' || quote.status === 'quoted'
+                          : ['QUOTED', 'quoted'].includes(quote.status)
                           ? 'bg-blue-600 hover:bg-blue-700'
+                          : ['ANALYZING', 'analyzing'].includes(quote.status)
+                          ? 'bg-purple-600 hover:bg-purple-700'
                           : 'bg-moria-orange hover:bg-moria-orange/90'
                       }
                     >
-                      {quote.status === 'APPROVED' || quote.status === 'approved' ? (
+                      {['APPROVED', 'approved'].includes(quote.status) ? (
                         <>
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Visualizar
                         </>
-                      ) : quote.status === 'QUOTED' || quote.status === 'quoted' ? (
+                      ) : ['QUOTED', 'quoted'].includes(quote.status) ? (
                         <>
                           <Eye className="h-4 w-4 mr-1" />
                           Gerenciar
+                        </>
+                      ) : ['ANALYZING', 'analyzing'].includes(quote.status) ? (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Continuar Análise
                         </>
                       ) : (
                         <>
@@ -2620,6 +2642,15 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         onSuccess={() => {
           loadData();
           setIsCreateOrderModalOpen(false);
+        }}
+      />
+
+      <CreateQuoteModal
+        isOpen={isCreateQuoteModalOpen}
+        onClose={() => setIsCreateQuoteModalOpen(false)}
+        onSuccess={() => {
+          loadData();
+          setIsCreateQuoteModalOpen(false);
         }}
       />
     </>

@@ -33,7 +33,9 @@ export interface Quote {
   customerWhatsApp: string;
   items: QuoteItem[];
   total: number;
-  status: 'PENDING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'pending' | 'responded' | 'accepted' | 'rejected';
+  status: 'PENDING' | 'ANALYZING' | 'QUOTED' | 'APPROVED' | 'REJECTED' | 'pending' | 'analyzing' | 'responded' | 'accepted' | 'rejected';
+  sessionId?: string;
+  hasLinkedOrder?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -318,6 +320,38 @@ class AdminService {
 
   async updateQuoteStatus(id: string, status: string): Promise<Quote> {
     const response = await apiClient.patch(`/admin/quotes/${id}/status`, { status });
+    return response.data;
+  }
+
+  async createQuote(data: {
+    customerId?: string;
+    customerData?: {
+      name: string;
+      email: string;
+      phone: string;
+      cpf?: string;
+    };
+    items: Array<{
+      serviceId: string;
+      quantity: number;
+      quotedPrice: number;
+      observations?: string;
+    }>;
+    observations?: string;
+    validityDays: number;
+    address?: {
+      street: string;
+      number: string;
+      complement?: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      type: 'HOME' | 'WORK' | 'OTHER';
+    };
+    sendToClient: boolean;
+  }): Promise<Quote> {
+    const response = await apiClient.post('/admin/quotes', data);
     return response.data;
   }
 
