@@ -1,0 +1,5 @@
+# Moria - Backup Automático de Uploads
+# Executa todo dia às 3h da manhã
+# Mantém os últimos 7 backups
+
+0 3 * * * root /root/moria/scripts/auto-backup-uploads.sh >> /var/log/moria-backup.log 2>&1

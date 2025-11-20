@@ -1,0 +1,5 @@
+# Moria - Monitoramento de Uploads
+# Executa a cada 6 horas
+# Detecta perda de arquivos e problemas no volume
+
+0 */6 * * * root /root/moria/scripts/monitor-uploads.sh >> /var/log/moria-monitor.log 2>&1

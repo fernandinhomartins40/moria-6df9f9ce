@@ -69,10 +69,39 @@ jobs:
 
             # Diretório da aplicação
             APP_DIR="/root/moria"
+            cd $APP_DIR
+
+            # ===== VERIFICAÇÃO PRÉ-DEPLOY =====
+            echo "=== Executando verificação pré-deploy ==="
+            if [ -f "scripts/pre-deploy-check.sh" ]; then
+              chmod +x scripts/pre-deploy-check.sh
+              if bash scripts/pre-deploy-check.sh; then
+                echo "✅ Verificação pré-deploy passou"
+              else
+                echo "❌ Verificação pré-deploy falhou!"
+                echo "⚠️ Continuando deploy (avisos não bloqueiam)"
+              fi
+            else
+              echo "⚠️ Script pre-deploy-check.sh não encontrado, pulando verificação"
+            fi
+            echo ""
+
+            # ===== BACKUP PRÉ-DEPLOY =====
+            echo "=== Criando backup pré-deploy ==="
+            if [ -f "scripts/auto-backup-uploads.sh" ]; then
+              chmod +x scripts/auto-backup-uploads.sh
+              if bash scripts/auto-backup-uploads.sh; then
+                echo "✅ Backup pré-deploy criado com sucesso"
+              else
+                echo "⚠️ Backup pré-deploy falhou, mas continuando deploy"
+              fi
+            else
+              echo "⚠️ Script auto-backup-uploads.sh não encontrado, pulando backup"
+            fi
+            echo ""
 
             # Parar containers existentes (SEM -v para preservar volumes)
             echo "Parando containers existentes..."
-            cd $APP_DIR
             docker-compose -f docker-compose.vps.yml down || true
 
             # Verificar e garantir que volumes críticos existam
