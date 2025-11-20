@@ -158,20 +158,66 @@ chmod -R 755 /app/apps/backend/uploads
 chown -R root:root /app/apps/backend/uploads
 echo "✓ Diretórios de upload configurados"
 
-# Sincronizar schema do Prisma com o banco
+# Sincronizar banco de dados com schema (produção)
 cd /app/apps/backend
-echo "Sincronizando schema do Prisma..."
-npx prisma db push --accept-data-loss --skip-generate 2>&1
+echo "Sincronizando banco de dados..."
+
+# Verificar se o banco já existe e tem tabelas
+TABLE_COUNT=$(node -e "
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  prisma.\$queryRaw\`
+    SELECT COUNT(*) as count
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_type = 'BASE TABLE'
+  \`.then(result => {
+    console.log(result[0].count);
+    prisma.\$disconnect();
+  }).catch(() => {
+    console.log(0);
+    process.exit(0);
+  });
+" 2>/dev/null || echo "0")
+
+if [ "$TABLE_COUNT" -eq 0 ]; then
+  echo "Banco vazio detectado - criando schema inicial..."
+  npx prisma db push --skip-generate 2>&1
+else
+  echo "Banco existente detectado (${TABLE_COUNT} tabelas) - aplicando migrations..."
+  npx prisma migrate deploy 2>&1 || echo "⚠️ Nenhuma migration pendente"
+fi
 
 # Prisma client já foi gerado no build do host, não precisa gerar novamente
 echo "✓ Prisma client já gerado"
 
-# Sempre executar seed (ele verifica se já foi executado)
-echo "Executando seed do banco de dados..."
-if npx prisma db seed 2>&1; then
-  echo "✅ Seed executado com sucesso"
+# Executar seed apenas se for primeiro deploy (banco vazio)
+echo "Verificando necessidade de seed..."
+ADMIN_COUNT=$(node -e "
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  prisma.admin.count().then(count => {
+    console.log(count);
+    prisma.\$disconnect();
+  }).catch(() => {
+    console.log(0);
+    process.exit(0);
+  });
+" 2>/dev/null || echo "0")
 
-  # Verificar se admins foram criados
+if [ "$ADMIN_COUNT" -eq 0 ]; then
+  echo "Banco vazio detectado - executando seed..."
+  if npx prisma db seed 2>&1; then
+    echo "✅ Seed executado com sucesso"
+  else
+    echo "⚠️ Seed falhou - continuando mesmo assim"
+  fi
+else
+  echo "✓ Banco já possui dados (${ADMIN_COUNT} admins) - pulando seed"
+fi
+
+# Verificar admins após seed (se foi executado)
+if [ "$ADMIN_COUNT" -eq 0 ]; then
   echo "Verificando admins criados..."
   node -e "
     const { PrismaClient } = require('@prisma/client');
@@ -192,8 +238,6 @@ if npx prisma db seed 2>&1; then
       process.exit(1);
     });
   "
-else
-  echo "⚠️ Seed falhou - continuando mesmo assim"
 fi
 
 # Iniciar supervisor

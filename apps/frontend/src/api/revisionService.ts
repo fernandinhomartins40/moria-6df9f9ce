@@ -47,7 +47,7 @@ class RevisionService {
    */
   async createRevision(data: CreateRevisionRequest): Promise<RevisionResponse> {
     const response = await apiClient.post('/admin/revisions', data);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -55,7 +55,7 @@ class RevisionService {
    */
   async updateRevision(id: string, data: UpdateRevisionRequest): Promise<RevisionResponse> {
     const response = await apiClient.put(`/admin/revisions/${id}`, data);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -63,7 +63,7 @@ class RevisionService {
    */
   async updateRevisionChecklistPartial(id: string, checklistItems: any[]): Promise<RevisionResponse> {
     const response = await apiClient.patch(`/admin/revisions/${id}/checklist`, { checklistItems });
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -71,7 +71,7 @@ class RevisionService {
    */
   async startRevision(id: string): Promise<RevisionResponse> {
     const response = await apiClient.patch(`/admin/revisions/${id}/start`);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -79,7 +79,7 @@ class RevisionService {
    */
   async completeRevision(id: string): Promise<RevisionResponse> {
     const response = await apiClient.patch(`/admin/revisions/${id}/complete`);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -87,7 +87,7 @@ class RevisionService {
    */
   async cancelRevision(id: string): Promise<RevisionResponse> {
     const response = await apiClient.patch(`/admin/revisions/${id}/cancel`);
-    return response.data;
+    return response.data.data || response.data;
   }
 
   /**
@@ -117,6 +117,7 @@ class RevisionService {
     status?: string;
   }): Promise<{ data: RevisionResponse[]; meta?: any }> {
     const response = await apiClient.get('/customer-revisions', { params });
+    // Esta já retorna o formato correto { data: [...], meta: {...} }
     return response.data;
   }
 
@@ -133,6 +134,7 @@ class RevisionService {
    */
   async getCustomerRevisionsByVehicle(vehicleId: string): Promise<{ data: RevisionResponse[]; meta?: any }> {
     const response = await apiClient.get(`/customer-revisions/vehicle/${vehicleId}`);
+    // Esta já retorna o formato correto { data: [...], meta: {...} }
     return response.data;
   }
 
@@ -141,7 +143,7 @@ class RevisionService {
    */
   async getUpcomingReminders(): Promise<any[]> {
     const response = await apiClient.get('/customer-revisions/reminders/upcoming');
-    return response.data;
+    return response.data.data || response.data;
   }
 
   // ==================== MECHANIC MANAGEMENT ====================
@@ -187,6 +189,7 @@ class RevisionService {
     params?: { page?: number; limit?: number; status?: string }
   ): Promise<{ data: RevisionResponse[]; meta: any }> {
     const response = await apiClient.get(`/revisions/mechanic/${mechanicId}`, { params });
+    // Esta já retorna o formato correto { data: [...], meta: {...} }
     return response.data;
   }
 
