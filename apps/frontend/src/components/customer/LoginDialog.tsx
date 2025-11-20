@@ -60,6 +60,11 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     setRegisterForm({ ...registerForm, cpf: value });
   };
 
+  const handleLoginPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setLoginForm({ ...loginForm, phone: value });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -68,7 +73,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       return;
     }
 
-    const result = await login(loginForm.phone, loginForm.password);
+    // Sanitizar telefone antes de enviar (apenas dígitos)
+    const cleanPhone = loginForm.phone.replace(/\D/g, '');
+
+    const result = await login(cleanPhone, loginForm.password);
 
     if (result.success) {
       toast.success("Login realizado com sucesso!");
@@ -163,9 +171,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                         type="tel"
                         placeholder="(11) 99999-9999"
                         className="pl-10"
-                        value={loginForm.phone}
-                        onChange={(e) => setLoginForm(prev => ({ ...prev, phone: e.target.value }))}
+                        value={formatPhone(loginForm.phone)}
+                        onChange={handleLoginPhoneChange}
                         disabled={isLoading}
+                        maxLength={15}
                       />
                     </div>
                   </div>
