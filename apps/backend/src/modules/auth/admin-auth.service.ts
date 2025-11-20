@@ -200,7 +200,7 @@ export class AdminAuthService {
       prisma.revision.count({
         where: {
           assignedMechanicId: adminId,
-          status: { in: ['DRAFT', 'PENDING'] },
+          status: 'DRAFT',
         },
       }),
       prisma.revision.findMany({
@@ -279,7 +279,7 @@ export class AdminAuthService {
               brand: true,
               model: true,
               year: true,
-              licensePlate: true,
+              plate: true,
             },
           },
           customer: {
@@ -299,7 +299,7 @@ export class AdminAuthService {
       type: rev.status === 'COMPLETED' ? 'COMPLETED' :
             rev.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'ASSIGNED',
       revisionId: rev.id,
-      vehicleInfo: `${rev.vehicle.brand} ${rev.vehicle.model} ${rev.vehicle.year} - ${rev.vehicle.licensePlate}`,
+      vehicleInfo: `${rev.vehicle.brand} ${rev.vehicle.model} ${rev.vehicle.year} - ${rev.vehicle.plate}`,
       customerName: rev.customer.name,
       status: rev.status,
       date: rev.updatedAt,
@@ -555,6 +555,7 @@ export class AdminAuthService {
           updatedAt: true,
           lastLoginAt: true,
           permissions: true,
+          preferences: true,
         },
       }),
       prisma.admin.count({ where }),
