@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
-import { CartProvider } from "../contexts/CartContext";
-import { AuthProvider } from "../contexts/AuthContext";
 import "../styles/public.css";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -140,11 +138,9 @@ ${new Date().toLocaleString('pt-BR')}
   };
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <div className="min-h-screen bg-white">
-          <Header />
-          <Marquee />
+    <div className="min-h-screen bg-white">
+      <Header />
+      <Marquee />
           
           {/* Hero Section */}
           <section className="relative py-20 bg-gradient-to-br from-moria-black to-gray-900 text-white overflow-hidden">
@@ -411,8 +407,6 @@ ${new Date().toLocaleString('pt-BR')}
           </section>
 
           <Footer />
-        </div>
-      </CartProvider>
-    </AuthProvider>
+    </div>
   );
 }

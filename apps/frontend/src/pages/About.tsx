@@ -1,8 +1,6 @@
 import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
-import { CartProvider } from "../contexts/CartContext";
-import { AuthProvider } from "../contexts/AuthContext";
 import "../styles/public.css";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent } from "../components/ui/card";
@@ -76,9 +74,7 @@ export default function About() {
   ];
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
           <Header />
           <Marquee />
           
@@ -255,8 +251,6 @@ export default function About() {
           </section>
 
           <Footer />
-        </div>
-      </CartProvider>
-    </AuthProvider>
+    </div>
   );
 }
