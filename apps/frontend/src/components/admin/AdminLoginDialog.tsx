@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, LogIn, Shield } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function AdminLoginDialog() {
   const { login, isLoading } = useAdminAuth();
@@ -90,9 +91,8 @@ export function AdminLoginDialog() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -136,7 +136,7 @@ export function AdminLoginDialog() {
                 disabled={isSubmitting}
               >
                 <Shield className="mr-2 h-3 w-3" />
-                Super Admin - admin@moria.com
+                Super Admin - Senha: Test123!
               </Button>
               <Button
                 type="button"
@@ -147,7 +147,7 @@ export function AdminLoginDialog() {
                 disabled={isSubmitting}
               >
                 <Shield className="mr-2 h-3 w-3" />
-                Gerente - gerente@moria.com
+                Gerente - Senha: Test123!
               </Button>
               <Button
                 type="button"
@@ -158,7 +158,7 @@ export function AdminLoginDialog() {
                 disabled={isSubmitting}
               >
                 <Shield className="mr-2 h-3 w-3" />
-                Mecânico - mecanico@moria.com
+                Mecânico - Senha: Test123!
               </Button>
             </div>
             <p className="text-xs text-gray-400 text-center mt-3">

@@ -13,6 +13,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { PasswordInput } from '@/components/ui/password-input';
+import { isPasswordStrong } from '@/lib/passwordUtils';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -49,8 +51,10 @@ export default function CreateUserModal({
       newErrors.email = 'Email inválido';
     }
 
-    if (!formData.password || formData.password.length < 8) {
-      newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
+    if (!formData.password) {
+      newErrors.password = 'Senha é obrigatória';
+    } else if (!isPasswordStrong(formData.password)) {
+      newErrors.password = 'A senha não atende aos requisitos mínimos de segurança';
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -148,27 +152,30 @@ export default function CreateUserModal({
 
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Crie uma senha forte"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              showStrengthIndicator
+              showRequirements
             />
             {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               placeholder="Digite a senha novamente"
               value={formData.confirmPassword}
               onChange={(e) =>
                 setFormData({ ...formData, confirmPassword: e.target.value })
               }
             />
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p className="text-xs text-red-600">As senhas não coincidem</p>
+            )}
             {errors.confirmPassword && (
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
             )}
