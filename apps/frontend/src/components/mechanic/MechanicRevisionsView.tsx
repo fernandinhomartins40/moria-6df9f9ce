@@ -165,8 +165,14 @@ export default function MechanicRevisionsView() {
       {/* Tabs with Revisions */}
       <Card>
         <CardContent className="p-6">
-          <Tabs defaultValue="pending">
+          <Tabs defaultValue="all">
             <TabsList>
+              <TabsTrigger value="all">
+                Todas
+                <Badge variant="secondary" className="ml-2">
+                  {stats.total}
+                </Badge>
+              </TabsTrigger>
               <TabsTrigger value="pending">
                 Pendentes
                 <Badge variant="secondary" className="ml-2">
@@ -186,6 +192,31 @@ export default function MechanicRevisionsView() {
                 </Badge>
               </TabsTrigger>
             </TabsList>
+
+            {/* Todas */}
+            <TabsContent value="all" className="mt-6">
+              {revisions.length === 0 ? (
+                <div className="text-center py-10">
+                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">Nenhuma revisão atribuída.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {revisions.map((revision) => (
+                    <RevisionCard
+                      key={revision.id}
+                      revision={revision}
+                      onViewDetails={handleViewDetails}
+                      onEditRevision={handleEditRevision}
+                      onChangeStatus={handleChangeStatus}
+                      showAssignMechanic={false}
+                      showDelete={false}
+                      showMechanicInfo={false}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
             {/* Pendentes */}
             <TabsContent value="pending" className="mt-6">
