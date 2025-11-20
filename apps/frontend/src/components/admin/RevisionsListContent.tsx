@@ -1,29 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
-  Calendar,
-  Car,
-  User,
   Filter,
-  Eye,
-  CheckCircle,
-  Clock,
-  XCircle,
   FileText,
-  UserCog,
-  Edit,
-  Trash2,
-  Play,
-  Circle,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
 import adminService, { AdminRevision } from '../../api/adminService';
 import revisionService from '../../api/revisionService';
 import { RevisionDetailsModal } from './RevisionDetailsModal';
 import { MechanicAssignmentModal } from './MechanicAssignmentModal';
 import { RevisionEditModal } from './RevisionEditModal';
+import { RevisionCard } from '../revisions/RevisionCard';
 
 export function RevisionsListContent() {
   const [revisions, setRevisions] = useState<AdminRevision[]>([]);
@@ -117,33 +105,6 @@ export function RevisionsListContent() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      DRAFT: { color: 'bg-gray-100 text-gray-800', label: 'Rascunho', icon: Circle },
-      IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', label: 'Em Andamento', icon: Clock },
-      COMPLETED: { color: 'bg-green-100 text-green-800', label: 'Concluída', icon: CheckCircle },
-      CANCELLED: { color: 'bg-red-100 text-red-800', label: 'Cancelada', icon: XCircle },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
-    const Icon = config.icon;
-
-    return (
-      <Badge className={config.color}>
-        <Icon className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
   const filteredRevisions = revisions.filter((revision) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
@@ -223,154 +184,18 @@ export function RevisionsListContent() {
           ) : (
             <div className="space-y-3">
               {filteredRevisions.map((revision) => (
-                <Card key={revision.id} className="hover:border-moria-orange transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      {/* Main Info */}
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {/* Customer */}
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {revision.customer?.name || 'N/A'}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {revision.customer?.phone || ''}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Vehicle */}
-                        <div className="flex items-center gap-2">
-                          <Car className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {revision.vehicle?.brand} {revision.vehicle?.model}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {revision.vehicle?.plate || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Mechanic */}
-                        <div className="flex items-center gap-2">
-                          <UserCog className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <div className="min-w-0">
-                            {revision.mechanicName ? (
-                              <>
-                                <p className="text-sm font-medium truncate">
-                                  {revision.mechanicName}
-                                </p>
-                                <p className="text-xs text-gray-500">Mecânico</p>
-                              </>
-                            ) : (
-                              <p className="text-sm text-gray-500">Não atribuído</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Date & Status */}
-                        <div className="flex items-center gap-3 justify-between">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600">
-                              {formatDate(revision.date)}
-                            </span>
-                          </div>
-                          {getStatusBadge(revision.status)}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        {/* View Details */}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleViewDetails(revision)}
-                          title="Ver detalhes"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-
-                        {/* Assign Mechanic */}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleAssignMechanic(revision)}
-                          title={revision.assignedMechanicId ? 'Trocar mecânico' : 'Atribuir mecânico'}
-                        >
-                          <UserCog className="h-4 w-4" />
-                        </Button>
-
-                        {/* Edit/Continue (DRAFT or IN_PROGRESS) */}
-                        {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEditRevision(revision)}
-                            title={revision.status === 'DRAFT' ? 'Editar rascunho' : 'Continuar revisão'}
-                            className="text-blue-600 hover:text-blue-700 hover:border-blue-600"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                        {/* Start (only DRAFT) */}
-                        {revision.status === 'DRAFT' && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleChangeStatus(revision.id, 'IN_PROGRESS')}
-                            title="Iniciar revisão"
-                            className="text-blue-600 hover:text-blue-700 hover:border-blue-600"
-                          >
-                            <Play className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                        {/* Complete (only IN_PROGRESS) */}
-                        {revision.status === 'IN_PROGRESS' && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleChangeStatus(revision.id, 'COMPLETED')}
-                            title="Concluir revisão"
-                            className="text-green-600 hover:text-green-700 hover:border-green-600"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                        {/* Cancel (DRAFT or IN_PROGRESS) */}
-                        {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleChangeStatus(revision.id, 'CANCELLED')}
-                            title="Cancelar revisão"
-                            className="text-orange-600 hover:text-orange-700 hover:border-orange-600"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                        {/* Delete */}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteRevision(revision.id)}
-                          title="Excluir revisão"
-                          className="text-red-600 hover:text-red-700 hover:border-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RevisionCard
+                  key={revision.id}
+                  revision={revision}
+                  onViewDetails={handleViewDetails}
+                  onAssignMechanic={handleAssignMechanic}
+                  onEditRevision={handleEditRevision}
+                  onChangeStatus={handleChangeStatus}
+                  onDeleteRevision={handleDeleteRevision}
+                  showAssignMechanic={true}
+                  showDelete={true}
+                  showMechanicInfo={true}
+                />
               ))}
             </div>
           )}
