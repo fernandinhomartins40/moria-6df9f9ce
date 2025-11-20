@@ -274,16 +274,16 @@ export function CustomerOrders() {
                             Ver Detalhes
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Detalhes do Pedido #{order.id}</DialogTitle>
+                        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-4 sm:p-6">
+                          <DialogHeader className="mb-4">
+                            <DialogTitle className="text-lg sm:text-xl">Detalhes do Pedido #{order.id.slice(0, 8)}</DialogTitle>
                             <DialogDescription>
                               Informações completas do seu pedido
                             </DialogDescription>
                           </DialogHeader>
-                          
+
                           {selectedOrder && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6 pr-1 sm:pr-2 pb-4">
                               {/* Status */}
                               <div className="flex items-center justify-between">
                                 <Badge className={statusInfo.color} variant="secondary">
