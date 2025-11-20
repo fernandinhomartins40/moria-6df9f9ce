@@ -242,7 +242,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getOrders = async () => {
     try {
       const response = await orderService.getOrders();
-      return { success: true, data: response.orders };
+      // orderService.getOrders() já retorna { success, data, meta }
+      // então response já é { success: true, data: Order[], meta: {...} }
+      return { success: true, data: response.data };
     } catch (error) {
       const apiError = handleApiError(error);
       return { success: false, error: apiError.message };

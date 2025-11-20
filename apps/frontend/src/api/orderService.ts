@@ -10,10 +10,16 @@ export interface CreateOrderRequest {
 }
 
 export interface OrderListResponse {
-  orders: Order[];
-  totalCount: number;
-  page: number;
-  limit: number;
+  success: boolean;
+  data: Order[];
+  meta: {
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface OrderTrackingEvent {
