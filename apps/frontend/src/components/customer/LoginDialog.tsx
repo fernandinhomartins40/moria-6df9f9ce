@@ -137,31 +137,31 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle className="text-center text-xl">
             Área do Cliente
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs defaultValue="login" className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="register">Cadastrar</TabsTrigger>
           </TabsList>
           
           {/* Login Tab */}
-          <TabsContent value="login">
-            <Card>
-              <CardHeader className="pb-4">
+          <TabsContent value="login" className="mt-0">
+            <Card className="border-none shadow-none">
+              <CardHeader className="px-0 pt-6 pb-4">
                 <CardTitle className="text-lg">Fazer Login</CardTitle>
                 <CardDescription>
                   Entre com suas credenciais para acessar sua conta
                 </CardDescription>
               </CardHeader>
-              
+
               <form onSubmit={handleLogin}>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-0">
                   <div className="space-y-2">
                     <Label htmlFor="login-phone">Telefone</Label>
                     <div className="relative">
@@ -189,17 +189,11 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                       disabled={isLoading}
                     />
                   </div>
-
-                  <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                    <p className="font-medium">Dados para teste:</p>
-                    <p>Telefone: (11) 99999-9999</p>
-                    <p>Senha: joa (3 primeiras letras do nome)</p>
-                  </div>
                 </CardContent>
 
-                <CardFooter>
-                  <Button 
-                    type="submit" 
+                <CardFooter className="px-0 pb-6 pt-4">
+                  <Button
+                    type="submit"
                     className="w-full bg-moria-orange hover:bg-moria-orange/90"
                     disabled={isLoading}
                   >
@@ -218,17 +212,17 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           </TabsContent>
 
           {/* Register Tab */}
-          <TabsContent value="register">
-            <Card>
-              <CardHeader className="pb-4">
+          <TabsContent value="register" className="mt-0">
+            <Card className="border-none shadow-none">
+              <CardHeader className="px-0 pt-6 pb-4">
                 <CardTitle className="text-lg">Criar Conta</CardTitle>
                 <CardDescription>
                   Cadastre-se para acompanhar seus pedidos e muito mais
                 </CardDescription>
               </CardHeader>
-              
+
               <form onSubmit={handleRegister}>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-0">
                   <div className="space-y-2">
                     <Label htmlFor="register-name">Nome Completo *</Label>
                     <div className="relative">
@@ -324,9 +318,9 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                   </div>
                 </CardContent>
 
-                <CardFooter>
-                  <Button 
-                    type="submit" 
+                <CardFooter className="px-0 pb-6 pt-4">
+                  <Button
+                    type="submit"
                     className="w-full bg-moria-orange hover:bg-moria-orange/90"
                     disabled={isLoading}
                   >
