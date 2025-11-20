@@ -5,14 +5,19 @@ import type { Customer, RegisterRequest } from '@moria/types';
 export type RegisterData = RegisterRequest;
 export type { LoginRequest, LoginResponse, RegisterResponse } from '@moria/types';
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 class AuthService {
-  async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/login', data);
+  async login(data: LoginRequest): Promise<ApiResponse<{ customer: Customer }>> {
+    const response = await apiClient.post<ApiResponse<{ customer: Customer }>>('/auth/login', data);
     return response.data;
   }
 
-  async register(data: RegisterData): Promise<RegisterResponse> {
-    const response = await apiClient.post<RegisterResponse>('/auth/register', data);
+  async register(data: RegisterData): Promise<ApiResponse<{ customer: Customer }>> {
+    const response = await apiClient.post<ApiResponse<{ customer: Customer }>>('/auth/register', data);
     return response.data;
   }
 
