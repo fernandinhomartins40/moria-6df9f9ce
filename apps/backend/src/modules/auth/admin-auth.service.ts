@@ -330,7 +330,7 @@ export class AdminAuthService {
   }> {
     const admin = await prisma.admin.findUnique({
       where: { id: adminId },
-      select: { preferences: true },
+      select: { id: true, preferences: true },
     });
 
     if (!admin) {
@@ -387,7 +387,7 @@ export class AdminAuthService {
   ): Promise<void> {
     const admin = await prisma.admin.findUnique({
       where: { id: adminId },
-      select: { preferences: true },
+      select: { id: true, preferences: true },
     });
 
     if (!admin) {
@@ -409,7 +409,7 @@ export class AdminAuthService {
 
     await prisma.admin.update({
       where: { id: adminId },
-      data: { preferences: updatedPrefs },
+      data: { preferences: updatedPrefs as any },
     });
 
     logger.info(`Preferences updated for admin: ${adminId}`);
