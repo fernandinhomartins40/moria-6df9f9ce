@@ -27,13 +27,13 @@ class AuthService {
   }
 
   async getProfile(): Promise<Customer> {
-    const response = await apiClient.get<ApiResponse<{ customer: Customer }>>('/auth/profile');
-    return response.data.data.customer;
+    const response = await apiClient.get<ApiResponse<Customer>>('/auth/profile');
+    return response.data.data;
   }
 
   async updateProfile(data: Partial<Customer>): Promise<Customer> {
-    const response = await apiClient.put<ApiResponse<{ customer: Customer }>>('/auth/profile', data);
-    return response.data.data.customer;
+    const response = await apiClient.put<ApiResponse<Customer>>('/auth/profile', data);
+    return response.data.data;
   }
 }
 

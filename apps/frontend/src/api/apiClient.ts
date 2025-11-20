@@ -15,15 +15,9 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Cookies são enviados automaticamente com withCredentials: true
-    // O cookie httpOnly 'adminToken' é enviado automaticamente pelo browser
+    // O cookie httpOnly 'authToken' (clientes) e 'adminToken' (admin)
+    // são enviados automaticamente pelo browser
     // Não precisamos adicionar Authorization header manualmente
-
-    // Para clientes (não admin), ainda usamos localStorage por compatibilidade
-    const customerToken = localStorage.getItem('customer_token');
-    if (customerToken && !config.url?.includes('/admin') && !config.url?.includes('/auth/admin')) {
-      config.headers.Authorization = `Bearer ${customerToken}`;
-    }
-
     return config;
   },
   (error) => {
