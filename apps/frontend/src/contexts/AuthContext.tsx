@@ -91,14 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (identifier: string, password: string) => {
-    console.log('🔐 AuthContext.login chamado com identifier:', identifier);
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
       const response = await authService.login({ identifier, password });
-      console.log('🔍 Login response:', response);
-      console.log('👤 Customer data:', response.data.customer);
-
       // O token agora vem em um httpOnly cookie, não precisamos armazenar
 
       setState({
@@ -107,11 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
       });
 
-      console.log('✅ Estado atualizado - isAuthenticated: true, customer:', response.data.customer.name);
-
       return { success: true };
     } catch (error) {
-      console.error('❌ Erro no login:', error);
       const apiError = handleApiError(error);
       setState(prev => ({ ...prev, isLoading: false }));
       return { success: false, error: apiError.message };
