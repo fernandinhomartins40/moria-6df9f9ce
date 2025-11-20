@@ -163,7 +163,7 @@ export interface PaginatedResponse<T> {
 
 // Auth Request/Response Types
 export interface LoginRequest {
-  email: string;
+  identifier: string; // Pode ser email ou telefone
   password: string;
 }
 

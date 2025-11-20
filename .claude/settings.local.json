@@ -46,7 +46,10 @@
       "Bash(cmd /c \"if exist nul del nul\")",
       "Bash(/tmp/login-test.json)",
       "Bash(del cookies.txt)",
-      "Bash(docker volume:*)"
+      "Bash(docker volume:*)",
+      "Bash(bash:*)",
+      "Bash(npx prisma db seed)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

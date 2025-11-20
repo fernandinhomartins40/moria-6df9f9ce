@@ -21,12 +21,12 @@ interface LoginDialogProps {
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
-  
+
   const [loginForm, setLoginForm] = useState({
     phone: "",
     password: "",
   });
-  
+
   const [registerForm, setRegisterForm] = useState({
     name: "",
     email: "",
@@ -35,6 +35,30 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     password: "",
     confirmPassword: "",
   });
+
+  // Funções de formatação (copiadas do CreateCustomerModal)
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  };
+
+  const formatCPF = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setRegisterForm({ ...registerForm, phone: value });
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setRegisterForm({ ...registerForm, cpf: value });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,11 +98,15 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       return;
     }
 
+    // Sanitizar telefone e CPF antes de enviar (apenas dígitos)
+    const cleanPhone = registerForm.phone.replace(/\D/g, '');
+    const cleanCpf = registerForm.cpf ? registerForm.cpf.replace(/\D/g, '') : '';
+
     const result = await register({
       name: registerForm.name,
       email: registerForm.email,
-      phone: registerForm.phone,
-      cpf: registerForm.cpf,
+      phone: cleanPhone,
+      cpf: cleanCpf || undefined,
       password: registerForm.password,
     });
 
@@ -95,7 +123,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       });
       navigate("/customer");
     } else {
-      toast.error("Erro ao criar conta");
+      toast.error(result.error || "Erro ao criar conta");
     }
   };
 
@@ -232,9 +260,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                           id="register-phone"
                           placeholder="(11) 99999-9999"
                           className="pl-10"
-                          value={registerForm.phone}
-                          onChange={(e) => setRegisterForm(prev => ({ ...prev, phone: e.target.value }))}
+                          value={formatPhone(registerForm.phone)}
+                          onChange={handlePhoneChange}
                           disabled={isLoading}
+                          maxLength={15}
                         />
                       </div>
                     </div>
@@ -247,9 +276,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                           id="register-cpf"
                           placeholder="000.000.000-00"
                           className="pl-10"
-                          value={registerForm.cpf}
-                          onChange={(e) => setRegisterForm(prev => ({ ...prev, cpf: e.target.value }))}
+                          value={formatCPF(registerForm.cpf)}
+                          onChange={handleCPFChange}
                           disabled={isLoading}
+                          maxLength={14}
                         />
                       </div>
                     </div>
