@@ -18,7 +18,8 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  ClipboardCheck
+  ClipboardCheck,
+  Car
 } from "lucide-react";
 
 interface CustomerLayoutProps {
@@ -36,6 +37,7 @@ export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLa
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Visão geral da conta' },
     { id: 'profile', label: 'Meu Perfil', icon: User, description: 'Dados pessoais e endereços' },
     { id: 'orders', label: 'Meus Pedidos', icon: Package, description: 'Histórico e acompanhamento' },
+    { id: 'vehicles', label: 'Meus Veículos', icon: Car, description: 'Gerencie seus veículos' },
     { id: 'revisions', label: 'Minhas Revisões', icon: ClipboardCheck, description: 'Histórico de revisões veiculares' },
     { id: 'favorites', label: 'Favoritos', icon: Heart, description: 'Produtos salvos' },
     { id: 'coupons', label: 'Cupons', icon: Gift, description: 'Descontos disponíveis' },
