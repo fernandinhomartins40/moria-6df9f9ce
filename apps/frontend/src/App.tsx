@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import { CartProvider } from "./contexts/CartContext";
+import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { RevisionsProvider } from "./contexts/RevisionsContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
@@ -24,12 +25,13 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AdminAuthProvider>
-          <CartProvider>
-            <RevisionsProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+          <FavoritesProvider>
+            <CartProvider>
+              <RevisionsProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/about" element={<About />} />
@@ -47,6 +49,7 @@ const App = () => (
               </TooltipProvider>
             </RevisionsProvider>
           </CartProvider>
+        </FavoritesProvider>
         </AdminAuthProvider>
       </AuthProvider>
     </QueryClientProvider>

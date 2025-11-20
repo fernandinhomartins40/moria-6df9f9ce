@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCart } from "../../contexts/CartContext";
-import { useFavorites } from "../../hooks/useFavorites";
+import { useFavoritesContext } from "../../contexts/FavoritesContext";
 import { productService, favoriteService } from "../../api";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -52,7 +52,7 @@ type FilterAvailability = 'all' | 'available' | 'unavailable';
 export function CustomerFavorites() {
   const { isAuthenticated } = useAuth();
   const { addItem, openCart } = useCart();
-  const { favorites, loading, error, fetchFavorites, clearError } = useFavorites();
+  const { favorites, loading, error, fetchFavorites, clearError } = useFavoritesContext();
   const { toast } = useToast();
 
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProductData[]>([]);

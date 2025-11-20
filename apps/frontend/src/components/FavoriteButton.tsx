@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,7 +31,7 @@ export function FavoriteButton({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { isAuthenticated } = useAuth();
-  const { isFavorite, toggleFavorite, loading, error } = useFavorites();
+  const { isFavorite, toggleFavorite, loading, error } = useFavoritesContext();
   const { toast } = useToast();
 
   const isCurrentlyFavorite = isFavorite(productId);
