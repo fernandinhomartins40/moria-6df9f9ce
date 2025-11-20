@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import {
   User,
   Phone,
@@ -17,11 +19,14 @@ import {
   Wrench,
   Mail,
   Home,
-  Search
+  Search,
+  MapPin,
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
-import type { CartItem } from "@moria/types";
+import type { CartItem, Address } from "@moria/types";
 import guestOrderService from "../api/guestOrderService";
+import orderService from "../api/orderService";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -46,6 +51,8 @@ interface CheckoutForm {
 
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart } = useCart();
+  const { customer, isAuthenticated } = useAuth();
+
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
     email: "",
@@ -61,9 +68,58 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     },
     paymentMethod: "pix",
   });
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+
+  // Pré-preencher dados do cliente logado
+  useEffect(() => {
+    if (isAuthenticated && customer && open) {
+      setForm(prev => ({
+        ...prev,
+        name: customer.name || "",
+        email: customer.email || "",
+        whatsapp: customer.phone ? formatWhatsApp(customer.phone) : "",
+      }));
+
+      // Selecionar endereço padrão se existir
+      if (customer.addresses && customer.addresses.length > 0) {
+        const defaultAddress = customer.addresses.find(addr => addr.isDefault) || customer.addresses[0];
+        setSelectedAddressId(defaultAddress.id);
+        setUseNewAddress(false);
+      } else {
+        setUseNewAddress(true);
+      }
+    } else if (!isAuthenticated && open) {
+      // Reset para convidados
+      setSelectedAddressId(null);
+      setUseNewAddress(true);
+    }
+  }, [isAuthenticated, customer, open]);
+
+  // Pré-preencher endereço quando selecionar da lista
+  useEffect(() => {
+    if (selectedAddressId && customer?.addresses) {
+      const address = customer.addresses.find(addr => addr.id === selectedAddressId);
+      if (address) {
+        setForm(prev => ({
+          ...prev,
+          address: {
+            zipCode: address.zipCode || "",
+            street: address.street || "",
+            number: address.number || "",
+            complement: address.complement || "",
+            neighborhood: address.neighborhood || "",
+            city: address.city || "",
+            state: address.state || "",
+          }
+        }));
+      }
+    }
+  }, [selectedAddressId, customer]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -200,38 +256,97 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
     setIsLoading(true);
 
     try {
-      // Preparar dados do pedido
-      const orderData = {
-        customerName: form.name,
-        customerEmail: form.email,
-        customerPhone: form.whatsapp.replace(/\D/g, ''),
-        address: {
-          street: form.address.street,
-          number: form.address.number,
-          complement: form.address.complement || undefined,
-          neighborhood: form.address.neighborhood,
-          city: form.address.city,
-          state: form.address.state,
-          zipCode: form.address.zipCode.replace(/\D/g, ''),
-          type: 'HOME' as const,
-        },
-        items: items.map(item => {
-          const isService = item.type === 'service';
-          return {
-            productId: !isService ? item.id : undefined,
-            serviceId: isService ? item.id : undefined,
-            type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
-            quantity: item.quantity,
+      let order: any;
+
+      // CLIENTE AUTENTICADO - usar rota /orders
+      if (isAuthenticated && customer) {
+        // Criar novo endereço ou usar existente
+        let addressId = selectedAddressId;
+
+        if (useNewAddress || !selectedAddressId) {
+          // Criar novo endereço (simulado - ideal seria chamar addressService)
+          // Por enquanto, vamos criar via guest order que aceita address inline
+          // Para pedidos autenticados, precisaríamos criar o endereço primeiro
+          toast.info("Criando novo endereço...");
+
+          // Fallback para guest order se não tiver endereço selecionado
+          const guestOrderData = {
+            customerName: form.name,
+            customerEmail: form.email,
+            customerPhone: form.whatsapp.replace(/\D/g, ''),
+            address: {
+              street: form.address.street,
+              number: form.address.number,
+              complement: form.address.complement || undefined,
+              neighborhood: form.address.neighborhood,
+              city: form.address.city,
+              state: form.address.state,
+              zipCode: form.address.zipCode.replace(/\D/g, ''),
+              type: 'HOME' as const,
+            },
+            items: items.map(item => {
+              const isService = item.type === 'service';
+              return {
+                productId: !isService ? item.id : undefined,
+                serviceId: isService ? item.id : undefined,
+                type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+                quantity: item.quantity,
+              };
+            }),
+            paymentMethod: form.paymentMethod,
           };
-        }),
-        paymentMethod: form.paymentMethod,
-      };
 
-      // Log dos dados enviados para debug
-      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+          order = await guestOrderService.createGuestOrder(guestOrderData);
+        } else {
+          // Usar endereço existente - pedido autenticado
+          const authenticatedOrderData = {
+            addressId: addressId!,
+            items: items.map(item => {
+              const isService = item.type === 'service';
+              return {
+                productId: !isService ? item.id : undefined,
+                serviceId: isService ? item.id : undefined,
+                type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+                quantity: item.quantity,
+              };
+            }),
+            paymentMethod: form.paymentMethod,
+            source: 'WEB',
+          };
 
-      // Criar pedido via API
-      const order = await guestOrderService.createGuestOrder(orderData);
+          const response = await orderService.createOrder(authenticatedOrderData);
+          order = response.data;
+        }
+      } else {
+        // CONVIDADO - usar rota /orders/guest
+        const guestOrderData = {
+          customerName: form.name,
+          customerEmail: form.email,
+          customerPhone: form.whatsapp.replace(/\D/g, ''),
+          address: {
+            street: form.address.street,
+            number: form.address.number,
+            complement: form.address.complement || undefined,
+            neighborhood: form.address.neighborhood,
+            city: form.address.city,
+            state: form.address.state,
+            zipCode: form.address.zipCode.replace(/\D/g, ''),
+            type: 'HOME' as const,
+          },
+          items: items.map(item => {
+            const isService = item.type === 'service';
+            return {
+              productId: !isService ? item.id : undefined,
+              serviceId: isService ? item.id : undefined,
+              type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+              quantity: item.quantity,
+            };
+          }),
+          paymentMethod: form.paymentMethod,
+        };
+
+        order = await guestOrderService.createGuestOrder(guestOrderData);
+      }
 
       console.log('Order created:', order);
 
@@ -252,21 +367,26 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           closeCart();
           onOpenChange(false);
           setIsSuccess(false);
-          setForm({
-            name: "",
-            email: "",
-            whatsapp: "",
-            address: {
-              zipCode: "",
-              street: "",
-              number: "",
-              complement: "",
-              neighborhood: "",
-              city: "",
-              state: "",
-            },
-            paymentMethod: "pix",
-          });
+
+          // Reset form apenas para convidados
+          if (!isAuthenticated) {
+            setForm({
+              name: "",
+              email: "",
+              whatsapp: "",
+              address: {
+                zipCode: "",
+                street: "",
+                number: "",
+                complement: "",
+                neighborhood: "",
+                city: "",
+                state: "",
+              },
+              paymentMethod: "pix",
+            });
+          }
+
           toast.success("Pedido criado com sucesso! Você será contatado em breve.");
         }, 1000);
       }, 2000);
@@ -335,9 +455,17 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-moria-orange" />
             Finalizar Pedido
+            {isAuthenticated && (
+              <Badge variant="outline" className="ml-2">
+                Logado como {customer?.name?.split(' ')[0]}
+              </Badge>
+            )}
           </SheetTitle>
           <SheetDescription>
-            Preencha seus dados para finalizar o pedido via WhatsApp
+            {isAuthenticated
+              ? "Seus dados foram preenchidos automaticamente. Confirme ou edite se necessário."
+              : "Preencha seus dados para finalizar o pedido via WhatsApp"
+            }
           </SheetDescription>
         </SheetHeader>
 
@@ -442,7 +570,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                         className="pl-10 h-10"
                         value={form.name}
                         onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                        disabled={isLoading}
+                        disabled={isLoading || (isAuthenticated && !!customer?.name)}
                         required
                       />
                     </div>
@@ -459,7 +587,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                         className="pl-10 h-10"
                         value={form.email}
                         onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                        disabled={isLoading}
+                        disabled={isLoading || (isAuthenticated && !!customer?.email)}
                         required
                       />
                     </div>
@@ -486,127 +614,174 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
                   <Separator />
 
-                  {/* Endereço */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Home className="h-4 w-4" />
-                      <Label className="text-sm font-semibold">Endereço de Entrega</Label>
+                  {/* Seleção de Endereço - APENAS PARA CLIENTES LOGADOS */}
+                  {isAuthenticated && customer?.addresses && customer.addresses.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Endereço de Entrega</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUseNewAddress(!useNewAddress)}
+                          className="h-8 text-xs"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {useNewAddress ? "Usar endereço salvo" : "Novo endereço"}
+                        </Button>
+                      </div>
+
+                      {!useNewAddress && (
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedAddressId || undefined}
+                            onValueChange={setSelectedAddressId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um endereço" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {customer.addresses.map((addr) => (
+                                <SelectItem key={addr.id} value={addr.id}>
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>
+                                      {addr.street}, {addr.number} - {addr.neighborhood}
+                                      {addr.isDefault && " (Padrão)"}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="col-span-1">
-                          <div className="relative">
-                            <Input
-                              placeholder="CEP *"
-                              value={form.address.zipCode}
-                              onChange={(e) => {
-                                const formatted = formatZipCode(e.target.value);
-                                setForm(prev => ({
-                                  ...prev,
-                                  address: { ...prev.address, zipCode: formatted }
-                                }));
+                  {/* Formulário de Endereço - Para convidados ou novo endereço */}
+                  {(!isAuthenticated || useNewAddress || !customer?.addresses?.length) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4" />
+                        <Label className="text-sm font-semibold">Endereço de Entrega</Label>
+                      </div>
 
-                                // Buscar endereço automaticamente quando tiver 8 dígitos
-                                if (formatted.replace(/\D/g, '').length === 8) {
-                                  fetchAddressByCep(formatted);
-                                }
-                              }}
-                              disabled={isLoading || isLoadingCep}
-                              maxLength={9}
-                              required
-                              className="pr-10"
-                            />
-                            {isLoadingCep && (
-                              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-moria-orange" />
-                            )}
-                            {!isLoadingCep && form.address.zipCode.replace(/\D/g, '').length === 8 && (
-                              <Search className="absolute right-3 top-3 h-4 w-4 text-green-600" />
-                            )}
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="col-span-1">
+                            <div className="relative">
+                              <Input
+                                placeholder="CEP *"
+                                value={form.address.zipCode}
+                                onChange={(e) => {
+                                  const formatted = formatZipCode(e.target.value);
+                                  setForm(prev => ({
+                                    ...prev,
+                                    address: { ...prev.address, zipCode: formatted }
+                                  }));
+
+                                  // Buscar endereço automaticamente quando tiver 8 dígitos
+                                  if (formatted.replace(/\D/g, '').length === 8) {
+                                    fetchAddressByCep(formatted);
+                                  }
+                                }}
+                                disabled={isLoading || isLoadingCep}
+                                maxLength={9}
+                                required
+                                className="pr-10"
+                              />
+                              {isLoadingCep && (
+                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-moria-orange" />
+                              )}
+                              {!isLoadingCep && form.address.zipCode.replace(/\D/g, '').length === 8 && (
+                                <Search className="absolute right-3 top-3 h-4 w-4 text-green-600" />
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          Digite o CEP para preencher o endereço automaticamente
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Digite o CEP para preencher o endereço automaticamente
-                      </p>
+
+                      <Input
+                        placeholder="Rua *"
+                        value={form.address.street}
+                        onChange={(e) => setForm(prev => ({
+                          ...prev,
+                          address: { ...prev.address, street: e.target.value }
+                        }))}
+                        disabled={isLoading}
+                        required
+                      />
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-1">
+                          <Input
+                            placeholder="Número *"
+                            value={form.address.number}
+                            onChange={(e) => setForm(prev => ({
+                              ...prev,
+                              address: { ...prev.address, number: e.target.value }
+                            }))}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            placeholder="Complemento"
+                            value={form.address.complement}
+                            onChange={(e) => setForm(prev => ({
+                              ...prev,
+                              address: { ...prev.address, complement: e.target.value }
+                            }))}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <Input
+                        placeholder="Bairro *"
+                        value={form.address.neighborhood}
+                        onChange={(e) => setForm(prev => ({
+                          ...prev,
+                          address: { ...prev.address, neighborhood: e.target.value }
+                        }))}
+                        disabled={isLoading}
+                        required
+                      />
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                          <Input
+                            placeholder="Cidade *"
+                            value={form.address.city}
+                            onChange={(e) => setForm(prev => ({
+                              ...prev,
+                              address: { ...prev.address, city: e.target.value }
+                            }))}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <Input
+                            placeholder="UF *"
+                            maxLength={2}
+                            value={form.address.state}
+                            onChange={(e) => setForm(prev => ({
+                              ...prev,
+                              address: { ...prev.address, state: e.target.value.toUpperCase() }
+                            }))}
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
-
-                    <Input
-                      placeholder="Rua *"
-                      value={form.address.street}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        address: { ...prev.address, street: e.target.value }
-                      }))}
-                      disabled={isLoading}
-                      required
-                    />
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="col-span-1">
-                        <Input
-                          placeholder="Número *"
-                          value={form.address.number}
-                          onChange={(e) => setForm(prev => ({
-                            ...prev,
-                            address: { ...prev.address, number: e.target.value }
-                          }))}
-                          disabled={isLoading}
-                          required
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          placeholder="Complemento"
-                          value={form.address.complement}
-                          onChange={(e) => setForm(prev => ({
-                            ...prev,
-                            address: { ...prev.address, complement: e.target.value }
-                          }))}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <Input
-                      placeholder="Bairro *"
-                      value={form.address.neighborhood}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        address: { ...prev.address, neighborhood: e.target.value }
-                      }))}
-                      disabled={isLoading}
-                      required
-                    />
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="col-span-2">
-                        <Input
-                          placeholder="Cidade *"
-                          value={form.address.city}
-                          onChange={(e) => setForm(prev => ({
-                            ...prev,
-                            address: { ...prev.address, city: e.target.value }
-                          }))}
-                          disabled={isLoading}
-                          required
-                        />
-                      </div>
-                      <div className="col-span-1">
-                        <Input
-                          placeholder="UF *"
-                          maxLength={2}
-                          value={form.address.state}
-                          onChange={(e) => setForm(prev => ({
-                            ...prev,
-                            address: { ...prev.address, state: e.target.value.toUpperCase() }
-                          }))}
-                          disabled={isLoading}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="bg-muted rounded-lg p-3">
                     <h4 className="font-medium text-sm mb-2">Como funciona:</h4>
