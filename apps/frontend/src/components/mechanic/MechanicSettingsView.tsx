@@ -19,13 +19,13 @@ import {
   Clock,
   AlertCircle,
   Loader2,
-  Eye,
-  EyeOff,
   Calendar,
   Car,
   TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordInput } from "../ui/password-input";
+import { isPasswordStrong } from "@/lib/passwordUtils";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
@@ -72,9 +72,6 @@ export default function MechanicSettingsView() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Stats state
@@ -202,14 +199,8 @@ export default function MechanicSettingsView() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("A nova senha deve ter pelo menos 6 caracteres");
-      return;
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-    if (!passwordRegex.test(newPassword)) {
-      toast.error("A senha deve conter letra maiúscula, minúscula e número");
+    if (!isPasswordStrong(newPassword)) {
+      toast.error("A nova senha não atende aos requisitos mínimos de segurança");
       return;
     }
 
@@ -385,71 +376,37 @@ export default function MechanicSettingsView() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Senha Atual</Label>
-                <div className="relative">
-                  <Input
-                    id="currentPassword"
-                    type={showCurrentPassword ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Digite sua senha atual"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  >
-                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
+                <PasswordInput
+                  id="currentPassword"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Digite sua senha atual"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Digite a nova senha"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Mínimo 6 caracteres, com letra maiúscula, minúscula e número
-                </p>
+                <PasswordInput
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Digite a nova senha"
+                  showStrengthIndicator
+                  showRequirements
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirme a nova senha"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
+                <PasswordInput
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirme a nova senha"
+                />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-xs text-red-600">As senhas não coincidem</p>
+                )}
               </div>
 
               <Separator />

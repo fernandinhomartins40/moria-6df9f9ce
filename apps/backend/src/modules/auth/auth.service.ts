@@ -5,6 +5,7 @@ import { JwtUtil } from '@shared/utils/jwt.util.js';
 import { ApiError } from '@shared/utils/error.util.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { logger } from '@shared/utils/logger.util.js';
 
 export interface AuthResponse {
@@ -191,5 +192,51 @@ export class AuthService {
 
     const { password, ...customerWithoutPassword } = customer;
     return customerWithoutPassword;
+  }
+
+  /**
+   * Change customer password
+   */
+  async changePassword(
+    customerId: string,
+    dto: ChangePasswordDto
+  ): Promise<void> {
+    try {
+      logger.info(`Password change attempt for customer: ${customerId}`);
+
+      // Find customer
+      const customer = await prisma.customer.findUnique({
+        where: { id: customerId },
+      });
+
+      if (!customer) {
+        throw ApiError.notFound('Customer not found');
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await HashUtil.comparePassword(
+        dto.currentPassword,
+        customer.password
+      );
+
+      if (!isCurrentPasswordValid) {
+        logger.warn(`Password change failed - invalid current password: ${customer.email}`);
+        throw ApiError.unauthorized('Current password is incorrect');
+      }
+
+      // Hash new password
+      const hashedNewPassword = await HashUtil.hashPassword(dto.newPassword);
+
+      // Update password
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { password: hashedNewPassword },
+      });
+
+      logger.info(`Password changed successfully for customer: ${customer.email}`);
+    } catch (error) {
+      logger.error('Password change error:', error);
+      throw error;
+    }
   }
 }

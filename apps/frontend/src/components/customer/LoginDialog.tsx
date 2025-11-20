@@ -8,8 +8,10 @@ import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
-import { Eye, EyeOff, Loader2, User, Mail, Phone, CreditCard } from "lucide-react";
+import { Loader2, User, Mail, Phone, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordInput } from "../ui/password-input";
+import { isPasswordStrong } from "@/lib/passwordUtils";
 
 interface LoginDialogProps {
   open: boolean;
@@ -19,7 +21,6 @@ interface LoginDialogProps {
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
   
   const [loginForm, setLoginForm] = useState({
     phone: "",
@@ -68,8 +69,8 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       return;
     }
 
-    if (registerForm.password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (!isPasswordStrong(registerForm.password)) {
+      toast.error("A senha não atende aos requisitos mínimos de segurança");
       return;
     }
 
@@ -143,25 +144,13 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
 
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Senha</Label>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Digite sua senha"
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
+                    <PasswordInput
+                      id="login-password"
+                      placeholder="Digite sua senha"
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                      disabled={isLoading}
+                    />
                   </div>
 
                   <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
@@ -270,37 +259,29 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
 
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Senha *</Label>
-                    <Input
+                    <PasswordInput
                       id="register-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Crie uma senha forte"
                       value={registerForm.password}
                       onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
                       disabled={isLoading}
+                      showStrengthIndicator
+                      showRequirements
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="register-confirm-password">Confirmar Senha *</Label>
-                    <div className="relative">
-                      <Input
-                        id="register-confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Digite a senha novamente"
-                        value={registerForm.confirmPassword}
-                        onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
+                    <PasswordInput
+                      id="register-confirm-password"
+                      placeholder="Digite a senha novamente"
+                      value={registerForm.confirmPassword}
+                      onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      disabled={isLoading}
+                    />
+                    {registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword && (
+                      <p className="text-xs text-red-600">As senhas não coincidem</p>
+                    )}
                   </div>
                 </CardContent>
 

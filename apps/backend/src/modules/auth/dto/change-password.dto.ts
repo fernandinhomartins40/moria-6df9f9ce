@@ -6,11 +6,11 @@ export const changePasswordSchema = z.object({
     .min(1, 'Current password is required'),
   newPassword: z
     .string({ required_error: 'New password is required' })
-    .min(6, 'Password must be at least 6 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/\d/, 'Password must contain at least one number')
+    .regex(/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/, 'Password must contain at least one special character'),
   confirmPassword: z
     .string({ required_error: 'Confirm password is required' })
     .min(1, 'Confirm password is required'),

@@ -9,23 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Badge } from "../ui/badge";
-import { 
-  User, 
-  MapPin, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Home, 
-  Briefcase, 
+import {
+  User,
+  MapPin,
+  Plus,
+  Edit,
+  Trash2,
+  Home,
+  Briefcase,
   MoreHorizontal,
   Save,
   Loader2,
   Phone,
   Mail,
   CreditCard,
-  Calendar
+  Calendar,
+  Lock
 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordInput } from "../ui/password-input";
+import { isPasswordStrong } from "@/lib/passwordUtils";
 
 export function CustomerProfile() {
   const { customer, updateProfile, addAddress, updateAddress, deleteAddress } = useAuth();
@@ -53,6 +56,12 @@ export function CustomerProfile() {
     zipCode: '',
     isDefault: false,
   });
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   if (!customer) return null;
 
@@ -187,6 +196,51 @@ export function CustomerProfile() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+
+    if (!isPasswordStrong(newPassword)) {
+      toast.error("A nova senha não atende aos requisitos mínimos de segurança");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/auth/change-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+
+      if (response.ok) {
+        toast.success("Senha alterada com sucesso");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Erro ao alterar senha");
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error("Erro ao alterar senha");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -197,8 +251,9 @@ export function CustomerProfile() {
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
+          <TabsTrigger value="security">Segurança</TabsTrigger>
           <TabsTrigger value="addresses">Endereços</TabsTrigger>
         </TabsList>
 
@@ -339,6 +394,83 @@ export function CustomerProfile() {
                 )}
               </form>
             </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Lock className="mr-2 h-5 w-5" />
+                Alterar Senha
+              </CardTitle>
+              <CardDescription>
+                Mantenha sua conta segura com uma senha forte
+              </CardDescription>
+            </CardHeader>
+
+            <form onSubmit={handleChangePassword}>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Senha Atual</Label>
+                  <PasswordInput
+                    id="currentPassword"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Digite sua senha atual"
+                    disabled={isChangingPassword}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <PasswordInput
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova senha"
+                    disabled={isChangingPassword}
+                    showStrengthIndicator
+                    showRequirements
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <PasswordInput
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                    disabled={isChangingPassword}
+                  />
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-red-600">As senhas não coincidem</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                <Button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="w-full sm:w-auto"
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Alterando Senha...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Alterar Senha
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </form>
           </Card>
         </TabsContent>
 
