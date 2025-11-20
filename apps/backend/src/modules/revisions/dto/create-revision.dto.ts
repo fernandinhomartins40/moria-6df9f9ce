@@ -9,13 +9,13 @@ export enum ChecklistItemStatus {
 }
 
 export const checklistItemCheckSchema = z.object({
-  categoryId: z.string().uuid(),
-  categoryName: z.string(),
-  itemId: z.string().uuid(),
-  itemName: z.string(),
+  categoryId: z.string().uuid('categoryId must be a valid UUID'),
+  categoryName: z.string().min(1, 'categoryName is required'),
+  itemId: z.string().uuid('itemId must be a valid UUID'),
+  itemName: z.string().min(1, 'itemName is required'),
   status: z.nativeEnum(ChecklistItemStatus),
   notes: z.string().optional(),
-  photos: z.array(z.string().url()).optional().default([]),
+  photos: z.array(z.string()).optional().default([]), // Removida validação .url() restritiva
 });
 
 export const createRevisionSchema = z.object({

@@ -106,6 +106,9 @@ export class RevisionsController {
         throw new Error('Admin not authenticated');
       }
 
+      // Log payload para debug
+      console.log('📥 Received revision creation payload:', JSON.stringify(req.body, null, 2));
+
       const dto = createRevisionSchema.parse(req.body);
       const revision = await this.revisionsService.createRevision(
         dto.customerId,
@@ -116,7 +119,12 @@ export class RevisionsController {
         success: true,
         data: revision,
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Log detalhado de erros Zod
+      if (error.name === 'ZodError') {
+        console.error('❌ Zod validation error:', JSON.stringify(error.errors, null, 2));
+        console.error('📦 Payload recebido:', JSON.stringify(req.body, null, 2));
+      }
       next(error);
     }
   };
