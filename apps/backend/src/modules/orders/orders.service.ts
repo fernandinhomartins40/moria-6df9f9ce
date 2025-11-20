@@ -1,4 +1,4 @@
-import { Order, OrderItem, OrderStatus, OrderItemType, Prisma } from '@prisma/client';
+import { Order, OrderItem, OrderStatus, OrderItemType, Prisma, Address } from '@prisma/client';
 import { prisma } from '@config/database.js';
 import { ApiError } from '@shared/utils/error.util.js';
 import { PaginationUtil, PaginatedResponse } from '@shared/utils/pagination.util.js';
@@ -9,6 +9,7 @@ import notificationService from '@modules/notifications/notification.service.js'
 
 export type OrderWithItems = Order & {
   items: OrderItem[];
+  address: Address;
 };
 
 export interface OrderFilters {
@@ -181,6 +182,7 @@ export class OrdersService {
       },
       include: {
         items: true,
+        address: true,
       },
     });
 
@@ -267,6 +269,7 @@ export class OrdersService {
         where,
         include: {
           items: true,
+          address: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -286,6 +289,7 @@ export class OrdersService {
       where: { id: orderId, customerId },
       include: {
         items: true,
+        address: true,
       },
     });
 
@@ -355,6 +359,7 @@ export class OrdersService {
       data: updateData,
       include: {
         items: true,
+        address: true,
       },
     });
 

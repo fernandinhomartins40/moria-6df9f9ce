@@ -87,7 +87,8 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
       include: {
         customer: { select: { name: true, phone: true } },
-        items: true
+        items: true,
+        address: true
       }
     }) as unknown as OrderWithRelations[];
 
@@ -137,7 +138,8 @@ export class AdminService {
         orderBy: { createdAt: 'desc' },
         include: {
           customer: { select: { name: true, phone: true } },
-          items: true
+          items: true,
+          address: true
         }
       }) as unknown as Promise<OrderWithRelations[]>,
       prisma.order.count({ where })
@@ -157,7 +159,8 @@ export class AdminService {
       where: { id },
       include: {
         customer: { select: { name: true, phone: true } },
-        items: true
+        items: true,
+        address: true
       }
     }) as unknown as OrderWithRelations | null;
 
@@ -414,6 +417,7 @@ export class AdminService {
           items: {
             where: { type: 'SERVICE' }, // Apenas itens de serviço
           },
+          address: true
         },
       }) as unknown as Promise<OrderWithRelations[]>,
       prisma.order.count({ where })
@@ -433,6 +437,7 @@ export class AdminService {
         items: {
           where: { type: 'SERVICE' },
         },
+        address: true
       },
     }) as unknown as OrderWithRelations | null;
 
@@ -467,7 +472,7 @@ export class AdminService {
     // Buscar pedido com itens atualizados
     const order = await prisma.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, address: true },
     });
 
     if (!order) {

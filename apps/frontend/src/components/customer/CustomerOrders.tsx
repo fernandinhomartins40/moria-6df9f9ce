@@ -248,10 +248,12 @@ export function CustomerOrders() {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center text-muted-foreground">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span>{order.address.city}, {order.address.state}</span>
-                        </div>
+                        {order.address && (
+                          <div className="flex items-center text-muted-foreground">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            <span>{order.address.city}, {order.address.state}</span>
+                          </div>
+                        )}
                         {order.estimatedDelivery && (
                           <div className="flex items-center text-muted-foreground">
                             <Calendar className="w-4 h-4 mr-2" />
@@ -314,18 +316,20 @@ export function CustomerOrders() {
                               </div>
 
                               {/* Address */}
-                              <div>
-                                <h4 className="font-medium mb-3">Endereço de Entrega</h4>
-                                <div className="p-3 bg-muted rounded">
-                                  <p>{selectedOrder.address.street}, {selectedOrder.address.number}</p>
-                                  {selectedOrder.address.complement && (
-                                    <p>{selectedOrder.address.complement}</p>
-                                  )}
-                                  <p>{selectedOrder.address.neighborhood}</p>
-                                  <p>{selectedOrder.address.city}, {selectedOrder.address.state}</p>
-                                  <p>CEP: {selectedOrder.address.zipCode}</p>
+                              {selectedOrder.address && (
+                                <div>
+                                  <h4 className="font-medium mb-3">Endereço de Entrega</h4>
+                                  <div className="p-3 bg-muted rounded">
+                                    <p>{selectedOrder.address.street}, {selectedOrder.address.number}</p>
+                                    {selectedOrder.address.complement && (
+                                      <p>{selectedOrder.address.complement}</p>
+                                    )}
+                                    <p>{selectedOrder.address.neighborhood}</p>
+                                    <p>{selectedOrder.address.city}, {selectedOrder.address.state}</p>
+                                    <p>CEP: {selectedOrder.address.zipCode}</p>
+                                  </div>
                                 </div>
-                              </div>
+                              )}
 
                               {/* Timeline */}
                               <div>

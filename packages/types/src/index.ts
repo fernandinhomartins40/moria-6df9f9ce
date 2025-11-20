@@ -74,14 +74,14 @@ export interface Order {
   id: string;
   customerId: string;
   items: OrderItem[];
+  subtotal: number;
+  discountAmount: number;
   total: number;
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PRODUCTION' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   source: 'WEB' | 'APP' | 'PHONE';
   hasProducts: boolean;
   hasServices: boolean;
   couponCode?: string;
-  discountAmount: number;
-  totalWithDiscount: number;
   address: Address;
   addressId: string;
   paymentMethod: string;

@@ -31,6 +31,7 @@ export class CustomerController {
         where,
         include: {
           items: true,
+          address: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -79,6 +80,7 @@ export class CustomerController {
         },
         include: {
           items: true,
+          address: true,
         },
       });
 
@@ -256,6 +258,7 @@ export class CustomerController {
         },
         include: {
           items: true,
+          address: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -303,15 +306,9 @@ export class CustomerController {
         },
         include: {
           items: true,
+          address: true,
         },
-      }) as (Order & { items: OrderItem[] }) | null;
-
-      let address: Address | null = null;
-      if (order && order.addressId) {
-        address = await prisma.address.findUnique({
-          where: { id: order.addressId },
-        });
-      }
+      }) as (Order & { items: OrderItem[]; address: Address }) | null;
 
       if (!order) {
         res.status(404).json({ error: 'Pedido não encontrado' });
@@ -335,7 +332,7 @@ export class CustomerController {
           price: Number(item.price),
           type: item.productId ? 'product' : 'service',
         })),
-        address: address,
+        address: order.address,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
       });
