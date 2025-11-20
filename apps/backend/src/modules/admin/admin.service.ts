@@ -328,39 +328,52 @@ export class AdminService {
     mileage?: number;
     chassisNumber?: string;
   }) {
-    // Verificar se o cliente existe
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId }
-    });
+    try {
+      // Verificar se o cliente existe
+      const customer = await prisma.customer.findUnique({
+        where: { id: customerId }
+      });
 
-    if (!customer) {
-      throw new Error('Cliente não encontrado');
-    }
-
-    // Verificar se já existe veículo com a mesma placa
-    const existingVehicle = await prisma.customerVehicle.findFirst({
-      where: { plate: data.plate }
-    });
-
-    if (existingVehicle) {
-      throw new Error('Já existe um veículo cadastrado com esta placa');
-    }
-
-    // Criar veículo
-    const vehicle = await prisma.customerVehicle.create({
-      data: {
-        customerId,
-        brand: data.brand,
-        model: data.model,
-        year: data.year,
-        plate: data.plate,
-        color: data.color,
-        mileage: data.mileage || null,
-        chassisNumber: data.chassisNumber || null,
+      if (!customer) {
+        throw new Error('Cliente não encontrado');
       }
-    });
 
-    return vehicle;
+      // Normalizar placa (remover espaços e converter para maiúsculas)
+      const normalizedPlate = data.plate.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      // Verificar se já existe veículo com a mesma placa
+      const existingVehicle = await prisma.customerVehicle.findFirst({
+        where: {
+          plate: {
+            equals: normalizedPlate,
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (existingVehicle) {
+        throw new Error('Já existe um veículo cadastrado com esta placa');
+      }
+
+      // Criar veículo
+      const vehicle = await prisma.customerVehicle.create({
+        data: {
+          customerId,
+          brand: data.brand.trim(),
+          model: data.model.trim(),
+          year: data.year,
+          plate: normalizedPlate,
+          color: data.color.trim(),
+          mileage: data.mileage || null,
+          chassisNumber: data.chassisNumber ? data.chassisNumber.trim().toUpperCase() : null,
+        }
+      });
+
+      return vehicle;
+    } catch (error: any) {
+      console.error('Error creating vehicle:', error);
+      throw error;
+    }
   }
 
   // ==================== QUOTES (ORÇAMENTOS) ====================

@@ -39,8 +39,8 @@ export class FavoritesController {
   };
 
   /**
-   * DELETE /favorites/:productId
-   * Remove product from favorites
+   * DELETE /favorites/product/:productId
+   * Remove product from favorites by product ID
    */
   removeFavorite = async (
     req: Request,
@@ -55,6 +55,31 @@ export class FavoritesController {
       await this.favoritesService.removeFavorite(
         req.user.customerId,
         req.params.productId
+      );
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /favorites/:favoriteId
+   * Remove favorite by favorite ID
+   */
+  removeFavoriteById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+
+      await this.favoritesService.removeFavoriteById(
+        req.user.customerId,
+        req.params.favoriteId
       );
 
       res.status(204).send();
@@ -86,7 +111,10 @@ export class FavoritesController {
 
       res.status(200).json({
         success: true,
-        ...result,
+        data: {
+          favorites: result.data,
+          pagination: result.meta
+        }
       });
     } catch (error) {
       next(error);

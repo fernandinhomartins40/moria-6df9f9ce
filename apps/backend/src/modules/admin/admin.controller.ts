@@ -191,7 +191,20 @@ export class AdminController {
       });
 
       res.status(201).json(vehicle);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error in createVehicleForCustomer controller:', error);
+
+      // Retornar erro específico
+      if (error.message === 'Cliente não encontrado') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      if (error.message === 'Já existe um veículo cadastrado com esta placa') {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+
       next(error);
     }
   };
