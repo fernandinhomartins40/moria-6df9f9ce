@@ -15,13 +15,33 @@ export interface FavoriteListResponse {
   limit: number;
 }
 
+interface StandardResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 class FavoriteService {
   async getFavorites(params?: {
     page?: number;
     limit?: number;
   }): Promise<FavoriteListResponse> {
-    const response = await apiClient.get<FavoriteListResponse>('/favorites', { params });
-    return response.data;
+    const response = await apiClient.get<StandardResponse<{
+      favorites: Favorite[];
+      pagination: {
+        page: number;
+        limit: number;
+        totalCount: number;
+        totalPages: number;
+      };
+    }>>('/favorites', { params });
+
+    // Convert to legacy format for compatibility
+    return {
+      favorites: response.data.data.favorites,
+      totalCount: response.data.data.pagination.totalCount,
+      page: response.data.data.pagination.page,
+      limit: response.data.data.pagination.limit
+    };
   }
 
   async getFavoriteProductIds(): Promise<string[]> {
@@ -59,6 +79,15 @@ class FavoriteService {
   async getFavoriteCount(): Promise<number> {
     const response = await apiClient.get<{ count: number }>('/favorites/count');
     return response.data.count;
+  }
+
+  async getFavoriteStats(): Promise<any> {
+    const response = await apiClient.get('/favorites/stats');
+    return response.data.data;
+  }
+
+  async clearAllFavorites(): Promise<void> {
+    await apiClient.delete('/favorites');
   }
 }
 

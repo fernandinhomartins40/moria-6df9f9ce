@@ -19,7 +19,8 @@ router.get('/', favoritesController.getFavorites);
 // Mutation operations
 router.post('/', favoritesController.addFavorite);
 router.post('/toggle', favoritesController.toggleFavorite);
-router.delete('/:productId', favoritesController.removeFavorite);
+router.delete('/product/:productId', favoritesController.removeFavorite);
+router.delete('/:favoriteId', favoritesController.removeFavoriteById);
 router.delete('/', favoritesController.clearFavorites);
 
 export default router;

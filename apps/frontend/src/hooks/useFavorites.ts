@@ -20,6 +20,7 @@ interface UseFavoritesResult {
   checkIsFavorite: (productId: string) => Promise<boolean>;
   toggleFavorite: (productId: string) => Promise<boolean>;
   clearError: () => void;
+  clearFavorites: () => void;
 }
 
 export const useFavorites = (): UseFavoritesResult => {
@@ -163,6 +164,13 @@ export const useFavorites = (): UseFavoritesResult => {
     setError(null);
   }, []);
 
+  const clearFavorites = useCallback(() => {
+    setFavorites([]);
+    setFavoriteProductIds([]);
+    setTotalCount(0);
+    setError(null);
+  }, []);
+
   return {
     favorites,
     favoriteProductIds,
@@ -178,5 +186,6 @@ export const useFavorites = (): UseFavoritesResult => {
     checkIsFavorite,
     toggleFavorite,
     clearError,
+    clearFavorites,
   };
 };

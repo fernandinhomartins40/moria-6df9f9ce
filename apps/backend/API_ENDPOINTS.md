@@ -193,12 +193,88 @@
 
 | Método | Endpoint | Autenticação | Descrição |
 |--------|----------|--------------|-----------|
-| GET | `/` | ✅ | Listar favoritos do cliente |
-| POST | `/` | ✅ | Adicionar aos favoritos |
-| DELETE | `/:productId` | ✅ | Remover dos favoritos |
-| GET | `/check/:productId` | ✅ | Verificar se está nos favoritos |
+| GET | `/` | ✅ | Listar favoritos do cliente (com paginação) |
+| GET | `/product-ids` | ✅ | Obter apenas IDs dos produtos favoritos |
+| GET | `/check/:productId` | ✅ | Verificar se produto está nos favoritos |
+| GET | `/count` | ✅ | Obter contador de favoritos |
+| GET | `/stats` | ✅ | Obter estatísticas detalhadas |
+| POST | `/` | ✅ | Adicionar produto aos favoritos |
+| POST | `/toggle` | ✅ | Toggle favorito (adiciona ou remove) |
+| DELETE | `/product/:productId` | ✅ | Remover favorito por ID do produto |
+| DELETE | `/:favoriteId` | ✅ | Remover favorito por ID do favorito |
+| DELETE | `/` | ✅ | Limpar todos os favoritos |
 
-**Total**: 4 endpoints
+**Total**: 10 endpoints
+
+### Detalhes dos Endpoints de Favoritos
+
+#### GET `/favorites`
+Lista todos os favoritos do cliente com paginação e opção de incluir dados dos produtos.
+
+**Query Parameters**:
+- `page` (number, opcional): Página desejada (padrão: 1)
+- `limit` (number, opcional): Itens por página (padrão: 20)
+- `includeProduct` (boolean, opcional): Incluir dados do produto (padrão: true)
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "favorites": [...],
+  "totalCount": 10,
+  "page": 1,
+  "limit": 20
+}
+```
+
+#### GET `/favorites/product-ids`
+Retorna apenas os IDs dos produtos favoritos (otimizado).
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": ["uuid1", "uuid2"]
+}
+```
+
+#### GET `/favorites/stats`
+Retorna estatísticas detalhadas dos favoritos.
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "totalFavorites": 15,
+    "favoritesByCategory": { "Pneus": 5 },
+    "recentlyAdded": [...]
+  }
+}
+```
+
+#### POST `/favorites`
+Adiciona um produto aos favoritos.
+
+**Body**:
+```json
+{ "productId": "uuid" }
+```
+
+**Response**: `201 Created`
+
+**Erros**: `404` Produto não encontrado, `409` Já nos favoritos
+
+#### DELETE `/favorites`
+Remove todos os favoritos do cliente.
+
+**Response**: `200 OK`
+```json
+{
+  "success": true,
+  "data": { "deletedCount": 15 }
+}
+```
 
 ---
 

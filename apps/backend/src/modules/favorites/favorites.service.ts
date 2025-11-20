@@ -49,7 +49,7 @@ export class FavoritesService {
   }
 
   /**
-   * Remove product from favorites
+   * Remove product from favorites by product ID
    */
   async removeFavorite(customerId: string, productId: string): Promise<void> {
     const favorite = await prisma.favorite.findUnique({
@@ -72,6 +72,34 @@ export class FavoritesService {
     });
 
     logger.info(`Product ${productId} removed from favorites for customer ${customerId}`);
+  }
+
+  /**
+   * Remove favorite by favorite ID
+   */
+  async removeFavoriteById(customerId: string, favoriteId: string): Promise<void> {
+    const favorite = await prisma.favorite.findUnique({
+      where: {
+        id: favoriteId,
+      },
+    });
+
+    if (!favorite) {
+      throw ApiError.notFound('Favorite not found');
+    }
+
+    // Verify ownership
+    if (favorite.customerId !== customerId) {
+      throw ApiError.forbidden('You do not have permission to delete this favorite');
+    }
+
+    await prisma.favorite.delete({
+      where: {
+        id: favoriteId,
+      },
+    });
+
+    logger.info(`Favorite ${favoriteId} removed for customer ${customerId}`);
   }
 
   /**
