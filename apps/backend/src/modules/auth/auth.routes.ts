@@ -27,6 +27,11 @@ router.post('/admin/logout', adminAuthController.logout);
 // Admin protected routes
 router.get('/admin/profile', AdminAuthMiddleware.authenticate, adminAuthController.getProfile);
 router.put('/admin/profile', AdminAuthMiddleware.authenticate, adminAuthController.updateProfile);
+router.put('/admin/change-password', AdminAuthMiddleware.authenticate, adminAuthController.changePassword);
+router.get('/admin/stats', AdminAuthMiddleware.authenticate, adminAuthController.getMechanicStats);
+router.get('/admin/activity-history', AdminAuthMiddleware.authenticate, adminAuthController.getActivityHistory);
+router.get('/admin/preferences', AdminAuthMiddleware.authenticate, adminAuthController.getPreferences);
+router.put('/admin/preferences', AdminAuthMiddleware.authenticate, adminAuthController.updatePreferences);
 
 // Admin user management (ADMIN and SUPER_ADMIN only)
 router.post(

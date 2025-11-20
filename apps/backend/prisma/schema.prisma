@@ -120,6 +120,7 @@ model Admin {
   role        AdminRole   @default(STAFF)
   status      AdminStatus @default(ACTIVE)
   permissions Json?       // Array de permissões customizadas
+  preferences Json?       // Preferências do usuário (notificações, tema, etc.)
 
   // Timestamps
   createdAt   DateTime    @default(now())

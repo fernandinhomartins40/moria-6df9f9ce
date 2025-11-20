@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AdminAuthService } from './admin-auth.service.js';
 import { adminLoginSchema } from './dto/admin-login.dto.js';
 import { createAdminSchema } from './dto/create-admin.dto.js';
+import { changePasswordSchema } from './dto/change-password.dto.js';
 import { logger } from '@shared/utils/logger.util.js';
 import { AdminRole, AdminStatus } from '@prisma/client';
 
@@ -86,6 +87,120 @@ export class AdminAuthController {
       res.status(200).json({
         success: true,
         data: admin,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /auth/admin/change-password
+   */
+  changePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const dto = changePasswordSchema.parse(req.body);
+      await this.adminAuthService.changePassword(req.admin.adminId, dto);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password changed successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /auth/admin/stats
+   */
+  getMechanicStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const stats = await this.adminAuthService.getMechanicStats(req.admin.adminId);
+
+      res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /auth/admin/activity-history
+   */
+  getActivityHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const result = await this.adminAuthService.getMechanicActivityHistory(
+        req.admin.adminId,
+        page,
+        limit
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result.activities,
+        meta: {
+          page: result.page,
+          limit: result.limit,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /auth/admin/preferences
+   */
+  getPreferences = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      const preferences = await this.adminAuthService.getPreferences(req.admin.adminId);
+
+      res.status(200).json({
+        success: true,
+        data: preferences,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /auth/admin/preferences
+   */
+  updatePreferences = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
+      }
+
+      await this.adminAuthService.updatePreferences(req.admin.adminId, req.body);
+
+      res.status(200).json({
+        success: true,
+        message: 'Preferences updated successfully',
       });
     } catch (error) {
       next(error);

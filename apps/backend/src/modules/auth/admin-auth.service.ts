@@ -5,6 +5,7 @@ import { JwtUtil } from '@shared/utils/jwt.util.js';
 import { ApiError } from '@shared/utils/error.util.js';
 import { AdminLoginDto } from './dto/admin-login.dto.js';
 import { CreateAdminDto } from './dto/create-admin.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { logger } from '@shared/utils/logger.util.js';
 
 export interface AdminAuthResponse {
@@ -115,6 +116,303 @@ export class AdminAuthService {
 
     const { password, ...adminWithoutPassword } = admin;
     return adminWithoutPassword;
+  }
+
+  /**
+   * Change admin password
+   */
+  async changePassword(
+    adminId: string,
+    dto: ChangePasswordDto
+  ): Promise<void> {
+    try {
+      logger.info(`Password change attempt for admin: ${adminId}`);
+
+      // Find admin
+      const admin = await prisma.admin.findUnique({
+        where: { id: adminId },
+      });
+
+      if (!admin) {
+        throw ApiError.notFound('Admin not found');
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await HashUtil.comparePassword(
+        dto.currentPassword,
+        admin.password
+      );
+
+      if (!isCurrentPasswordValid) {
+        logger.warn(`Password change failed - invalid current password: ${admin.email}`);
+        throw ApiError.unauthorized('Current password is incorrect');
+      }
+
+      // Hash new password
+      const hashedNewPassword = await HashUtil.hashPassword(dto.newPassword);
+
+      // Update password
+      await prisma.admin.update({
+        where: { id: adminId },
+        data: { password: hashedNewPassword },
+      });
+
+      logger.info(`Password changed successfully for admin: ${admin.email}`);
+    } catch (error) {
+      logger.error('Password change error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get mechanic statistics
+   */
+  async getMechanicStats(adminId: string): Promise<{
+    totalRevisions: number;
+    completedRevisions: number;
+    inProgressRevisions: number;
+    pendingRevisions: number;
+    completionRate: number;
+    averageCompletionTime: number | null;
+  }> {
+    const [
+      totalRevisions,
+      completedRevisions,
+      inProgressRevisions,
+      pendingRevisions,
+      completedWithTime,
+    ] = await Promise.all([
+      prisma.revision.count({
+        where: { assignedMechanicId: adminId },
+      }),
+      prisma.revision.count({
+        where: {
+          assignedMechanicId: adminId,
+          status: 'COMPLETED',
+        },
+      }),
+      prisma.revision.count({
+        where: {
+          assignedMechanicId: adminId,
+          status: 'IN_PROGRESS',
+        },
+      }),
+      prisma.revision.count({
+        where: {
+          assignedMechanicId: adminId,
+          status: { in: ['DRAFT', 'PENDING'] },
+        },
+      }),
+      prisma.revision.findMany({
+        where: {
+          assignedMechanicId: adminId,
+          status: 'COMPLETED',
+          completedAt: { not: null },
+          assignedAt: { not: null },
+        },
+        select: {
+          assignedAt: true,
+          completedAt: true,
+        },
+      }),
+    ]);
+
+    // Calculate average completion time in hours
+    let averageCompletionTime: number | null = null;
+    if (completedWithTime.length > 0) {
+      const totalTime = completedWithTime.reduce((sum, rev) => {
+        if (rev.assignedAt && rev.completedAt) {
+          return sum + (rev.completedAt.getTime() - rev.assignedAt.getTime());
+        }
+        return sum;
+      }, 0);
+      averageCompletionTime = Math.round(totalTime / completedWithTime.length / (1000 * 60 * 60)); // Convert to hours
+    }
+
+    const completionRate = totalRevisions > 0
+      ? Math.round((completedRevisions / totalRevisions) * 100)
+      : 0;
+
+    return {
+      totalRevisions,
+      completedRevisions,
+      inProgressRevisions,
+      pendingRevisions,
+      completionRate,
+      averageCompletionTime,
+    };
+  }
+
+  /**
+   * Get mechanic activity history
+   */
+  async getMechanicActivityHistory(
+    adminId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    activities: Array<{
+      id: string;
+      type: string;
+      revisionId: string;
+      vehicleInfo: string;
+      customerName: string;
+      status: string;
+      date: Date;
+    }>;
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [revisions, totalCount] = await Promise.all([
+      prisma.revision.findMany({
+        where: { assignedMechanicId: adminId },
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          vehicle: {
+            select: {
+              brand: true,
+              model: true,
+              year: true,
+              licensePlate: true,
+            },
+          },
+          customer: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+      prisma.revision.count({
+        where: { assignedMechanicId: adminId },
+      }),
+    ]);
+
+    const activities = revisions.map((rev) => ({
+      id: rev.id,
+      type: rev.status === 'COMPLETED' ? 'COMPLETED' :
+            rev.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'ASSIGNED',
+      revisionId: rev.id,
+      vehicleInfo: `${rev.vehicle.brand} ${rev.vehicle.model} ${rev.vehicle.year} - ${rev.vehicle.licensePlate}`,
+      customerName: rev.customer.name,
+      status: rev.status,
+      date: rev.updatedAt,
+    }));
+
+    return {
+      activities,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  }
+
+  /**
+   * Get admin preferences
+   */
+  async getPreferences(adminId: string): Promise<{
+    notifications: {
+      newRevisionAssigned: boolean;
+      revisionDeadlineReminder: boolean;
+      emailNotifications: boolean;
+    };
+    display: {
+      theme: 'light' | 'dark' | 'system';
+      language: string;
+    };
+  }> {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      select: { preferences: true },
+    });
+
+    if (!admin) {
+      throw ApiError.notFound('Admin not found');
+    }
+
+    // Default preferences
+    const defaultPreferences = {
+      notifications: {
+        newRevisionAssigned: true,
+        revisionDeadlineReminder: true,
+        emailNotifications: false,
+      },
+      display: {
+        theme: 'system' as const,
+        language: 'pt-BR',
+      },
+    };
+
+    // Merge with stored preferences
+    const storedPrefs = admin.preferences as any;
+    if (storedPrefs) {
+      return {
+        notifications: {
+          ...defaultPreferences.notifications,
+          ...(storedPrefs.notifications || {}),
+        },
+        display: {
+          ...defaultPreferences.display,
+          ...(storedPrefs.display || {}),
+        },
+      };
+    }
+
+    return defaultPreferences;
+  }
+
+  /**
+   * Update admin preferences
+   */
+  async updatePreferences(
+    adminId: string,
+    preferences: {
+      notifications?: {
+        newRevisionAssigned?: boolean;
+        revisionDeadlineReminder?: boolean;
+        emailNotifications?: boolean;
+      };
+      display?: {
+        theme?: 'light' | 'dark' | 'system';
+        language?: string;
+      };
+    }
+  ): Promise<void> {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      select: { preferences: true },
+    });
+
+    if (!admin) {
+      throw ApiError.notFound('Admin not found');
+    }
+
+    // Merge with existing preferences
+    const currentPrefs = (admin.preferences as any) || {};
+    const updatedPrefs = {
+      notifications: {
+        ...(currentPrefs.notifications || {}),
+        ...(preferences.notifications || {}),
+      },
+      display: {
+        ...(currentPrefs.display || {}),
+        ...(preferences.display || {}),
+      },
+    };
+
+    await prisma.admin.update({
+      where: { id: adminId },
+      data: { preferences: updatedPrefs },
+    });
+
+    logger.info(`Preferences updated for admin: ${adminId}`);
   }
 
   /**
