@@ -59,20 +59,28 @@ export function Header() {
 
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="hover:text-moria-orange"
-              onClick={() => {
-                if (isAuthenticated) {
-                  window.location.href = '/customer';
-                } else {
-                  setShowLoginDialog(true);
-                }
-              }}
-            >
-              <User className="h-5 w-5" />
-            </Button>
+            {isAuthenticated && customer ? (
+              <Button
+                variant="ghost"
+                className="hover:text-moria-orange flex items-center gap-2 px-3"
+                onClick={() => window.location.href = '/customer'}
+              >
+                <User className="h-5 w-5" />
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">{customer.name}</span>
+                  <span className="text-xs text-moria-orange/80">{customer.email}</span>
+                </div>
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:text-moria-orange"
+                onClick={() => setShowLoginDialog(true)}
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -125,34 +133,44 @@ export function Header() {
                 )
               ))}
             </nav>
-            <div className="flex items-center justify-center space-x-4 mt-4 pt-4 border-t border-moria-orange/30">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:text-moria-orange"
-                onClick={() => {
-                  if (isAuthenticated) {
-                    window.location.href = '/customer';
-                  } else {
-                    setShowLoginDialog(true);
-                  }
-                }}
-              >
-                <User className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:text-moria-orange relative"
-                onClick={openCart}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-moria-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {totalItems}
-                  </span>
-                )}
-              </Button>
+            <div className="flex flex-col items-center space-y-4 mt-4 pt-4 border-t border-moria-orange/30">
+              {isAuthenticated && customer ? (
+                <Button
+                  variant="ghost"
+                  className="hover:text-moria-orange w-full flex items-center gap-2 px-3"
+                  onClick={() => window.location.href = '/customer'}
+                >
+                  <User className="h-5 w-5" />
+                  <div className="flex flex-col items-start flex-1">
+                    <span className="text-sm font-medium">{customer.name}</span>
+                    <span className="text-xs text-moria-orange/80">{customer.email}</span>
+                  </div>
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:text-moria-orange"
+                  onClick={() => setShowLoginDialog(true)}
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              )}
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:text-moria-orange relative"
+                  onClick={openCart}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-moria-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         )}

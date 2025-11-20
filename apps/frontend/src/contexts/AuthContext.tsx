@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addAddress = async (address: Omit<Address, 'id'>) => {
     if (!state.customer) return { success: false, error: "Usuário não autenticado" };
-    
+
     try {
       // In a real implementation, this would call the addressService
       // For now, we'll simulate it
@@ -173,15 +173,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...address,
         id: Date.now().toString(),
       };
-      
+
       setState(prev => ({
         ...prev,
         customer: prev.customer ? {
           ...prev.customer,
-          addresses: [...prev.customer.addresses, newAddress]
+          addresses: Array.isArray(prev.customer.addresses)
+            ? [...prev.customer.addresses, newAddress]
+            : [newAddress]
         } : null,
       }));
-      
+
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
@@ -191,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateAddress = async (id: string, addressData: Partial<Address>) => {
     if (!state.customer) return { success: false, error: "Usuário não autenticado" };
-    
+
     try {
       // In a real implementation, this would call the addressService
       // For now, we'll simulate it
@@ -199,12 +201,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...prev,
         customer: prev.customer ? {
           ...prev.customer,
-          addresses: prev.customer.addresses.map(addr => 
-            addr.id === id ? { ...addr, ...addressData } : addr
-          )
+          addresses: Array.isArray(prev.customer.addresses)
+            ? prev.customer.addresses.map(addr =>
+                addr.id === id ? { ...addr, ...addressData } : addr
+              )
+            : []
         } : null,
       }));
-      
+
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
@@ -214,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const deleteAddress = async (id: string) => {
     if (!state.customer) return { success: false, error: "Usuário não autenticado" };
-    
+
     try {
       // In a real implementation, this would call the addressService
       // For now, we'll simulate it
@@ -222,10 +226,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...prev,
         customer: prev.customer ? {
           ...prev.customer,
-          addresses: prev.customer.addresses.filter(addr => addr.id !== id)
+          addresses: Array.isArray(prev.customer.addresses)
+            ? prev.customer.addresses.filter(addr => addr.id !== id)
+            : []
         } : null,
       }));
-      
+
       return { success: true };
     } catch (error) {
       const apiError = handleApiError(error);
