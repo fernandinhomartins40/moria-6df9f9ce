@@ -1,0 +1,52 @@
+{
+  "id": "mechanic-app",
+  "name": "Moria - Painel do Mecânico",
+  "short_name": "Moria Mecânico",
+  "description": "Gestão de ordens de serviço e atendimentos náuticos",
+  "start_url": "/mecanico",
+  "scope": "/mecanico/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/mechanic-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/mechanic-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova OS",
+      "short_name": "Nova OS",
+      "description": "Criar nova ordem de serviço",
+      "url": "/mecanico/os/nova",
+      "icons": [
+        {
+          "src": "/icons/new-os.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Agenda",
+      "short_name": "Agenda",
+      "description": "Ver agenda de atendimentos",
+      "url": "/mecanico/agenda",
+      "icons": [
+        {
+          "src": "/icons/calendar.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
