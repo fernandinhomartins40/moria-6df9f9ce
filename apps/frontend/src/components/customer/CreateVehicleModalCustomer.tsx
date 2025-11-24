@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Loader2, Car } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { Combobox } from '../ui/combobox';
 import vehicleService, { CustomerVehicle } from '../../api/vehicleService';
+import { useFipeData } from '../../hooks/useFipeData';
+import fipeService from '../../api/fipeService';
 import { useToast } from '../../hooks/use-toast';
 
 interface CreateVehicleModalCustomerProps {
@@ -17,6 +20,15 @@ interface CreateVehicleModalCustomerProps {
 export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: CreateVehicleModalCustomerProps) {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+
+  // Dados FIPE
+  const { brands, models, years, loadingBrands, loadingModels, loadingYears, loadModels, loadYears, resetModels, resetYears } = useFipeData('cars');
+
+  // Seleções FIPE
+  const [selectedBrandCode, setSelectedBrandCode] = useState('');
+  const [selectedModelCode, setSelectedModelCode] = useState('');
+  const [selectedYearCode, setSelectedYearCode] = useState('');
+
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
@@ -36,6 +48,41 @@ export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: Creat
     mileage: '',
     chassisNumber: '',
   });
+
+  // Quando marca é selecionada, carregar modelos
+  useEffect(() => {
+    if (selectedBrandCode) {
+      loadModels(selectedBrandCode);
+      // Limpar seleções anteriores
+      setSelectedModelCode('');
+      setSelectedYearCode('');
+      setFormData(prev => ({ ...prev, model: '', year: '' }));
+      resetYears();
+    } else {
+      resetModels();
+      resetYears();
+    }
+  }, [selectedBrandCode]);
+
+  // Quando modelo é selecionado, carregar anos
+  useEffect(() => {
+    if (selectedBrandCode && selectedModelCode) {
+      loadYears(selectedBrandCode, selectedModelCode);
+      // Limpar ano anterior
+      setSelectedYearCode('');
+      setFormData(prev => ({ ...prev, year: '' }));
+    } else {
+      resetYears();
+    }
+  }, [selectedModelCode]);
+
+  // Quando ano é selecionado, extrair valor numérico
+  useEffect(() => {
+    if (selectedYearCode) {
+      const yearNum = fipeService.extractYear(selectedYearCode);
+      setFormData(prev => ({ ...prev, year: yearNum.toString() }));
+    }
+  }, [selectedYearCode]);
 
   const validateForm = () => {
     const newErrors = {
@@ -144,6 +191,9 @@ export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: Creat
         mileage: '',
         chassisNumber: '',
       });
+      setSelectedBrandCode('');
+      setSelectedModelCode('');
+      setSelectedYearCode('');
 
       onSuccess(vehicle);
     } catch (error: any) {
@@ -183,6 +233,9 @@ export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: Creat
         mileage: '',
         chassisNumber: '',
       });
+      setSelectedBrandCode('');
+      setSelectedModelCode('');
+      setSelectedYearCode('');
       onClose();
     }
   };
@@ -203,6 +256,26 @@ export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: Creat
     setFormData({ ...formData, plate: value });
   };
 
+  const handleBrandChange = (brandCode: string) => {
+    setSelectedBrandCode(brandCode);
+    const brand = brands.find(b => b.code === brandCode);
+    if (brand) {
+      setFormData(prev => ({ ...prev, brand: brand.name }));
+    }
+  };
+
+  const handleModelChange = (modelCode: string) => {
+    setSelectedModelCode(modelCode);
+    const model = models.find(m => m.code === modelCode);
+    if (model) {
+      setFormData(prev => ({ ...prev, model: model.name }));
+    }
+  };
+
+  const handleYearChange = (yearCode: string) => {
+    setSelectedYearCode(yearCode);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
@@ -215,115 +288,128 @@ export function CreateVehicleModalCustomer({ isOpen, onClose, onSuccess }: Creat
 
         <ScrollArea className="flex-1 px-6">
           <form onSubmit={handleSubmit} className="py-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="brand" className="text-xs">
-                Marca <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="brand"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                placeholder="Ex: Fiat, Ford, Chevrolet"
-                disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.brand ? 'border-red-500' : ''}`}
-              />
-              {errors.brand && <p className="text-xs text-red-500 mt-0.5">{errors.brand}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Marca (Combobox FIPE) */}
+              <div>
+                <Label htmlFor="brand" className="text-xs">
+                  Marca <span className="text-red-500">*</span>
+                </Label>
+                <Combobox
+                  options={brands.map(b => ({ value: b.code, label: b.name }))}
+                  value={selectedBrandCode}
+                  onValueChange={handleBrandChange}
+                  placeholder="Selecione a marca"
+                  searchPlaceholder="Buscar marca..."
+                  emptyText="Nenhuma marca encontrada"
+                  disabled={isCreating}
+                  loading={loadingBrands}
+                  className={`mt-1 ${errors.brand ? 'border-red-500' : ''}`}
+                />
+                {errors.brand && <p className="text-xs text-red-500 mt-0.5">{errors.brand}</p>}
+              </div>
+
+              {/* Modelo (Combobox FIPE) */}
+              <div>
+                <Label htmlFor="model" className="text-xs">
+                  Modelo <span className="text-red-500">*</span>
+                </Label>
+                <Combobox
+                  options={models.map(m => ({ value: m.code, label: m.name }))}
+                  value={selectedModelCode}
+                  onValueChange={handleModelChange}
+                  placeholder={selectedBrandCode ? "Selecione o modelo" : "Selecione a marca primeiro"}
+                  searchPlaceholder="Buscar modelo..."
+                  emptyText="Nenhum modelo encontrado"
+                  disabled={isCreating || !selectedBrandCode}
+                  loading={loadingModels}
+                  className={`mt-1 ${errors.model ? 'border-red-500' : ''}`}
+                />
+                {errors.model && <p className="text-xs text-red-500 mt-0.5">{errors.model}</p>}
+              </div>
+
+              {/* Ano (Combobox FIPE) */}
+              <div>
+                <Label htmlFor="year" className="text-xs">
+                  Ano <span className="text-red-500">*</span>
+                </Label>
+                <Combobox
+                  options={years.map(y => ({ value: y.code, label: y.name }))}
+                  value={selectedYearCode}
+                  onValueChange={handleYearChange}
+                  placeholder={selectedModelCode ? "Selecione o ano" : "Selecione o modelo primeiro"}
+                  searchPlaceholder="Buscar ano..."
+                  emptyText="Nenhum ano encontrado"
+                  disabled={isCreating || !selectedModelCode}
+                  loading={loadingYears}
+                  className={`mt-1 ${errors.year ? 'border-red-500' : ''}`}
+                />
+                {errors.year && <p className="text-xs text-red-500 mt-0.5">{errors.year}</p>}
+              </div>
+
+              {/* Placa */}
+              <div>
+                <Label htmlFor="plate" className="text-xs">
+                  Placa <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="plate"
+                  value={formatPlate(formData.plate)}
+                  onChange={handlePlateChange}
+                  placeholder="ABC-1234 ou ABC1D23"
+                  disabled={isCreating}
+                  className={`mt-1 h-9 text-sm ${errors.plate ? 'border-red-500' : ''}`}
+                  maxLength={8}
+                />
+                {errors.plate && <p className="text-xs text-red-500 mt-0.5">{errors.plate}</p>}
+              </div>
+
+              {/* Cor */}
+              <div>
+                <Label htmlFor="color" className="text-xs">
+                  Cor <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  placeholder="Ex: Branco, Preto, Prata"
+                  disabled={isCreating}
+                  className={`mt-1 h-9 text-sm ${errors.color ? 'border-red-500' : ''}`}
+                />
+                {errors.color && <p className="text-xs text-red-500 mt-0.5">{errors.color}</p>}
+              </div>
+
+              {/* Quilometragem */}
+              <div>
+                <Label htmlFor="mileage" className="text-xs">Quilometragem (opcional)</Label>
+                <Input
+                  id="mileage"
+                  type="number"
+                  value={formData.mileage}
+                  onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
+                  placeholder="50000"
+                  disabled={isCreating}
+                  className={`mt-1 h-9 text-sm ${errors.mileage ? 'border-red-500' : ''}`}
+                  min="0"
+                />
+                {errors.mileage && <p className="text-xs text-red-500 mt-0.5">{errors.mileage}</p>}
+              </div>
             </div>
 
+            {/* Chassi */}
             <div>
-              <Label htmlFor="model" className="text-xs">
-                Modelo <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="chassisNumber" className="text-xs">Número do Chassi (opcional)</Label>
               <Input
-                id="model"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                placeholder="Ex: Uno, Fiesta, Onix"
+                id="chassisNumber"
+                value={formData.chassisNumber}
+                onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
+                placeholder="9BWZZZ377VT004251"
                 disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.model ? 'border-red-500' : ''}`}
+                maxLength={17}
+                className="mt-1 h-9 text-sm"
               />
-              {errors.model && <p className="text-xs text-red-500 mt-0.5">{errors.model}</p>}
             </div>
-
-            <div>
-              <Label htmlFor="year" className="text-xs">
-                Ano <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="year"
-                type="number"
-                value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                placeholder="2020"
-                disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.year ? 'border-red-500' : ''}`}
-                min="1900"
-                max={new Date().getFullYear() + 1}
-              />
-              {errors.year && <p className="text-xs text-red-500 mt-0.5">{errors.year}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="plate" className="text-xs">
-                Placa <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="plate"
-                value={formatPlate(formData.plate)}
-                onChange={handlePlateChange}
-                placeholder="ABC-1234 ou ABC1D23"
-                disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.plate ? 'border-red-500' : ''}`}
-                maxLength={8}
-              />
-              {errors.plate && <p className="text-xs text-red-500 mt-0.5">{errors.plate}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="color" className="text-xs">
-                Cor <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="color"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                placeholder="Ex: Branco, Preto, Prata"
-                disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.color ? 'border-red-500' : ''}`}
-              />
-              {errors.color && <p className="text-xs text-red-500 mt-0.5">{errors.color}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="mileage" className="text-xs">Quilometragem (opcional)</Label>
-              <Input
-                id="mileage"
-                type="number"
-                value={formData.mileage}
-                onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
-                placeholder="50000"
-                disabled={isCreating}
-                className={`mt-1 h-9 text-sm ${errors.mileage ? 'border-red-500' : ''}`}
-                min="0"
-              />
-              {errors.mileage && <p className="text-xs text-red-500 mt-0.5">{errors.mileage}</p>}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="chassisNumber" className="text-xs">Número do Chassi (opcional)</Label>
-            <Input
-              id="chassisNumber"
-              value={formData.chassisNumber}
-              onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
-              placeholder="9BWZZZ377VT004251"
-              disabled={isCreating}
-              maxLength={17}
-              className="mt-1 h-9 text-sm"
-            />
-          </div>
-        </form>
+          </form>
         </ScrollArea>
 
         {/* Footer com ações */}
