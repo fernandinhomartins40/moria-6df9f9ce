@@ -20,7 +20,7 @@ class VehicleService {
    */
   async getVehicles(): Promise<CustomerVehicle[]> {
     const response = await apiClient.get('/customer-vehicles');
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -28,7 +28,7 @@ class VehicleService {
    */
   async getVehicleById(id: string): Promise<CustomerVehicle> {
     const response = await apiClient.get(`/customer-vehicles/${id}`);
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -36,7 +36,7 @@ class VehicleService {
    */
   async getVehiclesByCustomer(customerId: string): Promise<CustomerVehicle[]> {
     const response = await apiClient.get(`/admin/customers/${customerId}/vehicles`);
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -52,7 +52,7 @@ class VehicleService {
     chassisNumber?: string;
   }): Promise<CustomerVehicle> {
     const response = await apiClient.post('/customer-vehicles', data);
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -71,7 +71,7 @@ class VehicleService {
     }
   ): Promise<CustomerVehicle> {
     const response = await apiClient.put(`/customer-vehicles/${id}`, data);
-    return response.data;
+    return response.data.data;
   }
 
   /**
