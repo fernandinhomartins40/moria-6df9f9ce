@@ -6,55 +6,26 @@ import {
 
 /**
  * SINESP Provider - Gratuito (fallback)
- * Usa API não oficial do SINESP Cidadão
+ * Usa biblioteca sinesp-api ou API alternativa
+ * Nota: Este provider está desabilitado por padrão pois as APIs públicas
+ * são instáveis. Configure API Brasil ou FIPE para funcionalidade completa.
  */
 export class SinespProvider implements VehicleAPIProvider {
   name = 'sinesp';
   priority = 3; // Menor prioridade (fallback)
 
-  private readonly baseURL = 'https://api-receitaws-sinesp.vercel.app/api/v1';
-
   async lookupByPlate(plate: string): Promise<VehicleLookupResponse> {
-    try {
-      const cleanPlate = this.cleanPlate(plate);
-
-      const response = await axios.get(`${this.baseURL}/sinesp`, {
-        params: { placa: cleanPlate },
-        timeout: 10000,
-      });
-
-      if (!response.data || response.data.error) {
-        throw new Error(response.data?.message || 'Placa não encontrada');
-      }
-
-      const data = response.data;
-
-      return {
-        plate: cleanPlate,
-        brand: this.normalizeBrand(data.marca || ''),
-        model: this.normalizeModel(data.modelo || ''),
-        year: parseInt(data.ano) || new Date().getFullYear(),
-        modelYear: parseInt(data.anoModelo) || parseInt(data.ano),
-        color: this.normalizeColor(data.cor || ''),
-        municipality: data.municipio || '',
-        state: data.uf || '',
-        stolen: data.situacao?.toLowerCase().includes('roubo') || false,
-        source: 'sinesp',
-      };
-    } catch (error: any) {
-      throw new Error(`SINESP: ${error.message}`);
-    }
+    // SINESP APIs públicas são instáveis e frequentemente indisponíveis
+    // Por enquanto, retornamos erro informativo
+    throw new Error(
+      'SINESP: Provider desabilitado. Configure API Brasil ou FIPE para busca automática de placas. ' +
+      'Alternativamente, você pode preencher os dados manualmente.'
+    );
   }
 
   async isAvailable(): Promise<boolean> {
-    try {
-      const response = await axios.get(`${this.baseURL}/health`, {
-        timeout: 5000,
-      });
-      return response.status === 200;
-    } catch {
-      return false;
-    }
+    // SINESP está desabilitado por padrão devido à instabilidade
+    return false;
   }
 
   async getRemainingQuota(): Promise<'unlimited'> {
@@ -63,26 +34,5 @@ export class SinespProvider implements VehicleAPIProvider {
 
   private cleanPlate(plate: string): string {
     return plate.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-  }
-
-  private normalizeBrand(brand: string): string {
-    return brand.toUpperCase().trim();
-  }
-
-  private normalizeModel(model: string): string {
-    return model.toUpperCase().trim();
-  }
-
-  private normalizeColor(color: string): string {
-    const colorMap: Record<string, string> = {
-      'BRANCA': 'BRANCO',
-      'PRETA': 'PRETO',
-      'VERMELHA': 'VERMELHO',
-      'AZUL': 'AZUL',
-      'PRATA': 'PRATA',
-      'CINZA': 'CINZA',
-    };
-
-    return colorMap[color.toUpperCase()] || color.toUpperCase();
   }
 }

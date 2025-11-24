@@ -29,7 +29,7 @@ export class VehicleLookupController {
         data: result.data,
         cached: result.cached,
       });
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof ZodError) {
         res.status(400).json({
           success: false,
@@ -38,6 +38,18 @@ export class VehicleLookupController {
         });
         return;
       }
+
+      // Se todos os providers falharam, retornar erro 503 (Service Unavailable)
+      if (error.message?.includes('Não foi possível consultar a placa')) {
+        res.status(503).json({
+          success: false,
+          error: 'Serviço de consulta temporariamente indisponível',
+          details: 'Configure as credenciais da API Brasil ou FIPE no arquivo .env para habilitar a busca automática. Por enquanto, preencha os dados do veículo manualmente.',
+          message: error.message,
+        });
+        return;
+      }
+
       next(error);
     }
   };
