@@ -33,6 +33,27 @@ export class CustomerVehiclesController {
   };
 
   /**
+   * GET /customer-vehicles/archived
+   * Get all archived vehicles for authenticated customer
+   */
+  getArchivedVehicles = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const vehicles = await this.vehiclesService.getArchivedVehicles(req.user.customerId);
+
+      res.status(200).json({
+        success: true,
+        data: vehicles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * GET /customer-vehicles/:id
    * Get vehicle by ID
    */
@@ -163,7 +184,7 @@ export class CustomerVehiclesController {
 
   /**
    * DELETE /customer-vehicles/:id
-   * Delete vehicle
+   * Soft delete vehicle (archive)
    */
   deleteVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -173,7 +194,56 @@ export class CustomerVehiclesController {
 
       await this.vehiclesService.deleteVehicle(req.params.id, req.user.customerId);
 
-      res.status(204).send();
+      res.status(200).json({
+        success: true,
+        message: 'Vehicle archived successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /customer-vehicles/:id/restore
+   * Restore archived vehicle
+   */
+  restoreVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const vehicle = await this.vehiclesService.restoreVehicle(
+        req.params.id,
+        req.user.customerId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: vehicle,
+        message: 'Vehicle restored successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /customer-vehicles/:id/permanent
+   * Permanently delete vehicle
+   */
+  hardDeleteVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+
+      await this.vehiclesService.hardDeleteVehicle(req.params.id, req.user.customerId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Vehicle permanently deleted',
+      });
     } catch (error) {
       next(error);
     }

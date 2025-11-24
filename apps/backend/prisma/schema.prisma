@@ -610,6 +610,9 @@ model CustomerVehicle {
   color         String?
   mileage       Int?
 
+  // Soft delete
+  deletedAt     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -619,6 +622,7 @@ model CustomerVehicle {
 
   @@index([customerId])
   @@index([plate])
+  @@index([deletedAt])
   @@map("customer_vehicles")
 }
 

@@ -10,6 +10,7 @@ export interface CustomerVehicle {
   color: string;
   mileage: number | null;
   chassisNumber: string | null;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,10 +76,33 @@ class VehicleService {
   }
 
   /**
-   * Delete vehicle
+   * Get archived vehicles for authenticated customer
+   */
+  async getArchivedVehicles(): Promise<CustomerVehicle[]> {
+    const response = await apiClient.get('/customer-vehicles/archived');
+    return response.data.data;
+  }
+
+  /**
+   * Soft delete vehicle (archive)
    */
   async deleteVehicle(id: string): Promise<void> {
     await apiClient.delete(`/customer-vehicles/${id}`);
+  }
+
+  /**
+   * Restore archived vehicle
+   */
+  async restoreVehicle(id: string): Promise<CustomerVehicle> {
+    const response = await apiClient.post(`/customer-vehicles/${id}/restore`);
+    return response.data.data;
+  }
+
+  /**
+   * Permanently delete vehicle
+   */
+  async permanentlyDeleteVehicle(id: string): Promise<void> {
+    await apiClient.delete(`/customer-vehicles/${id}/permanent`);
   }
 }
 

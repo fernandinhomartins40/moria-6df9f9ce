@@ -18,26 +18,31 @@ interface DeleteVehicleDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  isPermanent?: boolean; // Se true, deleta permanentemente; se false, arquiva
 }
 
-export function DeleteVehicleDialog({ vehicle, isOpen, onClose, onSuccess }: DeleteVehicleDialogProps) {
+export function DeleteVehicleDialog({ vehicle, isOpen, onClose, onSuccess, isPermanent = false }: DeleteVehicleDialogProps) {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await vehicleService.deleteVehicle(vehicle.id);
+      if (isPermanent) {
+        await vehicleService.permanentlyDeleteVehicle(vehicle.id);
+      } else {
+        await vehicleService.deleteVehicle(vehicle.id);
+      }
       onSuccess();
     } catch (error: any) {
       console.error('Erro ao deletar veículo:', error);
       const errorMessage = error.response?.data?.error
         || error.response?.data?.message
         || error.message
-        || 'Erro ao remover veículo. Tente novamente.';
+        || `Erro ao ${isPermanent ? 'deletar permanentemente' : 'arquivar'} veículo. Tente novamente.`;
 
       toast({
-        title: 'Erro ao remover veículo',
+        title: `Erro ao ${isPermanent ? 'deletar' : 'arquivar'} veículo`,
         description: errorMessage,
         variant: 'destructive',
       });
@@ -52,19 +57,23 @@ export function DeleteVehicleDialog({ vehicle, isOpen, onClose, onSuccess }: Del
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Remover Veículo
+            {isPermanent ? 'Deletar Veículo Permanentemente' : 'Arquivar Veículo'}
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>
-              Tem certeza que deseja remover o veículo{' '}
+              Tem certeza que deseja {isPermanent ? 'deletar permanentemente' : 'arquivar'} o veículo{' '}
               <span className="font-semibold text-gray-900">
                 {vehicle.brand} {vehicle.model} - {vehicle.plate}
               </span>
               ?
             </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-800">
-                <strong>Atenção:</strong> Esta ação não pode ser desfeita. O histórico de revisões vinculado a este veículo será mantido, mas você não poderá mais visualizá-lo em "Meus Veículos".
+            <div className={`${isPermanent ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'} border rounded-lg p-3`}>
+              <p className={`text-sm ${isPermanent ? 'text-red-800' : 'text-orange-800'}`}>
+                <strong>Atenção:</strong>{' '}
+                {isPermanent
+                  ? 'Esta ação NÃO PODE ser desfeita! O veículo será deletado permanentemente do sistema. Se houver revisões vinculadas, a deleção não será permitida.'
+                  : 'O veículo será arquivado e não aparecerá mais na lista de veículos ativos. Você poderá restaurá-lo a qualquer momento na seção de "Veículos Arquivados".'
+                }
               </p>
             </div>
           </AlertDialogDescription>
@@ -86,12 +95,12 @@ export function DeleteVehicleDialog({ vehicle, isOpen, onClose, onSuccess }: Del
             {isDeleting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Removendo...
+                {isPermanent ? 'Deletando...' : 'Arquivando...'}
               </>
             ) : (
               <>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Sim, Remover Veículo
+                {isPermanent ? 'Sim, Deletar Permanentemente' : 'Sim, Arquivar Veículo'}
               </>
             )}
           </Button>
