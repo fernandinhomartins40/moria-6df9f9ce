@@ -35,9 +35,17 @@ export interface ChecklistStructureResponse {
 
 class ChecklistService {
   /**
-   * Get complete checklist structure (Admin)
+   * Get complete checklist structure (For authenticated customers)
    */
   async getChecklistStructure(): Promise<ChecklistStructureResponse> {
+    const response = await apiClient.get('/checklist/structure/customer');
+    return response.data.data || response.data;
+  }
+
+  /**
+   * Get complete checklist structure (Admin only)
+   */
+  async getChecklistStructureAdmin(): Promise<ChecklistStructureResponse> {
     const response = await apiClient.get('/checklist/structure');
     return response.data.data || response.data;
   }

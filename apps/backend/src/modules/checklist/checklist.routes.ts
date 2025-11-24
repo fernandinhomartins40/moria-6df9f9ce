@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { ChecklistController } from './checklist.controller.js';
 import { AdminAuthMiddleware } from '@middlewares/admin-auth.middleware.js';
+import { AuthMiddleware } from '@middlewares/auth.middleware.js';
 import { AdminRole } from '@prisma/client';
 
 const router = Router();
 const checklistController = new ChecklistController();
+
+// Customer routes (authenticated customers can view checklist structure)
+router.get('/structure/customer', AuthMiddleware.authenticate, checklistController.getChecklistStructure);
 
 // Read-only routes (staff can view)
 router.get('/structure', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.STAFF), checklistController.getChecklistStructure);
