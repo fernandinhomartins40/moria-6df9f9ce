@@ -53,21 +53,29 @@ async function cleanupFailedMigrations() {
       if (deleted > 0) {
         console.log(`   ✓ Entrada failed removida: ${migrationName}`);
 
-        // Inserir como migration aplicada com sucesso
-        await prisma.$executeRaw`
-          INSERT INTO _prisma_migrations (migration_name, checksum, finished_at, started_at, applied_steps_count, logs)
-          VALUES (
-            ${migrationName},
-            '',
-            NOW(),
-            NOW(),
-            1,
-            ''
-          )
-          ON CONFLICT (migration_name) DO NOTHING
+        // Verificar se já existe uma entrada para essa migration
+        const existing = await prisma.$queryRaw`
+          SELECT migration_name FROM _prisma_migrations
+          WHERE migration_name = ${migrationName}
         `;
 
-        console.log(`   ✓ Marcada como aplicada: ${migrationName}`);
+        // Inserir como migration aplicada com sucesso apenas se não existir
+        if (existing.length === 0) {
+          await prisma.$executeRaw`
+            INSERT INTO _prisma_migrations (migration_name, checksum, finished_at, started_at, applied_steps_count, logs)
+            VALUES (
+              ${migrationName},
+              '',
+              NOW(),
+              NOW(),
+              1,
+              ''
+            )
+          `;
+          console.log(`   ✓ Marcada como aplicada: ${migrationName}`);
+        } else {
+          console.log(`   ℹ️  Migration já existe como aplicada: ${migrationName}`);
+        }
       }
     }
 
