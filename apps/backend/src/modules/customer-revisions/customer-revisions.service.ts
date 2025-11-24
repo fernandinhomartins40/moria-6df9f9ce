@@ -105,7 +105,7 @@ export class CustomerRevisionsService {
     });
 
     if (!revision) {
-      throw new ApiError('Revision not found or access denied', 404);
+      throw ApiError.notFound('Revision not found or access denied');
     }
 
     return revision;
@@ -124,7 +124,7 @@ export class CustomerRevisionsService {
     });
 
     if (!vehicle) {
-      throw new ApiError('Vehicle not found or access denied', 404);
+      throw ApiError.notFound('Vehicle not found or access denied');
     }
 
     const revisions = await prisma.revision.findMany({

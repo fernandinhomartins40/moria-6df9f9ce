@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { CustomerRevisionsService } from './customer-revisions.service.js';
-import { AuthRequest } from '@middlewares/auth.middleware.js';
 
 export class CustomerRevisionsController {
   private customerRevisionsService: CustomerRevisionsService;
@@ -13,8 +12,8 @@ export class CustomerRevisionsController {
    * Get all revisions for authenticated customer
    * GET /customer-revisions
    */
-  getCustomerRevisions = async (req: AuthRequest, res: Response): Promise<void> => {
-    const customerId = req.customer?.id;
+  getCustomerRevisions = async (req: Request, res: Response): Promise<void> => {
+    const customerId = req.user?.customerId;
 
     if (!customerId) {
       res.status(401).json({
@@ -45,8 +44,8 @@ export class CustomerRevisionsController {
    * Get specific revision by ID for authenticated customer
    * GET /customer-revisions/:id
    */
-  getCustomerRevisionById = async (req: AuthRequest, res: Response): Promise<void> => {
-    const customerId = req.customer?.id;
+  getCustomerRevisionById = async (req: Request, res: Response): Promise<void> => {
+    const customerId = req.user?.customerId;
     const revisionId = req.params.id;
 
     if (!customerId) {
@@ -72,8 +71,8 @@ export class CustomerRevisionsController {
    * Get revisions for specific vehicle of authenticated customer
    * GET /customer-revisions/vehicle/:vehicleId
    */
-  getCustomerRevisionsByVehicle = async (req: AuthRequest, res: Response): Promise<void> => {
-    const customerId = req.customer?.id;
+  getCustomerRevisionsByVehicle = async (req: Request, res: Response): Promise<void> => {
+    const customerId = req.user?.customerId;
     const vehicleId = req.params.vehicleId;
 
     if (!customerId) {
@@ -99,8 +98,8 @@ export class CustomerRevisionsController {
    * Get upcoming maintenance reminders for authenticated customer
    * GET /customer-revisions/reminders/upcoming
    */
-  getUpcomingReminders = async (req: AuthRequest, res: Response): Promise<void> => {
-    const customerId = req.customer?.id;
+  getUpcomingReminders = async (req: Request, res: Response): Promise<void> => {
+    const customerId = req.user?.customerId;
 
     if (!customerId) {
       res.status(401).json({
@@ -122,8 +121,8 @@ export class CustomerRevisionsController {
    * Get revision statistics for authenticated customer
    * GET /customer-revisions/statistics
    */
-  getCustomerStatistics = async (req: AuthRequest, res: Response): Promise<void> => {
-    const customerId = req.customer?.id;
+  getCustomerStatistics = async (req: Request, res: Response): Promise<void> => {
+    const customerId = req.user?.customerId;
 
     if (!customerId) {
       res.status(401).json({
