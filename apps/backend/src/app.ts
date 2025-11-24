@@ -24,7 +24,6 @@ import checklistRoutes from '@modules/checklist/checklist.routes.js';
 import revisionsRoutes from '@modules/revisions/revisions.routes.js';
 import adminRoutes from '@modules/admin/admin.routes.js';
 import customerRoutes from '@modules/customer/customer.routes.js';
-import vehicleLookupRoutes from '@modules/vehicle-lookup/vehicle-lookup.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -103,9 +102,6 @@ export function createApp(): Express {
 
   // Customer Routes
   app.use('/customers', customerRoutes);
-
-  // Vehicle Lookup Routes (Plate Search API)
-  app.use('/vehicles/lookup', vehicleLookupRoutes);
 
   // 404 handler
   app.use((_req: Request, res: Response) => {
