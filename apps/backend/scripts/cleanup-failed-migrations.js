@@ -5,7 +5,7 @@
  * Executa de forma segura e idempotente
  */
 
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
