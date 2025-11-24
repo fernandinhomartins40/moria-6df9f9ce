@@ -48,7 +48,7 @@ class VehicleLookupService {
    * Verifica status dos providers de API
    */
   async getProvidersStatus(): Promise<ProvidersStatusResponse> {
-    const response = await apiClient.get('/vehicles/lookup-status');
+    const response = await apiClient.get('/vehicles/lookup/status');
     return response.data.data;
   }
 
@@ -56,7 +56,7 @@ class VehicleLookupService {
    * Retorna estatísticas do cache (admin apenas)
    */
   async getCacheStats(): Promise<{ size: number; entries: string[] }> {
-    const response = await apiClient.get('/vehicles/lookup-cache/stats');
+    const response = await apiClient.get('/vehicles/lookup/cache/stats');
     return response.data.data;
   }
 
@@ -64,7 +64,7 @@ class VehicleLookupService {
    * Limpa o cache (admin apenas)
    */
   async clearCache(): Promise<void> {
-    await apiClient.post('/vehicles/lookup-cache/clear');
+    await apiClient.post('/vehicles/lookup/cache/clear');
   }
 
   /**
