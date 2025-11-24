@@ -22,6 +22,7 @@ import favoritesRoutes from '@modules/favorites/favorites.routes.js';
 import customerVehiclesRoutes from '@modules/customer-vehicles/customer-vehicles.routes.js';
 import checklistRoutes from '@modules/checklist/checklist.routes.js';
 import revisionsRoutes from '@modules/revisions/revisions.routes.js';
+import customerRevisionsRoutes from '@modules/customer-revisions/customer-revisions.routes.js';
 import adminRoutes from '@modules/admin/admin.routes.js';
 import customerRoutes from '@modules/customer/customer.routes.js';
 
@@ -96,6 +97,7 @@ export function createApp(): Express {
   app.use('/customer-vehicles', customerVehiclesRoutes);
   app.use('/checklist', checklistRoutes);
   app.use('/revisions', revisionsRoutes);
+  app.use('/customer-revisions', customerRevisionsRoutes);
 
   // Admin Routes
   app.use('/admin', adminRoutes);

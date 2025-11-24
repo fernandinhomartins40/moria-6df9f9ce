@@ -9,6 +9,8 @@ import {
   DEFAULT_CHECKLIST_ITEMS
 } from '../types/revisions';
 import checklistService from '../api/checklistService';
+import revisionService from '../api/revisionService';
+import { useAuth } from './AuthContext';
 
 interface RevisionsContextData {
   // Customers
@@ -41,6 +43,8 @@ interface RevisionsContextData {
 
   // Revisions
   revisions: Revision[];
+  isLoadingRevisions: boolean;
+  loadRevisions: () => Promise<void>;
   addRevision: (revision: Omit<Revision, 'id' | 'createdAt' | 'updatedAt'>) => Revision;
   updateRevision: (id: string, revision: Partial<Revision>) => void;
   deleteRevision: (id: string) => void;
@@ -52,6 +56,8 @@ interface RevisionsContextData {
 const RevisionsContext = createContext<RevisionsContextData>({} as RevisionsContextData);
 
 export function RevisionsProvider({ children }: { children: ReactNode }) {
+  const { customer } = useAuth();
+
   // Load from localStorage
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const stored = localStorage.getItem('moria_customers');
@@ -65,6 +71,10 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
 
   const [categories, setCategories] = useState<ChecklistCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  // Revisions - load from API instead of localStorage
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [isLoadingRevisions, setIsLoadingRevisions] = useState(false);
 
   // Load categories from backend
   useEffect(() => {
@@ -127,12 +137,50 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
     loadCategories();
   }, []);
 
-  const [revisions, setRevisions] = useState<Revision[]>(() => {
-    const stored = localStorage.getItem('moria_revisions');
-    return stored ? JSON.parse(stored) : [];
-  });
+  // Load revisions from API when customer is authenticated
+  const loadRevisions = async () => {
+    if (!customer) {
+      setRevisions([]);
+      return;
+    }
 
-  // Save to localStorage (except categories, which come from backend)
+    try {
+      setIsLoadingRevisions(true);
+      const result = await revisionService.getCustomerRevisions();
+
+      // Transform backend data to match frontend types
+      const transformedRevisions: Revision[] = result.data.map((rev: any) => ({
+        id: rev.id,
+        customerId: rev.customerId,
+        vehicleId: rev.vehicleId,
+        date: new Date(rev.date),
+        mileage: rev.mileage,
+        status: rev.status.toLowerCase(),
+        checklistItems: rev.checklistItems || [],
+        generalNotes: rev.generalNotes,
+        recommendations: rev.recommendations,
+        assignedMechanicId: rev.assignedMechanicId,
+        mechanicName: rev.mechanicName,
+        mechanicNotes: rev.mechanicNotes,
+        createdAt: new Date(rev.createdAt),
+        updatedAt: new Date(rev.updatedAt),
+        completedAt: rev.completedAt ? new Date(rev.completedAt) : undefined
+      }));
+
+      setRevisions(transformedRevisions);
+    } catch (error) {
+      console.error('Error loading revisions:', error);
+      setRevisions([]);
+    } finally {
+      setIsLoadingRevisions(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRevisions();
+  }, [customer?.id]);
+
+  // Save to localStorage (except categories and revisions, which come from backend)
   useEffect(() => {
     localStorage.setItem('moria_customers', JSON.stringify(customers));
   }, [customers]);
@@ -140,10 +188,6 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('moria_vehicles', JSON.stringify(vehicles));
   }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('moria_revisions', JSON.stringify(revisions));
-  }, [revisions]);
 
   // Customer methods
   const addCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>): Customer => {
@@ -371,6 +415,8 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
         toggleItemEnabled,
         deleteItem,
         revisions,
+        isLoadingRevisions,
+        loadRevisions,
         addRevision,
         updateRevision,
         deleteRevision,
