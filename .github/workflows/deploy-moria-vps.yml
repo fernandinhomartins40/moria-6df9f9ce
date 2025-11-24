@@ -318,10 +318,21 @@ jobs:
             echo "Aguardando aplicação inicializar (40s)..."
             sleep 40
 
-            # Aplicar migrations do banco de dados (dentro do container)
-            echo "Aplicando migrations do banco de dados..."
+            # Limpar migrations failed e aplicar migrations pendentes
+            echo "Preparando banco de dados..."
+
+            # Executar script de limpeza de migrations failed
+            echo "Limpando migrations failed do banco de dados..."
+            docker exec -w /app/apps/backend moria-vps node scripts/cleanup-failed-migrations.js || {
+              echo "⚠️  Aviso: Não foi possível executar limpeza de migrations (pode ser primeira execução)"
+            }
+
+            # Aplicar migrations pendentes
+            echo "Aplicando migrations pendentes..."
             docker exec -w /app/apps/backend moria-vps npx prisma migrate deploy || {
               echo "❌ Erro ao aplicar migrations"
+              echo "=== Status das migrations ==="
+              docker exec -w /app/apps/backend moria-vps npx prisma migrate status || true
               echo "=== Logs do backend ==="
               docker logs moria-vps --tail=50
               exit 1
