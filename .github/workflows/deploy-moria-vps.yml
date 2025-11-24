@@ -244,6 +244,9 @@ jobs:
             echo "Gerando Prisma client..."
             npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
 
+            echo "Aplicando migrations do banco de dados..."
+            npx prisma migrate deploy || { echo "❌ Erro ao aplicar migrations"; exit 1; }
+
             echo "Compilando backend..."
             npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
 
