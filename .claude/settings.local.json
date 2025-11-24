@@ -45,7 +45,8 @@
       "Bash(npm install:*)",
       "Bash(VEHICLE_API_DENATRAN_OFFICIAL.md)",
       "Bash(git revert:*)",
-      "Bash(ssh root@moriapecas.com.br:*)"
+      "Bash(ssh root@moriapecas.com.br:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": []

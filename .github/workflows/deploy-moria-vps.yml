@@ -244,9 +244,6 @@ jobs:
             echo "Gerando Prisma client..."
             npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
 
-            echo "Aplicando migrations do banco de dados..."
-            npx prisma migrate deploy || { echo "❌ Erro ao aplicar migrations"; exit 1; }
-
             echo "Compilando backend..."
             npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
 
@@ -320,6 +317,16 @@ jobs:
             # Aguardar aplicação inicializar completamente
             echo "Aguardando aplicação inicializar (40s)..."
             sleep 40
+
+            # Aplicar migrations do banco de dados (dentro do container)
+            echo "Aplicando migrations do banco de dados..."
+            docker exec moria-vps npx prisma migrate deploy || {
+              echo "❌ Erro ao aplicar migrations"
+              echo "=== Logs do backend ==="
+              docker logs moria-vps --tail=50
+              exit 1
+            }
+            echo "✅ Migrations aplicadas com sucesso"
 
             # ===== DIAGNÓSTICO: Verificar se aplicação está rodando =====
             echo "=== Verificando status no supervisord ==="
