@@ -185,6 +185,11 @@ if [ "$TABLE_COUNT" -eq 0 ]; then
   npx prisma db push --skip-generate 2>&1
 else
   echo "Banco existente detectado (${TABLE_COUNT} tabelas) - aplicando migrations..."
+
+  # Limpar migrations failed antes de tentar aplicar novas
+  echo "Verificando migrations failed..."
+  node /app/apps/backend/scripts/cleanup-failed-migrations.js 2>&1 || echo "⚠️ Aviso: não foi possível limpar migrations failed"
+
   npx prisma migrate deploy 2>&1 || echo "⚠️ Nenhuma migration pendente"
 fi
 
