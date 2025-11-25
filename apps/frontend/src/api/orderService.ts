@@ -40,8 +40,8 @@ export interface OrderTrackingResponse {
 
 class OrderService {
   async createOrder(data: CreateOrderRequest): Promise<Order> {
-    const response = await apiClient.post<Order>('/orders', data);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: Order }>('/orders', data);
+    return response.data.data;
   }
 
   async getOrders(params?: {

@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import type { CartItem, Address } from "@moria/types";
 import guestOrderService from "../api/guestOrderService";
 import orderService from "../api/orderService";
+import addressService from "../api/addressService";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -260,63 +261,46 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
       // CLIENTE AUTENTICADO - usar rota /orders
       if (isAuthenticated && customer) {
-        // Criar novo endereço ou usar existente
         let addressId = selectedAddressId;
 
+        // Se precisa criar novo endereço
         if (useNewAddress || !selectedAddressId) {
-          // Criar novo endereço (simulado - ideal seria chamar addressService)
-          // Por enquanto, vamos criar via guest order que aceita address inline
-          // Para pedidos autenticados, precisaríamos criar o endereço primeiro
           toast.info("Criando novo endereço...");
 
-          // Fallback para guest order se não tiver endereço selecionado
-          const guestOrderData = {
-            customerName: form.name,
-            customerEmail: form.email,
-            customerPhone: form.whatsapp.replace(/\D/g, ''),
-            address: {
-              street: form.address.street,
-              number: form.address.number,
-              complement: form.address.complement || undefined,
-              neighborhood: form.address.neighborhood,
-              city: form.address.city,
-              state: form.address.state,
-              zipCode: form.address.zipCode.replace(/\D/g, ''),
-              type: 'HOME' as const,
-            },
-            items: items.map(item => {
-              const isService = item.type === 'service';
-              return {
-                productId: !isService ? item.id : undefined,
-                serviceId: isService ? item.id : undefined,
-                type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
-                quantity: item.quantity,
-              };
-            }),
-            paymentMethod: form.paymentMethod,
-          };
+          // ✅ CORREÇÃO: Usar addressService para criar endereço
+          const newAddress = await addressService.createAddress({
+            street: form.address.street,
+            number: form.address.number,
+            complement: form.address.complement || '',
+            neighborhood: form.address.neighborhood,
+            city: form.address.city,
+            state: form.address.state,
+            zipCode: form.address.zipCode.replace(/\D/g, ''),
+            type: 'HOME',
+            isDefault: false,
+          });
 
-          order = await guestOrderService.createGuestOrder(guestOrderData);
-        } else {
-          // Usar endereço existente - pedido autenticado
-          const authenticatedOrderData = {
-            addressId: addressId!,
-            items: items.map(item => {
-              const isService = item.type === 'service';
-              return {
-                productId: !isService ? item.id : undefined,
-                serviceId: isService ? item.id : undefined,
-                type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
-                quantity: item.quantity,
-              };
-            }),
-            paymentMethod: form.paymentMethod,
-            source: 'WEB',
-          };
-
-          const response = await orderService.createOrder(authenticatedOrderData);
-          order = response.data;
+          addressId = newAddress.id;
+          toast.success("Endereço criado!");
         }
+
+        // ✅ Agora sempre usa rota autenticada com addressId válido
+        const authenticatedOrderData = {
+          addressId: addressId!,
+          items: items.map(item => {
+            const isService = item.type === 'service';
+            return {
+              productId: !isService ? item.id : undefined,
+              serviceId: isService ? item.id : undefined,
+              type: (isService ? 'SERVICE' : 'PRODUCT') as 'PRODUCT' | 'SERVICE',
+              quantity: item.quantity,
+            };
+          }),
+          paymentMethod: form.paymentMethod,
+          source: 'WEB' as const,
+        };
+
+        order = await orderService.createOrder(authenticatedOrderData);
       } else {
         // CONVIDADO - usar rota /orders/guest
         const guestOrderData = {
