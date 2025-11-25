@@ -43,26 +43,6 @@ export class CustomerVehiclesController {
     }
   };
 
-  /**
-   * GET /customer-vehicles/archived
-   * Get all archived vehicles for authenticated customer
-   */
-  getArchivedVehicles = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
-      }
-
-      const vehicles = await this.vehiclesService.getArchivedVehicles(req.user.customerId);
-
-      res.status(200).json({
-        success: true,
-        data: vehicles,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
 
   /**
    * GET /customer-vehicles/:id
@@ -195,7 +175,7 @@ export class CustomerVehiclesController {
 
   /**
    * DELETE /customer-vehicles/:id
-   * Soft delete vehicle (archive)
+   * Delete vehicle
    */
   deleteVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -207,53 +187,7 @@ export class CustomerVehiclesController {
 
       res.status(200).json({
         success: true,
-        message: 'Vehicle archived successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * POST /customer-vehicles/:id/restore
-   * Restore archived vehicle
-   */
-  restoreVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
-      }
-
-      const vehicle = await this.vehiclesService.restoreVehicle(
-        req.params.id,
-        req.user.customerId
-      );
-
-      res.status(200).json({
-        success: true,
-        data: vehicle,
-        message: 'Vehicle restored successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * DELETE /customer-vehicles/:id/permanent
-   * Permanently delete vehicle
-   */
-  hardDeleteVehicle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
-      }
-
-      await this.vehiclesService.hardDeleteVehicle(req.params.id, req.user.customerId);
-
-      res.status(200).json({
-        success: true,
-        message: 'Vehicle permanently deleted',
+        message: 'Vehicle deleted successfully',
       });
     } catch (error) {
       next(error);

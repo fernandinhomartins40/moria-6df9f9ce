@@ -13,9 +13,7 @@ import {
   Gauge,
   AlertCircle,
   Loader2,
-  CheckCircle2,
-  ClipboardCheck,
-  Archive
+  ClipboardCheck
 } from 'lucide-react';
 import { CreateVehicleModalCustomer } from './CreateVehicleModalCustomer';
 import { EditVehicleModalCustomer } from './EditVehicleModalCustomer';
@@ -31,20 +29,17 @@ export function CustomerVehicles() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<CustomerVehicle | null>(null);
   const [deletingVehicle, setDeletingVehicle] = useState<CustomerVehicle | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (customer) {
       loadVehicles();
     }
-  }, [customer, showArchived]);
+  }, [customer]);
 
   const loadVehicles = async () => {
     try {
       setIsLoading(true);
-      const data = showArchived
-        ? await vehicleService.getArchivedVehicles()
-        : await vehicleService.getVehicles();
+      const data = await vehicleService.getVehicles();
       setVehicles(data);
     } catch (error) {
       console.error('Erro ao carregar veículos:', error);
@@ -80,27 +75,9 @@ export function CustomerVehicles() {
     setVehicles(prev => prev.filter(v => v.id !== vehicleId));
     setDeletingVehicle(null);
     toast({
-      title: showArchived ? 'Veículo deletado permanentemente!' : 'Veículo arquivado com sucesso!',
-      description: showArchived ? 'O veículo foi deletado permanentemente.' : 'O veículo foi arquivado. Você pode restaurá-lo na seção de arquivados.',
+      title: 'Veículo removido com sucesso!',
+      description: 'O veículo foi removido da sua lista.',
     });
-  };
-
-  const handleRestoreVehicle = async (vehicle: CustomerVehicle) => {
-    try {
-      await vehicleService.restoreVehicle(vehicle.id);
-      setVehicles(prev => prev.filter(v => v.id !== vehicle.id));
-      toast({
-        title: 'Veículo restaurado com sucesso!',
-        description: `${vehicle.brand} ${vehicle.model} está ativo novamente.`,
-      });
-    } catch (error) {
-      console.error('Erro ao restaurar veículo:', error);
-      toast({
-        title: 'Erro ao restaurar veículo',
-        description: 'Não foi possível restaurar o veículo. Tente novamente.',
-        variant: 'destructive',
-      });
-    }
   };
 
   const formatDate = (date: string) => {
@@ -120,34 +97,18 @@ export function CustomerVehicles() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
-            {showArchived ? 'Veículos Arquivados' : 'Meus Veículos'}
-          </h1>
+          <h1 className="text-3xl font-bold">Meus Veículos</h1>
           <p className="text-muted-foreground">
-            {showArchived
-              ? 'Visualize e restaure seus veículos arquivados'
-              : 'Gerencie seus veículos cadastrados'
-            }
+            Gerencie seus veículos cadastrados
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowArchived(!showArchived)}
-          >
-            <Archive className="h-4 w-4 mr-2" />
-            {showArchived ? 'Ver Ativos' : 'Ver Arquivados'}
-          </Button>
-          {!showArchived && (
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-moria-orange hover:bg-moria-orange/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Cadastrar Veículo
-            </Button>
-          )}
-        </div>
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="bg-moria-orange hover:bg-moria-orange/90"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Cadastrar Veículo
+        </Button>
       </div>
 
       {/* Info Alert */}
@@ -209,17 +170,6 @@ export function CustomerVehicles() {
                       </CardDescription>
                     </div>
                   </div>
-                  {showArchived ? (
-                    <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-                      <Archive className="h-3 w-3 mr-1" />
-                      Arquivado
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Ativo
-                    </Badge>
-                  )}
                 </div>
               </CardHeader>
 
@@ -256,64 +206,37 @@ export function CustomerVehicles() {
 
                 {/* Actions */}
                 <div className="space-y-2">
-                  {showArchived ? (
-                    // Archived vehicle actions
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => handleRestoreVehicle(vehicle)}
-                      >
-                        <Archive className="h-4 w-4 mr-2" />
-                        Restaurar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => setDeletingVehicle(vehicle)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Deletar
-                      </Button>
-                    </div>
-                  ) : (
-                    // Active vehicle actions
-                    <>
-                      <Button
-                        className="w-full bg-moria-orange hover:bg-moria-orange/90"
-                        size="sm"
-                        onClick={() => toast({
-                          title: 'Funcionalidade em desenvolvimento',
-                          description: 'Em breve você poderá agendar revisões diretamente pelo painel!',
-                        })}
-                      >
-                        <ClipboardCheck className="h-4 w-4 mr-2" />
-                        Agendar Revisão
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => setEditingVehicle(vehicle)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setDeletingVehicle(vehicle)}
-                        >
-                          <Archive className="h-4 w-4 mr-2" />
-                          Arquivar
-                        </Button>
-                      </div>
-                    </>
-                  )}
+                  <Button
+                    className="w-full bg-moria-orange hover:bg-moria-orange/90"
+                    size="sm"
+                    onClick={() => toast({
+                      title: 'Funcionalidade em desenvolvimento',
+                      description: 'Em breve você poderá agendar revisões diretamente pelo painel!',
+                    })}
+                  >
+                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                    Agendar Revisão
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setEditingVehicle(vehicle)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => setDeletingVehicle(vehicle)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remover
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -345,7 +268,6 @@ export function CustomerVehicles() {
           isOpen={!!deletingVehicle}
           onClose={() => setDeletingVehicle(null)}
           onSuccess={() => handleDeleteSuccess(deletingVehicle.id)}
-          isPermanent={showArchived}
         />
       )}
     </div>

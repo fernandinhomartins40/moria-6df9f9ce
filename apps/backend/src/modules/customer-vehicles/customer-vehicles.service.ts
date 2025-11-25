@@ -7,41 +7,21 @@ import { logger } from '@shared/utils/logger.util.js';
 
 export class CustomerVehiclesService {
   /**
-   * Get all vehicles for a customer (excluding deleted)
+   * Get all vehicles for a customer
    */
   async getVehicles(customerId: string): Promise<CustomerVehicle[]> {
     return prisma.customerVehicle.findMany({
-      where: {
-        customerId,
-        deletedAt: null,
-      },
+      where: { customerId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   /**
-   * Get archived vehicles for a customer
-   */
-  async getArchivedVehicles(customerId: string): Promise<CustomerVehicle[]> {
-    return prisma.customerVehicle.findMany({
-      where: {
-        customerId,
-        deletedAt: { not: null },
-      },
-      orderBy: { deletedAt: 'desc' },
-    });
-  }
-
-  /**
-   * Get vehicle by ID (excluding deleted)
+   * Get vehicle by ID
    */
   async getVehicleById(id: string, customerId: string): Promise<CustomerVehicle> {
     const vehicle = await prisma.customerVehicle.findFirst({
-      where: {
-        id,
-        customerId,
-        deletedAt: null,
-      },
+      where: { id, customerId },
     });
 
     if (!vehicle) {
@@ -130,61 +110,11 @@ export class CustomerVehiclesService {
   }
 
   /**
-   * Soft delete vehicle (archive)
+   * Delete vehicle
    */
   async deleteVehicle(id: string, customerId: string): Promise<void> {
     // Verify vehicle exists and belongs to customer
     await this.getVehicleById(id, customerId);
-
-    await prisma.customerVehicle.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-
-    logger.info(`Vehicle archived (soft deleted): ${id}`);
-  }
-
-  /**
-   * Restore archived vehicle
-   */
-  async restoreVehicle(id: string, customerId: string): Promise<CustomerVehicle> {
-    const vehicle = await prisma.customerVehicle.findFirst({
-      where: {
-        id,
-        customerId,
-        deletedAt: { not: null },
-      },
-    });
-
-    if (!vehicle) {
-      throw ApiError.notFound('Archived vehicle not found');
-    }
-
-    const restored = await prisma.customerVehicle.update({
-      where: { id },
-      data: { deletedAt: null },
-    });
-
-    logger.info(`Vehicle restored: ${id}`);
-
-    return restored;
-  }
-
-  /**
-   * Permanently delete vehicle (hard delete)
-   */
-  async hardDeleteVehicle(id: string, customerId: string): Promise<void> {
-    const vehicle = await prisma.customerVehicle.findFirst({
-      where: {
-        id,
-        customerId,
-        deletedAt: { not: null },
-      },
-    });
-
-    if (!vehicle) {
-      throw ApiError.notFound('Archived vehicle not found');
-    }
 
     // Check if vehicle has revisions
     const revisionsCount = await prisma.revision.count({
@@ -193,7 +123,7 @@ export class CustomerVehiclesService {
 
     if (revisionsCount > 0) {
       throw ApiError.badRequest(
-        'Cannot permanently delete vehicle with existing revisions. Please delete revisions first.'
+        'Cannot delete vehicle with existing revisions. Please delete revisions first.'
       );
     }
 
@@ -201,7 +131,7 @@ export class CustomerVehiclesService {
       where: { id },
     });
 
-    logger.info(`Vehicle permanently deleted: ${id}`);
+    logger.info(`Vehicle deleted: ${id}`);
   }
 
   /**
