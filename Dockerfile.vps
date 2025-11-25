@@ -246,16 +246,6 @@ else
     fi
   fi
 
-  # Executar migrations manuais (SQL files)
-  echo ""
-  echo "Executando migrations manuais..."
-  if node /app/apps/backend/scripts/run-manual-migrations.js 2>&1; then
-    echo "✅ Migrations manuais concluídas"
-  else
-    echo "❌ ERRO: Migrations manuais falharam!"
-    echo "⚠️  Deploy interrompido para prevenir inconsistências"
-    exit 1
-  fi
 fi
 
 # Prisma client já foi gerado no build do host, não precisa gerar novamente
