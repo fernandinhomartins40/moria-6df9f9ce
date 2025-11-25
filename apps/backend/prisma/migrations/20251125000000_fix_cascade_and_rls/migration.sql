@@ -43,8 +43,8 @@ CREATE POLICY mechanic_select_own_revisions ON "revisions"
   FOR SELECT
   USING (
     -- Allow if assigned to current user OR user is MANAGER/ADMIN/SUPER_ADMIN
-    "assignedMechanicId" = current_setting('app.current_user_id', true)::uuid
-    OR current_setting('app.current_role', true) IN ('MANAGER', 'ADMIN', 'SUPER_ADMIN')
+    ("assignedMechanicId"::text = current_setting('app.current_user_id', true)
+    OR current_setting('app.current_role', true) IN ('MANAGER', 'ADMIN', 'SUPER_ADMIN'))
   );
 
 -- Policy 2: Mechanics can only UPDATE their assigned revisions
@@ -52,8 +52,8 @@ CREATE POLICY mechanic_select_own_revisions ON "revisions"
 CREATE POLICY mechanic_update_own_revisions ON "revisions"
   FOR UPDATE
   USING (
-    "assignedMechanicId" = current_setting('app.current_user_id', true)::uuid
-    OR current_setting('app.current_role', true) IN ('MANAGER', 'ADMIN', 'SUPER_ADMIN')
+    ("assignedMechanicId"::text = current_setting('app.current_user_id', true)
+    OR current_setting('app.current_role', true) IN ('MANAGER', 'ADMIN', 'SUPER_ADMIN'))
   );
 
 -- Policy 3: Only MANAGER+ can INSERT revisions
