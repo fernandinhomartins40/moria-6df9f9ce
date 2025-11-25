@@ -164,7 +164,7 @@ export class AdminController {
     try {
       const { customerId } = req.params;
       const vehicles = await this.adminService.getCustomerVehicles(customerId);
-      res.json(vehicles);
+      res.json({ data: vehicles });
     } catch (error) {
       next(error);
     }

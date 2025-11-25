@@ -50,6 +50,13 @@ export function VehicleSelector({
       setIsLoading(true);
       const response = await vehicleService.getVehiclesByCustomer(customerId);
 
+      // Check if response is valid and has data
+      if (!response || !Array.isArray(response)) {
+        console.warn('Invalid response from getVehiclesByCustomer:', response);
+        setVehicles([]);
+        return;
+      }
+
       // Transform API vehicles to local format
       const transformedVehicles: Vehicle[] = response.map((v: CustomerVehicle) => ({
         id: v.id,
@@ -64,6 +71,7 @@ export function VehicleSelector({
       setVehicles(transformedVehicles);
     } catch (error) {
       console.error('Error loading vehicles:', error);
+      setVehicles([]);
       toast({
         title: 'Erro ao carregar veículos',
         description: 'Não foi possível carregar os veículos deste cliente.',
