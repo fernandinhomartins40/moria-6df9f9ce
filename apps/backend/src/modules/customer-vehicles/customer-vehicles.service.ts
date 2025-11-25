@@ -148,7 +148,7 @@ export class CustomerVehiclesService {
    * Permanently delete vehicle (hard delete)
    */
   async hardDeleteVehicle(id: string, customerId: string): Promise<void> {
-    const vehicle = await this.getVehicleById(id, customerId);
+    await this.getVehicleById(id, customerId);
 
     // Check if vehicle has revisions
     const revisionsCount = await prisma.revision.count({
