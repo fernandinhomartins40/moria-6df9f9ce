@@ -13,6 +13,7 @@ export class CustomerVehiclesService {
     return prisma.customerVehicle.findMany({
       where: {
         customerId,
+        deletedAt: null,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -22,8 +23,13 @@ export class CustomerVehiclesService {
    * Get archived vehicles for a customer
    */
   async getArchivedVehicles(customerId: string): Promise<CustomerVehicle[]> {
-    // Archived vehicles not supported without deletedAt column
-    return [];
+    return prisma.customerVehicle.findMany({
+      where: {
+        customerId,
+        deletedAt: { not: null },
+      },
+      orderBy: { deletedAt: 'desc' },
+    });
   }
 
   /**
@@ -34,6 +40,7 @@ export class CustomerVehiclesService {
       where: {
         id,
         customerId,
+        deletedAt: null,
       },
     });
 
@@ -129,26 +136,55 @@ export class CustomerVehiclesService {
     // Verify vehicle exists and belongs to customer
     await this.getVehicleById(id, customerId);
 
-    // Hard delete since deletedAt column doesn't exist
-    await prisma.customerVehicle.delete({
+    await prisma.customerVehicle.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
 
-    logger.info(`Vehicle deleted: ${id}`);
+    logger.info(`Vehicle archived (soft deleted): ${id}`);
   }
 
   /**
    * Restore archived vehicle
    */
   async restoreVehicle(id: string, customerId: string): Promise<CustomerVehicle> {
-    throw ApiError.notFound('Restore not supported without deletedAt column');
+    const vehicle = await prisma.customerVehicle.findFirst({
+      where: {
+        id,
+        customerId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!vehicle) {
+      throw ApiError.notFound('Archived vehicle not found');
+    }
+
+    const restored = await prisma.customerVehicle.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    logger.info(`Vehicle restored: ${id}`);
+
+    return restored;
   }
 
   /**
    * Permanently delete vehicle (hard delete)
    */
   async hardDeleteVehicle(id: string, customerId: string): Promise<void> {
-    await this.getVehicleById(id, customerId);
+    const vehicle = await prisma.customerVehicle.findFirst({
+      where: {
+        id,
+        customerId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!vehicle) {
+      throw ApiError.notFound('Archived vehicle not found');
+    }
 
     // Check if vehicle has revisions
     const revisionsCount = await prisma.revision.count({
