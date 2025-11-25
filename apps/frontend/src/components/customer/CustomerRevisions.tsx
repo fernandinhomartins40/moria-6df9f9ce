@@ -47,7 +47,8 @@ export function CustomerRevisions() {
     }> = [];
 
     customerRevisions.forEach(revision => {
-      const vehicle = getVehicle(revision.vehicleId);
+      // Use vehicle data from revision (from API) or fallback to context
+      const vehicle = revision.vehicle || getVehicle(revision.vehicleId);
       if (!vehicle || revision.status !== 'completed') return;
 
       const criticalItems: Array<{ categoryName: string; itemName: string; notes?: string }> = [];
@@ -296,7 +297,8 @@ export function CustomerRevisions() {
             </Card>
           ) : (
             customerRevisions.map(revision => {
-              const vehicle = getVehicle(revision.vehicleId);
+              // Use vehicle data from revision (from API) or fallback to context
+              const vehicle = revision.vehicle || getVehicle(revision.vehicleId);
               const stats = getRevisionStats(revision);
 
               if (!vehicle) return null;
@@ -403,7 +405,8 @@ export function CustomerRevisions() {
 
         <TabsContent value="completed" className="space-y-4">
           {customerRevisions.filter(r => r.status === 'completed').map(revision => {
-            const vehicle = getVehicle(revision.vehicleId);
+            // Use vehicle data from revision (from API) or fallback to context
+            const vehicle = revision.vehicle || getVehicle(revision.vehicleId);
             const stats = getRevisionStats(revision);
             if (!vehicle) return null;
 
@@ -443,7 +446,8 @@ export function CustomerRevisions() {
 
         <TabsContent value="in_progress" className="space-y-4">
           {customerRevisions.filter(r => r.status === 'in_progress').map(revision => {
-            const vehicle = getVehicle(revision.vehicleId);
+            // Use vehicle data from revision (from API) or fallback to context
+            const vehicle = revision.vehicle || getVehicle(revision.vehicleId);
             if (!vehicle) return null;
 
             return (

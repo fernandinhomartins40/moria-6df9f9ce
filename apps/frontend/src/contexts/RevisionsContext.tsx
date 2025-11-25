@@ -158,6 +158,16 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
         id: rev.id,
         customerId: rev.customerId,
         vehicleId: rev.vehicleId,
+        vehicle: rev.vehicle ? {
+          id: rev.vehicle.id,
+          customerId: rev.customerId,
+          brand: rev.vehicle.brand,
+          model: rev.vehicle.model,
+          year: rev.vehicle.year,
+          plate: rev.vehicle.plate,
+          color: rev.vehicle.color,
+          createdAt: new Date()
+        } : undefined,
         date: new Date(rev.date),
         mileage: rev.mileage,
         status: rev.status.toLowerCase(),

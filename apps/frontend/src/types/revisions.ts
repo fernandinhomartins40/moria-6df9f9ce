@@ -66,6 +66,7 @@ export interface Revision {
   id: string;
   customerId: string;
   vehicleId: string;
+  vehicle?: Vehicle; // Vehicle data from API (optional for backwards compatibility)
   date: Date;
   mileage?: number;
   status: 'draft' | 'in_progress' | 'completed' | 'cancelled';
