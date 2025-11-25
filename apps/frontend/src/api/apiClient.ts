@@ -18,6 +18,18 @@ apiClient.interceptors.request.use(
     // O cookie httpOnly 'authToken' (clientes) e 'adminToken' (admin)
     // são enviados automaticamente pelo browser
     // Não precisamos adicionar Authorization header manualmente
+
+    // Debug logs
+    if (import.meta.env.DEV) {
+      console.log('[API Client] Request:', {
+        url: config.url,
+        method: config.method,
+        baseURL: config.baseURL,
+        withCredentials: config.withCredentials,
+        cookies: document.cookie,
+      });
+    }
+
     return config;
   },
   (error) => {

@@ -43,6 +43,13 @@ export class AuthMiddleware {
       try {
         const payload = JwtUtil.verifyToken(token);
         console.log('[AuthMiddleware] Token verified successfully, payload:', payload);
+
+        // Validate token structure
+        if (!payload.customerId) {
+          console.error('[AuthMiddleware] Token missing customerId:', payload);
+          throw ApiError.unauthorized('Invalid token structure - missing customerId');
+        }
+
         req.user = payload;
         next();
       } catch (error) {

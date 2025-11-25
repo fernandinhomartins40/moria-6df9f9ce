@@ -22,9 +22,11 @@ export class CustomerVehiclesController {
       console.log('[CustomerVehiclesController] req.cookies:', req.cookies);
       console.log('[CustomerVehiclesController] req.headers.authorization:', req.headers.authorization);
 
-      if (!req.user) {
-        console.error('[CustomerVehiclesController] User not authenticated');
-        throw new Error('User not authenticated');
+      if (!req.user || !req.user.customerId) {
+        console.error('[CustomerVehiclesController] Invalid user context:', req.user);
+        const error: any = new Error('User not authenticated or invalid token');
+        error.statusCode = 401;
+        throw error;
       }
 
       console.log('[CustomerVehiclesController] Fetching vehicles for customerId:', req.user.customerId);
