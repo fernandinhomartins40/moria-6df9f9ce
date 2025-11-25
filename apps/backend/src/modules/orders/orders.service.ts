@@ -10,6 +10,12 @@ import notificationService from '@modules/notifications/notification.service.js'
 export type OrderWithItems = Order & {
   items: OrderItem[];
   address: Address;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
 };
 
 export interface OrderFilters {
@@ -183,6 +189,14 @@ export class OrdersService {
       include: {
         items: true,
         address: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
       },
     });
 
@@ -270,6 +284,14 @@ export class OrdersService {
         include: {
           items: true,
           address: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -290,6 +312,14 @@ export class OrdersService {
       include: {
         items: true,
         address: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
       },
     });
 
@@ -360,6 +390,14 @@ export class OrdersService {
       include: {
         items: true,
         address: true,
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
       },
     });
 
