@@ -182,7 +182,10 @@ TABLE_COUNT=$(node -e "
 
 if [ "$TABLE_COUNT" -eq 0 ]; then
   echo "Banco vazio detectado - criando schema inicial..."
-  npx prisma db push --skip-generate 2>&1
+  npx prisma db push --skip-generate 2>&1 || {
+    echo "❌ ERRO: Falha ao criar schema inicial!"
+    exit 1
+  }
 else
   echo "Banco existente detectado (${TABLE_COUNT} tabelas) - aplicando migrations..."
 
@@ -190,7 +193,31 @@ else
   echo "Verificando migrations failed..."
   node /app/apps/backend/scripts/cleanup-failed-migrations.js 2>&1 || echo "⚠️ Aviso: não foi possível limpar migrations failed"
 
-  npx prisma migrate deploy 2>&1 || echo "⚠️ Nenhuma migration pendente"
+  # Aplicar migrations do Prisma (com validação de erro)
+  echo "Aplicando Prisma migrations..."
+  if npx prisma migrate deploy 2>&1; then
+    echo "✅ Prisma migrations aplicadas"
+  else
+    MIGRATE_EXIT_CODE=$?
+    if [ $MIGRATE_EXIT_CODE -eq 0 ]; then
+      echo "ℹ️  Nenhuma Prisma migration pendente"
+    else
+      echo "❌ ERRO: Prisma migrations falharam (código: $MIGRATE_EXIT_CODE)"
+      npx prisma migrate status 2>&1 || true
+      exit 1
+    fi
+  fi
+
+  # Executar migrations manuais (SQL files)
+  echo ""
+  echo "Executando migrations manuais..."
+  if node /app/apps/backend/scripts/run-manual-migrations.js 2>&1; then
+    echo "✅ Migrations manuais concluídas"
+  else
+    echo "❌ ERRO: Migrations manuais falharam!"
+    echo "⚠️  Deploy interrompido para prevenir inconsistências"
+    exit 1
+  fi
 fi
 
 # Prisma client já foi gerado no build do host, não precisa gerar novamente
