@@ -110,28 +110,18 @@ export class CustomerVehiclesService {
   }
 
   /**
-   * Delete vehicle
+   * Delete vehicle (cascade deletes revisions)
    */
   async deleteVehicle(id: string, customerId: string): Promise<void> {
     // Verify vehicle exists and belongs to customer
     await this.getVehicleById(id, customerId);
 
-    // Check if vehicle has revisions
-    const revisionsCount = await prisma.revision.count({
-      where: { vehicleId: id },
-    });
-
-    if (revisionsCount > 0) {
-      throw ApiError.badRequest(
-        'Cannot delete vehicle with existing revisions. Please delete revisions first.'
-      );
-    }
-
+    // Delete vehicle (revisions will be cascade deleted automatically)
     await prisma.customerVehicle.delete({
       where: { id },
     });
 
-    logger.info(`Vehicle deleted: ${id}`);
+    logger.info(`Vehicle deleted (with cascade): ${id}`);
   }
 
   /**

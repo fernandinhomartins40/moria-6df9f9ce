@@ -65,8 +65,8 @@ export function DeleteVehicleDialog({ vehicle, isOpen, onClose, onSuccess }: Del
             <div className="bg-red-50 border-red-200 border rounded-lg p-3">
               <p className="text-sm text-red-800">
                 <strong>Atenção:</strong>{' '}
-                Esta ação NÃO PODE ser desfeita! O veículo será removido permanentemente do sistema.
-                Se houver revisões vinculadas, a remoção não será permitida.
+                Esta ação NÃO PODE ser desfeita! O veículo será removido permanentemente do sistema{' '}
+                <strong>junto com TODAS as suas revisões e histórico</strong>.
               </p>
             </div>
           </AlertDialogDescription>

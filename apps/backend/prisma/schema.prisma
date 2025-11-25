@@ -688,7 +688,7 @@ model Revision {
 
   // Relations
   customer         Customer        @relation(fields: [customerId], references: [id])
-  vehicle          CustomerVehicle @relation(fields: [vehicleId], references: [id])
+  vehicle          CustomerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   assignedMechanic Admin?          @relation(fields: [assignedMechanicId], references: [id])
 
   @@index([customerId])
