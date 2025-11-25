@@ -166,8 +166,7 @@ export class CustomerRevisionsService {
     // Get all customer vehicles
     const vehicles = await prisma.customerVehicle.findMany({
       where: {
-        customerId,
-        deletedAt: null
+        customerId
       }
     });
 
@@ -270,8 +269,7 @@ export class CustomerRevisionsService {
       // Total vehicles
       prisma.customerVehicle.count({
         where: {
-          customerId,
-          deletedAt: null
+          customerId
         }
       }),
 
