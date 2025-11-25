@@ -17,17 +17,26 @@ export class CustomerVehiclesController {
    */
   getVehicles = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      console.log('[CustomerVehiclesController] getVehicles called');
+      console.log('[CustomerVehiclesController] req.user:', req.user);
+      console.log('[CustomerVehiclesController] req.cookies:', req.cookies);
+      console.log('[CustomerVehiclesController] req.headers.authorization:', req.headers.authorization);
+
       if (!req.user) {
+        console.error('[CustomerVehiclesController] User not authenticated');
         throw new Error('User not authenticated');
       }
 
+      console.log('[CustomerVehiclesController] Fetching vehicles for customerId:', req.user.customerId);
       const vehicles = await this.vehiclesService.getVehicles(req.user.customerId);
+      console.log('[CustomerVehiclesController] Found vehicles:', vehicles.length);
 
       res.status(200).json({
         success: true,
         data: vehicles,
       });
     } catch (error) {
+      console.error('[CustomerVehiclesController] Error:', error);
       next(error);
     }
   };
