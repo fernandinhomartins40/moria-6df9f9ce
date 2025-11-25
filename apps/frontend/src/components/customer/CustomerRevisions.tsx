@@ -20,13 +20,76 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Revision, ItemStatus } from '../../types/revisions';
-import { RevisionDetailsDialog } from './RevisionDetailsDialog';
+import { RevisionDetailsModal } from '../admin/RevisionDetailsModal';
+import { AdminRevision } from '../../api/adminService';
 
 export function CustomerRevisions() {
   const { customer } = useAuth();
   const { revisions, getRevisionsByCustomer, vehicles, getVehicle, categories } = useRevisions();
-  const [selectedRevision, setSelectedRevision] = useState<Revision | null>(null);
+  const [selectedRevision, setSelectedRevision] = useState<AdminRevision | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // Converte Revision para AdminRevision para o modal
+  const convertToAdminRevision = (revision: Revision): AdminRevision => {
+    const vehicle = revision.vehicle || getVehicle(revision.vehicleId);
+
+    // Mapeia checklistItems para o formato esperado pelo modal do admin
+    const checklistItems = revision.checklistItems.map(checkItem => {
+      // Encontra a categoria e o item correspondente
+      for (const category of categories) {
+        const item = category.items.find(i => i.id === checkItem.itemId);
+        if (item) {
+          return {
+            categoryName: category.name,
+            itemName: item.name,
+            itemDescription: item.description,
+            status: checkItem.status,
+            notes: checkItem.notes,
+            checkedAt: checkItem.checkedAt,
+            checkedBy: checkItem.checkedBy,
+          };
+        }
+      }
+      return null;
+    }).filter(Boolean);
+
+    return {
+      id: revision.id,
+      customerId: revision.customerId,
+      vehicleId: revision.vehicleId,
+      date: revision.date.toString(),
+      mileage: revision.mileage,
+      status: revision.status.toUpperCase() as 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+      checklistItems: checklistItems as any[],
+      generalNotes: revision.generalNotes,
+      recommendations: revision.recommendations,
+      createdAt: revision.createdAt.toString(),
+      updatedAt: revision.updatedAt.toString(),
+      completedAt: revision.completedAt?.toString(),
+      customer: customer ? {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || '',
+      } : undefined,
+      vehicle: vehicle ? {
+        id: vehicle.id,
+        customerId: vehicle.customerId,
+        brand: vehicle.brand,
+        model: vehicle.model,
+        year: vehicle.year,
+        plate: vehicle.plate,
+        color: vehicle.color,
+        mileage: vehicle.mileage,
+      } : undefined,
+      assignedMechanicId: null,
+      mechanicName: null,
+      assignedMechanic: null,
+      assignedAt: null,
+      mechanicNotes: null,
+      transferHistory: [],
+    } as AdminRevision;
+  };
 
   // Get customer's revisions
   const customerRevisions = useMemo(() => {
@@ -147,7 +210,8 @@ export function CustomerRevisions() {
   };
 
   const handleViewDetails = (revision: Revision) => {
-    setSelectedRevision(revision);
+    const adminRevision = convertToAdminRevision(revision);
+    setSelectedRevision(adminRevision);
     setIsDetailsOpen(true);
   };
 
@@ -470,17 +534,15 @@ export function CustomerRevisions() {
         </TabsContent>
       </Tabs>
 
-      {/* Details Dialog */}
-      {selectedRevision && (
-        <RevisionDetailsDialog
-          revision={selectedRevision}
-          isOpen={isDetailsOpen}
-          onClose={() => {
-            setIsDetailsOpen(false);
-            setSelectedRevision(null);
-          }}
-        />
-      )}
+      {/* Details Modal */}
+      <RevisionDetailsModal
+        revision={selectedRevision}
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedRevision(null);
+        }}
+      />
     </div>
   );
 }
