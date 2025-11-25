@@ -11,6 +11,7 @@ import {
 import checklistService from '../api/checklistService';
 import revisionService from '../api/revisionService';
 import { useAuth } from './AuthContext';
+import { useAdminAuth } from './AdminAuthContext';
 
 interface RevisionsContextData {
   // Customers
@@ -57,6 +58,7 @@ const RevisionsContext = createContext<RevisionsContextData>({} as RevisionsCont
 
 export function RevisionsProvider({ children }: { children: ReactNode }) {
   const { customer } = useAuth();
+  const { admin } = useAdminAuth();
 
   // Load from localStorage
   const [customers, setCustomers] = useState<Customer[]>(() => {
@@ -81,7 +83,10 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
     const loadCategories = async () => {
       try {
         setIsLoadingCategories(true);
-        const data = await checklistService.getChecklistStructure();
+        // Use admin endpoint if admin is logged in, otherwise use customer endpoint
+        const data = admin
+          ? await checklistService.getChecklistStructureAdmin()
+          : await checklistService.getChecklistStructure();
 
         // Transform backend data to match frontend types
         const transformedCategories: ChecklistCategory[] = data.categories.map(cat => ({
@@ -135,7 +140,7 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
     };
 
     loadCategories();
-  }, []);
+  }, [admin]);
 
   // Load revisions from API when customer is authenticated
   const loadRevisions = async () => {
