@@ -65,11 +65,11 @@ async function cleanupFailedMigrations() {
             INSERT INTO _prisma_migrations (migration_name, checksum, finished_at, started_at, applied_steps_count, logs)
             VALUES (
               ${migrationName},
-              '',
+              '00000000000000000000000000000000000000',
               NOW(),
               NOW(),
               1,
-              ''
+              'Manually marked as applied by cleanup script'
             )
           `;
           console.log(`   ✓ Marcada como aplicada: ${migrationName}`);
