@@ -18,28 +18,39 @@ export class AuthMiddleware {
    */
   static authenticate(req: Request, res: Response, next: NextFunction): void {
     try {
+      console.log('[AuthMiddleware] authenticate called for:', req.method, req.path);
+      console.log('[AuthMiddleware] req.cookies:', req.cookies);
+      console.log('[AuthMiddleware] req.headers.authorization:', req.headers.authorization);
+      console.log('[AuthMiddleware] req.headers.cookie:', req.headers.cookie);
+
       // Try to get token from cookie first, then fallback to Authorization header
       let token = req.cookies?.authToken;
+      console.log('[AuthMiddleware] authToken from cookies:', token ? 'PRESENT' : 'MISSING');
 
       if (!token) {
         const authHeader = req.headers.authorization;
         if (authHeader && authHeader.startsWith('Bearer ')) {
           token = authHeader.substring(7); // Remove 'Bearer ' prefix
+          console.log('[AuthMiddleware] Token found in Authorization header');
         }
       }
 
       if (!token) {
+        console.error('[AuthMiddleware] No token found in cookies or Authorization header');
         throw ApiError.unauthorized('No token provided');
       }
 
       try {
         const payload = JwtUtil.verifyToken(token);
+        console.log('[AuthMiddleware] Token verified successfully, payload:', payload);
         req.user = payload;
         next();
       } catch (error) {
+        console.error('[AuthMiddleware] Token verification failed:', error);
         throw ApiError.unauthorized('Invalid or expired token');
       }
     } catch (error) {
+      console.error('[AuthMiddleware] Authentication error:', error);
       next(error);
     }
   }
