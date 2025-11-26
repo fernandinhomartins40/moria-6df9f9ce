@@ -1,14 +1,26 @@
--- CreateEnum
-CREATE TYPE "TicketStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'WAITING_SUPPORT', 'RESOLVED', 'CLOSED');
+-- CreateEnum (if not exists)
+DO $$ BEGIN
+    CREATE TYPE "TicketStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'WAITING_SUPPORT', 'RESOLVED', 'CLOSED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- CreateEnum
-CREATE TYPE "TicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+-- CreateEnum (if not exists)
+DO $$ BEGIN
+    CREATE TYPE "TicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- CreateEnum
-CREATE TYPE "TicketCategory" AS ENUM ('ORDER_ISSUE', 'PRODUCT_QUESTION', 'PAYMENT_ISSUE', 'DELIVERY_ISSUE', 'REVISION_QUESTION', 'TECHNICAL_SUPPORT', 'SUGGESTION', 'COMPLAINT', 'OTHER');
+-- CreateEnum (if not exists)
+DO $$ BEGIN
+    CREATE TYPE "TicketCategory" AS ENUM ('ORDER_ISSUE', 'PRODUCT_QUESTION', 'PAYMENT_ISSUE', 'DELIVERY_ISSUE', 'REVISION_QUESTION', 'TECHNICAL_SUPPORT', 'SUGGESTION', 'COMPLAINT', 'OTHER');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- CreateTable
-CREATE TABLE "support_tickets" (
+CREATE TABLE IF NOT EXISTS "support_tickets" (
     "id" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
@@ -31,7 +43,7 @@ CREATE TABLE "support_tickets" (
 );
 
 -- CreateTable
-CREATE TABLE "ticket_messages" (
+CREATE TABLE IF NOT EXISTS "ticket_messages" (
     "id" TEXT NOT NULL,
     "ticketId" TEXT NOT NULL,
     "senderId" TEXT NOT NULL,
@@ -45,7 +57,7 @@ CREATE TABLE "ticket_messages" (
 );
 
 -- CreateTable
-CREATE TABLE "faq_categories" (
+CREATE TABLE IF NOT EXISTS "faq_categories" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
@@ -59,7 +71,7 @@ CREATE TABLE "faq_categories" (
 );
 
 -- CreateTable
-CREATE TABLE "faq_items" (
+CREATE TABLE IF NOT EXISTS "faq_items" (
     "id" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
     "question" TEXT NOT NULL,
@@ -77,46 +89,62 @@ CREATE TABLE "faq_items" (
 );
 
 -- CreateIndex
-CREATE INDEX "support_tickets_customerId_idx" ON "support_tickets"("customerId");
+CREATE INDEX IF NOT EXISTS "support_tickets_customerId_idx" ON "support_tickets"("customerId");
 
 -- CreateIndex
-CREATE INDEX "support_tickets_status_idx" ON "support_tickets"("status");
+CREATE INDEX IF NOT EXISTS "support_tickets_status_idx" ON "support_tickets"("status");
 
 -- CreateIndex
-CREATE INDEX "support_tickets_priority_idx" ON "support_tickets"("priority");
+CREATE INDEX IF NOT EXISTS "support_tickets_priority_idx" ON "support_tickets"("priority");
 
 -- CreateIndex
-CREATE INDEX "support_tickets_category_idx" ON "support_tickets"("category");
+CREATE INDEX IF NOT EXISTS "support_tickets_category_idx" ON "support_tickets"("category");
 
 -- CreateIndex
-CREATE INDEX "support_tickets_assignedToId_idx" ON "support_tickets"("assignedToId");
+CREATE INDEX IF NOT EXISTS "support_tickets_assignedToId_idx" ON "support_tickets"("assignedToId");
 
 -- CreateIndex
-CREATE INDEX "support_tickets_createdAt_idx" ON "support_tickets"("createdAt");
+CREATE INDEX IF NOT EXISTS "support_tickets_createdAt_idx" ON "support_tickets"("createdAt");
 
 -- CreateIndex
-CREATE INDEX "ticket_messages_ticketId_idx" ON "ticket_messages"("ticketId");
+CREATE INDEX IF NOT EXISTS "ticket_messages_ticketId_idx" ON "ticket_messages"("ticketId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "faq_categories_name_key" ON "faq_categories"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "faq_categories_name_key" ON "faq_categories"("name");
 
 -- CreateIndex
-CREATE INDEX "faq_categories_order_idx" ON "faq_categories"("order");
+CREATE INDEX IF NOT EXISTS "faq_categories_order_idx" ON "faq_categories"("order");
 
 -- CreateIndex
-CREATE INDEX "faq_items_categoryId_idx" ON "faq_items"("categoryId");
+CREATE INDEX IF NOT EXISTS "faq_items_categoryId_idx" ON "faq_items"("categoryId");
 
 -- CreateIndex
-CREATE INDEX "faq_items_order_idx" ON "faq_items"("order");
+CREATE INDEX IF NOT EXISTS "faq_items_order_idx" ON "faq_items"("order");
 
--- AddForeignKey
-ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$ BEGIN
+    ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "admins"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$ BEGIN
+    ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "admins"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "ticket_messages" ADD CONSTRAINT "ticket_messages_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "support_tickets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$ BEGIN
+    ALTER TABLE "ticket_messages" ADD CONSTRAINT "ticket_messages_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "support_tickets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "faq_items" ADD CONSTRAINT "faq_items_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "faq_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (if not exists)
+DO $$ BEGIN
+    ALTER TABLE "faq_items" ADD CONSTRAINT "faq_items_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "faq_categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
