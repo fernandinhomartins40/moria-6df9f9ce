@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X } from 'lucide-react';
-import { apiClient } from '../../services/api.ts';
+import apiClient from '../../api/apiClient';
 
 interface Promotion {
   id?: number;
