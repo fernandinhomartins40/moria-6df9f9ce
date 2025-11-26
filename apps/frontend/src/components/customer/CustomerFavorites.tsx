@@ -197,12 +197,16 @@ export function CustomerFavorites() {
 
   const handleAddToCart = (product: FavoriteProductData) => {
     const price = product.promoPrice || product.salePrice;
+    // Extract first image from array or use placeholder
+    const imageUrl = product.images && Array.isArray(product.images) && product.images.length > 0
+      ? product.images[0]
+      : (typeof product.images === 'string' ? product.images : '/placeholder-product.jpg');
 
     addItem({
       id: product.id,
       name: product.name,
       price: price,
-      image: product.images,
+      image: imageUrl,
       category: product.category,
       type: 'product'
     });
@@ -222,11 +226,16 @@ export function CustomerFavorites() {
 
     selectedProducts.forEach(product => {
       const price = product.promoPrice || product.salePrice;
+      // Extract first image from array or use placeholder
+      const imageUrl = product.images && Array.isArray(product.images) && product.images.length > 0
+        ? product.images[0]
+        : (typeof product.images === 'string' ? product.images : '/placeholder-product.jpg');
+
       addItem({
         id: product.id,
         name: product.name,
         price: price,
-        image: product.images,
+        image: imageUrl,
         category: product.category,
         type: 'product'
       });
