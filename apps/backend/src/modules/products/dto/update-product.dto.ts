@@ -97,6 +97,79 @@ export const updateProductSchema = z.object({
     .optional(),
   metaDescription: z.string().max(160, 'Meta description must not exceed 160 characters').optional().nullable(),
   metaKeywords: z.string().max(255, 'Meta keywords must not exceed 255 characters').optional().nullable(),
+})
+// Validação refinada: Se offerType estiver presente, datas e promoPrice são obrigatórios
+.refine(
+  (data) => {
+    if (data.offerType) {
+      return data.offerStartDate !== null && data.offerStartDate !== undefined;
+    }
+    return true;
+  },
+  {
+    message: 'Offer start date is required when offer type is set',
+    path: ['offerStartDate'],
+  }
+)
+.refine(
+  (data) => {
+    if (data.offerType) {
+      return data.offerEndDate !== null && data.offerEndDate !== undefined;
+    }
+    return true;
+  },
+  {
+    message: 'Offer end date is required when offer type is set',
+    path: ['offerEndDate'],
+  }
+)
+.refine(
+  (data) => {
+    if (data.offerType) {
+      return data.promoPrice !== null && data.promoPrice !== undefined && data.promoPrice > 0;
+    }
+    return true;
+  },
+  {
+    message: 'Promotional price is required and must be positive when offer type is set',
+    path: ['promoPrice'],
+  }
+)
+.refine(
+  (data) => {
+    if (data.offerType && data.offerStartDate && data.offerEndDate) {
+      return data.offerEndDate > data.offerStartDate;
+    }
+    return true;
+  },
+  {
+    message: 'Offer end date must be after start date',
+    path: ['offerEndDate'],
+  }
+)
+.refine(
+  (data) => {
+    if (data.offerType && data.promoPrice && data.salePrice) {
+      return data.promoPrice < data.salePrice;
+    }
+    return true;
+  },
+  {
+    message: 'Promotional price must be less than sale price',
+    path: ['promoPrice'],
+  }
+)
+.transform((data) => {
+  // Se offerType está sendo removido (null), limpar campos de oferta
+  if (data.offerType === null) {
+    return {
+      ...data,
+      offerStartDate: null,
+      offerEndDate: null,
+      offerBadge: null,
+    };
+  }
+  return data;
 });
 
 export type UpdateProductDto = z.infer<typeof updateProductSchema>;

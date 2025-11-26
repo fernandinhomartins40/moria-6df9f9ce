@@ -181,11 +181,77 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     setActiveTab('basic');
   }, [product, isOpen]);
 
-  const handleInputChange = (field: keyof Product, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Limpar erro do campo quando usuário digita
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+  // Helper para calcular datas padrão baseadas no tipo de oferta
+  const getDefaultOfferDates = (offerType: 'DIA' | 'SEMANA' | 'MES') => {
+    const now = new Date();
+    const startDate = new Date(now);
+    const endDate = new Date(now);
+
+    // Definir data de início para agora
+    startDate.setMinutes(0);
+    startDate.setSeconds(0);
+    startDate.setMilliseconds(0);
+
+    // Definir data de fim baseada no tipo
+    switch (offerType) {
+      case 'DIA':
+        endDate.setDate(endDate.getDate() + 1);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'SEMANA':
+        endDate.setDate(endDate.getDate() + 7);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case 'MES':
+        endDate.setDate(endDate.getDate() + 30);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+    }
+
+    return {
+      startDate: startDate.toISOString().slice(0, 16),
+      endDate: endDate.toISOString().slice(0, 16)
+    };
+  };
+
+  const handleInputChange = (field: keyof ProductFormData, value: any) => {
+    // Se mudou o tipo de oferta, aplicar smart defaults nas datas
+    if (field === 'offer_type') {
+      if (value && value !== 'NONE') {
+        const { startDate, endDate } = getDefaultOfferDates(value as 'DIA' | 'SEMANA' | 'MES');
+
+        // Aplicar datas padrão apenas se não houver datas já preenchidas
+        setFormData(prev => ({
+          ...prev,
+          [field]: value,
+          offer_start_date: prev.offer_start_date || startDate,
+          offer_end_date: prev.offer_end_date || endDate
+        }));
+
+        // Limpar erros de data ao selecionar tipo de oferta
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.offer_start_date;
+          delete newErrors.offer_end_date;
+          delete newErrors[field];
+          return newErrors;
+        });
+      } else {
+        // Se removeu a oferta, limpar as datas
+        setFormData(prev => ({
+          ...prev,
+          [field]: null,
+          offer_start_date: '',
+          offer_end_date: '',
+          offer_badge: ''
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+      // Limpar erro do campo quando usuário digita
+      if (errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
     }
   };
 
@@ -220,6 +286,38 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
     if (formData.min_stock !== undefined && formData.min_stock < 0) {
       newErrors.min_stock = 'Estoque mínimo não pode ser negativo';
+    }
+
+    // Validações de ofertas
+    if (formData.offer_type) {
+      // Datas são obrigatórias quando há tipo de oferta
+      if (!formData.offer_start_date) {
+        newErrors.offer_start_date = 'Data de início é obrigatória para ofertas';
+      }
+
+      if (!formData.offer_end_date) {
+        newErrors.offer_end_date = 'Data de fim é obrigatória para ofertas';
+      }
+
+      // Validar se data de fim é maior que data de início
+      if (formData.offer_start_date && formData.offer_end_date) {
+        const startDate = new Date(formData.offer_start_date);
+        const endDate = new Date(formData.offer_end_date);
+
+        if (endDate <= startDate) {
+          newErrors.offer_end_date = 'Data de fim deve ser posterior à data de início';
+        }
+      }
+
+      // Preço promocional é obrigatório para ofertas
+      if (!formData.promo_price || formData.promo_price <= 0) {
+        newErrors.promo_price = 'Preço promocional é obrigatório para ofertas';
+      }
+
+      // Preço promocional deve ser menor que o preço normal
+      if (formData.promo_price && formData.sale_price && formData.promo_price >= formData.sale_price) {
+        newErrors.promo_price = 'Preço promocional deve ser menor que o preço de venda';
+      }
     }
 
     setErrors(newErrors);
@@ -729,25 +827,57 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="offer_start_date">Data/Hora Início</Label>
+                  <Label htmlFor="offer_start_date" className="flex items-center gap-1">
+                    Data/Hora Início
+                    {formData.offer_type && <span className="text-red-500">*</span>}
+                  </Label>
                   <Input
                     id="offer_start_date"
                     type="datetime-local"
                     value={formData.offer_start_date || ''}
                     onChange={(e) => handleInputChange('offer_start_date', e.target.value)}
+                    className={errors.offer_start_date ? 'border-red-500' : ''}
+                    disabled={!formData.offer_type}
                   />
-                  <p className="text-xs text-gray-500">Quando a oferta começa</p>
+                  {errors.offer_start_date ? (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.offer_start_date}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      {formData.offer_type
+                        ? 'Quando a oferta começa (preenchido automaticamente)'
+                        : 'Selecione um tipo de oferta primeiro'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="offer_end_date">Data/Hora Fim</Label>
+                  <Label htmlFor="offer_end_date" className="flex items-center gap-1">
+                    Data/Hora Fim
+                    {formData.offer_type && <span className="text-red-500">*</span>}
+                  </Label>
                   <Input
                     id="offer_end_date"
                     type="datetime-local"
                     value={formData.offer_end_date || ''}
                     onChange={(e) => handleInputChange('offer_end_date', e.target.value)}
+                    className={errors.offer_end_date ? 'border-red-500' : ''}
+                    disabled={!formData.offer_type}
                   />
-                  <p className="text-xs text-gray-500">Quando a oferta expira</p>
+                  {errors.offer_end_date ? (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.offer_end_date}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      {formData.offer_type
+                        ? 'Quando a oferta expira (preenchido automaticamente)'
+                        : 'Selecione um tipo de oferta primeiro'}
+                    </p>
+                  )}
                 </div>
               </div>
 

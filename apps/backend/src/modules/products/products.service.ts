@@ -180,6 +180,50 @@ export class ProductsService {
   }
 
   /**
+   * Validate offer data
+   */
+  private validateOfferData(
+    offerType: string | null | undefined,
+    offerStartDate: Date | null | undefined,
+    offerEndDate: Date | null | undefined,
+    promoPrice: any,
+    salePrice: any
+  ): void {
+    if (offerType) {
+      // Validar datas obrigatórias
+      if (!offerStartDate) {
+        throw ApiError.badRequest('Offer start date is required when offer type is set');
+      }
+
+      if (!offerEndDate) {
+        throw ApiError.badRequest('Offer end date is required when offer type is set');
+      }
+
+      // Validar período
+      if (offerEndDate <= offerStartDate) {
+        throw ApiError.badRequest('Offer end date must be after start date');
+      }
+
+      // Validar preço promocional
+      if (!promoPrice || promoPrice <= 0) {
+        throw ApiError.badRequest('Promotional price is required and must be positive when offer type is set');
+      }
+
+      if (salePrice && promoPrice >= salePrice) {
+        throw ApiError.badRequest('Promotional price must be less than sale price');
+      }
+
+      // Validar se a data de início não está muito no passado (mais de 1 dia)
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      if (offerStartDate < oneDayAgo) {
+        throw ApiError.badRequest('Offer start date cannot be more than 1 day in the past');
+      }
+    }
+  }
+
+  /**
    * Create new product
    */
   async createProduct(dto: CreateProductDto): Promise<Product> {
@@ -191,6 +235,15 @@ export class ProductsService {
     if (existingSku) {
       throw ApiError.conflict(`Product with SKU "${dto.sku}" already exists`);
     }
+
+    // Validate offer data
+    this.validateOfferData(
+      dto.offerType,
+      dto.offerStartDate,
+      dto.offerEndDate,
+      dto.promoPrice,
+      dto.salePrice
+    );
 
     // Generate and ensure unique slug
     const baseSlug = dto.slug || this.generateSlug(dto.name);
@@ -254,6 +307,22 @@ export class ProductsService {
         throw ApiError.conflict(`Product with SKU "${dto.sku}" already exists`);
       }
     }
+
+    // Validate offer data if being updated
+    // Merge with existing data to validate correctly
+    const offerType = dto.offerType !== undefined ? dto.offerType : existing.offerType;
+    const offerStartDate = dto.offerStartDate !== undefined ? dto.offerStartDate : existing.offerStartDate;
+    const offerEndDate = dto.offerEndDate !== undefined ? dto.offerEndDate : existing.offerEndDate;
+    const promoPrice = dto.promoPrice !== undefined ? dto.promoPrice : existing.promoPrice;
+    const salePrice = dto.salePrice !== undefined ? dto.salePrice : existing.salePrice;
+
+    this.validateOfferData(
+      offerType,
+      offerStartDate,
+      offerEndDate,
+      promoPrice,
+      salePrice
+    );
 
     // Handle slug update
     let slug = dto.slug;
