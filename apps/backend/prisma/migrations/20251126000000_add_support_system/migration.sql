@@ -98,6 +98,9 @@ CREATE INDEX "support_tickets_createdAt_idx" ON "support_tickets"("createdAt");
 CREATE INDEX "ticket_messages_ticketId_idx" ON "ticket_messages"("ticketId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "faq_categories_name_key" ON "faq_categories"("name");
+
+-- CreateIndex
 CREATE INDEX "faq_categories_order_idx" ON "faq_categories"("order");
 
 -- CreateIndex
