@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supportService, SupportTicket, CreateTicketDto, CreateMessageDto, RateTicketDto, TicketStatus, TicketCategory, SupportStats } from '../api/supportService';
 import { useToast } from './use-toast';
 
@@ -16,7 +16,7 @@ export const useSupport = () => {
     category?: TicketCategory;
     limit?: number;
     offset?: number;
-  }) => {
+  }, options?: { silent?: boolean }) => {
     try {
       setLoading(true);
       setError(null);
@@ -26,11 +26,14 @@ export const useSupport = () => {
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || 'Erro ao carregar tickets';
       setError(errorMsg);
-      toast({
-        title: 'Erro',
-        description: errorMsg,
-        variant: 'destructive',
-      });
+      // Não mostrar toast se for silent (chamada automática)
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -207,7 +210,7 @@ export const useSupport = () => {
   }, [currentTicket, toast]);
 
   // Carregar estatísticas
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (options?: { silent?: boolean }) => {
     try {
       setLoading(true);
       setError(null);
@@ -217,11 +220,19 @@ export const useSupport = () => {
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || 'Erro ao carregar estatísticas';
       setError(errorMsg);
+      // Não mostrar toast se for silent (chamada automática)
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      }
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   return {
     tickets,

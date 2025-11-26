@@ -19,7 +19,9 @@ export function TicketList({ onOpenTicket }: TicketListProps) {
 
   useEffect(() => {
     const filters = statusFilter !== 'ALL' ? { status: statusFilter } : undefined;
-    loadTickets(filters);
+    loadTickets(filters, { silent: true }).catch(() => {
+      // Silently fail - user might not be authenticated yet
+    });
   }, [statusFilter, loadTickets]);
 
   const filteredTickets = tickets.filter(ticket => {

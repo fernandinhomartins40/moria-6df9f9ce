@@ -31,7 +31,9 @@ export function SupportDashboard() {
   const [activeView, setActiveView] = useState<'tickets' | 'faq'>('tickets');
 
   useEffect(() => {
-    loadStats();
+    loadStats({ silent: true }).catch(() => {
+      // Silently fail - user might not be on support page yet
+    });
   }, [loadStats]);
 
   const handleOpenTicket = async (ticketId: string) => {
