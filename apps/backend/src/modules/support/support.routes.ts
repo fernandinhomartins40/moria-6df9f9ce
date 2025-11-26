@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { SupportController } from './support.controller.js';
 import { FAQController } from './faq.controller.js';
 import { SupportConfigController } from './support-config.controller.js';
@@ -28,21 +28,21 @@ router.get('/config', asyncHandler(supportConfigController.getSupportConfig));
 // ============================================================================
 
 // Tickets
-router.post('/tickets', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.createTicket(req, res)));
-router.get('/tickets', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.getCustomerTickets(req, res)));
-router.get('/tickets/:id', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.getTicketById(req, res)));
-router.patch('/tickets/:id', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.updateTicket(req, res)));
-router.delete('/tickets/:id', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.closeTicket(req, res)));
+router.post('/tickets', authenticateCustomer, asyncHandler(supportController.createTicket.bind(supportController)));
+router.get('/tickets', authenticateCustomer, asyncHandler(supportController.getCustomerTickets.bind(supportController)));
+router.get('/tickets/:id', authenticateCustomer, asyncHandler(supportController.getTicketById.bind(supportController)));
+router.patch('/tickets/:id', authenticateCustomer, asyncHandler(supportController.updateTicket.bind(supportController)));
+router.delete('/tickets/:id', authenticateCustomer, asyncHandler(supportController.closeTicket.bind(supportController)));
 
 // Mensagens
-router.post('/tickets/:id/messages', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.addMessage(req, res)));
-router.get('/tickets/:id/messages', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.getMessages(req, res)));
+router.post('/tickets/:id/messages', authenticateCustomer, asyncHandler(supportController.addMessage.bind(supportController)));
+router.get('/tickets/:id/messages', authenticateCustomer, asyncHandler(supportController.getMessages.bind(supportController)));
 
 // Avaliação
-router.post('/tickets/:id/rating', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.rateTicket(req, res)));
+router.post('/tickets/:id/rating', authenticateCustomer, asyncHandler(supportController.rateTicket.bind(supportController)));
 
 // Estatísticas
-router.get('/stats', authenticateCustomer, asyncHandler((req: Request, res: Response) => supportController.getCustomerStats(req, res)));
+router.get('/stats', authenticateCustomer, asyncHandler(supportController.getCustomerStats.bind(supportController)));
 
 // FAQ (autenticado - para marcar como útil)
 router.post('/faq/:id/helpful', authenticateCustomer, asyncHandler(faqController.markFAQHelpful));

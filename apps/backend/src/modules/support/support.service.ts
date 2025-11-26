@@ -257,7 +257,7 @@ export class SupportService {
     }
 
     if (ticket.status === 'CLOSED') {
-      throw ApiError.badRequest('Não é possível adicionar mensagens a um ticket fechado');
+      throw ApiError.badRequest('Ticket já está fechado');
     }
 
     const closed = await prisma.supportTicket.update({
@@ -288,11 +288,11 @@ export class SupportService {
     }
 
     if (ticket.status !== 'CLOSED' && ticket.status !== 'RESOLVED') {
-      throw ApiError.badRequest('Ticket já está fechado');
+      throw ApiError.badRequest('Só é possível avaliar tickets resolvidos ou fechados');
     }
 
     if (ticket.rating) {
-      throw ApiError.badRequest('Ticket já está fechado');
+      throw ApiError.badRequest('Este ticket já foi avaliado');
     }
 
     const rated = await prisma.supportTicket.update({
