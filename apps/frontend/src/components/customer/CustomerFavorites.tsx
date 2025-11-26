@@ -158,9 +158,9 @@ export function CustomerFavorites() {
 
     // Filter by availability
     if (filterAvailability === 'available') {
-      filtered = filtered.filter(p => p.isActive && p.stock > 0);
+      filtered = filtered.filter(p => p.status === 'ACTIVE' && p.stock > 0);
     } else if (filterAvailability === 'unavailable') {
-      filtered = filtered.filter(p => !p.isActive || p.stock === 0);
+      filtered = filtered.filter(p => p.status !== 'ACTIVE' || p.stock === 0);
     }
 
     // Filter by search term
@@ -222,7 +222,7 @@ export function CustomerFavorites() {
 
   const handleBulkAddToCart = () => {
     const selectedProducts = filteredAndSortedProducts.filter(p =>
-      selectedItems.has(p.id) && p.isActive && p.stock > 0
+      selectedItems.has(p.id) && p.status === 'ACTIVE' && p.stock > 0
     );
 
     if (selectedProducts.length === 0) {
@@ -733,7 +733,7 @@ export function CustomerFavorites() {
                     )}
 
                     {/* Stock Status - Center overlay if unavailable */}
-                    {(!product.isActive || product.stock === 0) && (
+                    {(product.status !== 'ACTIVE' || product.stock === 0) && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <Badge className="bg-gray-500 text-white text-lg px-4 py-2">
                           Indisponível
@@ -792,7 +792,7 @@ export function CustomerFavorites() {
                         )}
                       </div>
 
-                      {product.stock <= product.minStock && product.isActive && (
+                      {product.stock <= product.minStock && product.status === 'ACTIVE' && (
                         <Badge variant="outline" className="text-xs text-orange-600">
                           Estoque baixo ({product.stock} unidades)
                         </Badge>
@@ -803,10 +803,10 @@ export function CustomerFavorites() {
                         size="sm"
                         className="w-full"
                         onClick={() => handleAddToCart(product)}
-                        disabled={!product.isActive || product.stock === 0}
+                        disabled={product.status !== 'ACTIVE' || product.stock === 0}
                       >
                         <ShoppingCart className="h-4 w-4 mr-1" />
-                        {product.isActive && product.stock > 0
+                        {product.status === 'ACTIVE' && product.stock > 0
                           ? 'Adicionar ao Carrinho'
                           : 'Indisponível'}
                       </Button>
