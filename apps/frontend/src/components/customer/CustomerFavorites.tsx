@@ -22,9 +22,10 @@ import {
   Download,
   TrendingUp,
   Package,
-  Tag
+  Tag,
+  CheckCircle2
 } from "lucide-react";
-import { useToast } from "../../hooks/use-toast";
+import { toast } from "sonner";
 import type { Product } from "../../api/productService";
 import {
   Select,
@@ -53,7 +54,6 @@ export function CustomerFavorites() {
   const { isAuthenticated } = useAuth();
   const { addItem, openCart } = useCart();
   const { favorites, loading, error, fetchFavorites, clearError } = useFavoritesContext();
-  const { toast } = useToast();
 
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProductData[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -211,9 +211,10 @@ export function CustomerFavorites() {
       type: 'product'
     });
 
-    toast({
-      title: "Produto adicionado",
-      description: `${product.name} foi adicionado ao carrinho.`,
+    toast.success(`${product.name} adicionado ao carrinho`, {
+      description: `Preço: ${formatPrice(price)}`,
+      duration: 3000,
+      icon: <ShoppingCart className="h-5 w-5" />,
     });
 
     openCart();
@@ -223,6 +224,14 @@ export function CustomerFavorites() {
     const selectedProducts = filteredAndSortedProducts.filter(p =>
       selectedItems.has(p.id) && p.isActive && p.stock > 0
     );
+
+    if (selectedProducts.length === 0) {
+      toast.error('Nenhum produto disponível selecionado', {
+        description: 'Selecione produtos com estoque disponível',
+        duration: 3000,
+      });
+      return;
+    }
 
     selectedProducts.forEach(product => {
       const price = product.promoPrice || product.salePrice;
@@ -241,9 +250,10 @@ export function CustomerFavorites() {
       });
     });
 
-    toast({
-      title: "Produtos adicionados",
-      description: `${selectedProducts.length} produtos foram adicionados ao carrinho.`,
+    toast.success(`${selectedProducts.length} produtos adicionados ao carrinho`, {
+      description: 'Produtos disponíveis foram adicionados com sucesso',
+      duration: 3000,
+      icon: <CheckCircle2 className="h-5 w-5" />,
     });
 
     setSelectedItems(new Set());
@@ -259,18 +269,17 @@ export function CustomerFavorites() {
 
     try {
       await Promise.all(promises);
-      toast({
-        title: "Favoritos removidos",
+      toast.success('Favoritos removidos', {
         description: `${selectedItems.size} produtos foram removidos dos favoritos.`,
+        duration: 3000,
       });
       setSelectedItems(new Set());
       setShowBulkActions(false);
       await loadFavoritesData();
     } catch (err) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover alguns favoritos.",
-        variant: "destructive"
+      toast.error('Erro ao remover favoritos', {
+        description: 'Não foi possível remover alguns favoritos.',
+        duration: 3000,
       });
     }
   };
@@ -282,16 +291,15 @@ export function CustomerFavorites() {
 
     try {
       await favoriteService.clearAllFavorites();
-      toast({
-        title: "Favoritos limpos",
-        description: "Todos os favoritos foram removidos.",
+      toast.success('Favoritos limpos', {
+        description: 'Todos os favoritos foram removidos.',
+        duration: 3000,
       });
       await loadFavoritesData();
     } catch (err) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível limpar os favoritos.",
-        variant: "destructive"
+      toast.error('Erro ao limpar favoritos', {
+        description: 'Não foi possível limpar os favoritos.',
+        duration: 3000,
       });
     }
   };
@@ -320,9 +328,10 @@ export function CustomerFavorites() {
     a.click();
     window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Exportado",
-      description: "Lista de favoritos exportada com sucesso.",
+    toast.success('Lista exportada', {
+      description: 'Lista de favoritos exportada com sucesso.',
+      duration: 3000,
+      icon: <Download className="h-5 w-5" />,
     });
   };
 
@@ -342,9 +351,10 @@ export function CustomerFavorites() {
       }
     } else {
       navigator.clipboard.writeText(text);
-      toast({
-        title: "Copiado",
-        description: "Lista copiada para área de transferência.",
+      toast.success('Copiado', {
+        description: 'Lista copiada para área de transferência.',
+        duration: 3000,
+        icon: <Share2 className="h-5 w-5" />,
       });
     }
   };
@@ -689,6 +699,10 @@ export function CustomerFavorites() {
               const finalPrice = product.promoPrice || product.salePrice;
               const discount = hasPromo ? Math.round(((product.salePrice - product.promoPrice!) / product.salePrice) * 100) : 0;
               const isSelected = selectedItems.has(product.id);
+              // Extract first image from array or use placeholder
+              const imageUrl = product.images && Array.isArray(product.images) && product.images.length > 0
+                ? product.images[0]
+                : (typeof product.images === 'string' ? product.images : '/placeholder.svg');
 
               return (
                 <Card
@@ -697,36 +711,38 @@ export function CustomerFavorites() {
                 >
                   <div className="relative">
                     <img
-                      src={product.images || "/placeholder.svg"}
+                      src={imageUrl}
                       alt={product.name}
                       className="w-full h-48 object-cover"
                     />
 
-                    {/* Discount Badge */}
+                    {/* Selection Checkbox - Top Left */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelectItem(product.id)}
+                        className="bg-white shadow-md"
+                      />
+                    </div>
+
+                    {/* Discount Badge - Top Left (below checkbox if both exist) */}
                     {discount > 0 && (
-                      <Badge className="absolute top-2 left-2 bg-red-500 text-white font-bold">
+                      <Badge className="absolute top-12 left-2 bg-red-500 text-white font-bold">
                         -{discount}%
                       </Badge>
                     )}
 
-                    {/* Stock Status */}
-                    {!product.isActive && (
-                      <Badge className="absolute top-2 left-2 bg-gray-500 text-white">
-                        Indisponível
-                      </Badge>
+                    {/* Stock Status - Center overlay if unavailable */}
+                    {(!product.isActive || product.stock === 0) && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Badge className="bg-gray-500 text-white text-lg px-4 py-2">
+                          Indisponível
+                        </Badge>
+                      </div>
                     )}
 
-                    {/* Selection Checkbox */}
-                    <div className="absolute top-2 left-2">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleSelectItem(product.id)}
-                        className="bg-white"
-                      />
-                    </div>
-
-                    {/* Favorite Button */}
-                    <div className="absolute top-2 right-2">
+                    {/* Favorite Button - Top Right */}
+                    <div className="absolute top-2 right-2 z-10">
                       <FavoriteButton
                         productId={product.id}
                         productName={product.name}
