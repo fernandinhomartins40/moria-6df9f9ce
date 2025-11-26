@@ -64,7 +64,8 @@
       "Bash(xargs cat:*)",
       "Bash(git reset:*)",
       "Bash(timeout 30 bash:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(if exist \"c:\\Projetos Cursor\\moria-6df9f9ce\\FAVORITOS_README.md\" type \"c:\\Projetos Cursor\\moria-6df9f9ce\\FAVORITOS_README.md\" else echo File does not exist)"
     ],
     "deny": [],
     "ask": []

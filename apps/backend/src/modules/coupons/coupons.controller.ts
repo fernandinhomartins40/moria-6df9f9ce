@@ -239,4 +239,26 @@ export class CouponsController {
       next(error);
     }
   };
+
+  /**
+   * ✅ ETAPA 3.1: GET /coupons/customer-available
+   * Get coupons available for customer based on cart value
+   */
+  getCustomerAvailableCoupons = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const cartValue = parseFloat(req.query.cartValue as string) || 0;
+      const coupons = await this.couponsService.getCustomerAvailableCoupons(cartValue);
+
+      res.status(200).json({
+        success: true,
+        data: coupons,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

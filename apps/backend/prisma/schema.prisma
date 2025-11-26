@@ -556,10 +556,34 @@ model Coupon {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // ✅ ETAPA 3.2: Relação com histórico de uso
+  usageHistory CouponUsage[]
+
   @@index([code])
   @@index([expiresAt])
   @@index([isActive])
   @@map("coupons")
+}
+
+// ✅ ETAPA 3.2: Histórico de Uso de Cupons
+model CouponUsage {
+  id          String   @id @default(uuid())
+  couponId    String
+  customerId  String?  // Pode ser null para pedidos de convidados
+  orderId     String
+  discountAmount Decimal @db.Decimal(10, 2)
+  orderValue  Decimal  @db.Decimal(10, 2)
+
+  createdAt   DateTime @default(now())
+
+  // Relations
+  coupon      Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([customerId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("coupon_usage")
 }
 
 // Favoritos

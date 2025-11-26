@@ -28,6 +28,7 @@ import type { CartItem, Address } from "@moria/types";
 import guestOrderService from "../api/guestOrderService";
 import orderService from "../api/orderService";
 import addressService from "../api/addressService";
+import { CouponInput } from "./CouponInput";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -75,6 +76,12 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+
+  // ✅ ETAPA 1.1: Estado para cupom aplicado
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+  } | null>(null);
 
   // Pré-preencher dados do cliente logado
   useEffect(() => {
@@ -298,6 +305,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           }),
           paymentMethod: form.paymentMethod,
           source: 'WEB' as const,
+          couponCode: appliedCoupon?.code, // ✅ ETAPA 1.4: Incluir cupom
         };
 
         order = await orderService.createOrder(authenticatedOrderData);
@@ -327,6 +335,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
             };
           }),
           paymentMethod: form.paymentMethod,
+          couponCode: appliedCoupon?.code, // ✅ ETAPA 1.4: Incluir cupom
         };
 
         order = await guestOrderService.createGuestOrder(guestOrderData);
@@ -524,16 +533,51 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                 </div>
 
                 {hasProducts && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex justify-between items-center font-bold mb-2">
-                      <span>Total dos Produtos:</span>
-                      <span className="text-lg text-moria-orange">{formatPrice(totalPrice)}</span>
+                  <div className="border-t pt-4 mt-4 space-y-4">
+                    {/* ✅ ETAPA 1.2: Componente CouponInput */}
+                    <CouponInput
+                      orderTotal={totalPrice}
+                      appliedCoupon={appliedCoupon}
+                      onCouponApplied={(code, discount) => {
+                        setAppliedCoupon({ code, discountAmount: discount });
+                        toast.success(`Cupom ${code} aplicado com sucesso!`);
+                      }}
+                      onCouponRemoved={() => {
+                        setAppliedCoupon(null);
+                        toast.info('Cupom removido');
+                      }}
+                      disabled={isLoading || !hasProducts}
+                    />
+
+                    {/* ✅ ETAPA 1.3: Cálculo de total com desconto */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Subtotal dos Produtos:</span>
+                        <span>{formatPrice(totalPrice)}</span>
+                      </div>
+
+                      {appliedCoupon && (
+                        <div className="flex justify-between items-center text-sm text-green-600">
+                          <span>Desconto ({appliedCoupon.code}):</span>
+                          <span>-{formatPrice(appliedCoupon.discountAmount)}</span>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      <div className="flex justify-between items-center font-bold">
+                        <span>Total Final:</span>
+                        <span className="text-lg text-moria-orange">
+                          {formatPrice(appliedCoupon ? totalPrice - appliedCoupon.discountAmount : totalPrice)}
+                        </span>
+                      </div>
+
+                      {hasServices && (
+                        <p className="text-xs text-muted-foreground">
+                          * Serviços serão orçados separadamente
+                        </p>
+                      )}
                     </div>
-                    {hasServices && (
-                      <p className="text-xs text-muted-foreground">
-                        * Serviços serão orçados separadamente
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

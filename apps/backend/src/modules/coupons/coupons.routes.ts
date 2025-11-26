@@ -11,6 +11,7 @@ const couponsController = new CouponsController();
 router.post('/validate', AuthMiddleware.authenticate, couponsController.validateCoupon);
 router.get('/active', couponsController.getActiveCoupons);
 router.get('/active/count', couponsController.getActiveCouponCount);
+router.get('/customer-available', couponsController.getCustomerAvailableCoupons); // ✅ ETAPA 3.1: Novo endpoint
 
 // Admin routes (for creating/managing coupons)
 router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), couponsController.createCoupon);

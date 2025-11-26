@@ -1,16 +1,36 @@
-import { useState } from "react";
-import { ShoppingCart, User, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ShoppingCart, User, Menu, X, Gift } from "lucide-react"; // ✅ ETAPA 2.2: Importar ícone Gift
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge"; // ✅ ETAPA 2.2: Importar Badge
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginDialog } from "./customer/LoginDialog";
 import { Link } from "react-router-dom";
+import couponService from "../api/couponService"; // ✅ ETAPA 2.2: Importar service
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [activeCouponCount, setActiveCouponCount] = useState(0); // ✅ ETAPA 2.2: Estado para contagem
   const { totalItems, openCart } = useCart();
   const { isAuthenticated, customer } = useAuth();
+
+  // ✅ ETAPA 2.2: Buscar contagem de cupons ativos
+  useEffect(() => {
+    const loadCouponCount = async () => {
+      try {
+        const count = await couponService.getActiveCouponCount();
+        setActiveCouponCount(count);
+      } catch (error) {
+        console.error('Erro ao carregar contagem de cupons:', error);
+      }
+    };
+
+    loadCouponCount();
+    // Atualizar a cada 5 minutos
+    const interval = setInterval(loadCouponCount, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const menuItems = [
     { name: "Início", href: "#inicio", isLink: false },
@@ -59,6 +79,26 @@ export function Header() {
 
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* ✅ ETAPA 2.2: Badge de cupons disponíveis */}
+            {activeCouponCount > 0 && (
+              <Button
+                variant="ghost"
+                className="hover:text-moria-orange flex items-center gap-2 px-3"
+                onClick={() => {
+                  if (isAuthenticated) {
+                    window.location.href = '/customer?tab=coupons';
+                  } else {
+                    setShowLoginDialog(true);
+                  }
+                }}
+              >
+                <Gift className="h-5 w-5" />
+                <Badge variant="secondary" className="bg-moria-orange text-white hover:bg-moria-orange/90">
+                  {activeCouponCount} {activeCouponCount === 1 ? 'cupom' : 'cupons'}
+                </Badge>
+              </Button>
+            )}
+
             {isAuthenticated && customer ? (
               <Button
                 variant="ghost"
@@ -81,9 +121,9 @@ export function Header() {
                 <User className="h-5 w-5" />
               </Button>
             )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="hover:text-moria-orange relative"
               onClick={openCart}
             >

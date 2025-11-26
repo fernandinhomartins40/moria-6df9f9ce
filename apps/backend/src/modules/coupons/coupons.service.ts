@@ -347,4 +347,32 @@ export class CouponsService {
       },
     });
   }
+
+  /**
+   * ✅ ETAPA 3.1: Get coupons available for customer based on cart value
+   */
+  async getCustomerAvailableCoupons(cartValue: number): Promise<Coupon[]> {
+    const now = new Date();
+
+    const allActiveCoupons = await prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        expiresAt: { gte: now },
+        OR: [
+          { minValue: null },
+          { minValue: { lte: cartValue } },
+        ],
+      },
+      orderBy: [
+        { discountValue: 'desc' }, // Maiores descontos primeiro
+        { createdAt: 'desc' },
+      ],
+    });
+
+    // Filtrar cupons que ainda têm usos disponíveis
+    return allActiveCoupons.filter(coupon => {
+      if (!coupon.usageLimit) return true;
+      return coupon.usedCount < coupon.usageLimit;
+    });
+  }
 }
