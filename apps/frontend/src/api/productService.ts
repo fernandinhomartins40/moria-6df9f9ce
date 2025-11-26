@@ -153,6 +153,13 @@ class ProductService {
     });
     return response.data;
   }
+
+  async getProductsByIds(productIds: string[]): Promise<Product[]> {
+    const response = await apiClient.post<{ success: boolean; data: Product[] }>('/products/bulk', {
+      productIds
+    });
+    return response.data.data;
+  }
 }
 
 export default new ProductService();

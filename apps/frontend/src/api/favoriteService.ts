@@ -45,13 +45,13 @@ class FavoriteService {
   }
 
   async getFavoriteProductIds(): Promise<string[]> {
-    const response = await apiClient.get<string[]>('/favorites/product-ids');
-    return response.data;
+    const response = await apiClient.get<StandardResponse<string[]>>('/favorites/product-ids');
+    return response.data.data;
   }
 
   async addToFavorites(productId: string): Promise<Favorite> {
-    const response = await apiClient.post<Favorite>('/favorites', { productId });
-    return response.data;
+    const response = await apiClient.post<StandardResponse<Favorite>>('/favorites', { productId });
+    return response.data.data;
   }
 
   async removeFromFavorites(productId: string): Promise<void> {
@@ -64,25 +64,25 @@ class FavoriteService {
 
   async isFavorite(productId: string): Promise<boolean> {
     try {
-      const response = await apiClient.get(`/favorites/check/${productId}`);
-      return response.data.isFavorite;
+      const response = await apiClient.get<StandardResponse<{ isFavorited: boolean }>>(`/favorites/check/${productId}`);
+      return response.data.data.isFavorited;
     } catch (error) {
       return false;
     }
   }
 
   async getFavoriteById(id: string): Promise<Favorite> {
-    const response = await apiClient.get<Favorite>(`/favorites/${id}`);
-    return response.data;
+    const response = await apiClient.get<StandardResponse<Favorite>>(`/favorites/${id}`);
+    return response.data.data;
   }
 
   async getFavoriteCount(): Promise<number> {
-    const response = await apiClient.get<{ count: number }>('/favorites/count');
-    return response.data.count;
+    const response = await apiClient.get<StandardResponse<{ count: number }>>('/favorites/count');
+    return response.data.data.count;
   }
 
   async getFavoriteStats(): Promise<any> {
-    const response = await apiClient.get('/favorites/stats');
+    const response = await apiClient.get<StandardResponse<any>>('/favorites/stats');
     return response.data.data;
   }
 

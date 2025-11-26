@@ -110,24 +110,29 @@ export function CustomerFavorites() {
     setProductError(null);
 
     try {
-      const productPromises = favorites.map(async (favorite) => {
-        try {
-          const product = await productService.getProductById(favorite.productId);
-          return {
-            ...product,
-            favoriteId: favorite.id,
-            addedAt: favorite.createdAt
-          } as FavoriteProductData;
-        } catch (err) {
-          console.error(`Error loading product ${favorite.productId}:`, err);
-          return null;
-        }
-      });
+      // Otimização: Buscar todos os produtos de uma vez usando bulk endpoint
+      const productIds = favorites.map(f => f.productId);
 
-      const products = await Promise.all(productPromises);
-      const validProducts = products.filter((p): p is FavoriteProductData => p !== null);
+      if (productIds.length === 0) {
+        setFavoriteProducts([]);
+        return;
+      }
 
-      setFavoriteProducts(validProducts);
+      const products = await productService.getProductsByIds(productIds);
+
+      // Mapear produtos com dados do favorito
+      const productsWithFavoriteData = favorites.map(favorite => {
+        const product = products.find(p => p.id === favorite.productId);
+        if (!product) return null;
+
+        return {
+          ...product,
+          favoriteId: favorite.id,
+          addedAt: favorite.createdAt
+        } as FavoriteProductData;
+      }).filter((p): p is FavoriteProductData => p !== null);
+
+      setFavoriteProducts(productsWithFavoriteData);
     } catch (err) {
       setProductError("Erro ao carregar dados dos produtos");
       console.error('Error loading product data:', err);
@@ -399,18 +404,45 @@ export function CustomerFavorites() {
           <p className="text-muted-foreground">Produtos que você salvou para depois</p>
         </div>
 
+        {/* Loading Header Actions */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+
+        {/* Loading Filters */}
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-10 flex-1 min-w-[200px]" />
+          <Skeleton className="h-10 w-[180px]" />
+          <Skeleton className="h-10 w-[180px]" />
+          <Skeleton className="h-10 w-[180px]" />
+        </div>
+
+        {/* Loading Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Card key={index} className="overflow-hidden">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Card key={index} className="overflow-hidden animate-pulse">
               <Skeleton className="w-full h-48" />
               <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-8 w-full" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="space-y-2 pt-2">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Loading Summary */}
+        <div className="text-center">
+          <Skeleton className="h-4 w-48 mx-auto" />
         </div>
       </div>
     );

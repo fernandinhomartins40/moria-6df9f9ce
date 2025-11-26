@@ -14,6 +14,7 @@ router.get('/offers/active', productsController.getActiveOffers);
 router.get('/slug/:slug', productsController.getProductBySlug);
 router.get('/sku/:sku', productsController.getProductBySku);
 router.get('/category/:category', productsController.getProductsByCategory);
+router.post('/bulk', productsController.getProductsByIds); // Bulk fetch products by IDs
 router.get('/:id', productsController.getProductById);
 
 // Protected routes (admin only)

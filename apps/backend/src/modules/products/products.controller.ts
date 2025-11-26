@@ -306,4 +306,26 @@ export class ProductsController {
       next(error);
     }
   };
+
+  /**
+   * POST /products/bulk
+   * Get multiple products by IDs
+   */
+  getProductsByIds = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const schema = z.object({
+        productIds: z.array(z.string().uuid()).min(1).max(100),
+      });
+
+      const { productIds } = schema.parse(req.body);
+      const products = await this.productsService.getProductsByIds(productIds);
+
+      res.status(200).json({
+        success: true,
+        data: products,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

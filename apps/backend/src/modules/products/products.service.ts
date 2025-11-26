@@ -445,4 +445,28 @@ export class ProductsService {
 
     return products;
   }
+
+  /**
+   * Get multiple products by IDs (bulk fetch)
+   */
+  async getProductsByIds(productIds: string[]): Promise<Product[]> {
+    if (!productIds || productIds.length === 0) {
+      return [];
+    }
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      include: {
+        vehicleCompatibility: true,
+      },
+    });
+
+    logger.info(`Fetched ${products.length} products from ${productIds.length} IDs`);
+
+    return products;
+  }
 }

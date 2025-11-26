@@ -2,15 +2,19 @@ import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Star, Plus, Heart, Loader2, AlertCircle, Package } from "lucide-react";
+import { Star, Plus, Loader2, AlertCircle, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useFavoritesContext } from "../contexts/FavoritesContext";
+import { FavoriteButton } from "./FavoriteButton";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import { getImageUrl } from "@/utils/imageUrl";
 
 export function Products() {
   const { addItem, openCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const { favoriteProductIds } = useFavoritesContext();
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [categories, setCategories] = useState<string[]>(["Todos"]);
   const [loading, setLoading] = useState(true);
@@ -70,13 +74,6 @@ export function Products() {
     }
   };
 
-  const toggleFavorite = (productId: string) => {
-    setFavorites(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-  };
 
   // Calcular preço de exibição
   const getDisplayPrice = (product: ApiProduct) => {
@@ -212,21 +209,14 @@ export function Products() {
                       </Badge>
                     )}
 
-                    {/* Favorite Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-                      onClick={() => toggleFavorite(product.id)}
-                    >
-                      <Heart
-                        className={`h-4 w-4 ${
-                          favorites.includes(product.id)
-                            ? 'text-red-500 fill-red-500'
-                            : 'text-gray-600'
-                        }`}
+                    {/* Favorite Button - Integrado com FavoritesContext */}
+                    <div className="absolute top-2 right-2">
+                      <FavoriteButton
+                        productId={product.id}
+                        productName={product.name}
+                        className="bg-white/80 hover:bg-white"
                       />
-                    </Button>
+                    </div>
 
                     {/* Stock Status */}
                     {!inStock && (

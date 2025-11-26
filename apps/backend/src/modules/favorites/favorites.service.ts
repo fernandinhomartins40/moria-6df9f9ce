@@ -127,7 +127,6 @@ export class FavoritesService {
         orderBy: { createdAt: 'desc' },
         skip,
         take: validLimit,
-        ...(includeProduct && { include: { customer: false } }),
       }),
       prisma.favorite.count({ where }),
     ]);
