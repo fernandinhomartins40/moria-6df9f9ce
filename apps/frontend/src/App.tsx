@@ -23,35 +23,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AdminAuthProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              <RevisionsProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/customer" element={<CustomerPanel />} />
-                    <Route path="/my-account" element={<MyAccount />} />
-                    <Route path="/store-panel" element={<StorePanel />} />
-                    <Route path="/mechanic-panel" element={<MechanicPanelPage />} />
-                    <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
-                    <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </RevisionsProvider>
-          </CartProvider>
-        </FavoritesProvider>
-        </AdminAuthProvider>
-      </AuthProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                <RevisionsProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/customer" element={<CustomerPanel />} />
+                      <Route path="/my-account" element={<MyAccount />} />
+                      <Route path="/store-panel" element={<StorePanel />} />
+                      <Route path="/mechanic-panel" element={<MechanicPanelPage />} />
+                      <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
+                      <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </TooltipProvider>
+                </RevisionsProvider>
+              </CartProvider>
+            </FavoritesProvider>
+          </AdminAuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   </ErrorBoundary>
 );

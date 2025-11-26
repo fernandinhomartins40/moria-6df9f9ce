@@ -26,6 +26,15 @@ const CART_STORAGE_KEY = 'moria_cart';
 
 // Carregar carrinho do localStorage
 const loadCartFromStorage = (): CartState => {
+  // Check if localStorage is available (browser environment)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return {
+      items: [],
+      isOpen: false,
+      appliedCoupon: null,
+    };
+  }
+
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
@@ -45,8 +54,6 @@ const loadCartFromStorage = (): CartState => {
     appliedCoupon: null,
   };
 };
-
-const initialState: CartState = loadCartFromStorage();
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -154,7 +161,8 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+  // Use lazy initialization to avoid accessing localStorage during module load
+  const [state, dispatch] = useReducer(cartReducer, undefined, loadCartFromStorage);
   const location = useLocation();
 
   // Fechar carrinho ao mudar de rota
@@ -166,6 +174,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Salvar no localStorage sempre que items ou appliedCoupon mudar
   useEffect(() => {
+    // Only save if localStorage is available
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
         items: state.items,
