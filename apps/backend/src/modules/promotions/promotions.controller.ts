@@ -267,4 +267,48 @@ export class PromotionsController {
       next(error);
     }
   };
+
+  /**
+   * POST /promotions/calculate
+   * Calculate applicable promotions for cart
+   */
+  calculatePromotions = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { items, totalAmount } = req.body;
+      const customerId = req.user?.customerId;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Cart items are required',
+        });
+        return;
+      }
+
+      if (!totalAmount || totalAmount <= 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Total amount must be greater than 0',
+        });
+        return;
+      }
+
+      const result = await this.promotionsService.calculatePromotions({
+        items,
+        customerId,
+        totalAmount,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

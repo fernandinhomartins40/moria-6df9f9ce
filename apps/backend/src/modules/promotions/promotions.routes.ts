@@ -9,6 +9,7 @@ const promotionsController = new PromotionsController();
 // Public routes
 router.get('/active', promotionsController.getActivePromotions);
 router.get('/code/:code', promotionsController.getPromotionByCode);
+router.post('/calculate', promotionsController.calculatePromotions);
 
 // Admin routes (for creating/managing promotions)
 router.post('/', AdminAuthMiddleware.authenticate, AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.createPromotion);

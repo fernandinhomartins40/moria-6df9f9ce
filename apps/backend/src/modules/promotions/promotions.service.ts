@@ -404,4 +404,170 @@ export class PromotionsService {
       daysRemaining: Math.max(0, daysRemaining),
     };
   }
+
+  /**
+   * Calculate applicable promotions for cart
+   */
+  async calculatePromotions(cartData: {
+    items: Array<{
+      productId?: string;
+      serviceId?: string;
+      quantity: number;
+      price: number;
+      category?: string;
+    }>;
+    customerId?: string;
+    totalAmount: number;
+  }): Promise<{
+    applicablePromotions: Array<{
+      promotionId: string;
+      promotionName: string;
+      promotionType: string;
+      discountAmount: number;
+      originalAmount: number;
+      finalAmount: number;
+      affectedItems: string[];
+      description: string;
+    }>;
+    totalDiscount: number;
+    finalTotal: number;
+  }> {
+    const now = new Date();
+
+    // Get active promotions
+    const promotions = await prisma.promotion.findMany({
+      where: {
+        isActive: true,
+        isDraft: false,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: { priority: 'desc' },
+    });
+
+    // Filter by customer segment if customerId provided
+    let eligiblePromotions = promotions;
+    if (cartData.customerId) {
+      const customer = await prisma.customer.findUnique({
+        where: { id: cartData.customerId },
+      });
+
+      if (customer) {
+        eligiblePromotions = promotions.filter((promo) => {
+          const segments = promo.customerSegments as string[];
+          return (
+            segments.includes('ALL') ||
+            segments.includes(customer.level) ||
+            (segments.includes('NEW_CUSTOMERS') && customer.totalOrders === 0) ||
+            (segments.includes('RETURNING_CUSTOMERS') && customer.totalOrders > 0)
+          );
+        });
+      }
+    }
+
+    const applicablePromotions: Array<{
+      promotionId: string;
+      promotionName: string;
+      promotionType: string;
+      discountAmount: number;
+      originalAmount: number;
+      finalAmount: number;
+      affectedItems: string[];
+      description: string;
+    }> = [];
+
+    let currentTotal = cartData.totalAmount;
+
+    for (const promotion of eligiblePromotions) {
+      // Check usage limit
+      if (promotion.usageLimit && promotion.usedCount >= promotion.usageLimit) {
+        continue;
+      }
+
+      // Check minimum value rule
+      const rules = promotion.rules as any;
+      if (rules.minPurchaseAmount && cartData.totalAmount < rules.minPurchaseAmount) {
+        continue;
+      }
+
+      // Check if promotion applies to cart items
+      const targetProductIds = promotion.targetProductIds as string[] | null;
+      const targetCategories = promotion.targetCategories as string[] | null;
+      const target = promotion.target as string;
+
+      let isApplicable = false;
+      const affectedItems: string[] = [];
+
+      if (target === 'ALL_PRODUCTS') {
+        isApplicable = true;
+        affectedItems.push(...cartData.items.map(item => item.productId || item.serviceId || ''));
+      } else if (target === 'SPECIFIC_PRODUCTS' && targetProductIds && targetProductIds.length > 0) {
+        const matchingItems = cartData.items.filter(item =>
+          item.productId && targetProductIds.includes(item.productId)
+        );
+        if (matchingItems.length > 0) {
+          isApplicable = true;
+          affectedItems.push(...matchingItems.map(item => item.productId!));
+        }
+      } else if (target === 'CATEGORY' && targetCategories && targetCategories.length > 0) {
+        const matchingItems = cartData.items.filter(item =>
+          item.category && targetCategories.includes(item.category)
+        );
+        if (matchingItems.length > 0) {
+          isApplicable = true;
+          affectedItems.push(...matchingItems.map(item => item.productId || item.serviceId || ''));
+        }
+      }
+
+      if (!isApplicable) {
+        continue;
+      }
+
+      // Calculate discount
+      const rewards = promotion.rewards as any;
+      let discountAmount = 0;
+
+      if (rewards?.primary?.type === 'PERCENTAGE') {
+        discountAmount = (currentTotal * rewards.primary.value) / 100;
+
+        // Apply max discount if set
+        if (rewards.primary.maxAmount && discountAmount > rewards.primary.maxAmount) {
+          discountAmount = rewards.primary.maxAmount;
+        }
+      } else if (rewards?.primary?.type === 'FIXED') {
+        discountAmount = Math.min(rewards.primary.value, currentTotal);
+      }
+
+      if (discountAmount > 0) {
+        const finalAmount = currentTotal - discountAmount;
+
+        applicablePromotions.push({
+          promotionId: promotion.id,
+          promotionName: promotion.name,
+          promotionType: promotion.type,
+          discountAmount: Math.round(discountAmount * 100) / 100,
+          originalAmount: currentTotal,
+          finalAmount: Math.round(finalAmount * 100) / 100,
+          affectedItems,
+          description: promotion.shortDescription || promotion.description,
+        });
+
+        // If promotion can't combine with others, stop here
+        if (!promotion.canCombineWithOthers) {
+          currentTotal = finalAmount;
+          break;
+        }
+
+        currentTotal = finalAmount;
+      }
+    }
+
+    const totalDiscount = cartData.totalAmount - currentTotal;
+
+    return {
+      applicablePromotions,
+      totalDiscount: Math.round(totalDiscount * 100) / 100,
+      finalTotal: Math.round(currentTotal * 100) / 100,
+    };
+  }
 }

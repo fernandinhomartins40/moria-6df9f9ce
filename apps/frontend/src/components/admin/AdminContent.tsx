@@ -46,6 +46,7 @@ import { NotificationCenter } from "./NotificationCenter";
 import { CreateOrderModal } from "./CreateOrderModal";
 import { CreateQuoteModal } from "./CreateQuoteModal";
 import AdminUsersSection from "./AdminUsersSection";
+import { PromotionsManagement } from "./PromotionsManagement";
 import adminService from "@/api/adminService";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import serviceService from "@/api/serviceService";
@@ -2599,7 +2600,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       case 'coupons':
         return renderCoupons();
       case 'promotions':
-        return renderPromotions();
+        return <PromotionsManagement />;
       case 'reports':
         return renderReports();
       case 'users':

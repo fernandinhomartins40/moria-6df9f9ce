@@ -21,7 +21,8 @@ import {
   Home,
   Search,
   MapPin,
-  Plus
+  Plus,
+  Gift
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CartItem, Address } from "@moria/types";
@@ -52,7 +53,7 @@ interface CheckoutForm {
 }
 
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
-  const { items, totalPrice, clearCart, closeCart } = useCart();
+  const { items, totalPrice, clearCart, closeCart, autoPromotions, promotionDiscount } = useCart();
   const { customer, isAuthenticated } = useAuth();
 
   const [form, setForm] = useState<CheckoutForm>({
@@ -308,6 +309,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           paymentMethod: form.paymentMethod,
           source: 'WEB' as const,
           couponCode: appliedCoupon?.code, // ✅ ETAPA 1.4: Incluir cupom
+          appliedPromotions: autoPromotions.map(promo => promo.promotionId), // ✅ ETAPA 2.4: Incluir promoções aplicadas
         };
 
         order = await orderService.createOrder(authenticatedOrderData);
@@ -340,6 +342,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
           }),
           paymentMethod: form.paymentMethod,
           couponCode: appliedCoupon?.code, // ✅ ETAPA 1.4: Incluir cupom
+          appliedPromotions: autoPromotions.map(promo => promo.promotionId), // ✅ ETAPA 2.4: Incluir promoções aplicadas
         };
 
         order = await guestOrderService.createGuestOrder(guestOrderData);
@@ -560,10 +563,30 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                         <span>{formatPrice(totalPrice)}</span>
                       </div>
 
+                      {/* Promoções automáticas */}
+                      {autoPromotions && autoPromotions.length > 0 && (
+                        <div className="space-y-1 bg-green-50 border border-green-200 rounded-lg p-2">
+                          <div className="flex items-center gap-1 text-xs font-semibold text-green-700">
+                            <Gift className="h-3 w-3" />
+                            <span>Promoções Aplicadas:</span>
+                          </div>
+                          {autoPromotions.map((promo, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-xs text-green-700">
+                              <span className="flex-1">• {promo.promotionName}</span>
+                              <span className="font-semibold">-{formatPrice(promo.discountAmount)}</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center text-sm font-bold text-green-600 pt-1 border-t border-green-300">
+                            <span>Desconto Total (Promoções):</span>
+                            <span>-{formatPrice(promotionDiscount)}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {appliedCoupon && (
-                        <div className="flex justify-between items-center text-sm text-green-600">
-                          <span>Desconto ({appliedCoupon.code}):</span>
-                          <span>-{formatPrice(appliedCoupon.discountAmount)}</span>
+                        <div className="flex justify-between items-center text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                          <span>Cupom ({appliedCoupon.code}):</span>
+                          <span className="font-semibold">-{formatPrice(appliedCoupon.discountAmount)}</span>
                         </div>
                       )}
 
@@ -572,9 +595,15 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
                       <div className="flex justify-between items-center font-bold">
                         <span>Total Final:</span>
                         <span className="text-lg text-moria-orange">
-                          {formatPrice(appliedCoupon ? totalPrice - appliedCoupon.discountAmount : totalPrice)}
+                          {formatPrice(totalPrice - promotionDiscount - (appliedCoupon?.discountAmount || 0))}
                         </span>
                       </div>
+
+                      {(promotionDiscount > 0 || appliedCoupon) && (
+                        <p className="text-xs text-green-600 font-medium">
+                          🎉 Você economizou {formatPrice(promotionDiscount + (appliedCoupon?.discountAmount || 0))}!
+                        </p>
+                      )}
 
                       {hasServices && (
                         <p className="text-xs text-muted-foreground">

@@ -313,10 +313,19 @@ export function Promotions() {
             e os melhores preços do mercado.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero" size="lg">
+            <Button
+              variant="hero"
+              size="lg"
+              onClick={() => window.location.href = '/promocoes'}
+            >
               Ver Todas as Promoções
             </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-moria-black">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-white text-white hover:bg-white hover:text-moria-black"
+              onClick={() => window.open('https://api.whatsapp.com/send?phone=5511999999999&text=Olá! Gostaria de saber mais sobre as promoções.', '_blank')}
+            >
               Falar com Vendedor
             </Button>
           </div>
