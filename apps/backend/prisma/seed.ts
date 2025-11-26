@@ -1,5 +1,6 @@
 import { PrismaClient, CustomerStatus, CustomerLevel, ProductStatus, ServiceStatus, OrderStatus, OrderSource, OrderItemType, RevisionStatus, AddressType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { seedFAQ } from './seeds/faq-seed.js';
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,10 @@ async function main() {
 
   // Clear existing data (in reverse order of dependencies)
   console.log('🗑️  Clearing existing data...');
+  await prisma.ticketMessage.deleteMany();
+  await prisma.supportTicket.deleteMany();
+  await prisma.fAQItem.deleteMany();
+  await prisma.fAQCategory.deleteMany();
   await prisma.revision.deleteMany();
   await prisma.customerVehicle.deleteMany();
   await prisma.checklistItem.deleteMany();
@@ -1545,6 +1550,11 @@ async function seedChecklistData() {
   }
 
   console.log('✅ Checklist data seeded successfully!');
+
+  // =========================================================================
+  // FAQ
+  // =========================================================================
+  await seedFAQ();
 }
 
 main()

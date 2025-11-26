@@ -102,3 +102,6 @@ export class AuthMiddleware {
     };
   }
 }
+
+// Export authenticateCustomer alias
+export const authenticateCustomer = AuthMiddleware.authenticate;

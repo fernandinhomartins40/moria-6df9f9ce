@@ -108,6 +108,34 @@ enum NotificationRecipientType {
   CUSTOMER
 }
 
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  WAITING_SUPPORT
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  ORDER_ISSUE
+  PRODUCT_QUESTION
+  PAYMENT_ISSUE
+  DELIVERY_ISSUE
+  REVISION_QUESTION
+  TECHNICAL_SUPPORT
+  SUGGESTION
+  COMPLAINT
+  OTHER
+}
+
 // ============================================================================
 // MODELS - FASE 1
 // ============================================================================
@@ -130,6 +158,7 @@ model Admin {
   // Relations
   assignedRevisions Revision[]
   auditLogs        AuditLog[]
+  assignedTickets  SupportTicket[]
 
   @@index([email])
   @@index([role])
@@ -179,6 +208,7 @@ model Customer {
   favorites Favorite[]
   vehicles  CustomerVehicle[]
   revisions Revision[]
+  supportTickets SupportTicket[]
 
   @@index([email])
   @@index([cpf])
@@ -741,4 +771,117 @@ model Notification {
   @@index([recipientId, recipientType, read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ============================================================================
+// MODELS - FASE 5: SUPORTE E FAQ
+// ============================================================================
+
+// Tickets de Suporte
+model SupportTicket {
+  id          String         @id @default(uuid())
+  customerId  String
+  subject     String
+  category    TicketCategory
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(OPEN)
+
+  // Contexto
+  orderId     String?
+  productId   String?
+  revisionId  String?
+
+  // Atendimento
+  assignedToId String?
+  assignedAt   DateTime?
+
+  // Timestamps
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  resolvedAt   DateTime?
+  closedAt     DateTime?
+
+  // Avaliação (após fechamento)
+  rating       Int?
+  feedback     String?       @db.Text
+
+  // Relations
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  assignedTo   Admin?        @relation(fields: [assignedToId], references: [id])
+  messages     TicketMessage[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
+// Mensagens do Ticket
+model TicketMessage {
+  id         String   @id @default(uuid())
+  ticketId   String
+  senderId   String
+  senderType String
+  message    String   @db.Text
+
+  // Anexos
+  attachments Json?
+
+  // Sistema
+  isInternal Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+
+  // Relations
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_messages")
+}
+
+// Categorias FAQ
+model FAQCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  order       Int
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  items       FAQItem[]
+
+  @@index([order])
+  @@map("faq_categories")
+}
+
+// Itens FAQ
+model FAQItem {
+  id          String      @id @default(uuid())
+  categoryId  String
+  question    String
+  answer      String      @db.Text
+  order       Int
+  views       Int         @default(0)
+  helpfulYes  Int         @default(0)
+  helpfulNo   Int         @default(0)
+  isActive    Boolean     @default(true)
+
+  // SEO
+  keywords    Json?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  category    FAQCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([order])
+  @@map("faq_items")
 }
