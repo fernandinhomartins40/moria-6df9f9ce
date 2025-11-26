@@ -295,7 +295,9 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
         const authenticatedOrderData = {
           addressId: addressId!,
           items: items.map(item => {
-            const isService = item.type === 'service';
+            // Normalização defensiva: assume 'product' se type não estiver definido
+            const itemType = item.type || 'product';
+            const isService = itemType === 'service';
             return {
               productId: !isService ? item.id : undefined,
               serviceId: isService ? item.id : undefined,
@@ -326,7 +328,9 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
             type: 'HOME' as const,
           },
           items: items.map(item => {
-            const isService = item.type === 'service';
+            // Normalização defensiva: assume 'product' se type não estiver definido
+            const itemType = item.type || 'product';
+            const isService = itemType === 'service';
             return {
               productId: !isService ? item.id : undefined,
               serviceId: isService ? item.id : undefined,

@@ -284,7 +284,8 @@ export function Products() {
                           name: product.name,
                           price: Number(displayPrice),
                           image: imageUrl,
-                          category: product.category
+                          category: product.category,
+                          type: 'product'
                         });
                         openCart();
                       }}

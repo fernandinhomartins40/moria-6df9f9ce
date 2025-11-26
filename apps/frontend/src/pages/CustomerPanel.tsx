@@ -7,7 +7,8 @@ import { CustomerOrders } from "../components/customer/CustomerOrders";
 import { CustomerFavorites } from "../components/customer/CustomerFavorites";
 import { CustomerRevisions } from "../components/customer/CustomerRevisions";
 import { CustomerVehicles } from "../components/customer/CustomerVehicles";
-import { CustomerCoupons } from "../components/customer/CustomerCoupons"; // ✅ ETAPA 2.1: Importar novo componente
+import { CustomerCoupons } from "../components/customer/CustomerCoupons";
+import { CartDrawer } from "../components/CartDrawer";
 import "../styles/cliente.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -166,8 +167,13 @@ export default function CustomerPanel() {
   };
 
   return (
-    <CustomerLayout currentTab={currentTab} onTabChange={setCurrentTab}>
-      {renderTabContent()}
-    </CustomerLayout>
+    <>
+      <CustomerLayout currentTab={currentTab} onTabChange={setCurrentTab}>
+        {renderTabContent()}
+      </CustomerLayout>
+
+      {/* CartDrawer disponível em todo o painel do cliente */}
+      <CartDrawer />
+    </>
   );
 }

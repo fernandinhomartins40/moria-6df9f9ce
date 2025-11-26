@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useCart } from "../../contexts/CartContext";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
@@ -19,7 +20,8 @@ import {
   TrendingUp,
   Calendar,
   ClipboardCheck,
-  Car
+  Car,
+  ShoppingCart
 } from "lucide-react";
 
 interface CustomerLayoutProps {
@@ -30,6 +32,7 @@ interface CustomerLayoutProps {
 
 export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLayoutProps) {
   const { customer, logout } = useAuth();
+  const { totalItems, openCart } = useCart();
 
   if (!customer) return null;
 
@@ -78,6 +81,30 @@ export function CustomerLayout({ children, currentTab, onTabChange }: CustomerLa
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header com carrinho */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-800">Painel do Cliente</h1>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openCart}
+              className="relative hover:text-moria-orange"
+              title="Ver carrinho"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-moria-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}

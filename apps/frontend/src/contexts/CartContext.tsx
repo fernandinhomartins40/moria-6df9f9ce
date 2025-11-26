@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer, ReactNode } from "react";
+import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import type { CartItem, CouponInfo } from "@moria/types";
 
 // Re-export for backward compatibility
@@ -21,11 +22,31 @@ type CartAction =
   | { type: 'APPLY_COUPON'; payload: CouponInfo }
   | { type: 'REMOVE_COUPON' };
 
-const initialState: CartState = {
-  items: [],
-  isOpen: false,
-  appliedCoupon: null,
+const CART_STORAGE_KEY = 'moria_cart';
+
+// Carregar carrinho do localStorage
+const loadCartFromStorage = (): CartState => {
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        items: parsed.items || [],
+        isOpen: false, // Sempre começa fechado
+        appliedCoupon: parsed.appliedCoupon || null,
+      };
+    }
+  } catch (error) {
+    console.error('Error loading cart from storage:', error);
+  }
+  return {
+    items: [],
+    isOpen: false,
+    appliedCoupon: null,
+  };
 };
+
+const initialState: CartState = loadCartFromStorage();
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -134,6 +155,26 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const location = useLocation();
+
+  // Fechar carrinho ao mudar de rota
+  useEffect(() => {
+    if (state.isOpen) {
+      dispatch({ type: 'CLOSE_CART' });
+    }
+  }, [location.pathname]);
+
+  // Salvar no localStorage sempre que items ou appliedCoupon mudar
+  useEffect(() => {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
+        items: state.items,
+        appliedCoupon: state.appliedCoupon,
+      }));
+    } catch (error) {
+      console.error('Error saving cart to storage:', error);
+    }
+  }, [state.items, state.appliedCoupon]);
 
   const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = state.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
