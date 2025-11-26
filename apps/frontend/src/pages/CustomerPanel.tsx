@@ -10,6 +10,8 @@ import { CustomerVehicles } from "../components/customer/CustomerVehicles";
 import { CustomerCoupons } from "../components/customer/CustomerCoupons";
 import { SupportDashboard } from "../components/customer/support/SupportDashboard";
 import { CartDrawer } from "../components/CartDrawer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import "../styles/cliente.css";
 
 // Login Component - Simplified without drawer
