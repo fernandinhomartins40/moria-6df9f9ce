@@ -72,7 +72,6 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
   });
 
   const [categories, setCategories] = useState<ChecklistCategory[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   // Revisions - load from API instead of localStorage
   const [revisions, setRevisions] = useState<Revision[]>([]);
@@ -81,8 +80,32 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
   // Load categories from backend
   useEffect(() => {
     const loadCategories = async () => {
+      // Don't load if neither admin nor customer is logged in
+      if (!admin && !customer) {
+        // Use default categories when no user is logged in
+        const defaultCategories: ChecklistCategory[] = DEFAULT_CHECKLIST_CATEGORIES.map((cat, index) => {
+          const categoryId = `cat-${Date.now()}-${index}`;
+          const categoryName = cat.name;
+          const defaultItems = DEFAULT_CHECKLIST_ITEMS[categoryName] || [];
+
+          return {
+            ...cat,
+            id: categoryId,
+            createdAt: new Date(),
+            items: defaultItems.map((item, itemIndex) => ({
+              ...item,
+              id: `item-${Date.now()}-${index}-${itemIndex}`,
+              categoryId: categoryId,
+              createdAt: new Date()
+            }))
+          };
+        });
+
+        setCategories(defaultCategories);
+        return;
+      }
+
       try {
-        setIsLoadingCategories(true);
         // Use admin endpoint if admin is logged in, otherwise use customer endpoint
         const data = admin
           ? await checklistService.getChecklistStructureAdmin()
@@ -134,13 +157,11 @@ export function RevisionsProvider({ children }: { children: ReactNode }) {
         });
 
         setCategories(defaultCategories);
-      } finally {
-        setIsLoadingCategories(false);
       }
     };
 
     loadCategories();
-  }, [admin]);
+  }, [admin, customer]);
 
   // Load revisions from API when customer is authenticated
   const loadRevisions = async () => {
