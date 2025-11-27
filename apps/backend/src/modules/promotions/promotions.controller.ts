@@ -20,21 +20,33 @@ export class PromotionsController {
     next: NextFunction
   ): Promise<void> => {
     try {
+      console.log('[PromotionsController] Recebendo requisição de criação de promoção');
+      console.log('[PromotionsController] Body:', JSON.stringify(req.body, null, 2));
+
       if (!req.user) {
+        console.error('[PromotionsController] Usuário não autenticado');
         throw new Error('User not authenticated');
       }
 
+      console.log('[PromotionsController] Validando schema...');
       const dto = createPromotionSchema.parse(req.body);
+      console.log('[PromotionsController] Schema validado com sucesso');
+      console.log('[PromotionsController] DTO:', JSON.stringify(dto, null, 2));
+
+      console.log('[PromotionsController] Criando promoção...');
       const promotion = await this.promotionsService.createPromotion(
         req.user.customerId,
         dto
       );
+      console.log('[PromotionsController] Promoção criada:', promotion.id);
 
       res.status(201).json({
         success: true,
         data: promotion,
       });
     } catch (error) {
+      console.error('[PromotionsController] Erro ao criar promoção:', error);
+      console.error('[PromotionsController] Stack:', error instanceof Error ? error.stack : 'No stack');
       next(error);
     }
   };
