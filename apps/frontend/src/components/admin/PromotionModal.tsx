@@ -120,7 +120,7 @@ const convertToBackendFormat = (formData: PromotionFormData) => {
     rules.push({
       type: 'MIN_VALUE',
       field: 'cartTotal',
-      operator: 'gte',
+      condition: 'gte',
       value: formData.minPurchaseAmount,
       description: `Valor mínimo: R$ ${formData.minPurchaseAmount.toFixed(2)}`
     });

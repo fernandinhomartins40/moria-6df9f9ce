@@ -72,8 +72,10 @@ export const createPromotionSchema = z.object({
       type: z.string(),
       condition: z.string(),
       value: z.union([z.string(), z.number(), z.boolean()]),
+      description: z.string().optional(),
+      field: z.string().optional(),
     })
-  ),
+  ).optional().default([]),
   tiers: z
     .array(
       z.object({
