@@ -988,26 +988,26 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
+                        <div className="flex items-center justify-between space-x-2 p-3 bg-gray-50 rounded border">
+                          <Label htmlFor="autoApply" className="cursor-pointer text-sm">
+                            Aplicar automaticamente no carrinho
+                          </Label>
+                          <Switch
                             id="autoApply"
                             checked={formData.autoApply}
                             onCheckedChange={(checked) => handleInputChange('autoApply', checked)}
                           />
-                          <Label htmlFor="autoApply" className="cursor-pointer">
-                            Aplicar automaticamente no carrinho
-                          </Label>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
+                        <div className="flex items-center justify-between space-x-2 p-3 bg-gray-50 rounded border">
+                          <Label htmlFor="canCombine" className="cursor-pointer text-sm">
+                            Pode combinar com outras promoções
+                          </Label>
+                          <Switch
                             id="canCombine"
                             checked={formData.canCombineWithOthers}
                             onCheckedChange={(checked) => handleInputChange('canCombineWithOthers', checked)}
                           />
-                          <Label htmlFor="canCombine" className="cursor-pointer">
-                            Pode combinar com outras promoções
-                          </Label>
                         </div>
                       </div>
 
