@@ -56,7 +56,7 @@ export class PromotionsService {
         geographicRestrictions: dto.geographicRestrictions || Prisma.JsonNull,
         deviceTypes: dto.deviceTypes || Prisma.JsonNull,
 
-        rules: dto.rules,
+        rules: dto.rules && dto.rules.length > 0 ? dto.rules : [],
         tiers: dto.tiers || Prisma.JsonNull,
 
         targetProductIds: dto.targetProductIds || Prisma.JsonNull,
@@ -82,8 +82,8 @@ export class PromotionsService {
         code: dto.code,
         autoApply: dto.autoApply,
 
-        isActive: !dto.isDraft,
-        isDraft: dto.isDraft,
+        isActive: dto.isDraft !== undefined ? !dto.isDraft : true,
+        isDraft: dto.isDraft || false,
 
         createdBy,
         tags: dto.tags || Prisma.JsonNull,
