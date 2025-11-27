@@ -8,9 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
-import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X, CheckCircle2, Package, Tag } from 'lucide-react';
+import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X, CheckCircle2, Package, Tag, Check } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import type { AdvancedPromotion } from '../../types/promotions';
 import { toast } from 'sonner';
@@ -254,12 +253,15 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     setLoadingData(true);
     try {
       const productsResponse = await apiClient.getProducts();
+      console.log('Produtos carregados:', productsResponse);
       if (productsResponse?.success && productsResponse.data) {
         const products = productsResponse.data;
         setAvailableProducts(products);
+        console.log('Total de produtos:', products.length);
 
         const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
         setAvailableCategories(categories);
+        console.log('Categorias disponíveis:', categories);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -315,25 +317,29 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   };
 
   const handleCategoryToggle = (category: string) => {
-    const currentCategories = formData.targetCategories || [];
-    const isSelected = currentCategories.includes(category);
+    setFormData(prev => {
+      const currentCategories = prev.targetCategories || [];
+      const isSelected = currentCategories.includes(category);
 
-    const newCategories = isSelected
-      ? currentCategories.filter(c => c !== category)
-      : [...currentCategories, category];
+      const newCategories = isSelected
+        ? currentCategories.filter(c => c !== category)
+        : [...currentCategories, category];
 
-    handleInputChange('targetCategories', newCategories);
+      return { ...prev, targetCategories: newCategories };
+    });
   };
 
   const handleProductToggle = (productId: string) => {
-    const currentProducts = formData.targetProductIds || [];
-    const isSelected = currentProducts.includes(productId);
+    setFormData(prev => {
+      const currentProducts = prev.targetProductIds || [];
+      const isSelected = currentProducts.includes(productId);
 
-    const newProducts = isSelected
-      ? currentProducts.filter(p => p !== productId)
-      : [...currentProducts, productId];
+      const newProducts = isSelected
+        ? currentProducts.filter(p => p !== productId)
+        : [...currentProducts, productId];
 
-    handleInputChange('targetProductIds', newProducts);
+      return { ...prev, targetProductIds: newProducts };
+    });
   };
 
   const removeCategory = (category: string) => {
@@ -793,7 +799,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">Selecione as categorias onde esta promoção será aplicada</p>
+                        <p className="text-sm text-gray-600">Clique nas categorias para selecioná-las</p>
 
                         {/* Categorias selecionadas */}
                         {formData.targetCategories && formData.targetCategories.length > 0 && (
@@ -803,7 +809,10 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                                 {category}
                                 <button
                                   type="button"
-                                  onClick={() => removeCategory(category)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeCategory(category);
+                                  }}
                                   className="ml-1 hover:text-red-600 transition-colors"
                                 >
                                   <X className="h-3 w-3" />
@@ -814,22 +823,25 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                         )}
 
                         {/* Lista de categorias disponíveis */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto bg-white border border-purple-200 rounded-lg p-3">
-                          {availableCategories.map(category => (
-                            <div key={category} className="flex items-center space-x-2 p-2 hover:bg-purple-50 rounded transition-colors">
-                              <Checkbox
-                                id={`category-${category}`}
-                                checked={formData.targetCategories?.includes(category) || false}
-                                onCheckedChange={() => handleCategoryToggle(category)}
-                              />
-                              <Label
-                                htmlFor={`category-${category}`}
-                                className="text-sm font-normal cursor-pointer flex-1"
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto bg-white border border-purple-200 rounded-lg p-3">
+                          {availableCategories.map(category => {
+                            const isSelected = formData.targetCategories?.includes(category) || false;
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                onClick={() => handleCategoryToggle(category)}
+                                className={`flex items-center justify-between p-2 rounded text-sm transition-all ${
+                                  isSelected
+                                    ? 'bg-purple-500 text-white font-medium'
+                                    : 'bg-white hover:bg-purple-100 text-gray-700 border border-gray-200'
+                                }`}
                               >
-                                {category}
-                              </Label>
-                            </div>
-                          ))}
+                                <span>{category}</span>
+                                {isSelected && <Check className="h-4 w-4 ml-2" />}
+                              </button>
+                            );
+                          })}
                         </div>
                         {errors.targetCategories && (
                           <p className="text-sm text-red-500 flex items-center gap-1">
@@ -883,26 +895,29 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                         {/* Lista de produtos disponíveis */}
                         <div className="max-h-64 overflow-y-auto bg-white border border-blue-200 rounded-lg">
                           <div className="p-2 space-y-1">
-                            {availableProducts.map(product => (
-                              <div key={product.id} className="flex items-center space-x-3 p-3 hover:bg-blue-50 rounded transition-colors">
-                                <Checkbox
-                                  id={`product-${product.id}`}
-                                  checked={formData.targetProductIds?.includes(product.id) || false}
-                                  onCheckedChange={() => handleProductToggle(product.id)}
-                                />
-                                <div className="flex-1">
-                                  <Label
-                                    htmlFor={`product-${product.id}`}
-                                    className="text-sm font-medium cursor-pointer block"
-                                  >
-                                    {product.name}
-                                  </Label>
-                                  <p className="text-xs text-gray-500">
-                                    {product.category} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice || product.price)}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                            {availableProducts.map(product => {
+                              const isSelected = formData.targetProductIds?.includes(product.id) || false;
+                              return (
+                                <button
+                                  key={product.id}
+                                  type="button"
+                                  onClick={() => handleProductToggle(product.id)}
+                                  className={`w-full flex items-center justify-between p-3 rounded text-sm transition-all ${
+                                    isSelected
+                                      ? 'bg-blue-500 text-white font-medium shadow-md'
+                                      : 'bg-white hover:bg-blue-100 border border-transparent hover:border-blue-300'
+                                  }`}
+                                >
+                                  <div className="flex-1 text-left">
+                                    <span className="block font-medium">{product.name}</span>
+                                    <p className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
+                                      {product.category} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice || product.price)}
+                                    </p>
+                                  </div>
+                                  {isSelected && <Check className="h-4 w-4 ml-2 flex-shrink-0" />}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                         {errors.targetProductIds && (
