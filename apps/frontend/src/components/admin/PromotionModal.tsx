@@ -761,10 +761,13 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                       <Label className="text-base font-medium">Onde aplicar esta promoção? *</Label>
                       <Select
                         value={formData.target}
-                        onValueChange={(value) => handleInputChange('target', value)}
+                        onValueChange={(value) => {
+                          console.log('Target alterado para:', value);
+                          handleInputChange('target', value);
+                        }}
                       >
                         <SelectTrigger className={errors.target ? 'border-red-500' : ''}>
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione onde aplicar a promoção" />
                         </SelectTrigger>
                         <SelectContent>
                           {TARGET_TYPES.map(target => (
@@ -783,6 +786,11 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                           {errors.target}
                         </p>
                       )}
+
+                      {/* Debug info */}
+                      <p className="text-xs text-gray-500">
+                        Target atual: <span className="font-mono font-bold">{formData.target}</span>
+                      </p>
                     </div>
 
                     {/* Seleção de Categorias */}
@@ -799,7 +807,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">Clique nas categorias para selecioná-las</p>
+                        <p className="text-sm text-gray-600">Clique nas categorias para selecioná-las ({availableCategories.length} disponíveis)</p>
 
                         {/* Categorias selecionadas */}
                         {formData.targetCategories && formData.targetCategories.length > 0 && (
@@ -866,7 +874,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">Selecione os produtos onde esta promoção será aplicada</p>
+                        <p className="text-sm text-gray-600">Selecione os produtos onde esta promoção será aplicada ({availableProducts.length} disponíveis)</p>
 
                         {/* Produtos selecionados */}
                         {formData.targetProductIds && formData.targetProductIds.length > 0 && (
