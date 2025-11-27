@@ -507,7 +507,7 @@ model Promotion {
   deviceTypes            Json?
 
   // Regras
-  rules Json // Array de regras complexas
+  rules Json? @default("[]") // Array de regras complexas
   tiers Json? // Descontos escalonados
 
   // Produtos alvo
