@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X, CheckCircle2, Package, Tag, Check } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import productService, { Product } from '../../api/productService';
@@ -478,8 +477,8 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50">
+      <DialogContent className="max-w-4xl h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <TrendingUp className="h-6 w-6 text-moria-orange" />
             {isEditing ? 'Editar Promoção' : 'Nova Promoção'}
@@ -492,7 +491,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <div className="flex-1 overflow-y-auto px-6">
           <div className="py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -1108,9 +1107,9 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
               </TabsContent>
             </Tabs>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="px-6 py-4 border-t bg-gray-50/50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t bg-gray-50/50 flex items-center justify-between flex-shrink-0">
           <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
