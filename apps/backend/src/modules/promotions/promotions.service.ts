@@ -56,15 +56,15 @@ export class PromotionsService {
         geographicRestrictions: dto.geographicRestrictions || Prisma.JsonNull,
         deviceTypes: dto.deviceTypes || Prisma.JsonNull,
 
-        rules: dto.rules && dto.rules.length > 0 ? dto.rules : Prisma.JsonNull,
+        rules: dto.rules || [],
         tiers: dto.tiers || Prisma.JsonNull,
 
-        targetProductIds: dto.targetProductIds && dto.targetProductIds.length > 0 ? dto.targetProductIds : Prisma.JsonNull,
-        targetCategories: dto.targetCategories && dto.targetCategories.length > 0 ? dto.targetCategories : Prisma.JsonNull,
-        targetBrands: dto.targetBrands && dto.targetBrands.length > 0 ? dto.targetBrands : Prisma.JsonNull,
+        targetProductIds: dto.targetProductIds || Prisma.JsonNull,
+        targetCategories: dto.targetCategories || Prisma.JsonNull,
+        targetBrands: dto.targetBrands || Prisma.JsonNull,
         targetPriceRange: dto.targetPriceRange || Prisma.JsonNull,
-        excludeProductIds: dto.excludeProductIds && dto.excludeProductIds.length > 0 ? dto.excludeProductIds : Prisma.JsonNull,
-        excludeCategories: dto.excludeCategories && dto.excludeCategories.length > 0 ? dto.excludeCategories : Prisma.JsonNull,
+        excludeProductIds: dto.excludeProductIds || Prisma.JsonNull,
+        excludeCategories: dto.excludeCategories || Prisma.JsonNull,
 
         rewards: dto.rewards,
 
@@ -76,7 +76,7 @@ export class PromotionsService {
         usageLimitPerCustomer: dto.usageLimitPerCustomer,
 
         canCombineWithOthers: dto.canCombineWithOthers,
-        excludePromotionIds: dto.excludePromotionIds && dto.excludePromotionIds.length > 0 ? dto.excludePromotionIds : Prisma.JsonNull,
+        excludePromotionIds: dto.excludePromotionIds || Prisma.JsonNull,
         priority: dto.priority,
 
         code: dto.code,
@@ -86,7 +86,7 @@ export class PromotionsService {
         isDraft: dto.isDraft || false,
 
         createdBy,
-        tags: dto.tags && dto.tags.length > 0 ? dto.tags : Prisma.JsonNull,
+        tags: dto.tags || Prisma.JsonNull,
         notes: dto.notes,
 
         customLogic: dto.customLogic,
@@ -271,27 +271,27 @@ export class PromotionsService {
       }),
 
       ...(dto.rules !== undefined && {
-        rules: dto.rules && dto.rules.length > 0 ? dto.rules : Prisma.JsonNull
+        rules: dto.rules || []
       }),
       ...(dto.tiers !== undefined && { tiers: dto.tiers || Prisma.JsonNull }),
 
       ...(dto.targetProductIds !== undefined && {
-        targetProductIds: dto.targetProductIds && dto.targetProductIds.length > 0 ? dto.targetProductIds : Prisma.JsonNull,
+        targetProductIds: dto.targetProductIds || Prisma.JsonNull,
       }),
       ...(dto.targetCategories !== undefined && {
-        targetCategories: dto.targetCategories && dto.targetCategories.length > 0 ? dto.targetCategories : Prisma.JsonNull,
+        targetCategories: dto.targetCategories || Prisma.JsonNull,
       }),
       ...(dto.targetBrands !== undefined && {
-        targetBrands: dto.targetBrands && dto.targetBrands.length > 0 ? dto.targetBrands : Prisma.JsonNull,
+        targetBrands: dto.targetBrands || Prisma.JsonNull,
       }),
       ...(dto.targetPriceRange !== undefined && {
         targetPriceRange: dto.targetPriceRange || Prisma.JsonNull,
       }),
       ...(dto.excludeProductIds !== undefined && {
-        excludeProductIds: dto.excludeProductIds && dto.excludeProductIds.length > 0 ? dto.excludeProductIds : Prisma.JsonNull,
+        excludeProductIds: dto.excludeProductIds || Prisma.JsonNull,
       }),
       ...(dto.excludeCategories !== undefined && {
-        excludeCategories: dto.excludeCategories && dto.excludeCategories.length > 0 ? dto.excludeCategories : Prisma.JsonNull,
+        excludeCategories: dto.excludeCategories || Prisma.JsonNull,
       }),
 
       ...(dto.rewards && { rewards: dto.rewards }),
@@ -309,7 +309,7 @@ export class PromotionsService {
         canCombineWithOthers: dto.canCombineWithOthers,
       }),
       ...(dto.excludePromotionIds !== undefined && {
-        excludePromotionIds: dto.excludePromotionIds && dto.excludePromotionIds.length > 0 ? dto.excludePromotionIds : Prisma.JsonNull,
+        excludePromotionIds: dto.excludePromotionIds || Prisma.JsonNull,
       }),
       ...(dto.priority !== undefined && { priority: dto.priority }),
 
@@ -319,7 +319,7 @@ export class PromotionsService {
       ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       ...(dto.isDraft !== undefined && { isDraft: dto.isDraft }),
 
-      ...(dto.tags !== undefined && { tags: dto.tags && dto.tags.length > 0 ? dto.tags : Prisma.JsonNull }),
+      ...(dto.tags !== undefined && { tags: dto.tags || Prisma.JsonNull }),
       ...(dto.notes !== undefined && { notes: dto.notes }),
 
       ...(dto.customLogic !== undefined && { customLogic: dto.customLogic }),
