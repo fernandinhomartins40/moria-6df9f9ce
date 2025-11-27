@@ -253,14 +253,27 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   const loadInitialData = async () => {
     setLoadingData(true);
     try {
-      const productsResponse = await productService.getProducts({ limit: 1000 });
-      console.log('Produtos carregados:', productsResponse);
+      // Backend limit máximo é 100, então fazer múltiplas requisições se necessário
+      let allProducts: Product[] = [];
+      let page = 1;
+      let hasMore = true;
 
-      const products = productsResponse.products || [];
-      setAvailableProducts(products);
-      console.log('Total de produtos:', products.length);
+      while (hasMore && page <= 10) { // Limitar a 10 páginas (1000 produtos)
+        const productsResponse = await productService.getProducts({ page, limit: 100 });
+        console.log(`Produtos carregados - Página ${page}:`, productsResponse);
 
-      const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        const products = productsResponse.products || [];
+        allProducts = [...allProducts, ...products];
+
+        // Verificar se há mais páginas
+        hasMore = products.length === 100;
+        page++;
+      }
+
+      setAvailableProducts(allProducts);
+      console.log('Total de produtos carregados:', allProducts.length);
+
+      const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
       setAvailableCategories(categories);
       console.log('Categorias disponíveis:', categories);
     } catch (error) {
