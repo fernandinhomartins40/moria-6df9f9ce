@@ -10,58 +10,217 @@ import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
-import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X } from 'lucide-react';
+import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X, CheckCircle2, Package, Tag } from 'lucide-react';
 import apiClient from '../../api/apiClient';
+import type { AdvancedPromotion } from '../../types/promotions';
+import { toast } from 'sonner';
 
-interface Promotion {
-  id?: number;
+// Interface para dados do formulário (simplificada e alinhada com backend)
+interface PromotionFormData {
+  // Básico
   name: string;
   description: string;
-  type: 'product' | 'category' | 'general';
-  conditions: {
-    categories?: string[];
-    productIds?: number[];
-    minAmount?: number;
-    maxUsesPerCustomer?: number;
-  };
-  discountType: 'percentage' | 'fixed';
+  shortDescription?: string;
+  badgeText?: string;
+
+  // Tipo e Alvo
+  discountType: 'PERCENTAGE' | 'FIXED' | 'FREE_SHIPPING';
+  target: 'ALL_PRODUCTS' | 'SPECIFIC_PRODUCTS' | 'CATEGORY';
+
+  // Seleção (baseado em target)
+  targetProductIds?: string[];
+  targetCategories?: string[];
+
+  // Desconto
   discountValue: number;
   maxDiscount?: number;
-  startsAt?: string;
-  endsAt?: string;
+
+  // Período
+  startDate: string;
+  endDate: string;
+
+  // Configurações
+  minPurchaseAmount?: number;
+  usageLimit?: number;
+  usageLimitPerCustomer?: number;
+
+  // Estado
+  autoApply: boolean;
+  canCombineWithOthers: boolean;
+  priority: number;
+  code?: string;
   isActive: boolean;
 }
 
 interface PromotionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (promotion: Partial<Promotion>) => Promise<void>;
-  promotion?: Promotion | null;
+  onSave: (promotion: Partial<any>) => Promise<void>;
+  promotion?: AdvancedPromotion | null;
   loading?: boolean;
 }
 
-const PROMOTION_TYPES = [
-  { value: 'general', label: 'Promoção Geral', description: 'Aplicada a todos os produtos' },
-  { value: 'category', label: 'Por Categoria', description: 'Aplicada a uma categoria específica' },
-  { value: 'product', label: 'Produto Específico', description: 'Aplicada a produtos selecionados' }
+// Função de conversão: AdvancedPromotion (Backend) → PromotionFormData (Form)
+const convertFromBackendFormat = (promotion: AdvancedPromotion): PromotionFormData => {
+  // Detectar tipo de desconto baseado em rewards
+  let discountType: 'PERCENTAGE' | 'FIXED' | 'FREE_SHIPPING' = 'PERCENTAGE';
+  if (promotion.type === 'FREE_SHIPPING') {
+    discountType = 'FREE_SHIPPING';
+  } else if (promotion.rewards?.primary?.type === 'FIXED') {
+    discountType = 'FIXED';
+  } else {
+    discountType = 'PERCENTAGE';
+  }
+
+  // Detectar target
+  let target: 'ALL_PRODUCTS' | 'SPECIFIC_PRODUCTS' | 'CATEGORY' = 'ALL_PRODUCTS';
+  if (promotion.target === 'SPECIFIC_PRODUCTS') {
+    target = 'SPECIFIC_PRODUCTS';
+  } else if (promotion.target === 'CATEGORY') {
+    target = 'CATEGORY';
+  }
+
+  // Extrair minPurchaseAmount das rules
+  const minPurchaseRule = promotion.rules?.find(r => r.type === 'MIN_VALUE');
+
+  return {
+    name: promotion.name || '',
+    description: promotion.description || '',
+    shortDescription: promotion.shortDescription,
+    badgeText: promotion.badgeText,
+
+    discountType,
+    target,
+
+    targetProductIds: (promotion.targetProductIds as string[]) || [],
+    targetCategories: (promotion.targetCategories as string[]) || [],
+
+    discountValue: promotion.rewards?.primary?.value || 0,
+    maxDiscount: promotion.rewards?.primary?.maxAmount,
+
+    startDate: promotion.schedule?.startDate ? new Date(promotion.schedule.startDate).toISOString().substring(0, 16) : '',
+    endDate: promotion.schedule?.endDate ? new Date(promotion.schedule.endDate).toISOString().substring(0, 16) : '',
+
+    minPurchaseAmount: minPurchaseRule?.value as number | undefined,
+    usageLimit: promotion.usageLimit,
+    usageLimitPerCustomer: promotion.usageLimitPerCustomer,
+
+    autoApply: promotion.autoApply ?? true,
+    canCombineWithOthers: promotion.canCombineWithOthers ?? false,
+    priority: promotion.priority ?? 0,
+    code: promotion.code,
+    isActive: promotion.isActive ?? true
+  };
+};
+
+// Função de conversão: PromotionFormData (Form) → CreatePromotionDto (Backend)
+const convertToBackendFormat = (formData: PromotionFormData) => {
+  // Construir rules array
+  const rules = [];
+  if (formData.minPurchaseAmount && formData.minPurchaseAmount > 0) {
+    rules.push({
+      type: 'MIN_VALUE',
+      field: 'cartTotal',
+      operator: 'gte',
+      value: formData.minPurchaseAmount,
+      description: `Valor mínimo: R$ ${formData.minPurchaseAmount.toFixed(2)}`
+    });
+  }
+
+  // Construir rewards
+  const rewards: any = {
+    primary: {
+      type: formData.discountType,
+      value: formData.discountValue
+    }
+  };
+
+  if (formData.discountType === 'PERCENTAGE' && formData.maxDiscount) {
+    rewards.primary.maxAmount = formData.maxDiscount;
+  }
+
+  if (formData.discountType === 'FREE_SHIPPING') {
+    rewards.freeShipping = true;
+  }
+
+  // Construir payload
+  const payload: any = {
+    name: formData.name,
+    description: formData.description,
+
+    // Mapear tipo de desconto
+    type: formData.discountType,
+    target: formData.target,
+    trigger: 'AUTO_APPLY',
+
+    customerSegments: ['ALL'],
+
+    rules,
+    rewards,
+
+    schedule: {
+      startDate: new Date(formData.startDate).toISOString(),
+      endDate: new Date(formData.endDate).toISOString()
+    },
+
+    autoApply: formData.autoApply,
+    canCombineWithOthers: formData.canCombineWithOthers,
+    priority: formData.priority,
+    isActive: formData.isActive
+  };
+
+  // Adicionar campos opcionais
+  if (formData.shortDescription) payload.shortDescription = formData.shortDescription;
+  if (formData.badgeText) payload.badgeText = formData.badgeText;
+  if (formData.code) payload.code = formData.code;
+  if (formData.usageLimit) payload.usageLimit = formData.usageLimit;
+  if (formData.usageLimitPerCustomer) payload.usageLimitPerCustomer = formData.usageLimitPerCustomer;
+
+  // Adicionar targetProductIds ou targetCategories baseado em target
+  if (formData.target === 'SPECIFIC_PRODUCTS' && formData.targetProductIds && formData.targetProductIds.length > 0) {
+    payload.targetProductIds = formData.targetProductIds;
+  }
+
+  if (formData.target === 'CATEGORY' && formData.targetCategories && formData.targetCategories.length > 0) {
+    payload.targetCategories = formData.targetCategories;
+  }
+
+  return payload;
+};
+
+const DISCOUNT_TYPES = [
+  { value: 'PERCENTAGE', label: 'Desconto Percentual (%)', description: 'Desconto em porcentagem do valor' },
+  { value: 'FIXED', label: 'Desconto Fixo (R$)', description: 'Desconto em valor fixo em reais' },
+  { value: 'FREE_SHIPPING', label: 'Frete Grátis', description: 'Isenção do frete' }
+];
+
+const TARGET_TYPES = [
+  { value: 'ALL_PRODUCTS', label: 'Todos os Produtos', description: 'Aplicada a todos os produtos do catálogo' },
+  { value: 'CATEGORY', label: 'Por Categoria', description: 'Aplicada a categorias específicas' },
+  { value: 'SPECIFIC_PRODUCTS', label: 'Produtos Específicos', description: 'Aplicada apenas aos produtos selecionados' }
 ];
 
 export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = false }: PromotionModalProps) {
-  const [formData, setFormData] = useState<Partial<Promotion>>({
+  const [formData, setFormData] = useState<PromotionFormData>({
     name: '',
     description: '',
-    type: 'general',
-    conditions: {
-      categories: [],
-      productIds: [],
-      minAmount: undefined,
-      maxUsesPerCustomer: undefined
-    },
-    discountType: 'percentage',
-    discountValue: undefined,
+    shortDescription: '',
+    badgeText: '',
+    discountType: 'PERCENTAGE',
+    target: 'ALL_PRODUCTS',
+    targetProductIds: [],
+    targetCategories: [],
+    discountValue: 0,
     maxDiscount: undefined,
-    startsAt: '',
-    endsAt: '',
+    startDate: '',
+    endDate: '',
+    minPurchaseAmount: undefined,
+    usageLimit: undefined,
+    usageLimitPerCustomer: undefined,
+    autoApply: true,
+    canCombineWithOthers: false,
+    priority: 0,
+    code: '',
     isActive: true
   });
 
@@ -94,18 +253,17 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   const loadInitialData = async () => {
     setLoadingData(true);
     try {
-      // Carregar produtos para obter categorias e lista de produtos
       const productsResponse = await apiClient.getProducts();
       if (productsResponse?.success && productsResponse.data) {
         const products = productsResponse.data;
         setAvailableProducts(products);
-        
-        // Extrair categorias únicas
+
         const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
         setAvailableCategories(categories);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar produtos e categorias');
     } finally {
       setLoadingData(false);
     }
@@ -114,45 +272,34 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   // Preencher form quando promoção é editada
   useEffect(() => {
     if (promotion) {
-      setFormData({
-        id: promotion.id,
-        name: promotion.name || '',
-        description: promotion.description || '',
-        type: promotion.type || 'general',
-        conditions: {
-          categories: promotion.conditions?.categories || [],
-          productIds: promotion.conditions?.productIds || [],
-          minAmount: promotion.conditions?.minAmount,
-          maxUsesPerCustomer: promotion.conditions?.maxUsesPerCustomer
-        },
-        discountType: promotion.discountType || 'percentage',
-        discountValue: promotion.discountValue || 0,
-        maxDiscount: promotion.maxDiscount || undefined,
-        startsAt: promotion.startsAt ? promotion.startsAt.split('T')[0] + 'T' + promotion.startsAt.split('T')[1]?.substring(0, 5) : '',
-        endsAt: promotion.endsAt ? promotion.endsAt.split('T')[0] + 'T' + promotion.endsAt.split('T')[1]?.substring(0, 5) : '',
-        isActive: promotion.isActive !== undefined ? promotion.isActive : true
-      });
+      const converted = convertFromBackendFormat(promotion);
+      setFormData(converted);
     } else {
       // Resetar form para nova promoção
       const now = new Date();
       const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
+      tomorrow.setDate(tomorrow.getDate() + 7);
+
       setFormData({
         name: '',
         description: '',
-        type: 'general',
-        conditions: {
-          categories: [],
-          productIds: [],
-          minAmount: undefined,
-          maxUsesPerCustomer: undefined
-        },
-        discountType: 'percentage',
-        discountValue: undefined,
+        shortDescription: '',
+        badgeText: '',
+        discountType: 'PERCENTAGE',
+        target: 'ALL_PRODUCTS',
+        targetProductIds: [],
+        targetCategories: [],
+        discountValue: 0,
         maxDiscount: undefined,
-        startsAt: now.toISOString().substring(0, 16),
-        endsAt: tomorrow.toISOString().substring(0, 16),
+        startDate: now.toISOString().substring(0, 16),
+        endDate: tomorrow.toISOString().substring(0, 16),
+        minPurchaseAmount: undefined,
+        usageLimit: undefined,
+        usageLimitPerCustomer: undefined,
+        autoApply: true,
+        canCombineWithOthers: false,
+        priority: 0,
+        code: '',
         isActive: true
       });
     }
@@ -160,75 +307,63 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
     setActiveTab('basic');
   }, [promotion, isOpen]);
 
-  const handleInputChange = (field: keyof Promotion, value: any) => {
+  const handleInputChange = (field: keyof PromotionFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Limpar erro do campo quando usuário digita
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const handleConditionChange = (conditionField: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      conditions: {
-        ...prev.conditions,
-        [conditionField]: value
-      }
-    }));
-  };
-
   const handleCategoryToggle = (category: string) => {
-    const currentCategories = formData.conditions?.categories || [];
+    const currentCategories = formData.targetCategories || [];
     const isSelected = currentCategories.includes(category);
-    
+
     const newCategories = isSelected
       ? currentCategories.filter(c => c !== category)
       : [...currentCategories, category];
-    
-    handleConditionChange('categories', newCategories);
+
+    handleInputChange('targetCategories', newCategories);
   };
 
-  const handleProductToggle = (productId: number) => {
-    const currentProducts = formData.conditions?.productIds || [];
+  const handleProductToggle = (productId: string) => {
+    const currentProducts = formData.targetProductIds || [];
     const isSelected = currentProducts.includes(productId);
-    
+
     const newProducts = isSelected
       ? currentProducts.filter(p => p !== productId)
       : [...currentProducts, productId];
-    
-    handleConditionChange('productIds', newProducts);
+
+    handleInputChange('targetProductIds', newProducts);
   };
 
   const removeCategory = (category: string) => {
-    const currentCategories = formData.conditions?.categories || [];
+    const currentCategories = formData.targetCategories || [];
     const newCategories = currentCategories.filter(c => c !== category);
-    handleConditionChange('categories', newCategories);
+    handleInputChange('targetCategories', newCategories);
   };
 
-  const removeProduct = (productId: number) => {
-    const currentProducts = formData.conditions?.productIds || [];
+  const removeProduct = (productId: string) => {
+    const currentProducts = formData.targetProductIds || [];
     const newProducts = currentProducts.filter(p => p !== productId);
-    handleConditionChange('productIds', newProducts);
+    handleInputChange('targetProductIds', newProducts);
   };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validações obrigatórias
     if (!formData.name?.trim()) {
       newErrors.name = 'Nome é obrigatório';
     }
 
-    if (!formData.type) {
-      newErrors.type = 'Tipo de promoção é obrigatório';
+    if (!formData.target) {
+      newErrors.target = 'Alvo da promoção é obrigatório';
     }
 
-    if (!formData.discountValue || formData.discountValue <= 0) {
+    if (formData.discountType !== 'FREE_SHIPPING' && (!formData.discountValue || formData.discountValue <= 0)) {
       newErrors.discountValue = 'Valor do desconto deve ser maior que zero';
     }
 
-    if (formData.discountType === 'percentage' && formData.discountValue > 100) {
+    if (formData.discountType === 'PERCENTAGE' && formData.discountValue > 100) {
       newErrors.discountValue = 'Percentual não pode ser maior que 100%';
     }
 
@@ -236,14 +371,22 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
       newErrors.maxDiscount = 'Desconto máximo não pode ser negativo';
     }
 
-    // Validação de datas
-    if (formData.startsAt && formData.endsAt) {
-      const startDate = new Date(formData.startsAt);
-      const endDate = new Date(formData.endsAt);
-      
+    if (formData.startDate && formData.endDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+
       if (endDate <= startDate) {
-        newErrors.endsAt = 'Data de fim deve ser posterior ao início';
+        newErrors.endDate = 'Data de fim deve ser posterior ao início';
       }
+    }
+
+    // Validar seleção baseada em target
+    if (formData.target === 'CATEGORY' && (!formData.targetCategories || formData.targetCategories.length === 0)) {
+      newErrors.targetCategories = 'Selecione pelo menos uma categoria';
+    }
+
+    if (formData.target === 'SPECIFIC_PRODUCTS' && (!formData.targetProductIds || formData.targetProductIds.length === 0)) {
+      newErrors.targetProductIds = 'Selecione pelo menos um produto';
     }
 
     setErrors(newErrors);
@@ -252,40 +395,33 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
   const handleSave = async () => {
     if (!validateForm()) {
+      toast.error('Por favor, corrija os erros no formulário');
       return;
     }
 
     try {
-      const dataToSave = { ...formData };
-      
-      // Converter datas para ISO string se fornecidas
-      if (dataToSave.startsAt) {
-        dataToSave.startsAt = new Date(dataToSave.startsAt).toISOString();
-      }
-      
-      if (dataToSave.endsAt) {
-        dataToSave.endsAt = new Date(dataToSave.endsAt).toISOString();
-      }
-      
-      // Remover campos undefined
-      Object.keys(dataToSave).forEach(key => {
-        if (dataToSave[key] === undefined || dataToSave[key] === '') {
-          delete dataToSave[key];
-        }
-      });
+      const backendData = convertToBackendFormat(formData);
 
-      await onSave(dataToSave);
+      console.log('Payload enviado ao backend:', JSON.stringify(backendData, null, 2));
+
+      await onSave(backendData);
+
+      toast.success(promotion ? 'Promoção atualizada com sucesso!' : 'Promoção criada com sucesso!');
       onClose();
     } catch (error) {
-      // Erro já tratado no hook
       console.error('Erro ao salvar promoção:', error);
+      toast.error('Erro ao salvar promoção. Verifique os dados e tente novamente.');
     }
   };
 
   const formatPreview = () => {
+    if (formData.discountType === 'FREE_SHIPPING') {
+      return 'Frete Grátis';
+    }
+
     if (!formData.discountValue) return '';
-    
-    if (formData.discountType === 'percentage') {
+
+    if (formData.discountType === 'PERCENTAGE') {
       let text = `${formData.discountValue}% de desconto`;
       if (formData.maxDiscount) {
         text += ` (máx ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.maxDiscount)})`;
@@ -298,37 +434,41 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
   const getPromotionStatus = () => {
     if (!formData.isActive) return { label: 'Inativa', color: 'gray' };
-    
+
     const now = new Date();
-    const starts = formData.startsAt ? new Date(formData.startsAt) : null;
-    const ends = formData.endsAt ? new Date(formData.endsAt) : null;
-    
+    const starts = formData.startDate ? new Date(formData.startDate) : null;
+    const ends = formData.endDate ? new Date(formData.endDate) : null;
+
     if (starts && now < starts) {
       return { label: 'Agendada', color: 'blue' };
     }
-    
+
     if (ends && now > ends) {
       return { label: 'Expirada', color: 'red' };
     }
-    
+
     return { label: 'Ativa', color: 'green' };
   };
 
   const isEditing = !!promotion?.id;
   const status = getPromotionStatus();
 
+  // Contadores para feedback visual
+  const selectedProductsCount = formData.targetProductIds?.length || 0;
+  const selectedCategoriesCount = formData.targetCategories?.length || 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="h-5 w-5 text-moria-orange" />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <TrendingUp className="h-6 w-6 text-moria-orange" />
             {isEditing ? 'Editar Promoção' : 'Nova Promoção'}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {isEditing
               ? 'Edite as informações da promoção abaixo'
-              : 'Preencha as informações da nova promoção'
+              : 'Configure uma nova campanha de marketing e ofertas especiais'
             }
           </DialogDescription>
         </DialogHeader>
@@ -336,435 +476,617 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
         <ScrollArea className="flex-1 px-6">
           <div className="py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Básico
-            </TabsTrigger>
-            <TabsTrigger value="discount" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              Desconto
-            </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Período
-            </TabsTrigger>
-            <TabsTrigger value="conditions" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Condições
-            </TabsTrigger>
-          </TabsList>
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="basic" className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Básico
+                </TabsTrigger>
+                <TabsTrigger value="discount" className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Desconto
+                </TabsTrigger>
+                <TabsTrigger value="schedule" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Período
+                </TabsTrigger>
+                <TabsTrigger value="conditions" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Condições
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Aba Básico */}
-          <TabsContent value="basic" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome da Promoção *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Ex: Black Friday 2024"
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Promoção *</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value) => handleInputChange('type', value)}
-                >
-                  <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROMOTION_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div>
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-xs text-gray-500">{type.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.type && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.type}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Descrição da promoção para os clientes..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="active"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-              />
-              <Label htmlFor="active">Promoção ativa</Label>
-              <Badge 
-                variant="outline" 
-                className={`${
-                  status.color === 'green' ? 'text-green-600' :
-                  status.color === 'blue' ? 'text-blue-600' :
-                  status.color === 'red' ? 'text-red-600' :
-                  'text-gray-600'
-                }`}
-              >
-                {status.label}
-              </Badge>
-            </div>
-          </TabsContent>
-
-          {/* Aba Desconto */}
-          <TabsContent value="discount" className="space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Tipo de Desconto *</Label>
-                <Select 
-                  value={formData.discountType} 
-                  onValueChange={(value) => handleInputChange('discountType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentual (%)</SelectItem>
-                    <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="discountValue">
-                    Valor do Desconto * {formData.discountType === 'percentage' ? '(%)' : '(R$)'}
-                  </Label>
-                  <div className="relative">
-                    {formData.discountType === 'percentage' ? (
-                      <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                    ) : (
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                    )}
-                    <Input
-                      id="discountValue"
-                      type="number"
-                      step={formData.discountType === 'percentage' ? "1" : "0.01"}
-                      min="0"
-                      max={formData.discountType === 'percentage' ? "100" : undefined}
-                      value={formData.discountValue ?? ''}
-                      onChange={(e) => handleInputChange('discountValue', safeParseFloat(e.target.value))}
-                      placeholder="0"
-                      className={`pl-10 ${errors.discountValue ? 'border-red-500' : ''}`}
-                    />
-                  </div>
-                  {errors.discountValue && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.discountValue}
-                    </p>
-                  )}
-                </div>
-
-                {formData.discountType === 'percentage' && (
+              {/* Aba Básico */}
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="maxDiscount">Desconto Máximo (R$)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                      <Input
-                        id="maxDiscount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.maxDiscount ?? ''}
-                        onChange={(e) => handleInputChange('maxDiscount', safeParseFloat(e.target.value))}
-                        placeholder="Sem limite"
-                        className={`pl-10 ${errors.maxDiscount ? 'border-red-500' : ''}`}
-                      />
-                    </div>
-                    {errors.maxDiscount && (
+                    <Label htmlFor="name">Nome da Promoção *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Ex: Black Friday 2024"
+                      className={errors.name ? 'border-red-500' : ''}
+                    />
+                    {errors.name && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        {errors.maxDiscount}
+                        {errors.name}
                       </p>
                     )}
                   </div>
-                )}
-              </div>
 
-              {formData.discountValue > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-medium text-green-900 mb-2">Preview do Desconto</h4>
-                  <p className="text-green-800 font-medium">
-                    {formatPreview()}
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="badgeText">Texto do Badge (Opcional)</Label>
+                    <Input
+                      id="badgeText"
+                      value={formData.badgeText || ''}
+                      onChange={(e) => handleInputChange('badgeText', e.target.value)}
+                      placeholder="Ex: SUPER OFERTA"
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-gray-500">Aparecerá nos cards de produtos</p>
+                  </div>
                 </div>
-              )}
-            </div>
-          </TabsContent>
 
-          {/* Aba Período */}
-          <TabsContent value="schedule" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startsAt">Data/Hora de Início</Label>
-                <Input
-                  id="startsAt"
-                  type="datetime-local"
-                  value={formData.startsAt}
-                  onChange={(e) => handleInputChange('startsAt', e.target.value)}
-                  className={errors.startsAt ? 'border-red-500' : ''}
-                />
-                {errors.startsAt && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.startsAt}
-                  </p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Deixe vazio para começar imediatamente
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição *</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Descrição detalhada da promoção para os clientes..."
+                    rows={3}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="endsAt">Data/Hora de Fim</Label>
-                <Input
-                  id="endsAt"
-                  type="datetime-local"
-                  value={formData.endsAt}
-                  onChange={(e) => handleInputChange('endsAt', e.target.value)}
-                  className={errors.endsAt ? 'border-red-500' : ''}
-                />
-                {errors.endsAt && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.endsAt}
-                  </p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Deixe vazio para promoção sem fim
-                </p>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="shortDescription">Descrição Curta (Opcional)</Label>
+                  <Input
+                    id="shortDescription"
+                    value={formData.shortDescription || ''}
+                    onChange={(e) => handleInputChange('shortDescription', e.target.value)}
+                    placeholder="Ex: Até 50% OFF em peças selecionadas"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-gray-500">Usada em banners e listagens</p>
+                </div>
 
-            {formData.startsAt && formData.endsAt && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Duração da Promoção</h4>
-                <p className="text-blue-800">
-                  {(() => {
-                    const start = new Date(formData.startsAt);
-                    const end = new Date(formData.endsAt);
-                    const diffTime = Math.abs(end.getTime() - start.getTime());
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    return `${diffDays} dias`;
-                  })()}
-                </p>
-              </div>
-            )}
-          </TabsContent>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Switch
+                      id="active"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                    />
+                    <Label htmlFor="active" className="cursor-pointer">Promoção ativa</Label>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={`${
+                      status.color === 'green' ? 'bg-green-50 text-green-700 border-green-200' :
+                      status.color === 'blue' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      status.color === 'red' ? 'bg-red-50 text-red-700 border-red-200' :
+                      'bg-gray-50 text-gray-700 border-gray-200'
+                    }`}
+                  >
+                    {status.label}
+                  </Badge>
+                </div>
+              </TabsContent>
 
-          {/* Aba Condições */}
-          <TabsContent value="conditions" className="space-y-4">
-            {loadingData ? (
-              <div className="text-center py-8">
-                <Loader2 className="mx-auto h-6 w-6 animate-spin text-moria-orange" />
-                <p className="text-sm text-gray-600 mt-2">Carregando dados...</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Seleção de Categorias - apenas para type = 'category' */}
-                {formData.type === 'category' && (
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Categorias Elegíveis *</Label>
-                    <p className="text-sm text-gray-600">Selecione as categorias onde esta promoção será aplicada</p>
-                    
-                    {/* Categorias selecionadas */}
-                    {formData.conditions?.categories && formData.conditions.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {formData.conditions.categories.map(category => (
-                          <Badge key={category} variant="secondary" className="gap-1">
-                            {category}
-                            <button
-                              type="button"
-                              onClick={() => removeCategory(category)}
-                              className="ml-1 hover:text-red-600"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
+              {/* Aba Desconto */}
+              <TabsContent value="discount" className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Desconto *</Label>
+                    <Select
+                      value={formData.discountType}
+                      onValueChange={(value) => handleInputChange('discountType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DISCOUNT_TYPES.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            <div>
+                              <div className="font-medium">{type.label}</div>
+                              <div className="text-xs text-gray-500">{type.description}</div>
+                            </div>
+                          </SelectItem>
                         ))}
-                      </div>
-                    )}
-                    
-                    {/* Lista de categorias disponíveis */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                      {availableCategories.map(category => (
-                        <div key={category} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${category}`}
-                            checked={formData.conditions?.categories?.includes(category) || false}
-                            onCheckedChange={() => handleCategoryToggle(category)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.discountType !== 'FREE_SHIPPING' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="discountValue">
+                          Valor do Desconto * {formData.discountType === 'PERCENTAGE' ? '(%)' : '(R$)'}
+                        </Label>
+                        <div className="relative">
+                          {formData.discountType === 'PERCENTAGE' ? (
+                            <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                          ) : (
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                          )}
+                          <Input
+                            id="discountValue"
+                            type="number"
+                            step={formData.discountType === 'PERCENTAGE' ? "1" : "0.01"}
+                            min="0"
+                            max={formData.discountType === 'PERCENTAGE' ? "100" : undefined}
+                            value={formData.discountValue || ''}
+                            onChange={(e) => handleInputChange('discountValue', safeParseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            className={`pl-10 ${errors.discountValue ? 'border-red-500' : ''}`}
                           />
-                          <Label
-                            htmlFor={`category-${category}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {category}
-                          </Label>
                         </div>
-                      ))}
+                        {errors.discountValue && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.discountValue}
+                          </p>
+                        )}
+                      </div>
+
+                      {formData.discountType === 'PERCENTAGE' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="maxDiscount">Desconto Máximo (R$)</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                            <Input
+                              id="maxDiscount"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={formData.maxDiscount ?? ''}
+                              onChange={(e) => handleInputChange('maxDiscount', safeParseFloat(e.target.value))}
+                              placeholder="Sem limite"
+                              className="pl-10"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500">Opcional: limite máximo do desconto em reais</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Preview do Desconto */}
+                  {(formData.discountValue > 0 || formData.discountType === 'FREE_SHIPPING') && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                        <h4 className="font-bold text-green-900 text-lg">Preview do Desconto</h4>
+                      </div>
+                      <p className="text-green-800 font-bold text-2xl">
+                        {formatPreview()}
+                      </p>
+                      {formData.discountType === 'PERCENTAGE' && formData.discountValue > 0 && (
+                        <div className="mt-4 space-y-1 text-sm text-green-700">
+                          <p>• Em um produto de R$ 100,00: <span className="font-bold">R$ {(100 * formData.discountValue / 100).toFixed(2)} de desconto</span></p>
+                          <p>• Em um produto de R$ 500,00: <span className="font-bold">R$ {Math.min(500 * formData.discountValue / 100, formData.maxDiscount || Infinity).toFixed(2)} de desconto</span></p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Aba Período */}
+              <TabsContent value="schedule" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Data/Hora de Início *</Label>
+                    <Input
+                      id="startDate"
+                      type="datetime-local"
+                      value={formData.startDate}
+                      onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      className={errors.startDate ? 'border-red-500' : ''}
+                    />
+                    {errors.startDate && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.startDate}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">Data/Hora de Fim *</Label>
+                    <Input
+                      id="endDate"
+                      type="datetime-local"
+                      value={formData.endDate}
+                      onChange={(e) => handleInputChange('endDate', e.target.value)}
+                      className={errors.endDate ? 'border-red-500' : ''}
+                    />
+                    {errors.endDate && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {errors.endDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {formData.startDate && formData.endDate && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Duração da Promoção
+                    </h4>
+                    <p className="text-blue-800 font-semibold">
+                      {(() => {
+                        const start = new Date(formData.startDate);
+                        const end = new Date(formData.endDate);
+                        const diffTime = Math.abs(end.getTime() - start.getTime());
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+
+                        if (diffDays >= 1) {
+                          return `${diffDays} dia${diffDays > 1 ? 's' : ''} (${diffHours}h)`;
+                        } else {
+                          return `${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+                        }
+                      })()}
+                    </p>
+                    <div className="mt-3 text-sm text-blue-700 space-y-1">
+                      <p>Início: {new Date(formData.startDate).toLocaleString('pt-BR')}</p>
+                      <p>Fim: {new Date(formData.endDate).toLocaleString('pt-BR')}</p>
                     </div>
                   </div>
                 )}
+              </TabsContent>
 
-                {/* Seleção de Produtos - apenas para type = 'product' */}
-                {formData.type === 'product' && (
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Produtos Específicos *</Label>
-                    <p className="text-sm text-gray-600">Selecione os produtos onde esta promoção será aplicada</p>
-                    
-                    {/* Produtos selecionados */}
-                    {formData.conditions?.productIds && formData.conditions.productIds.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        <Label className="text-sm font-medium">Produtos Selecionados:</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {formData.conditions.productIds.map(productId => {
-                            const product = availableProducts.find(p => p.id === productId);
-                            return product ? (
-                              <Badge key={productId} variant="secondary" className="gap-1">
-                                {product.name}
+              {/* Aba Condições */}
+              <TabsContent value="conditions" className="space-y-6">
+                {loadingData ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-moria-orange" />
+                    <p className="text-sm text-gray-600 mt-3">Carregando produtos e categorias...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Seleção de Alvo */}
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">Onde aplicar esta promoção? *</Label>
+                      <Select
+                        value={formData.target}
+                        onValueChange={(value) => handleInputChange('target', value)}
+                      >
+                        <SelectTrigger className={errors.target ? 'border-red-500' : ''}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TARGET_TYPES.map(target => (
+                            <SelectItem key={target.value} value={target.value}>
+                              <div>
+                                <div className="font-medium">{target.label}</div>
+                                <div className="text-xs text-gray-500">{target.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.target && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.target}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Seleção de Categorias */}
+                    {formData.target === 'CATEGORY' && (
+                      <div className="space-y-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-medium flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-purple-600" />
+                            Categorias Elegíveis *
+                          </Label>
+                          {selectedCategoriesCount > 0 && (
+                            <Badge className="bg-purple-600">
+                              {selectedCategoriesCount} selecionada{selectedCategoriesCount > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Selecione as categorias onde esta promoção será aplicada</p>
+
+                        {/* Categorias selecionadas */}
+                        {formData.targetCategories && formData.targetCategories.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3 p-3 bg-white rounded border border-purple-200">
+                            {formData.targetCategories.map(category => (
+                              <Badge key={category} variant="secondary" className="gap-1 bg-purple-100 text-purple-800">
+                                {category}
                                 <button
                                   type="button"
-                                  onClick={() => removeProduct(productId)}
-                                  className="ml-1 hover:text-red-600"
+                                  onClick={() => removeCategory(category)}
+                                  className="ml-1 hover:text-red-600 transition-colors"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
                               </Badge>
-                            ) : null;
-                          })}
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Lista de categorias disponíveis */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto bg-white border border-purple-200 rounded-lg p-3">
+                          {availableCategories.map(category => (
+                            <div key={category} className="flex items-center space-x-2 p-2 hover:bg-purple-50 rounded transition-colors">
+                              <Checkbox
+                                id={`category-${category}`}
+                                checked={formData.targetCategories?.includes(category) || false}
+                                onCheckedChange={() => handleCategoryToggle(category)}
+                              />
+                              <Label
+                                htmlFor={`category-${category}`}
+                                className="text-sm font-normal cursor-pointer flex-1"
+                              >
+                                {category}
+                              </Label>
+                            </div>
+                          ))}
                         </div>
+                        {errors.targetCategories && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.targetCategories}
+                          </p>
+                        )}
                       </div>
                     )}
-                    
-                    {/* Lista de produtos disponíveis */}
-                    <div className="max-h-64 overflow-y-auto border rounded-lg">
-                      <div className="p-3 space-y-2">
-                        {availableProducts.map(product => (
-                          <div key={product.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-                            <Checkbox
-                              id={`product-${product.id}`}
-                              checked={formData.conditions?.productIds?.includes(product.id) || false}
-                              onCheckedChange={() => handleProductToggle(product.id)}
-                            />
-                            <div className="flex-1">
-                              <Label
-                                htmlFor={`product-${product.id}`}
-                                className="text-sm font-medium cursor-pointer block"
-                              >
-                                {product.name}
-                              </Label>
-                              <p className="text-xs text-gray-500">
-                                {product.category} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}
-                              </p>
+
+                    {/* Seleção de Produtos */}
+                    {formData.target === 'SPECIFIC_PRODUCTS' && (
+                      <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-medium flex items-center gap-2">
+                            <Package className="h-4 w-4 text-blue-600" />
+                            Produtos Específicos *
+                          </Label>
+                          {selectedProductsCount > 0 && (
+                            <Badge className="bg-blue-600">
+                              {selectedProductsCount} selecionado{selectedProductsCount > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Selecione os produtos onde esta promoção será aplicada</p>
+
+                        {/* Produtos selecionados */}
+                        {formData.targetProductIds && formData.targetProductIds.length > 0 && (
+                          <div className="space-y-2 mb-3">
+                            <Label className="text-sm font-medium">Produtos Selecionados:</Label>
+                            <div className="flex flex-wrap gap-2 p-3 bg-white rounded border border-blue-200 max-h-32 overflow-y-auto">
+                              {formData.targetProductIds.map(productId => {
+                                const product = availableProducts.find(p => p.id === productId);
+                                return product ? (
+                                  <Badge key={productId} variant="secondary" className="gap-1 bg-blue-100 text-blue-800">
+                                    {product.name}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeProduct(productId)}
+                                      className="ml-1 hover:text-red-600 transition-colors"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ) : null;
+                              })}
                             </div>
                           </div>
-                        ))}
+                        )}
+
+                        {/* Lista de produtos disponíveis */}
+                        <div className="max-h-64 overflow-y-auto bg-white border border-blue-200 rounded-lg">
+                          <div className="p-2 space-y-1">
+                            {availableProducts.map(product => (
+                              <div key={product.id} className="flex items-center space-x-3 p-3 hover:bg-blue-50 rounded transition-colors">
+                                <Checkbox
+                                  id={`product-${product.id}`}
+                                  checked={formData.targetProductIds?.includes(product.id) || false}
+                                  onCheckedChange={() => handleProductToggle(product.id)}
+                                />
+                                <div className="flex-1">
+                                  <Label
+                                    htmlFor={`product-${product.id}`}
+                                    className="text-sm font-medium cursor-pointer block"
+                                  >
+                                    {product.name}
+                                  </Label>
+                                  <p className="text-xs text-gray-500">
+                                    {product.category} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice || product.price)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {errors.targetProductIds && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.targetProductIds}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Condições adicionais */}
+                    <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                      <h4 className="font-medium text-gray-900">Configurações Adicionais</h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="minPurchaseAmount">Valor Mínimo do Pedido (R$)</Label>
+                          <Input
+                            id="minPurchaseAmount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.minPurchaseAmount ?? ''}
+                            onChange={(e) => handleInputChange('minPurchaseAmount', safeParseFloat(e.target.value))}
+                            placeholder="Ex: 100.00"
+                          />
+                          <p className="text-xs text-gray-500">Deixe vazio para não ter valor mínimo</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="usageLimitPerCustomer">Limite de Uso por Cliente</Label>
+                          <Input
+                            id="usageLimitPerCustomer"
+                            type="number"
+                            min="1"
+                            value={formData.usageLimitPerCustomer ?? ''}
+                            onChange={(e) => handleInputChange('usageLimitPerCustomer', safeParseInt(e.target.value))}
+                            placeholder="Ex: 1"
+                          />
+                          <p className="text-xs text-gray-500">Quantas vezes cada cliente pode usar</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="usageLimit">Limite Total de Usos</Label>
+                          <Input
+                            id="usageLimit"
+                            type="number"
+                            min="1"
+                            value={formData.usageLimit ?? ''}
+                            onChange={(e) => handleInputChange('usageLimit', safeParseInt(e.target.value))}
+                            placeholder="Ex: 100"
+                          />
+                          <p className="text-xs text-gray-500">Limite global da promoção</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="code">Código da Promoção (Opcional)</Label>
+                          <Input
+                            id="code"
+                            value={formData.code || ''}
+                            onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
+                            placeholder="Ex: BLACKFRIDAY"
+                            maxLength={20}
+                          />
+                          <p className="text-xs text-gray-500">Para aplicação manual pelo cliente</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="autoApply"
+                            checked={formData.autoApply}
+                            onCheckedChange={(checked) => handleInputChange('autoApply', checked)}
+                          />
+                          <Label htmlFor="autoApply" className="cursor-pointer">
+                            Aplicar automaticamente no carrinho
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="canCombine"
+                            checked={formData.canCombineWithOthers}
+                            onCheckedChange={(checked) => handleInputChange('canCombineWithOthers', checked)}
+                          />
+                          <Label htmlFor="canCombine" className="cursor-pointer">
+                            Pode combinar com outras promoções
+                          </Label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Prioridade (0-10)</Label>
+                        <Input
+                          id="priority"
+                          type="number"
+                          min="0"
+                          max="10"
+                          value={formData.priority}
+                          onChange={(e) => handleInputChange('priority', safeParseInt(e.target.value) || 0)}
+                        />
+                        <p className="text-xs text-gray-500">Promoções com maior prioridade são aplicadas primeiro</p>
+                      </div>
+                    </div>
+
+                    {/* Resumo da promoção */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-5">
+                      <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5" />
+                        Resumo da Configuração
+                      </h4>
+                      <div className="text-blue-800 text-sm space-y-2">
+                        {formData.target === 'ALL_PRODUCTS' && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                            Será aplicada em <strong>todos os produtos e serviços</strong>
+                          </p>
+                        )}
+                        {formData.target === 'CATEGORY' && formData.targetCategories && formData.targetCategories.length > 0 && (
+                          <p className="flex items-start gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600 mt-1.5"></span>
+                            <span>Aplicada nas categorias: <strong>{formData.targetCategories.join(', ')}</strong></span>
+                          </p>
+                        )}
+                        {formData.target === 'SPECIFIC_PRODUCTS' && formData.targetProductIds && formData.targetProductIds.length > 0 && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                            Aplicada em <strong>{formData.targetProductIds.length} produto(s) específico(s)</strong>
+                          </p>
+                        )}
+                        {formData.minPurchaseAmount && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                            Valor mínimo do pedido: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.minPurchaseAmount)}</strong>
+                          </p>
+                        )}
+                        {formData.usageLimitPerCustomer && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                            Máximo <strong>{formData.usageLimitPerCustomer} uso(s) por cliente</strong>
+                          </p>
+                        )}
+                        {formData.usageLimit && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                            Limite total de <strong>{formData.usageLimit} uso(s)</strong>
+                          </p>
+                        )}
+                        {formData.autoApply && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-green-600"></span>
+                            <strong>Aplicação automática</strong> no carrinho
+                          </p>
+                        )}
+                        {formData.code && (
+                          <p className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+                            Código: <strong>{formData.code}</strong>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
-
-                {/* Condições adicionais */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="minAmount">Valor Mínimo do Pedido (R$)</Label>
-                    <Input
-                      id="minAmount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.conditions?.minAmount ?? ''}
-                      onChange={(e) => handleConditionChange('minAmount', safeParseFloat(e.target.value))}
-                      placeholder="Ex: 100.00"
-                    />
-                    <p className="text-xs text-gray-500">Valor mínimo para aplicar a promoção</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maxUsesPerCustomer">Limite de Uso por Cliente</Label>
-                    <Input
-                      id="maxUsesPerCustomer"
-                      type="number"
-                      min="1"
-                      value={formData.conditions?.maxUsesPerCustomer ?? ''}
-                      onChange={(e) => handleConditionChange('maxUsesPerCustomer', safeParseInt(e.target.value))}
-                      placeholder="Ex: 1"
-                    />
-                    <p className="text-xs text-gray-500">Quantas vezes cada cliente pode usar</p>
-                  </div>
-                </div>
-
-                {/* Resumo da promoção */}
-                {(formData.type === 'category' && formData.conditions?.categories && formData.conditions.categories.length > 0) ||
-                 (formData.type === 'product' && formData.conditions?.productIds && formData.conditions.productIds.length > 0) ||
-                 formData.type === 'general' ? (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Resumo da Aplicação</h4>
-                    <div className="text-blue-800 text-sm space-y-1">
-                      {formData.type === 'general' && <p>• Aplicada em todos os produtos e serviços</p>}
-                      {formData.type === 'category' && formData.conditions?.categories && (
-                        <p>• Aplicada nas categorias: {formData.conditions.categories.join(', ')}</p>
-                      )}
-                      {formData.type === 'product' && formData.conditions?.productIds && (
-                        <p>• Aplicada em {formData.conditions.productIds.length} produto(s) específico(s)</p>
-                      )}
-                      {formData.conditions?.minAmount && (
-                        <p>• Valor mínimo do pedido: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.conditions.minAmount)}</p>
-                      )}
-                      {formData.conditions?.maxUsesPerCustomer && (
-                        <p>• Máximo {formData.conditions.maxUsesPerCustomer} uso(s) por cliente</p>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </TabsContent>
+              </TabsContent>
             </Tabs>
           </div>
         </ScrollArea>
 
-        <div className="px-6 py-3 border-t bg-gray-50/50">
-          <div className="flex items-center justify-between gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading} size="sm">
-              Cancelar
-            </Button>
-            <Button type="button" onClick={handleSave} disabled={loading} size="sm" className="bg-moria-orange hover:bg-orange-600">
-              {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-              {isEditing ? 'Salvar Alterações' : 'Criar Promoção'}
-            </Button>
-          </div>
+        <div className="px-6 py-4 border-t bg-gray-50/50 flex items-center justify-between">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="bg-moria-orange hover:bg-orange-600 min-w-[140px]"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? 'Salvar Alterações' : 'Criar Promoção'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

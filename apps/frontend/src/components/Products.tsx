@@ -2,18 +2,22 @@ import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Star, Plus, Loader2, AlertCircle, Package } from "lucide-react";
+import { Star, Plus, Loader2, AlertCircle, Package, Gift, Zap } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useFavoritesContext } from "../contexts/FavoritesContext";
+import { usePromotions } from "../hooks/usePromotions";
 import { FavoriteButton } from "./FavoriteButton";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import { getImageUrl } from "@/utils/imageUrl";
+import type { AdvancedPromotion } from "../types/promotions";
 
 export function Products() {
   const { addItem, openCart } = useCart();
   const { isAuthenticated } = useAuth();
   const { favoriteProductIds } = useFavoritesContext();
+  const { activePromotions, isLoading: promotionsLoading } = usePromotions();
+
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [categories, setCategories] = useState<string[]>(["Todos"]);
@@ -74,6 +78,56 @@ export function Products() {
     }
   };
 
+  // Verificar se produto está em promoção ativa
+  const getProductPromotion = (product: ApiProduct): AdvancedPromotion | null => {
+    if (!activePromotions || activePromotions.length === 0) return null;
+
+    // Ordenar por prioridade (maior primeiro)
+    const sortedPromotions = [...activePromotions].sort((a, b) => b.priority - a.priority);
+
+    return sortedPromotions.find(promo => {
+      // Verificar se promoção está ativa e vigente
+      const now = new Date();
+      const start = new Date(promo.schedule.startDate);
+      const end = new Date(promo.schedule.endDate);
+
+      if (!promo.isActive || now < start || now > end) {
+        return false;
+      }
+
+      // Target: ALL_PRODUCTS
+      if (promo.target === 'ALL_PRODUCTS') {
+        return true;
+      }
+
+      // Target: SPECIFIC_PRODUCTS
+      if (promo.target === 'SPECIFIC_PRODUCTS' && promo.targetProductIds) {
+        return (promo.targetProductIds as string[]).includes(product.id);
+      }
+
+      // Target: CATEGORY
+      if (promo.target === 'CATEGORY' && promo.targetCategories) {
+        return (promo.targetCategories as string[]).includes(product.category);
+      }
+
+      return false;
+    }) || null;
+  };
+
+  // Formatar desconto da promoção
+  const formatPromotionDiscount = (promo: AdvancedPromotion): string => {
+    if (promo.type === 'FREE_SHIPPING') return 'FRETE GRÁTIS';
+
+    if (promo.rewards?.primary?.type === 'PERCENTAGE') {
+      return `${promo.rewards.primary.value}% OFF`;
+    }
+
+    if (promo.rewards?.primary?.type === 'FIXED') {
+      return `R$ ${promo.rewards.primary.value.toFixed(0)} OFF`;
+    }
+
+    return 'PROMOÇÃO';
+  };
 
   // Calcular preço de exibição
   const getDisplayPrice = (product: ApiProduct) => {
@@ -188,9 +242,10 @@ export function Products() {
               const inStock = isInStock(product);
               const imageUrl = getProductImage(product);
               const rating = getProductRating();
+              const activePromotion = getProductPromotion(product);
 
               return (
-                <Card key={product.id} className="product-hover overflow-hidden">
+                <Card key={product.id} className="product-hover overflow-hidden relative">
                   <div className="relative">
                     <img
                       src={imageUrl}
@@ -202,9 +257,17 @@ export function Products() {
                       }}
                     />
 
-                    {/* Discount Badge */}
-                    {discount > 0 && (
-                      <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold">
+                    {/* Badge de Promoção Ativa (Prioridade 1) */}
+                    {activePromotion && (
+                      <Badge className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white font-bold px-3 py-1.5 shadow-lg animate-pulse">
+                        <Gift className="h-3.5 w-3.5 mr-1 inline" />
+                        {activePromotion.badgeText || formatPromotionDiscount(activePromotion)}
+                      </Badge>
+                    )}
+
+                    {/* Badge de Desconto (Prioridade 2 - só aparece se não houver promoção ativa) */}
+                    {!activePromotion && discount > 0 && (
+                      <Badge className="absolute top-2 left-2 bg-moria-orange text-white font-bold px-3 py-1.5 shadow-lg">
                         -{discount}%
                       </Badge>
                     )}
@@ -214,14 +277,24 @@ export function Products() {
                       <FavoriteButton
                         productId={product.id}
                         productName={product.name}
-                        className="bg-white/80 hover:bg-white"
+                        className="bg-white/90 hover:bg-white shadow-md"
                       />
                     </div>
 
                     {/* Stock Status */}
                     {!inStock && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white font-bold">Esgotado</span>
+                        <span className="text-white font-bold text-lg">Esgotado</span>
+                      </div>
+                    )}
+
+                    {/* Indicador de Promoção Extra (canto superior esquerdo quando tem badge) */}
+                    {activePromotion && (
+                      <div className="absolute top-14 left-2">
+                        <Badge variant="secondary" className="bg-yellow-400 text-yellow-900 font-semibold text-xs px-2 py-0.5">
+                          <Zap className="h-3 w-3 mr-0.5 inline" />
+                          {activePromotion.name}
+                        </Badge>
                       </div>
                     )}
                   </div>
@@ -255,21 +328,43 @@ export function Products() {
                     </div>
 
                     {/* Price */}
-                    <div className="mb-4">
+                    <div className="mb-3">
                       {product.promoPrice && product.salePrice && product.promoPrice < product.salePrice && (
                         <span className="text-sm text-gray-500 line-through mr-2">
                           R$ {Number(product.salePrice).toFixed(2)}
                         </span>
                       )}
-                      <span className="text-xl font-bold text-moria-orange">
+                      <span className={`text-xl font-bold ${activePromotion ? 'text-purple-600' : 'text-moria-orange'}`}>
                         R$ {Number(displayPrice).toFixed(2)}
                       </span>
                     </div>
 
+                    {/* Informação adicional da promoção */}
+                    {activePromotion && (
+                      <div className="mb-3 p-2 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-md">
+                        <p className="text-xs font-semibold text-purple-800">
+                          {activePromotion.rewards?.primary?.type === 'PERCENTAGE' && (
+                            <>🎉 {activePromotion.rewards.primary.value}% de desconto</>
+                          )}
+                          {activePromotion.rewards?.primary?.type === 'FIXED' && (
+                            <>🎉 R$ {activePromotion.rewards.primary.value.toFixed(2)} de desconto</>
+                          )}
+                          {activePromotion.type === 'FREE_SHIPPING' && (
+                            <>🚚 Frete Grátis neste produto</>
+                          )}
+                        </p>
+                        {activePromotion.shortDescription && (
+                          <p className="text-xs text-purple-600 mt-1">
+                            {activePromotion.shortDescription}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {/* Stock Info */}
                     {inStock && product.stock <= product.minStock && (
-                      <p className="text-xs text-orange-600 mb-2">
-                        Últimas unidades!
+                      <p className="text-xs text-orange-600 mb-2 font-medium">
+                        ⚠️ Últimas {product.stock} unidades!
                       </p>
                     )}
 
@@ -277,7 +372,7 @@ export function Products() {
                     <Button
                       variant="hero"
                       size="sm"
-                      className="w-full"
+                      className={`w-full ${activePromotion ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : ''}`}
                       onClick={() => {
                         addItem({
                           id: product.id,
@@ -292,9 +387,16 @@ export function Products() {
                       disabled={!inStock}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Adicionar ao Carrinho
+                      {activePromotion ? 'Aproveitar Promoção' : 'Adicionar ao Carrinho'}
                     </Button>
                   </div>
+
+                  {/* Ribbon de categoria com promoção */}
+                  {activePromotion && activePromotion.target === 'CATEGORY' && (
+                    <div className="absolute -right-12 top-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-12 py-1 rotate-45 shadow-lg">
+                      OFERTA
+                    </div>
+                  )}
                 </Card>
               );
             })}
@@ -302,7 +404,7 @@ export function Products() {
         )}
 
         {/* CTA Section */}
-        <div className="text-center mt-16 p-8 bg-gray-50 rounded-lg">
+        <div className="text-center mt-16 p-8 bg-gradient-to-r from-gray-50 to-orange-50 rounded-lg border border-orange-100">
           <h3 className="text-2xl font-bold mb-4">
             Não encontrou o que procura?
           </h3>
