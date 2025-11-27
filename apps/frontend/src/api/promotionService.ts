@@ -66,23 +66,29 @@ class PromotionService {
     limit?: number;
     active?: boolean;
   }): Promise<PromotionListResponse> {
-    const response = await apiClient.get<PromotionListResponse>('/promotions', { params: filter });
-    return response.data;
+    const response = await apiClient.get<{ success: boolean; data: AdvancedPromotion[]; meta: any }>('/promotions', { params: filter });
+    // Backend retorna { success, data: [...], meta: {...} }
+    return {
+      promotions: response.data.data,
+      totalCount: response.data.meta?.totalCount || 0,
+      page: response.data.meta?.page || 1,
+      limit: response.data.meta?.limit || 20
+    };
   }
 
   async getPromotionById(id: string): Promise<AdvancedPromotion> {
-    const response = await apiClient.get<AdvancedPromotion>(`/promotions/${id}`);
-    return response.data;
+    const response = await apiClient.get<{ success: boolean; data: AdvancedPromotion }>(`/promotions/${id}`);
+    return response.data.data;
   }
 
   async createPromotion(promotion: PromotionCreateRequest): Promise<AdvancedPromotion> {
-    const response = await apiClient.post<AdvancedPromotion>('/promotions', promotion);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: AdvancedPromotion }>('/promotions', promotion);
+    return response.data.data;
   }
 
   async updatePromotion(id: string, promotion: Partial<AdvancedPromotion>): Promise<AdvancedPromotion> {
-    const response = await apiClient.put<AdvancedPromotion>(`/promotions/${id}`, promotion);
-    return response.data;
+    const response = await apiClient.put<{ success: boolean; data: AdvancedPromotion }>(`/promotions/${id}`, promotion);
+    return response.data.data;
   }
 
   async deletePromotion(id: string): Promise<void> {
@@ -90,13 +96,13 @@ class PromotionService {
   }
 
   async activatePromotion(id: string): Promise<AdvancedPromotion> {
-    const response = await apiClient.patch<AdvancedPromotion>(`/promotions/${id}/activate`);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: AdvancedPromotion }>(`/promotions/${id}/activate`, {});
+    return response.data.data;
   }
 
   async deactivatePromotion(id: string): Promise<AdvancedPromotion> {
-    const response = await apiClient.patch<AdvancedPromotion>(`/promotions/${id}/deactivate`);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: AdvancedPromotion }>(`/promotions/${id}/deactivate`, {});
+    return response.data.data;
   }
 
   // Métodos avançados para aplicação de promoções
