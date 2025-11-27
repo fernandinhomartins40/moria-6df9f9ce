@@ -162,6 +162,10 @@ const convertToBackendFormat = (formData: PromotionFormData) => {
       endDate: new Date(formData.endDate).toISOString()
     },
 
+    // Campos obrigatórios no nível raiz
+    startDate: new Date(formData.startDate).toISOString(),
+    endDate: new Date(formData.endDate).toISOString(),
+
     autoApply: formData.autoApply,
     canCombineWithOthers: formData.canCombineWithOthers,
     priority: formData.priority,
