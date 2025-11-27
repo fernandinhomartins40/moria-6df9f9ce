@@ -39,6 +39,7 @@ export const createPromotionSchema = z.object({
     'CUSTOMER_SEGMENT',
     'TIME_WINDOW',
     'FIRST_PURCHASE',
+    'AUTO_APPLY',
   ]),
 
   // Segmentation
@@ -98,13 +99,25 @@ export const createPromotionSchema = z.object({
 
   // Rewards
   rewards: z.object({
-    type: z.string(),
-    value: z.union([z.string(), z.number()]),
-    items: z.array(z.any()).optional(),
+    primary: z.object({
+      type: z.string(),
+      value: z.number(),
+      maxAmount: z.number().optional(),
+    }),
+    secondary: z.object({
+      type: z.string(),
+      value: z.number(),
+    }).optional(),
+    freeProducts: z.array(z.object({
+      productId: z.string().uuid(),
+      quantity: z.number().int().positive(),
+    })).optional(),
   }),
 
   // Schedule
   schedule: z.object({
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
     daysOfWeek: z.array(z.number().min(0).max(6)).optional(),
     timeWindows: z
       .array(
