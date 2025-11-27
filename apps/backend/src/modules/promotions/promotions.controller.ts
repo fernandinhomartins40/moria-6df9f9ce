@@ -23,9 +23,9 @@ export class PromotionsController {
       console.log('[PromotionsController] Recebendo requisição de criação de promoção');
       console.log('[PromotionsController] Body:', JSON.stringify(req.body, null, 2));
 
-      if (!req.user) {
-        console.error('[PromotionsController] Usuário não autenticado');
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        console.error('[PromotionsController] Admin não autenticado');
+        throw new Error('Admin not authenticated');
       }
 
       console.log('[PromotionsController] Validando schema...');
@@ -35,7 +35,7 @@ export class PromotionsController {
 
       console.log('[PromotionsController] Criando promoção...');
       const promotion = await this.promotionsService.createPromotion(
-        req.user.customerId,
+        req.admin.adminId,
         dto
       );
       console.log('[PromotionsController] Promoção criada:', promotion.id);
@@ -165,14 +165,14 @@ export class PromotionsController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const dto = updatePromotionSchema.parse(req.body);
       const promotion = await this.promotionsService.updatePromotion(
         req.params.id,
-        req.user.customerId,
+        req.admin.adminId,
         dto
       );
 
@@ -213,13 +213,13 @@ export class PromotionsController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const promotion = await this.promotionsService.activatePromotion(
         req.params.id,
-        req.user.customerId
+        req.admin.adminId
       );
 
       res.status(200).json({
@@ -241,13 +241,13 @@ export class PromotionsController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
+      if (!req.admin) {
+        throw new Error('Admin not authenticated');
       }
 
       const promotion = await this.promotionsService.deactivatePromotion(
         req.params.id,
-        req.user.customerId
+        req.admin.adminId
       );
 
       res.status(200).json({
