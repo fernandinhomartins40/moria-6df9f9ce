@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, TrendingUp, Percent, Calendar, Settings, X, CheckCircle2, Package, Tag, Check } from 'lucide-react';
 import apiClient from '../../api/apiClient';
+import productService, { Product } from '../../api/productService';
 import type { AdvancedPromotion } from '../../types/promotions';
 import { toast } from 'sonner';
 
@@ -226,7 +227,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // Funções auxiliares para conversão segura de números
@@ -252,17 +253,16 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
   const loadInitialData = async () => {
     setLoadingData(true);
     try {
-      const productsResponse = await apiClient.getProducts();
+      const productsResponse = await productService.getProducts({ limit: 1000 });
       console.log('Produtos carregados:', productsResponse);
-      if (productsResponse?.success && productsResponse.data) {
-        const products = productsResponse.data;
-        setAvailableProducts(products);
-        console.log('Total de produtos:', products.length);
 
-        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
-        setAvailableCategories(categories);
-        console.log('Categorias disponíveis:', categories);
-      }
+      const products = productsResponse.products || [];
+      setAvailableProducts(products);
+      console.log('Total de produtos:', products.length);
+
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      setAvailableCategories(categories);
+      console.log('Categorias disponíveis:', categories);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar produtos e categorias');
@@ -919,7 +919,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
                                   <div className="flex-1 text-left">
                                     <span className="block font-medium">{product.name}</span>
                                     <p className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
-                                      {product.category} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice || product.price)}
+                                      {product.category} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.promoPrice || product.salePrice)}
                                     </p>
                                   </div>
                                   {isSelected && <Check className="h-4 w-4 ml-2 flex-shrink-0" />}
