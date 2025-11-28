@@ -28,6 +28,8 @@ import customerRoutes from '@modules/customer/customer.routes.js';
 import supportRoutes from '@modules/support/support.routes.js';
 import reportsRoutes from '@modules/reports/reports.routes.js';
 import notificationsRoutes from '@modules/notifications/notifications.routes.js';
+import settingsRoutes from '@modules/settings/settings.routes.js';
+import cmsRoutes from '@modules/cms/cms.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -116,6 +118,10 @@ export function createApp(): Express {
 
   // Notifications Routes
   app.use('/', notificationsRoutes);
+
+  // Settings & CMS Routes
+  app.use('/settings', settingsRoutes);
+  app.use('/cms', cmsRoutes);
 
   // 404 handler
   app.use((_req: Request, res: Response) => {

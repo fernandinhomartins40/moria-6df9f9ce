@@ -1552,6 +1552,125 @@ async function seedChecklistData() {
   console.log('✅ Checklist data seeded successfully!');
 
   // =========================================================================
+  // CMS - SETTINGS, HERO, MARQUEE, FOOTER
+  // =========================================================================
+  console.log('\n🎨 Seeding CMS data...');
+
+  // Store Settings
+  console.log('⚙️  Creating Store Settings...');
+  await prisma.storeSettings.create({
+    data: {
+      storeName: 'Moria Peças & Serviços',
+      cnpj: '12.345.678/0001-90',
+      phone: '(11) 99999-9999',
+      email: 'contato@moriapecas.com.br',
+      address: 'Rua das Oficinas, 123',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01234567',
+      defaultMargin: 35,
+      freeShippingMin: 150,
+      deliveryFee: 15.90,
+      deliveryDays: 3,
+      businessHours: {
+        weekdays: 'Segunda a Sexta: 8h às 18h',
+        saturday: 'Sábado: 8h às 12h',
+        sunday: 'Domingo: Fechado',
+      },
+      notifyNewOrders: true,
+      notifyLowStock: true,
+      notifyWeeklyReports: false,
+    },
+  });
+  console.log('  ✅ Store Settings created');
+
+  // Hero Section
+  console.log('🎯 Creating Hero Section...');
+  await prisma.heroSection.create({
+    data: {
+      title: 'MORIA Peças & Serviços',
+      subtitle:
+        'Especialistas em peças automotivas e serviços de qualidade há mais de 15 anos. Encontre tudo o que você precisa para manter seu veículo em perfeito estado com garantia e atendimento especializado.',
+      imageUrl: '/assets/hero-garage.jpg',
+      features: [
+        { icon: 'Shield', text: 'Qualidade Garantida' },
+        { icon: 'Truck', text: 'Entrega Rápida' },
+        { icon: 'Wrench', text: 'Serviços Especializados' },
+        { icon: 'Award', text: '15+ Anos no Mercado' },
+      ],
+      cta1Text: 'Ver Produtos',
+      cta1Link: '#products',
+      cta1Enabled: true,
+      cta2Text: 'Nossos Serviços',
+      cta2Link: '#services',
+      cta2Enabled: true,
+      cta3Text: 'Fale Conosco',
+      cta3Link: 'https://wa.me/5511999999999',
+      cta3Enabled: true,
+      active: true,
+    },
+  });
+  console.log('  ✅ Hero Section created');
+
+  // Marquee Messages
+  console.log('📢 Creating Marquee Messages...');
+  const marqueeMessages = [
+    '🔧 PEÇAS ORIGINAIS COM ATÉ 30% DE DESCONTO',
+    '⚡ SERVIÇOS ESPECIALIZADOS - ORÇAMENTO GRÁTIS',
+    '🚗 ENTREGA RÁPIDA EM TODA A CIDADE',
+    '🛠️ QUALIDADE GARANTIDA - ESPECIALISTAS HÁ MAIS DE 15 ANOS',
+    '💰 PROMOÇÕES IMPERDÍVEIS - CONFIRA NOSSAS OFERTAS',
+  ];
+
+  for (let i = 0; i < marqueeMessages.length; i++) {
+    await prisma.marqueeMessage.create({
+      data: {
+        message: marqueeMessages[i],
+        order: i,
+        active: true,
+      },
+    });
+  }
+  console.log(`  ✅ Created ${marqueeMessages.length} Marquee Messages`);
+
+  // Footer Content
+  console.log('📄 Creating Footer Content...');
+  await prisma.footerContent.create({
+    data: {
+      description:
+        'A Moria Peças & Serviços é referência em peças automotivas e serviços especializados. Atendemos com excelência há mais de 15 anos.',
+      services: [
+        'Manutenção Preventiva',
+        'Troca de Óleo e Filtros',
+        'Revisão Completa',
+        'Freios e Suspensão',
+        'Ar Condicionado',
+        'Diagnóstico Eletrônico',
+      ],
+      socialLinks: {
+        facebook: '',
+        instagram: '',
+        whatsapp: '5511999999999',
+        youtube: '',
+      },
+      certifications: [
+        'Peças Originais',
+        'Garantia de 90 dias',
+        'Atendimento Especializado',
+        'Orçamento Gratuito',
+      ],
+      footerLinks: {
+        privacy: '#',
+        terms: '#',
+        warranty: '#',
+      },
+    },
+  });
+  console.log('  ✅ Footer Content created');
+
+  console.log('✅ CMS data seeded successfully!');
+
+  // =========================================================================
   // FAQ
   // =========================================================================
   await seedFAQ();
