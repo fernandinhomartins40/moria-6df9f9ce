@@ -69,7 +69,17 @@
       "Bash(timeout 10 npm run dev)",
       "Bash(timeout /t 15)",
       "Bash(python -m json.tool:*)",
-      "Bash(if exist \"apps\\backend\\src\\nul\" del /f \"apps\\backend\\src\\nul\")"
+      "Bash(if exist \"apps\\backend\\src\\nul\" del /f \"apps\\backend\\src\\nul\")",
+      "Bash(timeout 5 bash:*)",
+      "Bash(migration_support.sql)",
+      "Bash(temp_migration.sql)",
+      "Bash(full_schema.sql)",
+      "Bash(timeout 15 npm run dev:customer:*)",
+      "Bash(git checkout:*)",
+      "Bash(timeout:*)",
+      "Bash(PROMOTIONS_IMPLEMENTATION_COMPLETE.md)",
+      "Bash(npm run dev:all:*)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []

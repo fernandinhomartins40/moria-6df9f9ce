@@ -3,6 +3,7 @@ import { OrdersService } from './orders.service.js';
 import { createOrderSchema } from './dto/create-order.dto.js';
 import { updateOrderSchema } from './dto/update-order.dto.js';
 import { OrderStatus } from '@prisma/client';
+import notificationsService from '../notifications/notifications.service.js';
 
 export class OrdersController {
   private ordersService: OrdersService;
@@ -23,6 +24,14 @@ export class OrdersController {
 
       const dto = createOrderSchema.parse(req.body);
       const order = await this.ordersService.createOrder(req.user.customerId, dto);
+
+      // Notify admins about new order
+      try {
+        await notificationsService.notifyNewOrder(order.id, req.user.name || 'Cliente');
+      } catch (error) {
+        console.error('Failed to send order notification:', error);
+        // Don't fail the order creation if notification fails
+      }
 
       res.status(201).json({
         success: true,

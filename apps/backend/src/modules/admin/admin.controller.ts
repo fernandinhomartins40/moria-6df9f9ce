@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminService } from './admin.service.js';
+import notificationsService from '../notifications/notifications.service.js';
 
 export class AdminController {
   private adminService: AdminService;
@@ -51,6 +52,19 @@ export class AdminController {
       const { id } = req.params;
       const { status } = req.body;
       const order = await this.adminService.updateOrderStatus(id, status);
+
+      // Notify customer about order status update
+      try {
+        await notificationsService.notifyOrderStatusUpdated(
+          order.userId,
+          order.id,
+          status
+        );
+      } catch (error) {
+        console.error('Failed to send order status notification:', error);
+        // Don't fail the update if notification fails
+      }
+
       res.json(order);
     } catch (error) {
       next(error);

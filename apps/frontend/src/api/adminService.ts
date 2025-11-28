@@ -726,6 +726,52 @@ class AdminService {
   async deleteAdminUser(id: string): Promise<void> {
     await apiClient.delete(`/auth/admin/users/${id}`);
   }
+
+  // ==================== NOTIFICATIONS ====================
+
+  /**
+   * Get admin notifications
+   */
+  async getNotifications(params?: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+  }): Promise<Array<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+    read: boolean;
+    readAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>> {
+    const response = await apiClient.get('/admin/notifications', { params });
+    return response.data;
+  }
+
+  /**
+   * Get unread notifications count
+   */
+  async getUnreadNotificationsCount(): Promise<number> {
+    const response = await apiClient.get('/admin/notifications/unread-count');
+    return response.data.count;
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markNotificationAsRead(id: string): Promise<void> {
+    await apiClient.patch(`/admin/notifications/${id}/read`);
+  }
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllNotificationsAsRead(): Promise<void> {
+    await apiClient.patch('/admin/notifications/mark-all-read');
+  }
 }
 
 export default new AdminService();

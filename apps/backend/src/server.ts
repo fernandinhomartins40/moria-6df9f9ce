@@ -7,18 +7,27 @@ import { setupPrismaRLS } from '@middlewares/prisma-rls.middleware.js';
 
 async function bootstrap(): Promise<void> {
   try {
+    logger.info('🔄 Starting bootstrap process...');
+
     // Validate environment variables first
+    logger.info('📋 Validating environment variables...');
     validateEnvironment();
+    logger.info('✅ Environment variables validated');
 
     // Connect to database
+    logger.info('🔌 Connecting to database...');
     await connectDatabase();
+    logger.info('✅ Database connected');
 
     // Setup Prisma Row-Level Security middleware
+    logger.info('🔐 Setting up Prisma RLS middleware...');
     await setupPrismaRLS();
     logger.info('✅ Prisma RLS middleware initialized');
 
     // Create Express app
+    logger.info('⚙️  Creating Express application...');
     const app = createApp();
+    logger.info('✅ Express app created');
 
     // Start server
     const server = app.listen(environment.port, () => {
@@ -49,8 +58,19 @@ async function bootstrap(): Promise<void> {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+    logger.error('❌ FATAL ERROR - Failed to start server');
+    logger.error('Error details:', error);
+
+    if (error instanceof Error) {
+      logger.error('Error name:', error.name);
+      logger.error('Error message:', error.message);
+      logger.error('Error stack:', error.stack);
+    }
+
+    // Give time for logs to flush
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   }
 }
 

@@ -684,6 +684,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         pendingOrders={stats.pendingOrders}
         pendingQuotes={stats.pendingQuotes}
         lowStockProducts={stats.lowStockProducts}
+        useRealNotifications={true}
         onActionClick={(notification) => {
           // Implementar navegação baseada na notificação
           console.log('Ação de notificação:', notification);
