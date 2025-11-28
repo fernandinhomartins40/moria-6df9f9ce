@@ -48,6 +48,7 @@ import { CreateQuoteModal } from "./CreateQuoteModal";
 import AdminUsersSection from "./AdminUsersSection";
 import { PromotionsManagement } from "./PromotionsManagement";
 import adminService from "@/api/adminService";
+import { reportsService, type CompleteReportData, type SalesByMonth, type TopCategory, type GrowthComparison } from "@/api/reportsService";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import serviceService from "@/api/serviceService";
 import couponService from "@/api/couponService";
@@ -172,9 +173,19 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
+  // Reports states
+  const [reportData, setReportData] = useState<CompleteReportData | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      loadReportData();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     filterOrders();
@@ -220,6 +231,26 @@ export function AdminContent({ activeTab }: AdminContentProps) {
       console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadReportData = async () => {
+    setIsLoadingReport(true);
+    try {
+      const report = await reportsService.getCompleteReport();
+      setReportData(report);
+    } catch (error) {
+      console.error('Error loading report data:', error);
+    } finally {
+      setIsLoadingReport(false);
+    }
+  };
+
+  const handleExportReport = async () => {
+    try {
+      await reportsService.exportToCSV();
+    } catch (error) {
+      console.error('Error exporting report:', error);
     }
   };
 
@@ -1796,21 +1827,21 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const renderReports = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
-    
-    // Dados simulados para gráficos baseados nos dados reais
-    const salesByMonth = Array.from({ length: 12 }, (_, i) => ({
-      month: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][i],
-      revenue: Math.max(0, stats.totalRevenue / 12 + (Math.random() - 0.5) * 1000),
-      orders: Math.max(0, Math.floor(stats.totalOrders / 12 + (Math.random() - 0.5) * 5))
-    }));
 
-    const topCategories = [
-      { name: 'Filtros', value: 35, revenue: formatPrice(stats.totalRevenue * 0.35) },
-      { name: 'Freios', value: 25, revenue: formatPrice(stats.totalRevenue * 0.25) },
-      { name: 'Suspensão', value: 20, revenue: formatPrice(stats.totalRevenue * 0.20) },
-      { name: 'Motor', value: 15, revenue: formatPrice(stats.totalRevenue * 0.15) },
-      { name: 'Outros', value: 5, revenue: formatPrice(stats.totalRevenue * 0.05) }
-    ];
+    // If report data is not loaded yet, show loading or use basic stats
+    if (isLoadingReport) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-moria-orange" />
+          <span className="ml-2 text-lg">Carregando relatórios...</span>
+        </div>
+      );
+    }
+
+    // Use real data from reports API or fallback to basic stats
+    const salesByMonth = reportData?.salesByMonth || [];
+    const topCategories = reportData?.topCategories || [];
+    const growth = reportData?.growthComparison;
 
     return (
       <div className="space-y-6">
@@ -1821,8 +1852,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Receita do Mês</p>
-                  <p className="text-2xl font-bold text-green-600">{formatPrice(stats.totalRevenue)}</p>
-                  <p className="text-xs text-gray-500">+12.5% vs mês anterior</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatPrice(growth?.current.revenue || stats.totalRevenue)}
+                  </p>
+                  {growth && (
+                    <p className={`text-xs ${growth.growth.revenuePercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {growth.growth.revenuePercentage >= 0 ? '+' : ''}{growth.growth.revenuePercentage.toFixed(1)}% vs mês anterior
+                    </p>
+                  )}
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
               </div>
@@ -1834,8 +1871,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pedidos do Mês</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
-                  <p className="text-xs text-gray-500">+8.2% vs mês anterior</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {growth?.current.orders || stats.totalOrders}
+                  </p>
+                  {growth && (
+                    <p className={`text-xs ${growth.growth.ordersPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {growth.growth.ordersPercentage >= 0 ? '+' : ''}{growth.growth.ordersPercentage.toFixed(1)}% vs mês anterior
+                    </p>
+                  )}
                 </div>
                 <ShoppingCart className="h-8 w-8 text-blue-600" />
               </div>
@@ -1847,8 +1890,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
-                  <p className="text-2xl font-bold text-purple-600">{formatPrice(stats.averageTicket)}</p>
-                  <p className="text-xs text-gray-500">+3.1% vs mês anterior</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatPrice(growth?.current.averageTicket || stats.averageTicket)}
+                  </p>
+                  {growth && (
+                    <p className={`text-xs ${growth.growth.averageTicketPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {growth.growth.averageTicketPercentage >= 0 ? '+' : ''}{growth.growth.averageTicketPercentage.toFixed(1)}% vs mês anterior
+                    </p>
+                  )}
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
               </div>
@@ -1861,7 +1910,6 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Taxa Conversão</p>
                   <p className="text-2xl font-bold text-orange-600">{stats.conversionRate.toFixed(1)}%</p>
-                  <p className="text-xs text-gray-500">+5.7% vs mês anterior</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-orange-600" />
               </div>
@@ -1877,20 +1925,27 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <CardDescription>Receita e número de pedidos mensais</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {salesByMonth.map((data, index) => (
-                  <div key={data.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${index === currentMonth ? 'bg-moria-orange' : 'bg-gray-300'}`} />
-                      <span className="font-medium">{data.month}</span>
+              {salesByMonth.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <BarChart3 className="mx-auto h-12 w-12 text-gray-300" />
+                  <p className="mt-2">Nenhum dado de vendas disponível</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {salesByMonth.map((data) => (
+                    <div key={data.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${data.monthNumber - 1 === currentMonth ? 'bg-moria-orange' : 'bg-gray-300'}`} />
+                        <span className="font-medium">{data.month}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{formatPrice(data.revenue)}</p>
+                        <p className="text-sm text-gray-500">{data.orders} pedidos</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{formatPrice(data.revenue)}</p>
-                      <p className="text-sm text-gray-500">{data.orders} pedidos</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1901,28 +1956,35 @@ export function AdminContent({ activeTab }: AdminContentProps) {
               <CardDescription>Categorias mais vendidas por receita</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {topCategories.map((category, index) => (
-                  <div key={category.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm font-medium text-gray-600">#{index + 1}</span>
-                        <span className="font-medium">{category.name}</span>
+              {topCategories.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Tag className="mx-auto h-12 w-12 text-gray-300" />
+                  <p className="mt-2">Nenhuma categoria vendida ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {topCategories.map((category, index) => (
+                    <div key={category.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-gray-600">#{index + 1}</span>
+                          <span className="font-medium">{category.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-semibold">{formatPrice(category.revenue)}</span>
+                          <span className="text-sm text-gray-500 ml-2">({category.percentage.toFixed(1)}%)</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="font-semibold">{category.revenue}</span>
-                        <span className="text-sm text-gray-500 ml-2">({category.value}%)</span>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-moria-orange h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(category.percentage, 100)}%` }}
+                        />
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-moria-orange h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${category.value}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -2010,9 +2072,13 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                 </div>
                 <Separator />
                 <div className="text-center py-4">
-                  <Button variant="outline" className="w-full">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Exportar Relatório
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleExportReport}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Relatório CSV
                   </Button>
                 </div>
               </div>

@@ -26,6 +26,7 @@ import customerRevisionsRoutes from '@modules/customer-revisions/customer-revisi
 import adminRoutes from '@modules/admin/admin.routes.js';
 import customerRoutes from '@modules/customer/customer.routes.js';
 import supportRoutes from '@modules/support/support.routes.js';
+import reportsRoutes from '@modules/reports/reports.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -108,6 +109,9 @@ export function createApp(): Express {
 
   // Support Routes
   app.use('/support', supportRoutes);
+
+  // Reports Routes (Admin only)
+  app.use('/admin/reports', reportsRoutes);
 
   // 404 handler
   app.use((_req: Request, res: Response) => {
