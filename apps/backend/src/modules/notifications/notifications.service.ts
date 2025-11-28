@@ -1,5 +1,5 @@
 // src/modules/notifications/notifications.service.ts
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '@config/database.js';
 import { NotificationType, NotificationRecipientType } from '@prisma/client';
 
 export interface CreateNotificationData {

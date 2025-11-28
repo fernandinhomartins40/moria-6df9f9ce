@@ -10,7 +10,7 @@ export class NotificationsController {
    */
   async getAdminNotifications(req: Request, res: Response) {
     try {
-      const adminId = req.user?.id;
+      const adminId = req.admin?.adminId;
       if (!adminId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -40,7 +40,7 @@ export class NotificationsController {
    */
   async getAdminUnreadCount(req: Request, res: Response) {
     try {
-      const adminId = req.user?.id;
+      const adminId = req.admin?.adminId;
       if (!adminId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -60,7 +60,7 @@ export class NotificationsController {
    */
   async markAsRead(req: Request, res: Response) {
     try {
-      const adminId = req.user?.id;
+      const adminId = req.admin?.adminId;
       if (!adminId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -82,7 +82,7 @@ export class NotificationsController {
    */
   async markAllAsRead(req: Request, res: Response) {
     try {
-      const adminId = req.user?.id;
+      const adminId = req.admin?.adminId;
       if (!adminId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -102,7 +102,7 @@ export class NotificationsController {
    */
   async getCustomerNotifications(req: Request, res: Response) {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.customerId;
       if (!customerId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -132,7 +132,7 @@ export class NotificationsController {
    */
   async getCustomerUnreadCount(req: Request, res: Response) {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.customerId;
       if (!customerId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -152,7 +152,7 @@ export class NotificationsController {
    */
   async markCustomerNotificationAsRead(req: Request, res: Response) {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.customerId;
       if (!customerId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -174,7 +174,7 @@ export class NotificationsController {
    */
   async markAllCustomerNotificationsAsRead(req: Request, res: Response) {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.customerId;
       if (!customerId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }

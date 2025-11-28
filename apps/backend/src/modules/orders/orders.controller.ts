@@ -4,6 +4,7 @@ import { createOrderSchema } from './dto/create-order.dto.js';
 import { updateOrderSchema } from './dto/update-order.dto.js';
 import { OrderStatus } from '@prisma/client';
 import notificationsService from '../notifications/notifications.service.js';
+import { prisma } from '@config/database.js';
 
 export class OrdersController {
   private ordersService: OrdersService;
@@ -27,7 +28,13 @@ export class OrdersController {
 
       // Notify admins about new order
       try {
-        await notificationsService.notifyNewOrder(order.id, req.user.name || 'Cliente');
+        // Get customer name from database
+        const customer = await prisma.customer.findUnique({
+          where: { id: req.user.customerId },
+          select: { name: true },
+        });
+        const customerName = customer?.name || 'Cliente';
+        await notificationsService.notifyNewOrder(order.id, customerName);
       } catch (error) {
         console.error('Failed to send order notification:', error);
         // Don't fail the order creation if notification fails
