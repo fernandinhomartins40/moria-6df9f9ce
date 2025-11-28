@@ -117,16 +117,21 @@ export class CmsService {
    */
   async createMarqueeMessage(data: CreateMarqueeMessageDto) {
     // Se order não foi fornecida, pegar o próximo número
-    if (data.order === undefined) {
+    let order = data.order;
+    if (order === undefined) {
       const lastMessage = await prisma.marqueeMessage.findFirst({
         orderBy: { order: 'desc' },
       });
 
-      data.order = lastMessage ? lastMessage.order + 1 : 0;
+      order = lastMessage ? lastMessage.order + 1 : 0;
     }
 
     const message = await prisma.marqueeMessage.create({
-      data,
+      data: {
+        message: data.message,
+        order,
+        active: data.active ?? true,
+      },
     });
 
     return message;
