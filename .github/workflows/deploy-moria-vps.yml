@@ -244,6 +244,10 @@ jobs:
             echo "Gerando Prisma client..."
             npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
 
+            echo "Aplicando schema ao banco de dados..."
+            npx prisma db push --accept-data-loss || { echo "❌ Erro ao aplicar schema ao banco"; exit 1; }
+            echo "✅ Schema aplicado ao banco de dados"
+
             echo "Compilando backend..."
             npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
 
