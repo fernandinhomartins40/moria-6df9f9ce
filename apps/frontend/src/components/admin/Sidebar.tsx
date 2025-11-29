@@ -17,7 +17,8 @@ import {
   Gift,
   ClipboardCheck,
   User,
-  UserCog
+  UserCog,
+  Palette
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -159,7 +160,20 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             {!isCollapsed && <span className="ml-3">Voltar ao Site</span>}
           </Button>
         </Link>
-        
+
+        <Link to="/admin/landing-page">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white",
+              isCollapsed && "justify-center px-2"
+            )}
+          >
+            <Palette className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span className="ml-3">Editor da Landing Page</span>}
+          </Button>
+        </Link>
+
         <Button
           variant="ghost"
           className={cn(
