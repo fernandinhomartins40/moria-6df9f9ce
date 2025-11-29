@@ -244,10 +244,6 @@ jobs:
             echo "Gerando Prisma client..."
             npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
 
-            echo "Aplicando schema ao banco de dados..."
-            npx prisma db push --accept-data-loss || { echo "❌ Erro ao aplicar schema ao banco"; exit 1; }
-            echo "✅ Schema aplicado ao banco de dados"
-
             echo "Compilando backend..."
             npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
 
@@ -321,6 +317,15 @@ jobs:
             # Aguardar aplicação inicializar completamente
             echo "Aguardando aplicação inicializar (40s)..."
             sleep 40
+
+            # ===== APLICAR SCHEMA DO PRISMA =====
+            echo "=== Aplicando schema do Prisma ao banco de dados ==="
+            docker exec moria-vps sh -c "cd /app/apps/backend && npx prisma db push --accept-data-loss" || {
+              echo "❌ Erro ao aplicar schema do Prisma"
+              docker logs moria-vps --tail=50
+              exit 1
+            }
+            echo "✅ Schema do Prisma aplicado com sucesso"
 
             # ===== DIAGNÓSTICO: Verificar se aplicação está rodando =====
             echo "=== Verificando status no supervisord ==="
