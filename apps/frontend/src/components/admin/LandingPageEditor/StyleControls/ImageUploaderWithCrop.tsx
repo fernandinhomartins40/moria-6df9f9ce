@@ -25,6 +25,8 @@ interface ImageUploaderWithCropProps {
   recommendedHeight?: number;
   aspectRatio?: number | null; // null para livre, número para fixo (ex: 16/9, 1)
   maxFileSizeMB?: number;
+  // Categoria para organização no servidor (hero, header, footer, logo)
+  category?: string;
 }
 
 export const ImageUploaderWithCrop = ({
@@ -37,6 +39,7 @@ export const ImageUploaderWithCrop = ({
   recommendedHeight = 1080,
   aspectRatio = null,
   maxFileSizeMB = 5,
+  category = 'general',
 }: ImageUploaderWithCropProps) => {
   const [preview, setPreview] = useState(value.url);
   const [isDragging, setIsDragging] = useState(false);
@@ -53,11 +56,12 @@ export const ImageUploaderWithCrop = ({
   /**
    * Upload de imagem via API
    */
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File, category: string = 'general'): Promise<string> => {
     console.log(`[ImageUploaderWithCrop] 🔄 Iniciando upload`, {
       fileName: file.name,
       fileSize: `${(file.size / 1024).toFixed(2)} KB`,
       fileType: file.type,
+      category,
     });
 
     try {
@@ -65,23 +69,38 @@ export const ImageUploaderWithCrop = ({
 
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('category', category);
 
       setUploadProgress(30);
 
-      // TODO: Ajustar endpoint para o backend Moria
-      const response = await fetch('/api/upload/image', {
+      // Buscar token de autenticação
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado');
+      }
+
+      // Endpoint correto: /api/landing-page/upload
+      const response = await fetch('/api/landing-page/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       setUploadProgress(100);
 
       const imageUrl = data.data?.url || data.url;
+
+      if (!imageUrl) {
+        throw new Error('URL da imagem não retornada pelo servidor');
+      }
 
       console.log(`[ImageUploaderWithCrop] ✅ Upload bem-sucedido`, { imageUrl });
 
@@ -142,8 +161,8 @@ export const ImageUploaderWithCrop = ({
       const localPreview = URL.createObjectURL(compressedFile);
       setPreview(localPreview);
 
-      // Upload para servidor
-      const imageUrl = await uploadImage(compressedFile);
+      // Upload para servidor com categoria
+      const imageUrl = await uploadImage(compressedFile, category);
 
       // Atualizar com URL real do servidor
       setPreview(imageUrl);

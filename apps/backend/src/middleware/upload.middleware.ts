@@ -8,10 +8,11 @@ import { Request } from 'express';
 // Configurar diretório de uploads
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const PRODUCTS_DIR = path.join(UPLOAD_DIR, 'products');
+const LANDING_PAGE_DIR = path.join(UPLOAD_DIR, 'landing-page');
 const TEMP_DIR = path.join(UPLOAD_DIR, 'temp');
 
 // Garantir que os diretórios existam
-[UPLOAD_DIR, PRODUCTS_DIR, TEMP_DIR].forEach(dir => {
+[UPLOAD_DIR, PRODUCTS_DIR, LANDING_PAGE_DIR, TEMP_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -167,3 +168,97 @@ export function cleanupTempFiles(): void {
 
 // Executar limpeza a cada hora
 setInterval(cleanupTempFiles, 60 * 60 * 1000);
+
+// ============================================================================
+// LANDING PAGE IMAGE PROCESSING
+// ============================================================================
+
+/**
+ * Processar imagem da landing page (hero, header, footer)
+ * Otimiza e salva em /uploads/landing-page/
+ */
+export async function processLandingPageImage(
+  inputPath: string,
+  category: string // 'hero', 'header', 'footer', 'logo', etc.
+): Promise<string> {
+  const fileId = uuidv4();
+  const filename = `${category}-${fileId}.jpg`;
+  const outputPath = path.join(LANDING_PAGE_DIR, filename);
+
+  // Processar imagem com qualidade alta para landing page
+  await processImage(inputPath, outputPath, {
+    width: 1920,
+    height: 1080,
+    quality: 90,
+    format: 'jpeg'
+  });
+
+  // Remover arquivo temporário
+  if (fs.existsSync(inputPath)) {
+    fs.unlinkSync(inputPath);
+  }
+
+  return `/uploads/landing-page/${filename}`;
+}
+
+/**
+ * Deletar imagens da landing page
+ */
+export async function deleteLandingPageImages(imageUrls: string[]): Promise<void> {
+  for (const url of imageUrls) {
+    try {
+      // Apenas deletar se for uma URL local (/uploads/landing-page/...)
+      if (!url.startsWith('/uploads/landing-page/')) {
+        continue;
+      }
+
+      // Extrair caminho do arquivo da URL
+      const filename = path.basename(url);
+      const filePath = path.join(LANDING_PAGE_DIR, filename);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`[Upload] Imagem deletada: ${filename}`);
+      }
+    } catch (error) {
+      console.error(`[Upload] Erro ao deletar imagem ${url}:`, error);
+    }
+  }
+}
+
+/**
+ * Extrair URLs de imagens de um objeto de configuração
+ * Busca recursivamente por propriedades 'url' ou que contenham 'Image'
+ */
+export function extractImageUrls(config: any): string[] {
+  const urls: string[] = [];
+
+  function extract(obj: any) {
+    if (!obj || typeof obj !== 'object') return;
+
+    // Se é array, processar cada item
+    if (Array.isArray(obj)) {
+      obj.forEach(item => extract(item));
+      return;
+    }
+
+    // Se é objeto, buscar propriedades de imagem
+    for (const [key, value] of Object.entries(obj)) {
+      // Propriedade 'url' direta
+      if (key === 'url' && typeof value === 'string' && value.startsWith('/uploads/landing-page/')) {
+        urls.push(value);
+      }
+      // Propriedades que contenham 'Image' ou 'image' e sejam objetos com 'url'
+      else if ((key.toLowerCase().includes('image') || key === 'logo') && typeof value === 'object' && value !== null) {
+        extract(value);
+      }
+      // Recursivamente buscar em objetos aninhados
+      else if (typeof value === 'object' && value !== null) {
+        extract(value);
+      }
+    }
+  }
+
+  extract(config);
+  return [...new Set(urls)]; // Remover duplicatas
+}

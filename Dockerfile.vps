@@ -153,10 +153,10 @@ sleep 5
 
 # Garantir permissões corretas para uploads
 echo "Configurando diretórios de upload..."
-mkdir -p /app/apps/backend/uploads/products /app/apps/backend/uploads/temp
+mkdir -p /app/apps/backend/uploads/products /app/apps/backend/uploads/landing-page /app/apps/backend/uploads/temp
 chmod -R 755 /app/apps/backend/uploads
 chown -R root:root /app/apps/backend/uploads
-echo "✓ Diretórios de upload configurados"
+echo "✓ Diretórios de upload configurados (products, landing-page, temp)"
 
 # Sincronizar banco de dados com schema (produção)
 cd /app/apps/backend

@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
 import { AdminAuthMiddleware } from '../../middlewares/admin-auth.middleware.js';
+import { upload, processLandingPageImage, deleteLandingPageImages, extractImageUrls } from '../../middleware/upload.middleware.js';
 
 const router = Router();
 const authenticate = AdminAuthMiddleware.authenticate;
@@ -15,6 +16,60 @@ const logChange = (action: string, details?: any) => {
   const timestamp = new Date().toISOString();
   console.log(`[LandingPage] ${timestamp} - ${action}`, details || '');
 };
+
+// ============================================================================
+// UPLOAD DE IMAGENS
+// ============================================================================
+
+/**
+ * POST /api/landing-page/upload
+ * Upload de imagem para landing page (requer autenticação)
+ */
+router.post('/upload', authenticate, upload.single('image'), async (req: any, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma imagem enviada',
+      });
+    }
+
+    // Extrair categoria do body (hero, header, footer, logo, etc.)
+    const category = req.body.category || 'general';
+
+    logChange('📤 Upload de imagem', {
+      category,
+      filename: req.file.originalname,
+      size: `${(req.file.size / 1024).toFixed(2)} KB`,
+      mimetype: req.file.mimetype,
+    });
+
+    // Processar e otimizar imagem
+    const imageUrl = await processLandingPageImage(req.file.path, category);
+
+    logChange('✅ Upload concluído', { imageUrl });
+
+    return res.json({
+      success: true,
+      data: {
+        url: imageUrl,
+      },
+      message: 'Imagem enviada com sucesso',
+    });
+  } catch (error: any) {
+    logChange('❌ Erro no upload', { error: error.message });
+
+    console.error('Erro ao fazer upload de imagem:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Erro ao fazer upload da imagem',
+    });
+  }
+});
+
+// ============================================================================
+// CONFIGURAÇÃO DA LANDING PAGE
+// ============================================================================
 
 /**
  * GET /api/landing-page/config
@@ -79,6 +134,46 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
 
     // Buscar config existente
     const existingConfig = await prisma.landingPageConfig.findFirst();
+
+    // ========================================================================
+    // LIMPEZA AUTOMÁTICA DE IMAGENS ANTIGAS
+    // ========================================================================
+    if (existingConfig) {
+      try {
+        // Extrair URLs antigas
+        const oldConfig = {
+          header: JSON.parse(existingConfig.header),
+          hero: JSON.parse(existingConfig.hero),
+          marquee: JSON.parse(existingConfig.marquee),
+          about: JSON.parse(existingConfig.about),
+          products: JSON.parse(existingConfig.products),
+          services: JSON.parse(existingConfig.services),
+          contact: JSON.parse(existingConfig.contact),
+          footer: JSON.parse(existingConfig.footer),
+        };
+
+        const oldUrls = extractImageUrls(oldConfig);
+
+        // Extrair URLs novas
+        const newConfig = { header, hero, marquee, about, products, services, contact, footer };
+        const newUrls = extractImageUrls(newConfig);
+
+        // Identificar imagens que não são mais usadas
+        const urlsToDelete = oldUrls.filter(url => !newUrls.includes(url));
+
+        if (urlsToDelete.length > 0) {
+          logChange('🗑️ Limpando imagens não utilizadas', {
+            count: urlsToDelete.length,
+            urls: urlsToDelete,
+          });
+
+          await deleteLandingPageImages(urlsToDelete);
+        }
+      } catch (error) {
+        // Não falhar a atualização se a limpeza falhar
+        console.error('[LandingPage] Erro ao limpar imagens antigas:', error);
+      }
+    }
 
     let config;
 
