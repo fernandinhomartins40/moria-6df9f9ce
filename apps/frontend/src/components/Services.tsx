@@ -36,9 +36,12 @@ const getIconForCategory = (category: string) => {
   return categoryIcons[category] || Wrench;
 };
 
+import { useLandingPageConfig } from "../hooks/useLandingPageConfig";
+
 export function Services() {
   const { addItem, openCart } = useCart();
   const { services, loading, error, fetchServices } = useServices();
+  const { config, loading: configLoading } = useLandingPageConfig();
 
   interface ServiceItem {
     id: string;
@@ -74,16 +77,33 @@ export function Services() {
     fetchServices({ status: 'ACTIVE', limit: 100 });
   }, []);
 
+  const sectionTitle = configLoading ? "Nossos Serviços" : config.about.title;
+  const sectionSubtitle = configLoading ? "Oferecemos uma gama completa de serviços automotivos com qualidade profissional e preços justos. Sua tranquilidade é nossa prioridade." : config.about.subtitle;
+
+  // Helper para pegar ícone dinamicamente
+  const getIcon = (iconName: string) => {
+    const iconMap: Record<string, any> = {
+      Shield,
+      Clock,
+      Wrench,
+      Zap,
+    };
+    return iconMap[iconName] || Wrench;
+  };
+
   return (
     <section id="servicos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Nossos <span className="gold-metallic">Serviços</span>
+            {sectionTitle.split(' ').map((word, i) =>
+              i === sectionTitle.split(' ').length - 1 ?
+                <span key={i} className="gold-metallic">{word}</span> :
+                <span key={i}>{word} </span>
+            )}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Oferecemos uma gama completa de serviços automotivos com qualidade profissional
-            e preços justos. Sua tranquilidade é nossa prioridade.
+            {sectionSubtitle}
           </p>
         </div>
 
@@ -169,37 +189,25 @@ export function Services() {
           </div>
         )}
 
-        {/* Trust Indicators */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 text-center">
-          <div className="flex flex-col items-center">
-            <div className="gold-metallic-bg p-4 rounded-full mb-2">
-              <Shield className="h-8 w-8 text-moria-black" />
-            </div>
-            <h4 className="font-bold text-moria-black">Garantia</h4>
-            <p className="text-gray-600 text-sm">6 meses em todos os serviços</p>
+        {/* Trust Indicators - from config */}
+        {!configLoading && config.about.trustIndicators && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 text-center">
+            {config.about.trustIndicators.map((indicator) => {
+              const IndicatorIcon = getIcon(indicator.icon);
+              const isGold = indicator.iconBackground === 'gold';
+
+              return (
+                <div key={indicator.id} className="flex flex-col items-center">
+                  <div className={isGold ? 'gold-metallic-bg p-4 rounded-full mb-2' : 'bg-moria-orange p-4 rounded-full mb-2'}>
+                    <IndicatorIcon className={isGold ? 'h-8 w-8 text-moria-black' : 'h-8 w-8 text-white'} />
+                  </div>
+                  <h4 className="font-bold text-moria-black">{indicator.title}</h4>
+                  <p className="text-gray-600 text-sm">{indicator.description}</p>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex flex-col items-center">
-            <div className="gold-metallic-bg p-4 rounded-full mb-2">
-              <Clock className="h-8 w-8 text-moria-black" />
-            </div>
-            <h4 className="font-bold text-moria-black">Agilidade</h4>
-            <p className="text-gray-600 text-sm">Atendimento rápido e eficiente</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="bg-moria-orange p-4 rounded-full mb-2">
-              <Wrench className="h-8 w-8 text-white" />
-            </div>
-            <h4 className="font-bold text-moria-black">Expertise</h4>
-            <p className="text-gray-600 text-sm">15+ anos de experiência</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="bg-moria-orange p-4 rounded-full mb-2">
-              <Zap className="h-8 w-8 text-white" />
-            </div>
-            <h4 className="font-bold text-moria-black">Tecnologia</h4>
-            <p className="text-gray-600 text-sm">Equipamentos modernos</p>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );

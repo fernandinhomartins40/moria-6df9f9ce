@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, User, Menu, X, Gift } from "lucide-react"; // ✅ ETAPA 2.2: Importar ícone Gift
+import { ShoppingCart, User, Menu, X, Gift } from "lucide-react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge"; // ✅ ETAPA 2.2: Importar Badge
+import { Badge } from "./ui/badge";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginDialog } from "./customer/LoginDialog";
 import { Link } from "react-router-dom";
-import couponService from "../api/couponService"; // ✅ ETAPA 2.2: Importar service
+import couponService from "../api/couponService";
+import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [activeCouponCount, setActiveCouponCount] = useState(0); // ✅ ETAPA 2.2: Estado para contagem
+  const [activeCouponCount, setActiveCouponCount] = useState(0);
   const { totalItems, openCart } = useCart();
   const { isAuthenticated, customer } = useAuth();
+  const { config, loading } = useLandingPageConfig();
 
-  // ✅ ETAPA 2.2: Buscar contagem de cupons ativos
   useEffect(() => {
     const loadCouponCount = async () => {
       try {
@@ -27,29 +28,40 @@ export function Header() {
     };
 
     loadCouponCount();
-    // Atualizar a cada 5 minutos
     const interval = setInterval(loadCouponCount, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const menuItems = [
+  const menuItems = loading ? [
     { name: "Início", href: "#inicio", isLink: false },
     { name: "Serviços", href: "#servicos", isLink: false },
     { name: "Peças", href: "#pecas", isLink: false },
     { name: "Promoções", href: "#promocoes", isLink: false },
     { name: "Sobre", href: "/about", isLink: true },
     { name: "Contato", href: "/contact", isLink: true },
-  ];
+  ] : config.header.menuItems.map(item => ({
+    name: item.label,
+    href: item.href,
+    isLink: item.isLink
+  }));
+
+  const headerStyle = loading ? {} : {
+    backgroundColor: config.header.backgroundColor,
+    color: config.header.textColor,
+  };
+
+  const logoSrc = loading ? "/logo_moria.png" : config.header.logo.url;
+  const logoAlt = loading ? "Moria Peças e Serviços" : config.header.logo.alt;
 
   return (
-    <header className="bg-moria-black text-white sticky top-0 z-50 shadow-lg">
+    <header className="text-white sticky top-0 z-50 shadow-lg" style={headerStyle}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-28">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <img 
-              src="/logo_moria.png" 
-              alt="Moria Peças e Serviços" 
+            <img
+              src={logoSrc}
+              alt={logoAlt}
               className="h-20 w-auto"
             />
           </div>

@@ -6,6 +6,7 @@ import { Clock, Timer, TrendingDown, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import offerService, { Offer } from "../api/offerService";
 import { getImageUrl } from "@/utils/imageUrl";
+import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
 
 interface PromotionalProduct {
   id: string;
@@ -70,6 +71,7 @@ const convertOfferToPromotional = (offer: Offer): PromotionalProduct => {
 
 export function Promotions() {
   const { addItem, openCart } = useCart();
+  const { config, loading: configLoading } = useLandingPageConfig();
 
   const [dailyOffers, setDailyOffers] = useState<PromotionalProduct[]>([]);
   const [weeklyOffers, setWeeklyOffers] = useState<PromotionalProduct[]>([]);
@@ -168,17 +170,23 @@ export function Promotions() {
     </Card>
   );
 
+  const sectionTitle = configLoading ? "Promoções Imperdíveis" : config.services.title;
+  const sectionSubtitle = configLoading ? "Aproveite nossas ofertas especiais por tempo limitado. Qualidade garantida com os melhores preços do mercado." : config.services.subtitle;
+
   return (
     <section id="promocoes" className="py-20 bg-gradient-to-br from-gray-900 to-moria-black text-white">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="gold-metallic">Promoções</span> Imperdíveis
+            {sectionTitle.split(' ').map((word, i) =>
+              i === 0 ?
+                <span key={i} className="gold-metallic">{word} </span> :
+                <span key={i}>{word} </span>
+            )}
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Aproveite nossas ofertas especiais por tempo limitado. 
-            Qualidade garantida com os melhores preços do mercado.
+            {sectionSubtitle}
           </p>
         </div>
 

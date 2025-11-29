@@ -11,12 +11,14 @@ import { FavoriteButton } from "./FavoriteButton";
 import productService, { Product as ApiProduct } from "@/api/productService";
 import { getImageUrl } from "@/utils/imageUrl";
 import type { AdvancedPromotion } from "../types/promotions";
+import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
 
 export function Products() {
   const { addItem, openCart } = useCart();
   const { isAuthenticated } = useAuth();
   const { favoriteProductIds } = useFavoritesContext();
   const { activePromotions, isLoading: promotionsLoading } = usePromotions();
+  const { config, loading: configLoading } = useLandingPageConfig();
 
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [products, setProducts] = useState<ApiProduct[]>([]);
@@ -161,16 +163,22 @@ export function Products() {
   };
 
 
+  const sectionTitle = configLoading ? "Peças Originais" : config.products.title;
+  const sectionSubtitle = configLoading ? "Peças de qualidade original com os melhores preços do mercado. Garantia de procedência e entrega rápida." : config.products.subtitle;
+
   return (
     <section id="pecas" className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Peças <span className="gold-metallic">Originais</span>
+            {sectionTitle.split(' ').map((word, i) =>
+              i === sectionTitle.split(' ').length - 1 ?
+                <span key={i} className="gold-metallic">{word}</span> :
+                <span key={i}>{word} </span>
+            )}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Peças de qualidade original com os melhores preços do mercado.
-            Garantia de procedência e entrega rápida.
+            {sectionSubtitle}
           </p>
         </div>
 

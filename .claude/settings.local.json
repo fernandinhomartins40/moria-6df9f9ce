@@ -79,7 +79,9 @@
       "Bash(timeout:*)",
       "Bash(PROMOTIONS_IMPLEMENTATION_COMPLETE.md)",
       "Bash(npm run dev:all:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(.gitignore)",
+      "Bash(git clean:*)"
     ],
     "deny": [],
     "ask": []
