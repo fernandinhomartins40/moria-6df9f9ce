@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { HeroConfig, HeroFeature, HeroButton } from '@/types/landingPage';
-import { ImageUploader, SliderControl, ArrayEditor, IconSelector } from '../StyleControls';
+import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector } from '../StyleControls';
 
 interface HeroEditorProps {
   config: HeroConfig;
@@ -153,11 +153,15 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
 
       {/* Imagem de Fundo */}
       <Card className="p-6">
-        <ImageUploader
-          label="Imagem de Fundo"
+        <ImageUploaderWithCrop
+          label="Imagem de Fundo do Hero"
           value={config.backgroundImage}
           onChange={(backgroundImage) => updateConfig({ backgroundImage })}
-          description="Imagem principal do banner (recomendado: 1920x1080px)"
+          description="Imagem principal do banner hero - largura total da tela"
+          recommendedWidth={1920}
+          recommendedHeight={1080}
+          aspectRatio={16/9}
+          maxFileSizeMB={10}
         />
       </Card>
 

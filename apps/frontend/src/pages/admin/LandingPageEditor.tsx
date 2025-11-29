@@ -20,7 +20,7 @@ import {
   Eye,
   FileText
 } from 'lucide-react';
-import { HeroEditor } from '@/components/admin/LandingPageEditor/SectionEditors/HeroEditor';
+import { HeroEditor, HeaderEditor, FooterEditor } from '@/components/admin/LandingPageEditor/SectionEditors';
 import { toast } from 'sonner';
 
 export default function LandingPageEditor() {
@@ -205,13 +205,11 @@ export default function LandingPageEditor() {
               />
             </TabsContent>
 
-            <TabsContent value="header">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor do Header em desenvolvimento...
-                </AlertDescription>
-              </Alert>
+            <TabsContent value="header" className="space-y-4">
+              <HeaderEditor
+                config={config.header}
+                onChange={(header) => updateConfig('header', header)}
+              />
             </TabsContent>
 
             <TabsContent value="marquee">
@@ -259,13 +257,11 @@ export default function LandingPageEditor() {
               </Alert>
             </TabsContent>
 
-            <TabsContent value="footer">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor do Footer em desenvolvimento...
-                </AlertDescription>
-              </Alert>
+            <TabsContent value="footer" className="space-y-4">
+              <FooterEditor
+                config={config.footer}
+                onChange={(footer) => updateConfig('footer', footer)}
+              />
             </TabsContent>
           </Tabs>
         </Card>

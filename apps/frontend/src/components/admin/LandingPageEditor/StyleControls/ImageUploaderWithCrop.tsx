@@ -1,0 +1,429 @@
+/**
+ * ImageUploaderWithCrop - Upload de imagens com crop integrado
+ * Usa ProductImageCropper (react-image-crop) para interface consistente
+ */
+
+import { useState, useRef } from 'react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Upload, X, Loader2, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { ImageConfig } from '@/types/landingPage';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ProductImageCropper } from '@/components/admin/ProductImageCropper';
+import imageCompression from 'browser-image-compression';
+
+interface ImageUploaderWithCropProps {
+  label: string;
+  value: ImageConfig;
+  onChange: (image: ImageConfig) => void;
+  description?: string;
+  acceptedFormats?: string[];
+  // Especificações de dimensões
+  recommendedWidth?: number;
+  recommendedHeight?: number;
+  aspectRatio?: number | null; // null para livre, número para fixo (ex: 16/9, 1)
+  maxFileSizeMB?: number;
+}
+
+export const ImageUploaderWithCrop = ({
+  label,
+  value,
+  onChange,
+  description,
+  acceptedFormats = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+  recommendedWidth = 1920,
+  recommendedHeight = 1080,
+  aspectRatio = null,
+  maxFileSizeMB = 5,
+}: ImageUploaderWithCropProps) => {
+  const [preview, setPreview] = useState(value.url);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Estado do crop
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+
+  /**
+   * Upload de imagem via API
+   */
+  const uploadImage = async (file: File): Promise<string> => {
+    console.log(`[ImageUploaderWithCrop] 🔄 Iniciando upload`, {
+      fileName: file.name,
+      fileSize: `${(file.size / 1024).toFixed(2)} KB`,
+      fileType: file.type,
+    });
+
+    try {
+      setUploadProgress(10);
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      setUploadProgress(30);
+
+      // TODO: Ajustar endpoint para o backend Moria
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setUploadProgress(100);
+
+      const imageUrl = data.data?.url || data.url;
+
+      console.log(`[ImageUploaderWithCrop] ✅ Upload bem-sucedido`, { imageUrl });
+
+      return imageUrl;
+    } catch (error: any) {
+      console.error(`[ImageUploaderWithCrop] ❌ Erro no upload:`, error);
+      throw error;
+    }
+  };
+
+  const handleFileSelect = async (file: File) => {
+    // Reset error state
+    setUploadError(null);
+
+    if (!acceptedFormats.includes(file.type)) {
+      setUploadError('Formato de arquivo não suportado. Use JPG, PNG, WebP ou SVG.');
+      return;
+    }
+
+    // Validar tamanho do arquivo
+    const maxSize = maxFileSizeMB * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadError(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo: ${maxFileSizeMB}MB.`);
+      return;
+    }
+
+    // Criar URL temporária para o cropper
+    const tempUrl = URL.createObjectURL(file);
+    setTempImageUrl(tempUrl);
+    setShowCropper(true);
+  };
+
+  /**
+   * Finalizar crop e fazer upload
+   */
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropper(false);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Comprimir imagem cropada
+      const compressedFile = await imageCompression(croppedBlob as File, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: Math.max(recommendedWidth, recommendedHeight),
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+        initialQuality: 0.85,
+      });
+
+      console.log('[ImageUploaderWithCrop] 📦 Imagem comprimida:', {
+        originalSize: `${(croppedBlob.size / 1024).toFixed(2)} KB`,
+        compressedSize: `${(compressedFile.size / 1024).toFixed(2)} KB`,
+        compression: `${((1 - compressedFile.size / croppedBlob.size) * 100).toFixed(1)}%`,
+      });
+
+      // Criar preview local imediatamente
+      const localPreview = URL.createObjectURL(compressedFile);
+      setPreview(localPreview);
+
+      // Upload para servidor
+      const imageUrl = await uploadImage(compressedFile);
+
+      // Atualizar com URL real do servidor
+      setPreview(imageUrl);
+      onChange({
+        ...value,
+        url: imageUrl,
+      });
+
+      setUploadError(null);
+
+      // Limpar URL temporária
+      if (tempImageUrl) {
+        URL.revokeObjectURL(tempImageUrl);
+        setTempImageUrl(null);
+      }
+    } catch (error: any) {
+      console.error('[ImageUploaderWithCrop] ❌ Upload falhou:', error);
+
+      const errorMsg = error.message || 'Erro ao fazer upload da imagem.';
+      setUploadError(errorMsg);
+
+      // Restaurar preview anterior
+      setPreview(value.url);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  /**
+   * Cancelar crop
+   */
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (tempImageUrl) {
+      URL.revokeObjectURL(tempImageUrl);
+      setTempImageUrl(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleUrlChange = (url: string) => {
+    setPreview(url);
+    onChange({
+      ...value,
+      url,
+    });
+  };
+
+  const handleClear = () => {
+    if (!value.url) return;
+
+    if (!confirm('Tem certeza que deseja remover esta imagem?')) {
+      return;
+    }
+
+    console.log('[ImageUploaderWithCrop] 🗑️ Removendo imagem:', value.url);
+
+    setPreview('');
+    onChange({
+      ...value,
+      url: '',
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    setUploadError(null);
+  };
+
+  const handleRetryUpload = () => {
+    if (fileInputRef.current?.files?.[0]) {
+      handleFileSelect(fileInputRef.current.files[0]);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Calcular aspect ratio display
+  const getAspectRatioLabel = () => {
+    if (aspectRatio === null) return 'Livre';
+    if (aspectRatio === 1) return '1:1 (Quadrado)';
+    if (aspectRatio === 16/9) return '16:9 (Widescreen)';
+    if (aspectRatio === 4/3) return '4:3';
+    return `${aspectRatio.toFixed(2)}:1`;
+  };
+
+  return (
+    <>
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+
+        {/* Especificações */}
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm text-blue-900">
+            <strong>Dimensões recomendadas:</strong> {recommendedWidth}x{recommendedHeight}px
+            {aspectRatio !== null && ` • Proporção: ${getAspectRatioLabel()}`}
+            {aspectRatio === null && ' • Proporção: Livre'}
+          </AlertDescription>
+        </Alert>
+
+        {/* Erro de Upload */}
+        {uploadError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{uploadError}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetryUpload}
+                className="ml-2"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Tentar Novamente
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Preview com Loading State */}
+        {preview && (
+          <div className="relative rounded-lg border overflow-hidden bg-muted">
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-10">
+                <Loader2 className="h-8 w-8 text-white animate-spin mb-2" />
+                <p className="text-white text-sm font-medium">
+                  Enviando imagem... {uploadProgress}%
+                </p>
+                <div className="w-3/4 h-2 bg-gray-300 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <img
+              src={preview}
+              alt={value.alt || 'Preview'}
+              className="w-full h-64 object-cover"
+            />
+            <Button
+              size="icon"
+              variant="destructive"
+              className="absolute top-2 right-2"
+              onClick={handleClear}
+              disabled={isUploading}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Upload Area */}
+        <div
+          className={`
+            border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
+            transition-colors
+            ${isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}
+            ${!preview ? 'block' : 'hidden'}
+          `}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground mb-1">
+            Arraste uma imagem ou clique para selecionar
+          </p>
+          <p className="text-xs text-muted-foreground">
+            JPG, PNG, WebP ou SVG (máx. {maxFileSizeMB}MB)
+          </p>
+          <p className="text-xs text-blue-600 font-medium mt-2">
+            ✂️ Editor de corte será exibido após seleção
+          </p>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={acceptedFormats.join(',')}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileSelect(file);
+          }}
+        />
+
+        {/* URL Input */}
+        <div className="space-y-2">
+          <Label>URL da Imagem (ou use upload acima)</Label>
+          <Input
+            type="url"
+            value={value.url}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            placeholder="https://exemplo.com/imagem.jpg"
+          />
+        </div>
+
+        {/* Alt Text */}
+        <div className="space-y-2">
+          <Label>Texto Alternativo (Alt)</Label>
+          <Input
+            type="text"
+            value={value.alt}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                alt: e.target.value,
+              })
+            }
+            placeholder="Descrição da imagem para acessibilidade"
+          />
+        </div>
+
+        {/* Object Fit */}
+        <div className="space-y-2">
+          <Label>Ajuste da Imagem</Label>
+          <select
+            value={value.objectFit || 'cover'}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                objectFit: e.target.value as ImageConfig['objectFit'],
+              })
+            }
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+          >
+            <option value="cover">Cobrir (Cover) - Preenche toda a área</option>
+            <option value="contain">Conter (Contain) - Imagem inteira visível</option>
+            <option value="fill">Preencher (Fill) - Estica para caber</option>
+            <option value="none">Original (None) - Tamanho original</option>
+            <option value="scale-down">Reduzir (Scale Down) - Menor entre none e contain</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Dialog de Crop */}
+      <Dialog open={showCropper} onOpenChange={(open) => !open && handleCropCancel()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Ajustar Imagem</DialogTitle>
+            <DialogDescription>
+              Recorte e ajuste a imagem antes de fazer upload
+              {aspectRatio !== null && ` • Proporção: ${getAspectRatioLabel()}`}
+            </DialogDescription>
+          </DialogHeader>
+          {tempImageUrl && (
+            <ProductImageCropper
+              imageUrl={tempImageUrl}
+              onComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+              aspectRatio={aspectRatio || 1}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};

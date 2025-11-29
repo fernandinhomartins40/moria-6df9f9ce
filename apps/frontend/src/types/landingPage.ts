@@ -10,6 +10,10 @@
 export interface ImageConfig {
   url: string;
   alt: string;
+  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  width?: number;  // Largura recomendada em pixels
+  height?: number; // Altura recomendada em pixels
+  aspectRatio?: number | null; // Proporção (ex: 16/9, 1, null=livre)
 }
 
 export interface StyleConfig {
