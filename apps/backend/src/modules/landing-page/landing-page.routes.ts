@@ -48,13 +48,13 @@ router.get('/config', async (req: Request, res: Response) => {
       updatedAt: config.updatedAt,
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: parsedConfig,
     });
   } catch (error: any) {
     console.error('Erro ao buscar configuração da landing page:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao buscar configuração',
     });
@@ -128,14 +128,14 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
       updatedAt: config.updatedAt,
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: parsedConfig,
       message: 'Configuração atualizada com sucesso',
     });
   } catch (error: any) {
     console.error('Erro ao atualizar configuração da landing page:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao atualizar configuração',
     });
@@ -193,7 +193,7 @@ router.post('/config/history', authenticate, async (req: any, res: Response) => 
       changeType,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: historyEntry.id,
@@ -207,7 +207,7 @@ router.post('/config/history', authenticate, async (req: any, res: Response) => 
     });
 
     console.error('Erro ao salvar histórico:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao salvar histórico',
     });
@@ -260,7 +260,7 @@ router.get('/config/history', authenticate, async (req: Request, res: Response) 
       prisma.landingPageConfigHistory.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         history,
@@ -276,7 +276,7 @@ router.get('/config/history', authenticate, async (req: Request, res: Response) 
     logChange('❌ Erro ao buscar histórico', { error: error.message });
 
     console.error('Erro ao buscar histórico:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao buscar histórico',
     });
@@ -329,7 +329,7 @@ router.get('/config/history/:id', authenticate, async (req: Request, res: Respon
       changedBy: historyEntry.changedByUser,
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: parsedConfig,
     });
@@ -340,7 +340,7 @@ router.get('/config/history/:id', authenticate, async (req: Request, res: Respon
     });
 
     console.error('Erro ao buscar versão:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao buscar versão',
     });
@@ -441,7 +441,7 @@ router.post('/config/restore/:id', authenticate, async (req: any, res: Response)
       updatedAt: restoredConfig.updatedAt,
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: parsedConfig,
       message: 'Configuração restaurada com sucesso',
@@ -453,7 +453,7 @@ router.post('/config/restore/:id', authenticate, async (req: any, res: Response)
     });
 
     console.error('Erro ao restaurar versão:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao restaurar versão',
     });
@@ -476,7 +476,7 @@ router.delete('/config/history/:id', authenticate, async (req: Request, res: Res
 
     logChange('✅ Entrada do histórico deletada', { id });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Entrada do histórico deletada com sucesso',
     });
@@ -487,7 +487,7 @@ router.delete('/config/history/:id', authenticate, async (req: Request, res: Res
     });
 
     console.error('Erro ao deletar entrada do histórico:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Erro ao deletar entrada do histórico',
     });
