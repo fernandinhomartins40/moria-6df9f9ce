@@ -159,6 +159,7 @@ model Admin {
   assignedRevisions Revision[]
   auditLogs        AuditLog[]
   assignedTickets  SupportTicket[]
+  landingPageConfigHistory LandingPageConfigHistory[]
 
   @@index([email])
   @@index([role])
@@ -887,127 +888,60 @@ model FAQItem {
 }
 
 // ============================================================================
-// MODELS - CMS (Content Management System)
+// MODELS - CMS (Content Management System) - PADRÃO FERRACO
 // ============================================================================
 
-// Configurações da Loja
-model StoreSettings {
-  id        String @id @default(uuid())
-
-  // Informações da Loja
-  storeName String @default("Moria Peças & Serviços")
-  cnpj      String @default("12.345.678/0001-90")
-  phone     String @default("(11) 99999-9999")
-  email     String @default("contato@moriapecas.com.br")
-  address   String @default("Rua das Oficinas, 123")
-  city      String @default("São Paulo")
-  state     String @default("SP") @db.Char(2)
-  zipCode   String @default("01234567") @db.Char(8)
-
-  // Configurações de Vendas
-  defaultMargin      Decimal @default(35) @db.Decimal(5, 2)
-  freeShippingMin    Decimal @default(150) @db.Decimal(10, 2)
-  deliveryFee        Decimal @default(15.90) @db.Decimal(10, 2)
-  deliveryDays       Int     @default(3)
-
-  // Horários de Funcionamento (JSON)
-  // Formato: { "weekdays": "8h-18h", "saturday": "8h-12h", "sunday": "Fechado" }
-  businessHours Json @default("{\"weekdays\": \"Segunda a Sexta: 8h às 18h\", \"saturday\": \"Sábado: 8h às 12h\", \"sunday\": \"Domingo: Fechado\"}")
-
-  // Notificações
-  notifyNewOrders     Boolean @default(true)
-  notifyLowStock      Boolean @default(true)
-  notifyWeeklyReports Boolean @default(false)
-
-  // Integrações
-  whatsappApiKey      String?
-  whatsappConnected   Boolean @default(false)
-  correiosApiKey      String?
-  correiosConnected   Boolean @default(false)
-  paymentGatewayKey   String?
-  paymentConnected    Boolean @default(false)
-  googleAnalyticsId   String?
-  analyticsConnected  Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("store_settings")
-}
-
-// Seção Hero da Landing Page
-model HeroSection {
+// Landing Page Configuration (JSON-based, igual ao Ferraco)
+model LandingPageConfig {
   id       String @id @default(uuid())
 
-  // Conteúdo
-  title    String @default("MORIA Peças & Serviços")
-  subtitle String @default("Especialistas em peças automotivas e serviços de qualidade há mais de 15 anos. Encontre tudo o que você precisa para manter seu veículo em perfeito estado com garantia e atendimento especializado.") @db.Text
-  imageUrl String @default("/assets/hero-garage.jpg")
-
-  // Features (badges)
-  // Array de objetos: [{ "icon": "Shield", "text": "Qualidade Garantida" }, ...]
-  features Json @default("[{\"icon\": \"Shield\", \"text\": \"Qualidade Garantida\"}, {\"icon\": \"Truck\", \"text\": \"Entrega Rápida\"}, {\"icon\": \"Wrench\", \"text\": \"Serviços Especializados\"}, {\"icon\": \"Award\", \"text\": \"15+ Anos no Mercado\"}]")
-
-  // CTAs (Call-to-Actions)
-  cta1Text    String  @default("Ver Produtos")
-  cta1Link    String  @default("#products")
-  cta1Enabled Boolean @default(true)
-
-  cta2Text    String  @default("Nossos Serviços")
-  cta2Link    String  @default("#services")
-  cta2Enabled Boolean @default(true)
-
-  cta3Text    String  @default("Fale Conosco")
-  cta3Link    String  @default("https://wa.me/5511999999999")
-  cta3Enabled Boolean @default(true)
-
-  // Status
-  active Boolean @default(true)
-
-  updatedAt DateTime @updatedAt
-
-  @@map("hero_section")
-}
-
-// Mensagens do Marquee (faixa animada)
-model MarqueeMessage {
-  id      String @id @default(uuid())
-  message String // Ex: "🔧 PEÇAS ORIGINAIS COM ATÉ 30% DE DESCONTO"
-  order   Int    // Ordem de exibição
-  active  Boolean @default(true)
+  // Todas as seções armazenadas como JSON Text
+  header     String @db.Text // JSON: logo, menu, CTAs
+  hero       String @db.Text // JSON: slides, auto-play, layout
+  marquee    String @db.Text // JSON: items, speed, colors
+  about      String @db.Text // JSON: title, description, features
+  products   String @db.Text // JSON: featured products config
+  services   String @db.Text // JSON: services showcase config
+  contact    String @db.Text // JSON: contact methods, form
+  footer     String @db.Text // JSON: sections, social, copyright
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([order])
-  @@index([active])
-  @@map("marquee_messages")
+  // Relations
+  history LandingPageConfigHistory[]
+
+  @@map("landing_page_config")
 }
 
-// Conteúdo do Footer
-model FooterContent {
-  id String @id @default(uuid())
+// Histórico de Alterações (Versionamento completo)
+model LandingPageConfigHistory {
+  id       String  @id @default(uuid())
+  configId String?
 
-  // Descrição da empresa
-  description String @default("A Moria Peças & Serviços é referência em peças automotivas e serviços especializados. Atendemos com excelência há mais de 15 anos.") @db.Text
+  // Snapshot completo de todas as seções
+  header   String @db.Text // JSON
+  hero     String @db.Text // JSON
+  marquee  String @db.Text // JSON
+  about    String @db.Text // JSON
+  products String @db.Text // JSON
+  services String @db.Text // JSON
+  contact  String @db.Text // JSON
+  footer   String @db.Text // JSON
 
-  // Lista de serviços principais (JSON array)
-  // Ex: ["Manutenção Preventiva", "Troca de Óleo", ...]
-  services Json @default("[\"Manutenção Preventiva\", \"Troca de Óleo e Filtros\", \"Revisão Completa\", \"Freios e Suspensão\", \"Ar Condicionado\", \"Diagnóstico Eletrônico\"]")
+  // Metadata
+  changeType      String   @default("manual_save") // 'auto_save', 'manual_save', 'import', 'restore'
+  changedByUserId String?
+  changeNotes     String?  @db.Text
 
-  // Links de redes sociais (JSON object)
-  // Ex: { "facebook": "url", "instagram": "url", "whatsapp": "5511999999999" }
-  socialLinks Json @default("{\"facebook\": \"\", \"instagram\": \"\", \"whatsapp\": \"5511999999999\", \"youtube\": \"\"}")
+  createdAt DateTime @default(now())
 
-  // Certificações e garantias (JSON array)
-  // Ex: ["Peças Originais", "Garantia de 90 dias", ...]
-  certifications Json @default("[\"Peças Originais\", \"Garantia de 90 dias\", \"Atendimento Especializado\", \"Orçamento Gratuito\"]")
+  // Relations
+  config        LandingPageConfig? @relation(fields: [configId], references: [id], onDelete: SetNull)
+  changedByUser Admin?             @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
 
-  // Links do footer (JSON object)
-  // Ex: { "privacy": "/politica-privacidade", "terms": "/termos-uso" }
-  footerLinks Json @default("{\"privacy\": \"#\", \"terms\": \"#\", \"warranty\": \"#\"}")
-
-  updatedAt DateTime @updatedAt
-
-  @@map("footer_content")
+  @@index([configId])
+  @@index([changedByUserId])
+  @@index([createdAt])
+  @@map("landing_page_config_history")
 }
