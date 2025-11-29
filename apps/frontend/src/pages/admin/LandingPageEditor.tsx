@@ -1,9 +1,12 @@
 /**
  * AdminLandingPageEditor - Página de edição da Landing Page
- * Padrão Ferraco adaptado para Moria
+ * Padrão Ferraco adaptado para Moria - Com layout do painel admin
  */
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ProtectedAdminRoute } from '@/components/admin/ProtectedAdminRoute';
+import { Sidebar } from '@/components/admin/Sidebar';
 import { useLandingPageConfig } from '@/hooks/useLandingPageConfig';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,13 +18,14 @@ import {
   Download,
   Upload,
   Loader2,
-  CheckCircle,
   AlertCircle,
   Eye,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 import { HeroEditor, HeaderEditor, FooterEditor } from '@/components/admin/LandingPageEditor/SectionEditors';
 import { toast } from 'sonner';
+import '@/styles/lojista.css';
 
 export default function LandingPageEditor() {
   const {
@@ -81,36 +85,61 @@ export default function LandingPageEditor() {
     window.open('/', '_blank');
   };
 
+  // Loading state dentro do layout
+  const loadingContent = (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-moria-orange" />
+        <p className="text-gray-600">Carregando configurações...</p>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-moria-orange" />
-          <p className="text-gray-600">Carregando configurações...</p>
+      <ProtectedAdminRoute>
+        <div className="lojista-layout">
+          <Sidebar activeTab="landing-page" onTabChange={() => {}} />
+          <main className="lojista-content">
+            {loadingContent}
+          </main>
         </div>
-      </div>
+      </ProtectedAdminRoute>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header fixo */}
-      <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Editor da Landing Page
-              </h1>
-              <p className="text-sm text-gray-600">
-                Configure todos os elementos visuais da página inicial
-              </p>
+    <ProtectedAdminRoute>
+      <div className="lojista-layout">
+        <Sidebar activeTab="landing-page" onTabChange={() => {}} />
+
+        <main className="lojista-content lojista-fade-in">
+          {/* Header */}
+          <div className="lojista-header">
+            <div className="flex items-center gap-4 flex-1">
+              <Link
+                to="/store-panel"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="text-sm">Voltar ao Painel</span>
+              </Link>
+              <div className="border-l h-6 border-gray-300"></div>
+              <div>
+                <h1 className="lojista-title">
+                  Editor da Landing Page
+                </h1>
+                <p className="lojista-subtitle">
+                  Configure todos os elementos visuais da página inicial
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Status */}
               {isDirty && (
-                <span className="text-sm text-orange-600 font-medium">
+                <span className="text-sm text-orange-600 font-medium flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-orange-600 animate-pulse"></div>
                   Alterações não salvas
                 </span>
               )}
@@ -119,6 +148,7 @@ export default function LandingPageEditor() {
               <Button
                 variant="outline"
                 onClick={handlePreview}
+                size="sm"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Visualizar
@@ -129,15 +159,19 @@ export default function LandingPageEditor() {
                 variant="outline"
                 onClick={handleExport}
                 title="Exportar (Ctrl+E)"
+                size="sm"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
               </Button>
 
               <Button
                 variant="outline"
                 onClick={handleImport}
+                size="sm"
               >
-                <Upload className="h-4 w-4" />
+                <Upload className="h-4 w-4 mr-2" />
+                Importar
               </Button>
 
               {/* Reset */}
@@ -145,6 +179,7 @@ export default function LandingPageEditor() {
                 variant="outline"
                 onClick={handleReset}
                 className="text-red-600 hover:text-red-700"
+                size="sm"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Restaurar Padrão
@@ -155,6 +190,7 @@ export default function LandingPageEditor() {
                 onClick={handleSave}
                 disabled={isSaving || !isDirty}
                 className="bg-moria-orange hover:bg-moria-orange/90"
+                size="sm"
               >
                 {isSaving ? (
                   <>
@@ -170,112 +206,112 @@ export default function LandingPageEditor() {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Alertas */}
-      {error && (
-        <div className="container mx-auto px-4 pt-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </div>
-      )}
-
-      {/* Conteúdo */}
-      <div className="container mx-auto px-4 py-8">
-        <Card className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-8 w-full mb-8">
-              <TabsTrigger value="hero">Hero</TabsTrigger>
-              <TabsTrigger value="header">Header</TabsTrigger>
-              <TabsTrigger value="marquee">Marquee</TabsTrigger>
-              <TabsTrigger value="about">Serviços</TabsTrigger>
-              <TabsTrigger value="products">Peças</TabsTrigger>
-              <TabsTrigger value="services">Promoções</TabsTrigger>
-              <TabsTrigger value="contact">Contato</TabsTrigger>
-              <TabsTrigger value="footer">Footer</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="hero" className="space-y-4">
-              <HeroEditor
-                config={config.hero}
-                onChange={(hero) => updateConfig('hero', hero)}
-              />
-            </TabsContent>
-
-            <TabsContent value="header" className="space-y-4">
-              <HeaderEditor
-                config={config.header}
-                onChange={(header) => updateConfig('header', header)}
-              />
-            </TabsContent>
-
-            <TabsContent value="marquee">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor do Marquee em desenvolvimento...
-                </AlertDescription>
+          {/* Alertas */}
+          {error && (
+            <div className="mb-6">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="about">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor da seção Serviços em desenvolvimento...
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
+          {/* Conteúdo */}
+          <div>
+            <Card className="p-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-8 w-full mb-8">
+                  <TabsTrigger value="hero">Hero</TabsTrigger>
+                  <TabsTrigger value="header">Header</TabsTrigger>
+                  <TabsTrigger value="marquee">Marquee</TabsTrigger>
+                  <TabsTrigger value="about">Serviços</TabsTrigger>
+                  <TabsTrigger value="products">Peças</TabsTrigger>
+                  <TabsTrigger value="services">Promoções</TabsTrigger>
+                  <TabsTrigger value="contact">Contato</TabsTrigger>
+                  <TabsTrigger value="footer">Footer</TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="products">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor da seção Peças em desenvolvimento...
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
+                <TabsContent value="hero" className="space-y-4">
+                  <HeroEditor
+                    config={config.hero}
+                    onChange={(hero) => updateConfig('hero', hero)}
+                  />
+                </TabsContent>
 
-            <TabsContent value="services">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor da seção Promoções em desenvolvimento...
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
+                <TabsContent value="header" className="space-y-4">
+                  <HeaderEditor
+                    config={config.header}
+                    onChange={(header) => updateConfig('header', header)}
+                  />
+                </TabsContent>
 
-            <TabsContent value="contact">
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Editor de Contato em desenvolvimento...
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
+                <TabsContent value="marquee">
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      Editor do Marquee em desenvolvimento...
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
 
-            <TabsContent value="footer" className="space-y-4">
-              <FooterEditor
-                config={config.footer}
-                onChange={(footer) => updateConfig('footer', footer)}
-              />
-            </TabsContent>
-          </Tabs>
-        </Card>
+                <TabsContent value="about">
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      Editor da seção Serviços em desenvolvimento...
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
 
-        {/* Shortcuts Help */}
-        <Card className="mt-6 p-4 bg-gray-50">
-          <h3 className="text-sm font-semibold mb-2">Atalhos de Teclado</h3>
-          <div className="grid grid-cols-3 gap-4 text-xs text-gray-600">
-            <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+S</kbd> Salvar</div>
-            <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+E</kbd> Exportar</div>
-            <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+R</kbd> Recarregar (com confirmação)</div>
+                <TabsContent value="products">
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      Editor da seção Peças em desenvolvimento...
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
+
+                <TabsContent value="services">
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      Editor da seção Promoções em desenvolvimento...
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
+
+                <TabsContent value="contact">
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      Editor de Contato em desenvolvimento...
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
+
+                <TabsContent value="footer" className="space-y-4">
+                  <FooterEditor
+                    config={config.footer}
+                    onChange={(footer) => updateConfig('footer', footer)}
+                  />
+                </TabsContent>
+              </Tabs>
+            </Card>
+
+            {/* Shortcuts Help */}
+            <Card className="mt-6 p-4 bg-gray-50">
+              <h3 className="text-sm font-semibold mb-2">Atalhos de Teclado</h3>
+              <div className="grid grid-cols-3 gap-4 text-xs text-gray-600">
+                <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+S</kbd> Salvar</div>
+                <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+E</kbd> Exportar</div>
+                <div><kbd className="px-2 py-1 bg-white border rounded">Ctrl+R</kbd> Recarregar (com confirmação)</div>
+              </div>
+            </Card>
           </div>
-        </Card>
+        </main>
       </div>
-    </div>
+    </ProtectedAdminRoute>
   );
 }

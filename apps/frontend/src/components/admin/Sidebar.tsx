@@ -42,6 +42,7 @@ const menuItems = [
   { id: "promotions", label: "Promoções", icon: TrendingUp },
   { id: "reports", label: "Relatórios", icon: BarChart3 },
   { id: "users", label: "Usuários", icon: UserCog, requiresPermission: 'canManageAdmins' },
+  { id: "landing-page", label: "Landing Page", icon: Palette, isExternal: true, href: "/admin/landing-page" },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -121,6 +122,33 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           const IconComponent = item.icon;
           const isActive = activeTab === item.id;
 
+          // External link (Landing Page Editor)
+          if ((item as any).isExternal) {
+            return (
+              <Link
+                key={item.id}
+                to={(item as any).href}
+                className={cn(
+                  "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
+                  isActive
+                    ? "bg-moria-orange text-white shadow-lg"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                  isCollapsed && "justify-center px-2"
+                )}
+              >
+                <IconComponent className="h-5 w-5 flex-shrink-0" />
+                {!isCollapsed && (
+                  <span className="font-medium">{item.label}</span>
+                )}
+
+                {isActive && !isCollapsed && (
+                  <div className="ml-auto w-2 h-2 bg-white rounded-full" />
+                )}
+              </Link>
+            );
+          }
+
+          // Internal tab button
           return (
             <button
               key={item.id}
