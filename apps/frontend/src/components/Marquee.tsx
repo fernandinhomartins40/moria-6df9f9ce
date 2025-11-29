@@ -1,26 +1,36 @@
 import { useMarqueeMessages } from '@/hooks/useMarqueeMessages';
+import { useLandingPageConfig } from '@/hooks/useLandingPageConfig';
 
 export function Marquee() {
   const { messages, loading } = useMarqueeMessages();
+  const { config, loading: configLoading } = useLandingPageConfig();
 
-  // Pegar apenas mensagens ativas e ordenadas
-  const activeMessages = messages
+  // Pegar mensagens do CMS se disponível, senão usar API, senão usar fallback
+  const cmsMessages = !configLoading && config.marquee.items && config.marquee.items.length > 0
+    ? config.marquee.items.map(item => `${item.icon} ${item.text}`)
+    : null;
+
+  // Pegar apenas mensagens ativas e ordenadas da API
+  const apiMessages = messages
     .filter(msg => msg.active)
     .sort((a, b) => a.order - b.order)
     .map(msg => msg.message);
 
-  // Fallback para mensagens padrão se não houver mensagens ou ainda estiver carregando
-  const displayMessages = activeMessages.length > 0
-    ? activeMessages
-    : [
-        "🔧 PEÇAS ORIGINAIS COM ATÉ 30% DE DESCONTO",
-        "⚡ SERVIÇOS ESPECIALIZADOS - ORÇAMENTO GRÁTIS",
-        "🚗 ENTREGA RÁPIDA EM TODA A CIDADE",
-        "🛠️ QUALIDADE GARANTIDA - ESPECIALISTAS HÁ MAIS DE 15 ANOS",
-        "💰 PROMOÇÕES IMPERDÍVEIS - CONFIRA NOSSAS OFERTAS",
-      ];
+  // Prioridade: CMS > API > Fallback
+  const displayMessages = cmsMessages || (apiMessages.length > 0 ? apiMessages : [
+    "🔧 PEÇAS ORIGINAIS COM ATÉ 30% DE DESCONTO",
+    "⚡ SERVIÇOS ESPECIALIZADOS - ORÇAMENTO GRÁTIS",
+    "🚗 ENTREGA RÁPIDA EM TODA A CIDADE",
+    "🛠️ QUALIDADE GARANTIDA - ESPECIALISTAS HÁ MAIS DE 15 ANOS",
+    "💰 PROMOÇÕES IMPERDÍVEIS - CONFIRA NOSSAS OFERTAS",
+  ]);
 
-  if (loading && messages.length === 0) {
+  // Usar cores e configurações do CMS
+  const backgroundColor = !configLoading ? config.marquee.backgroundColor : 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)';
+  const textColor = !configLoading ? config.marquee.textColor : '#ffffff';
+  const speed = !configLoading ? config.marquee.speed : 30;
+
+  if (loading && messages.length === 0 && configLoading) {
     // Enquanto carrega, mostra as mensagens padrão
     return (
       <div className="gradient-marquee text-white py-2 overflow-hidden">
@@ -32,8 +42,19 @@ export function Marquee() {
   }
 
   return (
-    <div className="gradient-marquee text-white py-2 overflow-hidden">
-      <div className="marquee whitespace-nowrap text-sm font-bold">
+    <div
+      className="text-white py-2 overflow-hidden"
+      style={{
+        background: backgroundColor,
+        color: textColor,
+      }}
+    >
+      <div
+        className="marquee whitespace-nowrap text-sm font-bold"
+        style={{
+          animationDuration: `${speed}s`,
+        }}
+      >
         {displayMessages.join(" • ")} • {displayMessages.join(" • ")} • {displayMessages.join(" • ")} • {displayMessages.join(" • ")}
       </div>
     </div>

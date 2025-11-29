@@ -20,10 +20,18 @@ import {
   Loader2,
   AlertCircle,
   Eye,
-  FileText,
   ArrowLeft
 } from 'lucide-react';
-import { HeroEditor, HeaderEditor, FooterEditor } from '@/components/admin/LandingPageEditor/SectionEditors';
+import {
+  HeroEditor,
+  HeaderEditor,
+  FooterEditor,
+  MarqueeEditor,
+  ServicesEditor,
+  ProductsEditor,
+  PromotionsEditor,
+  ContactEditor,
+} from '@/components/admin/LandingPageEditor/SectionEditors';
 import { toast } from 'sonner';
 import '@/styles/lojista.css';
 
@@ -246,49 +254,39 @@ export default function LandingPageEditor() {
                   />
                 </TabsContent>
 
-                <TabsContent value="marquee">
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertDescription>
-                      Editor do Marquee em desenvolvimento...
-                    </AlertDescription>
-                  </Alert>
+                <TabsContent value="marquee" className="space-y-4">
+                  <MarqueeEditor
+                    config={config.marquee}
+                    onChange={(marquee) => updateConfig('marquee', marquee)}
+                  />
                 </TabsContent>
 
-                <TabsContent value="about">
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertDescription>
-                      Editor da seção Serviços em desenvolvimento...
-                    </AlertDescription>
-                  </Alert>
+                <TabsContent value="about" className="space-y-4">
+                  <ServicesEditor
+                    config={config.about}
+                    onChange={(about) => updateConfig('about', about)}
+                  />
                 </TabsContent>
 
-                <TabsContent value="products">
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertDescription>
-                      Editor da seção Peças em desenvolvimento...
-                    </AlertDescription>
-                  </Alert>
+                <TabsContent value="products" className="space-y-4">
+                  <ProductsEditor
+                    config={config.products}
+                    onChange={(products) => updateConfig('products', products)}
+                  />
                 </TabsContent>
 
-                <TabsContent value="services">
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertDescription>
-                      Editor da seção Promoções em desenvolvimento...
-                    </AlertDescription>
-                  </Alert>
+                <TabsContent value="services" className="space-y-4">
+                  <PromotionsEditor
+                    config={config.services}
+                    onChange={(services) => updateConfig('services', services)}
+                  />
                 </TabsContent>
 
-                <TabsContent value="contact">
-                  <Alert>
-                    <FileText className="h-4 w-4" />
-                    <AlertDescription>
-                      Editor de Contato em desenvolvimento...
-                    </AlertDescription>
-                  </Alert>
+                <TabsContent value="contact" className="space-y-4">
+                  <ContactEditor
+                    config={config.contact}
+                    onChange={(contact) => updateConfig('contact', contact)}
+                  />
                 </TabsContent>
 
                 <TabsContent value="footer" className="space-y-4">

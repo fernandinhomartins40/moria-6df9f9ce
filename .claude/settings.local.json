@@ -81,7 +81,8 @@
       "Bash(npm run dev:all:*)",
       "Bash(node -e:*)",
       "Bash(.gitignore)",
-      "Bash(git clean:*)"
+      "Bash(git clean:*)",
+      "Bash(npm run build:customer:*)"
     ],
     "deny": [],
     "ask": []
