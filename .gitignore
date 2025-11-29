@@ -61,3 +61,6 @@ Thumbs.db
 # Backups
 *.backup
 *.bak
+
+cookies.txt
+test-promotion.json
