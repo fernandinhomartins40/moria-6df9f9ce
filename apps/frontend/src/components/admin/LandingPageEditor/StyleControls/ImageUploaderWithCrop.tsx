@@ -73,18 +73,11 @@ export const ImageUploaderWithCrop = ({
 
       setUploadProgress(30);
 
-      // Buscar token de autenticação
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
-      }
-
       // Endpoint correto: /api/landing-page/upload
+      // Autenticação via httpOnly cookie (credentials: 'include')
       const response = await fetch('/api/landing-page/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include', // Envia cookies httpOnly
         body: formData,
       });
 
