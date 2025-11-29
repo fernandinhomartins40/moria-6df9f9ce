@@ -36,11 +36,9 @@ export const useMarqueeMessages = (autoFetch: boolean = true): UseMarqueeMessage
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message);
-      toast({
-        title: 'Erro ao carregar mensagens',
-        description: apiError.message,
-        variant: 'destructive',
-      });
+      // Não mostrar toast de erro durante carregamento inicial
+      // Para evitar poluir a UI se a API ainda não tiver dados
+      console.warn('Erro ao carregar mensagens do marquee:', apiError.message);
     } finally {
       setLoading(false);
     }

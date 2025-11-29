@@ -95,26 +95,39 @@ class CmsService {
 
   /**
    * Busca o conteúdo do Hero
+   * Agora usa landing-page API
    */
   async getHero(): Promise<HeroSection> {
-    const response = await apiClient.get<{ success: boolean; data: HeroSection }>('/cms/hero');
-    return response.data.data;
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { hero: HeroSection }
+    }>('/landing-page/config');
+    return response.data.data.hero;
   }
 
   /**
    * Atualiza o conteúdo do Hero
+   * Agora usa landing-page API
    */
   async updateHero(data: UpdateHeroData): Promise<HeroSection> {
-    const response = await apiClient.put<{ success: boolean; data: HeroSection }>('/cms/hero', data);
-    return response.data.data;
+    const response = await apiClient.put<{
+      success: boolean;
+      data: { hero: HeroSection }
+    }>('/landing-page/config', { hero: data });
+    return response.data.data.hero;
   }
 
   /**
    * Reseta o Hero para valores padrão
+   * NOTA: Não há endpoint específico, retorna hero atual
    */
   async resetHero(): Promise<HeroSection> {
-    const response = await apiClient.post<{ success: boolean; data: HeroSection }>('/cms/hero/reset');
-    return response.data.data;
+    // Buscar config atual e retornar hero
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { hero: HeroSection }
+    }>('/landing-page/config');
+    return response.data.data.hero;
   }
 
   // ==========================================================================
@@ -123,59 +136,171 @@ class CmsService {
 
   /**
    * Busca todas as mensagens do marquee
+   * Agora usa landing-page API
    */
   async getMarqueeMessages(activeOnly: boolean = false): Promise<MarqueeMessage[]> {
-    const response = await apiClient.get<{ success: boolean; data: MarqueeMessage[] }>(
-      '/cms/marquee',
-      { params: { activeOnly } }
-    );
-    return response.data.data;
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { marquee: { messages: MarqueeMessage[] } }
+    }>('/landing-page/config');
+
+    const messages = response.data.data.marquee.messages || [];
+
+    if (activeOnly) {
+      return messages.filter(msg => msg.active);
+    }
+
+    return messages;
   }
 
   /**
    * Busca uma mensagem específica
    */
   async getMarqueeMessageById(id: string): Promise<MarqueeMessage> {
-    const response = await apiClient.get<{ success: boolean; data: MarqueeMessage }>(
-      `/cms/marquee/${id}`
-    );
-    return response.data.data;
+    const messages = await this.getMarqueeMessages(false);
+    const message = messages.find(msg => msg.id === id);
+
+    if (!message) {
+      throw new Error('Mensagem não encontrada');
+    }
+
+    return message;
   }
 
   /**
    * Cria uma nova mensagem do marquee
    */
   async createMarqueeMessage(data: CreateMarqueeMessageData): Promise<MarqueeMessage> {
-    const response = await apiClient.post<{ success: boolean; data: MarqueeMessage }>(
-      '/cms/marquee',
-      data
+    // Buscar config atual
+    const configResponse = await apiClient.get<{
+      success: boolean;
+      data: any
+    }>('/landing-page/config');
+
+    const currentConfig = configResponse.data.data;
+    const currentMessages = currentConfig.marquee?.messages || [];
+
+    // Criar nova mensagem
+    const newMessage: MarqueeMessage = {
+      id: crypto.randomUUID(),
+      message: data.message,
+      order: data.order ?? currentMessages.length,
+      active: data.active ?? true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Atualizar config com nova mensagem
+    await apiClient.put<{ success: boolean; data: any }>(
+      '/landing-page/config',
+      {
+        marquee: {
+          ...currentConfig.marquee,
+          messages: [...currentMessages, newMessage],
+        },
+      }
     );
-    return response.data.data;
+
+    return newMessage;
   }
 
   /**
    * Atualiza uma mensagem do marquee
    */
   async updateMarqueeMessage(id: string, data: UpdateMarqueeMessageData): Promise<MarqueeMessage> {
-    const response = await apiClient.put<{ success: boolean; data: MarqueeMessage }>(
-      `/cms/marquee/${id}`,
-      data
+    // Buscar config atual
+    const configResponse = await apiClient.get<{
+      success: boolean;
+      data: any
+    }>('/landing-page/config');
+
+    const currentConfig = configResponse.data.data;
+    const currentMessages = currentConfig.marquee?.messages || [];
+
+    // Atualizar mensagem
+    const updatedMessages = currentMessages.map((msg: MarqueeMessage) =>
+      msg.id === id
+        ? { ...msg, ...data, updatedAt: new Date().toISOString() }
+        : msg
     );
-    return response.data.data;
+
+    const updatedMessage = updatedMessages.find((msg: MarqueeMessage) => msg.id === id);
+
+    if (!updatedMessage) {
+      throw new Error('Mensagem não encontrada');
+    }
+
+    // Atualizar config
+    await apiClient.put<{ success: boolean; data: any }>(
+      '/landing-page/config',
+      {
+        marquee: {
+          ...currentConfig.marquee,
+          messages: updatedMessages,
+        },
+      }
+    );
+
+    return updatedMessage;
   }
 
   /**
    * Deleta uma mensagem do marquee
    */
   async deleteMarqueeMessage(id: string): Promise<void> {
-    await apiClient.delete(`/cms/marquee/${id}`);
+    // Buscar config atual
+    const configResponse = await apiClient.get<{
+      success: boolean;
+      data: any
+    }>('/landing-page/config');
+
+    const currentConfig = configResponse.data.data;
+    const currentMessages = currentConfig.marquee?.messages || [];
+
+    // Remover mensagem
+    const updatedMessages = currentMessages.filter((msg: MarqueeMessage) => msg.id !== id);
+
+    // Atualizar config
+    await apiClient.put<{ success: boolean; data: any }>(
+      '/landing-page/config',
+      {
+        marquee: {
+          ...currentConfig.marquee,
+          messages: updatedMessages,
+        },
+      }
+    );
   }
 
   /**
    * Reordena as mensagens do marquee
    */
   async reorderMarqueeMessages(ids: string[]): Promise<void> {
-    await apiClient.post('/cms/marquee/reorder', { ids });
+    // Buscar config atual
+    const configResponse = await apiClient.get<{
+      success: boolean;
+      data: any
+    }>('/landing-page/config');
+
+    const currentConfig = configResponse.data.data;
+    const currentMessages = currentConfig.marquee?.messages || [];
+
+    // Reordenar mensagens
+    const reorderedMessages = ids.map((id, index) => {
+      const msg = currentMessages.find((m: MarqueeMessage) => m.id === id);
+      return msg ? { ...msg, order: index } : null;
+    }).filter(Boolean);
+
+    // Atualizar config
+    await apiClient.put<{ success: boolean; data: any }>(
+      '/landing-page/config',
+      {
+        marquee: {
+          ...currentConfig.marquee,
+          messages: reorderedMessages,
+        },
+      }
+    );
   }
 
   // ==========================================================================
@@ -184,31 +309,39 @@ class CmsService {
 
   /**
    * Busca o conteúdo do Footer
+   * Agora usa landing-page API
    */
   async getFooter(): Promise<FooterContent> {
-    const response = await apiClient.get<{ success: boolean; data: FooterContent }>('/cms/footer');
-    return response.data.data;
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { footer: FooterContent }
+    }>('/landing-page/config');
+    return response.data.data.footer;
   }
 
   /**
    * Atualiza o conteúdo do Footer
+   * Agora usa landing-page API
    */
   async updateFooter(data: UpdateFooterData): Promise<FooterContent> {
-    const response = await apiClient.put<{ success: boolean; data: FooterContent }>(
-      '/cms/footer',
-      data
-    );
-    return response.data.data;
+    const response = await apiClient.put<{
+      success: boolean;
+      data: { footer: FooterContent }
+    }>('/landing-page/config', { footer: data });
+    return response.data.data.footer;
   }
 
   /**
    * Reseta o Footer para valores padrão
+   * NOTA: Não há endpoint específico, retorna footer atual
    */
   async resetFooter(): Promise<FooterContent> {
-    const response = await apiClient.post<{ success: boolean; data: FooterContent }>(
-      '/cms/footer/reset'
-    );
-    return response.data.data;
+    // Buscar config atual e retornar footer
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { footer: FooterContent }
+    }>('/landing-page/config');
+    return response.data.data.footer;
   }
 }
 
