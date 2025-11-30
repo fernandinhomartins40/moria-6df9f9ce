@@ -21,6 +21,8 @@
     "build:mechanic": "npm run build --workspace=apps/mechanic-pwa",
     "build:customer": "npm run build --workspace=apps/customer-pwa",
     "build:pwa": "npm run build:mechanic && npm run build:customer",
+    "build:docker": "bash scripts/build-all-for-docker.sh",
+    "build:docker:windows": "pwsh scripts/build-all-for-docker.ps1",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
     "install:all": "npm install"
