@@ -269,10 +269,10 @@ jobs:
             fi
             echo "✅ Frontend compilado"
 
-            if [ ! -f "apps/frontend/dist/manifest.webmanifest" ]; then
-              echo "⚠️ Aviso: PWA manifest não foi gerado!"
+            if [ ! -f "apps/frontend/dist/manifest-customer.webmanifest" ] || [ ! -f "apps/frontend/dist/manifest-store.webmanifest" ]; then
+              echo "⚠️ Aviso: PWA manifests não foram gerados!"
             else
-              echo "✅ PWA manifest gerado"
+              echo "✅ PWA manifests gerados (customer + store)"
             fi
 
             if [ ! -d "apps/frontend/dist/icons" ]; then
