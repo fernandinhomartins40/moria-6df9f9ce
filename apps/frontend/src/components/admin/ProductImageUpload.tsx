@@ -20,13 +20,14 @@ import {
 
 export interface ProductImage {
   id: string;
-  file: File;
+  file: File | null; // null para imagens já existentes (apenas URL)
   url: string;
   status: 'pending' | 'cropping' | 'compressing' | 'ready' | 'error';
   progress: number;
   error?: string;
   compressedSize?: number;
   originalSize?: number;
+  isExisting?: boolean; // Flag para indicar imagens já salvas
 }
 
 interface ProductImageUploadProps {
@@ -382,7 +383,7 @@ export function ProductImageUpload({
                   key={image.id}
                   className={`relative group transition-all ${
                     index === 0 ? 'ring-2 ring-blue-500' : ''
-                  }`}
+                  } ${!image.isExisting && image.status === 'ready' ? 'ring-2 ring-green-400' : ''}`}
                 >
                   <CardContent className="p-2">
                     {/* Badge de primeira imagem */}
@@ -391,6 +392,15 @@ export function ProductImageUpload({
                         <Badge className="bg-blue-600 text-white">
                           <Star className="h-3 w-3 mr-1" />
                           Principal
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Badge de nova imagem */}
+                    {!image.isExisting && image.status === 'ready' && index !== 0 && (
+                      <div className="absolute -top-2 -right-2 z-10">
+                        <Badge className="bg-green-600 text-white text-xs">
+                          Nova
                         </Badge>
                       </div>
                     )}
@@ -425,17 +435,21 @@ export function ProductImageUpload({
                       {image.status === 'ready' && (
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <div className="flex gap-1">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                editImage(image.id);
-                              }}
-                              type="button"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
+                            {/* Botão de editar só aparece para imagens novas (com arquivo) */}
+                            {!image.isExisting && image.file && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editImage(image.id);
+                                }}
+                                type="button"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {/* Botão de deletar aparece para todas as imagens */}
                             <Button
                               variant="destructive"
                               size="sm"
@@ -472,17 +486,52 @@ export function ProductImageUpload({
 
         {/* Info geral */}
         {images.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-start gap-2 text-sm text-blue-900">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Dicas:</p>
-                <ul className="mt-1 space-y-1 text-xs">
-                  <li>• Use imagens de alta qualidade para melhor visualização</li>
-                  <li>• A primeira imagem será exibida como principal</li>
-                  <li>• Proporção {aspectRatio === 1 ? 'quadrada (1:1)' : `${aspectRatio}:1`} recomendada</li>
-                  <li>• Imagens serão automaticamente otimizadas</li>
-                </ul>
+          <div className="space-y-2">
+            {/* Estatísticas */}
+            {(() => {
+              const existingCount = images.filter(img => img.isExisting).length;
+              const newCount = images.filter(img => !img.isExisting && img.status === 'ready').length;
+              const processingCount = images.filter(img => img.status !== 'ready').length;
+
+              return existingCount > 0 || newCount > 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center gap-4 text-sm">
+                    {existingCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                        <span className="text-gray-700">{existingCount} existente{existingCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {newCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span className="text-gray-700">{newCount} nova{newCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {processingCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                        <span className="text-gray-700">{processingCount} processando</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2 text-sm text-blue-900">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Dicas:</p>
+                  <ul className="mt-1 space-y-1 text-xs">
+                    <li>• Use imagens de alta qualidade para melhor visualização</li>
+                    <li>• A primeira imagem será exibida como principal</li>
+                    <li>• Proporção {aspectRatio === 1 ? 'quadrada (1:1)' : `${aspectRatio}:1`} recomendada</li>
+                    <li>• Imagens novas serão automaticamente otimizadas</li>
+                    <li>• Passe o mouse sobre as imagens para editar ou remover</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

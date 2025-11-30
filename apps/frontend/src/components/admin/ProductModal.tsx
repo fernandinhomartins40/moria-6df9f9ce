@@ -145,9 +145,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         const existingImages: ProductImage[] = product.images.map((url, index) => ({
           id: `existing-${index}`,
           url: getImageUrl(url),
-          file: null as any, // Não há arquivo para imagens existentes
+          file: null, // Não há arquivo para imagens existentes
           status: 'ready' as const,
-          progress: 100
+          progress: 100,
+          isExisting: true // Marcar como imagem existente
         }));
         setProductImages(existingImages);
       } else {
@@ -340,8 +341,12 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
       // Separar imagens novas (com arquivo) das existentes (só URL)
       const newImages = productImages.filter(img => img.file && img.status === 'ready');
       const existingImageUrls = productImages
-        .filter(img => !img.file && img.url)
-        .map(img => img.url);
+        .filter(img => img.isExisting && img.url)
+        .map(img => {
+          // Remover o baseURL se existir para manter apenas o caminho relativo
+          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+          return img.url.replace(baseUrl, '').replace(/^\//, '');
+        });
 
       // Validar se há pelo menos uma imagem (nova ou existente)
       if (newImages.length === 0 && existingImageUrls.length === 0) {
