@@ -9,7 +9,6 @@ import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, Package, DollarSign, Warehouse, Settings, Images, CheckCircle } from 'lucide-react';
 import { ProductImageUpload, ProductImage } from './ProductImageUpload';
 import { useToast } from '../ui/use-toast';
@@ -488,8 +487,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl h-[95vh] sm:h-[90vh] max-h-[900px] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5 text-moria-orange" />
             {isEditing ? 'Editar Produto' : 'Novo Produto'}
@@ -502,33 +501,39 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 min-h-0">
+          <div className="py-3 sm:py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Básico
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
+            <TabsTrigger value="basic" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Básico</span>
+              <span className="sm:hidden">Info</span>
             </TabsTrigger>
-            <TabsTrigger value="images" className="flex items-center gap-2">
-              <Images className="h-4 w-4" />
-              Imagens
+            <TabsTrigger value="images" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Images className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Imagens</span>
+              <span className="sm:hidden">Imgs</span>
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Preços
+            <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs sm:text-sm">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Preços</span>
+              <span className="sm:hidden">R$</span>
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4" />
-              Estoque
+            <TabsTrigger value="inventory" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Warehouse className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Estoque</span>
+              <span className="sm:hidden">Estq</span>
             </TabsTrigger>
-            <TabsTrigger value="offers" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Ofertas
+            <TabsTrigger value="offers" className="flex items-center gap-1 text-xs sm:text-sm">
+              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Ofertas</span>
+              <span className="sm:hidden">Ofts</span>
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Detalhes
+            <TabsTrigger value="details" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Detalhes</span>
+              <span className="sm:hidden">Det</span>
             </TabsTrigger>
           </TabsList>
 
@@ -901,9 +906,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
           </TabsContent>
             </Tabs>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="px-6 py-3 border-t bg-gray-50/50">
+        <div className="px-4 sm:px-6 py-2 sm:py-3 border-t bg-gray-50/50 shrink-0">
           {errors.general && (
             <div className="mb-2">
               <p className="text-sm text-red-500 flex items-center gap-1">
