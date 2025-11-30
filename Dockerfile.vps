@@ -21,8 +21,7 @@ RUN mkdir -p /var/log/supervisor /var/run/nginx
 # Validar que builds existem
 RUN test -f /app/apps/frontend/dist/index.html || (echo "ERROR: Frontend não foi buildado! Execute: npm run build:docker" && exit 1)
 RUN test -f /app/apps/backend/dist/server.js || (echo "ERROR: Backend não foi buildado! Execute: npm run build:docker" && exit 1)
-RUN test -f /app/apps/frontend/dist/manifest.webmanifest || (echo "ERROR: PWAs não foram buildados! Execute: npm run build:docker" && exit 1)
-RUN test -d /app/apps/frontend/dist/cliente || (echo "ERROR: Customer PWA não foi buildado! Execute: npm run build:docker" && exit 1)
+RUN test -f /app/apps/frontend/dist/manifest.webmanifest || (echo "ERROR: PWA manifest não foi gerado! Execute: npm run build:docker" && exit 1)
 RUN test -d /app/apps/frontend/dist/icons || (echo "ERROR: Ícones PWA não foram copiados! Execute: npm run build:docker" && exit 1)
 
 # Nota: node_modules, prisma generate e build DEVEM ser feitos FORA do Docker

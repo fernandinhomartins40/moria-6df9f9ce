@@ -10,6 +10,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { RevisionsProvider } from "./contexts/RevisionsContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { InstallBanner } from "@moria/ui/pwa-install";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import StorePanel from "./pages/StorePanel";
@@ -36,6 +37,7 @@ const App = () => (
                     <TooltipProvider>
                       <Toaster />
                       <Sonner />
+                      <InstallBanner appName="Moria Peças" variant="customer" />
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/about" element={<About />} />

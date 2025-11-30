@@ -251,7 +251,7 @@ jobs:
 
             # Voltar para root e rodar build completo
             cd $APP_DIR
-            echo "=== Executando build completo (Backend + Frontend + PWAs) ==="
+            echo "=== Executando build completo (Backend + Frontend com PWA) ==="
             npm run build:docker || { echo "❌ Erro no build completo"; exit 1; }
 
             # Verificar se todos os builds foram criados
@@ -270,24 +270,18 @@ jobs:
             echo "✅ Frontend compilado"
 
             if [ ! -f "apps/frontend/dist/manifest.webmanifest" ]; then
-              echo "❌ Erro: PWAs não foram buildados (manifest.webmanifest não encontrado)!"
-              exit 1
+              echo "⚠️ Aviso: PWA manifest não foi gerado!"
+            else
+              echo "✅ PWA manifest gerado"
             fi
-            echo "✅ PWAs buildados"
-
-            if [ ! -d "apps/frontend/dist/cliente" ]; then
-              echo "❌ Erro: Customer PWA não foi copiado!"
-              exit 1
-            fi
-            echo "✅ Customer PWA copiado"
 
             if [ ! -d "apps/frontend/dist/icons" ]; then
-              echo "❌ Erro: Ícones PWA não foram copiados!"
-              exit 1
+              echo "⚠️ Aviso: Ícones PWA não foram copiados!"
+            else
+              echo "✅ Ícones PWA copiados"
             fi
-            echo "✅ Ícones PWA copiados"
 
-            echo "✅ Build completo concluído com sucesso (Backend + Frontend + Customer PWA + Mechanic PWA)"
+            echo "✅ Build completo concluído com sucesso (Backend + Frontend PWA)"
 
             # Build da imagem Docker (agora apenas copia os arquivos já compilados)
             echo "Construindo imagem Docker..."
