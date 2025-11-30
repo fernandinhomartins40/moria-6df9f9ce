@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { MarqueeConfig, MarqueeItem } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker, SliderControl } from '../StyleControls';
+import { ArrayEditor, ColorPicker, GradientColorPicker, SliderControl } from '../StyleControls';
 
 interface MarqueeEditorProps {
   config: MarqueeConfig;
@@ -101,10 +101,11 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
       <Card className="p-6 space-y-4">
         <h3 className="text-lg font-semibold">Cores</h3>
 
-        <ColorPicker
+        <GradientColorPicker
           label="Cor de Fundo"
           value={config.backgroundColor}
           onChange={(backgroundColor) => updateConfig({ backgroundColor })}
+          description="Escolha uma cor sólida ou gradiente para o fundo do banner. Use gradientes para um visual mais impactante."
         />
 
         <ColorPicker
