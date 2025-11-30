@@ -82,7 +82,9 @@
       "Bash(node -e:*)",
       "Bash(.gitignore)",
       "Bash(git clean:*)",
-      "Bash(npm run build:customer:*)"
+      "Bash(npm run build:customer:*)",
+      "Bash(node generate-icons.js:*)",
+      "Bash(node generate-pngs.js:*)"
     ],
     "deny": [],
     "ask": []

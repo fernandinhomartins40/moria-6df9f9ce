@@ -24,6 +24,22 @@ function PWAInstallBanner() {
       return;
     }
 
+    // Verificar se foi dispensado recentemente
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed, 10);
+      const now = Date.now();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+      if (now - dismissedTime < sevenDays) {
+        setShowBanner(false);
+        return;
+      } else {
+        // Expirou, remover
+        localStorage.removeItem('pwa-install-dismissed');
+      }
+    }
+
     // Listener para evento de instalação (Android/Chrome)
     const handler = (e: any) => {
       e.preventDefault();
@@ -43,18 +59,20 @@ function PWAInstallBanner() {
       return;
     }
 
-    if (!deferredPrompt) {
-      return;
+    // Se tiver o prompt nativo (Android/Chrome), usar
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted') {
+        setShowBanner(false);
+      }
+
+      setDeferredPrompt(null);
+    } else {
+      // Se não tiver (Desktop ou navegadores que não suportam), mostrar instruções genéricas
+      alert('Para instalar: \n\n1. Clique no ícone de menu (⋮) no navegador\n2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial"');
     }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      setShowBanner(false);
-    }
-
-    setDeferredPrompt(null);
   };
 
   const handleDismiss = () => {

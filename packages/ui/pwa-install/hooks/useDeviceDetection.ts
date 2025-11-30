@@ -60,6 +60,15 @@ export function useDeviceDetection(): DeviceInfo {
     } else if (platform === 'ios' && browser === 'safari' && !isStandalone) {
       installMethod = 'manual'; // Share menu
       canInstall = true;
+    } else if (platform === 'desktop' && !isStandalone) {
+      // Desktop Chrome/Edge suportam PWA
+      if (browser === 'chrome' || browser === 'edge') {
+        installMethod = 'native';
+        canInstall = true;
+      } else {
+        installMethod = 'manual';
+        canInstall = true; // Mesmo que não tenha prompt nativo, pode adicionar aos favoritos
+      }
     }
 
     setDeviceInfo({
