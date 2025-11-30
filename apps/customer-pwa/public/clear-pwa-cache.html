@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpar Cache PWA - Cliente</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #10b981;
+      margin-top: 0;
+    }
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #059669;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f0f9ff;
+      border-left: 4px solid #10b981;
+    }
+    pre {
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔧 Limpar Cache PWA - Cliente</h1>
+
+    <p><strong>Use esta página para resetar completamente o PWA e forçar o banner a aparecer.</strong></p>
+
+    <button onclick="checkStatus()">✅ Verificar Status</button>
+    <button onclick="clearAll()">🗑️ Limpar Tudo</button>
+    <button onclick="goToApp()">🚀 Ir para o App</button>
+
+    <div id="status" class="status" style="display:none;"></div>
+  </div>
+
+  <script>
+    function checkStatus() {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const userAgent = navigator.userAgent;
+
+      const info = {
+        'Banner dispensado': dismissed ? `Sim (${new Date(parseInt(dismissed)).toLocaleString()})` : 'Não',
+        'Modo standalone': isStandalone ? 'Sim (app instalado)' : 'Não (navegador)',
+        'User Agent': userAgent,
+        'Platform': /android/i.test(userAgent) ? 'Android' : /iphone|ipad|ipod/i.test(userAgent) ? 'iOS' : 'Desktop',
+        'Service Workers': 'Verificando...'
+      };
+
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        info['Service Workers'] = regs.length + ' registrado(s)';
+        displayInfo(info);
+      });
+    }
+
+    function displayInfo(info) {
+      const status = document.getElementById('status');
+      let html = '<h3>📊 Status Atual:</h3><pre>';
+      for (const [key, value] of Object.entries(info)) {
+        html += `${key}: ${value}\n`;
+      }
+      html += '</pre>';
+
+      if (info['Banner dispensado'] !== 'Não') {
+        html += '<p style="color: #ef4444; font-weight: bold;">⚠️ Banner foi dispensado! Clique em "Limpar Tudo" para resetar.</p>';
+      }
+
+      status.innerHTML = html;
+    }
+
+    async function clearAll() {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.innerHTML = '<h3>🔄 Limpando...</h3>';
+
+      // 1. Limpar localStorage
+      localStorage.clear();
+
+      // 2. Limpar sessionStorage
+      sessionStorage.clear();
+
+      // 3. Desregistrar service workers
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.unregister();
+      }
+
+      // 4. Limpar cache
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      status.innerHTML = `
+        <h3>✅ Limpeza Completa!</h3>
+        <p><strong>O que foi limpo:</strong></p>
+        <ul>
+          <li>✅ localStorage (banner dispensado removido)</li>
+          <li>✅ sessionStorage</li>
+          <li>✅ ${regs.length} Service Worker(s) desregistrado(s)</li>
+          <li>✅ Cache do navegador</li>
+        </ul>
+        <p style="color: #10b981; font-weight: bold;">🎉 Agora o banner deve aparecer!</p>
+        <p><button onclick="goToApp()" style="margin-top: 10px;">🚀 Ir para o App</button></p>
+      `;
+    }
+
+    function goToApp() {
+      window.location.href = '/';
+    }
+
+    // Auto-check ao carregar
+    window.addEventListener('load', checkStatus);
+  </script>
+</body>
+</html>
