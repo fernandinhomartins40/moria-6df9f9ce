@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { InstallCard, IOSInstructions, PWADebug } from '@moria/ui/pwa-install';
-import '@moria/ui/pwa-install/styles/animations.css';
+import { InstallBanner, PWADebug } from '@moria/ui/pwa-install';
 import { Anchor, Mail, Lock } from 'lucide-react';
 
 export function LoginPage() {
@@ -45,15 +44,8 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Card de Instalação PWA */}
-        <InstallCard
-          appName="Cliente"
-          appIcon="/icons/customer-192.png"
-          variant="customer"
-        />
-
-        {/* Modal de Instruções - iOS */}
-        <IOSInstructions
+        {/* Banner de Instalação PWA */}
+        <InstallBanner
           appName="Moria Cliente"
           variant="customer"
         />

@@ -1,153 +1,9 @@
 import React, { useState } from 'react';
 import { Shield, LogIn, Loader2 } from 'lucide-react';
+import { InstallBanner, PWADebug } from '@moria/ui/pwa-install';
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => Promise<{ success: boolean; role?: 'ADMIN' | 'STAFF' }>;
-}
-
-// Componente de Banner de Instalação PWA
-function PWAInstallBanner() {
-  const [showBanner, setShowBanner] = useState(true);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
-
-  React.useEffect(() => {
-    // Detectar iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
-
-    // Detectar se já está instalado
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isStandalone) {
-      setShowBanner(false);
-      return;
-    }
-
-    // Verificar se foi dispensado recentemente
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed, 10);
-      const now = Date.now();
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
-      if (now - dismissedTime < sevenDays) {
-        setShowBanner(false);
-        return;
-      } else {
-        // Expirou, remover
-        localStorage.removeItem('pwa-install-dismissed');
-      }
-    }
-
-    // Listener para evento de instalação (Android/Chrome)
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (isIOS) {
-      setShowIOSInstructions(true);
-      return;
-    }
-
-    // Se tiver o prompt nativo (Android/Chrome), usar
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-
-      if (outcome === 'accepted') {
-        setShowBanner(false);
-      }
-
-      setDeferredPrompt(null);
-    } else {
-      // Se não tiver (Desktop ou navegadores que não suportam), mostrar instruções genéricas
-      alert('Para instalar: \n\n1. Clique no ícone de menu (⋮) no navegador\n2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial"');
-    }
-  };
-
-  const handleDismiss = () => {
-    setShowBanner(false);
-    // Guardar preferência por 7 dias
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-  };
-
-  if (!showBanner) return null;
-
-  return (
-    <>
-      <div className="bg-gradient-to-r from-orange-500 to-blue-600 text-white rounded-xl p-4 shadow-lg mb-6 animate-fade-in">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-sm mb-1">
-              {isIOS ? '📱 Instale o App' : '⚡ Instale o App'}
-            </h3>
-            <p className="text-xs text-white/90 mb-3">
-              {isIOS
-                ? 'Acesse offline e receba notificações. Toque no botão de compartilhar ↗️'
-                : 'Acesso rápido, trabalhe offline e receba notificações'
-              }
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={handleInstallClick}
-                className="bg-white text-orange-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-50 transition-colors"
-              >
-                {isIOS ? 'Ver como instalar' : 'Instalar agora'}
-              </button>
-              <button
-                onClick={handleDismiss}
-                className="text-white/80 hover:text-white px-3 py-2 text-sm"
-              >
-                Agora não
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de instruções iOS */}
-      {showIOSInstructions && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowIOSInstructions(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Como instalar no iOS</h3>
-            <ol className="space-y-3 text-sm text-gray-700">
-              <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">1</span>
-                <span>Toque no botão <strong>Compartilhar</strong> ↗️ (parte inferior do Safari)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">2</span>
-                <span>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">3</span>
-                <span>Toque em <strong>"Adicionar"</strong> no canto superior direito</span>
-              </li>
-            </ol>
-            <button
-              onClick={() => setShowIOSInstructions(false)}
-              className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Entendi
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -178,7 +34,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-orange-50 p-4">
       <div className="w-full max-w-md">
         {/* Banner de Instalação PWA */}
-        <PWAInstallBanner />
+        <InstallBanner
+          appName="Moria Admin"
+          variant="mechanic"
+        />
 
         <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
           {/* Header */}
@@ -271,6 +130,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             </p>
           </div>
         </div>
+
+        {/* Debug em desenvolvimento */}
+        <PWADebug />
       </div>
     </div>
   );

@@ -14,13 +14,16 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY);
+    console.log('[PWA Install] Checking dismissed status:', dismissed);
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
       const now = Date.now();
 
       if (now - dismissedTime < DISMISS_DURATION) {
+        console.log('[PWA Install] Banner was dismissed recently, hiding');
         setIsDismissed(true);
       } else {
+        console.log('[PWA Install] Dismissal expired, removing');
         localStorage.removeItem(STORAGE_KEY);
       }
     }
@@ -31,6 +34,12 @@ export function usePWAInstall() {
   const shouldShowPrompt =
     !deviceInfo.isStandalone &&  // Não está instalado
     !isDismissed;                 // Não foi dispensado
+
+  console.log('[PWA Install] shouldShowPrompt:', shouldShowPrompt, {
+    isStandalone: deviceInfo.isStandalone,
+    isDismissed,
+    platform: deviceInfo.platform,
+  });
 
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, Date.now().toString());
