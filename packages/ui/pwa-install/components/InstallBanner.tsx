@@ -14,7 +14,14 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
     usePWAInstall();
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
-  if (!shouldShowPrompt) {
+  // DEBUG: Log forçado
+  console.log('🎯 [InstallBanner] Renderizando', { shouldShowPrompt, deviceInfo });
+
+  // TEMPORÁRIO: SEMPRE mostra para debug
+  const forceShow = true;
+
+  if (!shouldShowPrompt && !forceShow) {
+    console.log('❌ [InstallBanner] Ocultado por shouldShowPrompt=false');
     return null;
   }
 
