@@ -9,13 +9,11 @@ import {
   Wrench,
   AlertTriangle,
   CheckCircle,
-  X,
-  MessageCircle,
-  FileText,
-  ShoppingCart
+  X
 } from "lucide-react";
 import adminService from "../../api/adminService";
 import { toast } from "../ui/use-toast";
+import { useAdminAuth } from "../../contexts/AdminAuthContext";
 
 // API Notification Types
 type NotificationType =
@@ -66,20 +64,22 @@ export function NotificationCenter({
   onActionClick,
   useRealNotifications = false
 }: NotificationCenterProps) {
+  const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (useRealNotifications) {
+    // Only load real notifications if authenticated
+    if (useRealNotifications && isAuthenticated && !authLoading) {
       loadRealNotifications();
       // Poll for new notifications every 30 seconds
       const interval = setInterval(loadRealNotifications, 30000);
       return () => clearInterval(interval);
-    } else {
+    } else if (!useRealNotifications) {
       generateNotifications();
     }
-  }, [pendingOrders, pendingQuotes, lowStockProducts, useRealNotifications]);
+  }, [pendingOrders, pendingQuotes, lowStockProducts, useRealNotifications, isAuthenticated, authLoading]);
 
   // Load notifications from API
   const loadRealNotifications = async () => {

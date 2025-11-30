@@ -46,10 +46,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Skip admin auth initialization on customer routes
-    const isCustomerRoute = !window.location.pathname.startsWith('/store-panel') &&
-                           !window.location.pathname.startsWith('/admin');
+    const isAdminRoute = window.location.pathname.startsWith('/store-panel') ||
+                         window.location.pathname.startsWith('/admin') ||
+                         window.location.pathname.startsWith('/mechanic-panel');
 
-    if (isCustomerRoute) {
+    if (!isAdminRoute) {
       setState(prev => ({ ...prev, isLoading: false }));
       return;
     }
@@ -74,6 +75,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         // If cookie is invalid/missing, admin is not authenticated
+        console.debug('[AdminAuth] Not authenticated:', error);
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
