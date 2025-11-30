@@ -29,16 +29,21 @@ export function usePWAInstall() {
     }
   }, []);
 
-  // Sempre mostra o banner customizado (exceto se já instalado ou dispensado)
-  // NÃO depende de canInstall ou beforeinstallprompt - seguindo melhores práticas web.dev 2025
+  // SEMPRE mostra o banner (exceto se já instalado ou dispensado)
+  // Funciona em: Android, iOS, Desktop (Chrome, Edge, Safari)
+  // NÃO depende de beforeinstallprompt - melhores práticas web.dev 2025
   const shouldShowPrompt =
     !deviceInfo.isStandalone &&  // Não está instalado
     !isDismissed;                 // Não foi dispensado
 
-  console.log('[PWA Install] shouldShowPrompt:', shouldShowPrompt, {
+  // Banner aparece SEMPRE que possível - PWA pode ser instalado em qualquer plataforma!
+
+  console.log('[PWA Install] 🎯 Banner Control:', {
+    shouldShowPrompt,
     isStandalone: deviceInfo.isStandalone,
     isDismissed,
     platform: deviceInfo.platform,
+    browser: deviceInfo.browser,
   });
 
   const handleDismiss = () => {

@@ -31,11 +31,28 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
 
   const isAndroid = deviceInfo.platform === 'android';
   const isIOS = deviceInfo.platform === 'ios';
+  const isDesktop = deviceInfo.platform === 'desktop';
 
   const handleClick = () => {
+    // Android com beforeinstallprompt disponível
     if (isAndroid && isInstallable) {
       handleInstall();
-    } else if (isIOS) {
+    }
+    // iOS sempre mostra instruções
+    else if (isIOS) {
+      setShowIOSInstructions(true);
+    }
+    // Desktop (Chrome/Edge) tenta instalar ou mostra instruções
+    else if (isDesktop) {
+      if (isInstallable) {
+        handleInstall();
+      } else {
+        // Instruções genéricas para desktop
+        setShowIOSInstructions(true);
+      }
+    }
+    // Qualquer outra plataforma mostra instruções
+    else {
       setShowIOSInstructions(true);
     }
   };
@@ -105,6 +122,8 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
           <p className="text-sm text-gray-600">
             {isAndroid && 'Acesso rápido e funciona offline'}
             {isIOS && 'Adicione à tela inicial para acesso rápido'}
+            {isDesktop && 'Instale no seu computador para acesso rápido'}
+            {!isAndroid && !isIOS && !isDesktop && 'Acesso rápido direto da área de trabalho'}
           </p>
         </div>
 
@@ -114,7 +133,7 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
           type="button"
         >
           <Download className="w-4 h-4" />
-          {isAndroid ? 'Instalar' : 'Ver como'}
+          {(isAndroid || isDesktop) && isInstallable ? 'Instalar' : 'Ver como'}
         </button>
 
         <button
