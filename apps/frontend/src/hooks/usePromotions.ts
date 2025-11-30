@@ -140,15 +140,20 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
     };
   }, [customer, cartItems, cartTotal, options.customerSegment]);
 
-  // Query para promoções
+  // Query para promoções (usa rota pública /active se não incluir inativas)
   const {
     data: promotions = [],
     isLoading,
     error
   } = useQuery({
-    queryKey: ['promotions', filter, searchTerm],
+    queryKey: ['promotions', filter, searchTerm, options.includeInactive],
     queryFn: async () => {
       try {
+        // Se incluir apenas ativas, usa rota pública
+        if (!options.includeInactive && !searchTerm && Object.keys(filter).length === 0) {
+          return await promotionService.getActivePromotions();
+        }
+        // Caso contrário, tenta rota admin (pode falhar se não autenticado)
         const response = await promotionService.getPromotions({
           ...filter,
           searchTerm: searchTerm || undefined,
@@ -157,7 +162,12 @@ export function usePromotions(options: UsePromotionsOptions = {}): UsePromotions
         return response.promotions || [];
       } catch (error) {
         console.error('Error fetching promotions:', error);
-        return [];
+        // Fallback para rota pública em caso de erro
+        try {
+          return await promotionService.getActivePromotions();
+        } catch {
+          return [];
+        }
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
