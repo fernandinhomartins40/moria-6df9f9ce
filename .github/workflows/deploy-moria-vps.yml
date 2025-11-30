@@ -236,6 +236,11 @@ jobs:
             # ===== BUILD NO HOST (FORA DO DOCKER) =====
             echo "=== Instalando dependências e fazendo build no host ==="
 
+            # Instalar dependências do workspace (root)
+            cd $APP_DIR
+            echo "Instalando dependências do workspace..."
+            npm install || { echo "❌ Erro ao instalar dependências do workspace"; exit 1; }
+
             # Backend
             cd $APP_DIR/apps/backend
             echo "Instalando dependências do backend..."
@@ -244,33 +249,45 @@ jobs:
             echo "Gerando Prisma client..."
             npx prisma generate || { echo "❌ Erro ao gerar Prisma client"; exit 1; }
 
-            echo "Compilando backend..."
-            npm run build || { echo "❌ Erro ao compilar backend"; exit 1; }
-
-            # Verificar se o build foi criado
-            if [ ! -f "dist/server.js" ]; then
-              echo "❌ Erro: dist/server.js não foi criado!"
-              exit 1
-            fi
-            echo "✅ Backend compilado com sucesso"
-
-            # Frontend
-            cd $APP_DIR/apps/frontend
-            echo "Instalando dependências do frontend..."
-            npm install || { echo "❌ Erro ao instalar dependências do frontend"; exit 1; }
-
-            echo "Compilando frontend..."
-            VITE_API_BASE_URL=/api npm run build || { echo "❌ Erro ao compilar frontend"; exit 1; }
-
-            # Verificar se o build foi criado
-            if [ ! -f "dist/index.html" ]; then
-              echo "❌ Erro: dist/index.html não foi criado!"
-              exit 1
-            fi
-            echo "✅ Frontend compilado com sucesso"
-
+            # Voltar para root e rodar build completo
             cd $APP_DIR
-            echo "✅ Build concluído no host com sucesso"
+            echo "=== Executando build completo (Backend + Frontend + PWAs) ==="
+            npm run build:docker || { echo "❌ Erro no build completo"; exit 1; }
+
+            # Verificar se todos os builds foram criados
+            echo "=== Validando builds criados ==="
+
+            if [ ! -f "apps/backend/dist/server.js" ]; then
+              echo "❌ Erro: backend/dist/server.js não foi criado!"
+              exit 1
+            fi
+            echo "✅ Backend compilado"
+
+            if [ ! -f "apps/frontend/dist/index.html" ]; then
+              echo "❌ Erro: frontend/dist/index.html não foi criado!"
+              exit 1
+            fi
+            echo "✅ Frontend compilado"
+
+            if [ ! -f "apps/frontend/dist/manifest.webmanifest" ]; then
+              echo "❌ Erro: PWAs não foram buildados (manifest.webmanifest não encontrado)!"
+              exit 1
+            fi
+            echo "✅ PWAs buildados"
+
+            if [ ! -d "apps/frontend/dist/cliente" ]; then
+              echo "❌ Erro: Customer PWA não foi copiado!"
+              exit 1
+            fi
+            echo "✅ Customer PWA copiado"
+
+            if [ ! -d "apps/frontend/dist/icons" ]; then
+              echo "❌ Erro: Ícones PWA não foram copiados!"
+              exit 1
+            fi
+            echo "✅ Ícones PWA copiados"
+
+            echo "✅ Build completo concluído com sucesso (Backend + Frontend + Customer PWA + Mechanic PWA)"
 
             # Build da imagem Docker (agora apenas copia os arquivos já compilados)
             echo "Construindo imagem Docker..."
