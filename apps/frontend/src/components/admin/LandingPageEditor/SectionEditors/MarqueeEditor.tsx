@@ -101,17 +101,11 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
       <Card className="p-6 space-y-4">
         <h3 className="text-lg font-semibold">Cores</h3>
 
-        <div className="space-y-2">
-          <Label>Cor de Fundo</Label>
-          <Input
-            value={config.backgroundColor}
-            onChange={(e) => updateConfig({ backgroundColor: e.target.value })}
-            placeholder="linear-gradient(90deg, #667eea 0%, #764ba2 100%)"
-          />
-          <p className="text-xs text-muted-foreground">
-            Use cores sólidas (#ff6b35) ou gradientes CSS (linear-gradient(...))
-          </p>
-        </div>
+        <ColorPicker
+          label="Cor de Fundo"
+          value={config.backgroundColor}
+          onChange={(backgroundColor) => updateConfig({ backgroundColor })}
+        />
 
         <ColorPicker
           label="Cor do Texto"

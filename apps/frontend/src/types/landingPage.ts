@@ -96,7 +96,7 @@ export interface HeroConfig {
 export interface TrustIndicator {
   id: string;
   icon: string; // nome do ícone Lucide
-  iconBackground: 'gold' | 'orange'; // gold-metallic-bg ou bg-moria-orange
+  iconBackground: string; // Cor de fundo do ícone (hex, rgb, etc)
   title: string;
   description: string;
 }
@@ -163,7 +163,7 @@ export interface FooterSocialLink {
 export interface FooterCertification {
   id: string;
   icon: string; // nome do ícone Lucide
-  iconBackground: 'gold' | 'orange';
+  iconBackground: string; // Cor de fundo do ícone (hex, rgb, etc)
   title: string;
   description: string;
 }

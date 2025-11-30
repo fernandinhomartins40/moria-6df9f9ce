@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { ServicesSectionConfig, TrustIndicator } from '@/types/landingPage';
-import { ArrayEditor, IconSelector } from '../StyleControls';
+import { ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
 
 interface ServicesEditorProps {
   config: ServicesSectionConfig;
@@ -74,7 +74,7 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
           createNew={() => ({
             id: Date.now().toString(),
             icon: 'Shield',
-            iconBackground: 'gold',
+            iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)',
             title: 'Novo Indicador',
             description: 'Descrição do indicador',
           })}
@@ -87,20 +87,12 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
                 onChange={(icon) => update({ icon })}
               />
 
-              <div className="space-y-2">
-                <Label>Cor de Fundo do Ícone</Label>
-                <select
-                  value={item.iconBackground}
-                  onChange={(e) => update({ iconBackground: e.target.value as 'gold' | 'orange' })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                >
-                  <option value="gold">Dourado (Premium)</option>
-                  <option value="orange">Laranja (Destaque)</option>
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Dourado: Efeito metálico premium • Laranja: Cor principal da marca
-                </p>
-              </div>
+              <GradientColorPicker
+                label="Cor de Fundo do Ícone"
+                value={item.iconBackground}
+                onChange={(iconBackground) => update({ iconBackground })}
+                description="Escolha uma cor sólida ou gradiente para o fundo do ícone. Dourado para premium, Laranja para destaque."
+              />
 
               <div className="space-y-2">
                 <Label>Título</Label>
@@ -124,8 +116,11 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
                 <p className="text-xs font-semibold text-gray-600 mb-2">Preview:</p>
                 <div className="flex flex-col items-center text-center">
-                  <div className={`p-3 rounded-full mb-2 ${item.iconBackground === 'gold' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 'bg-orange-500'}`}>
-                    <div className={`w-6 h-6 ${item.iconBackground === 'gold' ? 'text-black' : 'text-white'}`}>
+                  <div
+                    className="p-3 rounded-full mb-2"
+                    style={{ background: item.iconBackground }}
+                  >
+                    <div className="w-6 h-6 text-white">
                       {/* Placeholder icon */}
                       ✓
                     </div>

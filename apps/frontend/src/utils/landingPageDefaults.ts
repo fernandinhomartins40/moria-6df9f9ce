@@ -26,9 +26,9 @@ export const getDefaultConfig = (): LandingPageConfig => ({
       { id: '5', label: 'Sobre', href: '/about', isLink: true },
       { id: '6', label: 'Contato', href: '/contact', isLink: true },
     ],
-    backgroundColor: '#000000', // moria-black
+    backgroundColor: '#1a1a1a', // moria-black
     textColor: '#ffffff',
-    hoverColor: '#ff6b35', // moria-orange
+    hoverColor: '#ff6933', // moria-orange
   },
 
   // ============================================================================
@@ -89,7 +89,7 @@ export const getDefaultConfig = (): LandingPageConfig => ({
       { id: '5', icon: '💰', text: 'PROMOÇÕES IMPERDÍVEIS - CONFIRA NOSSAS OFERTAS' },
     ],
     speed: 30, // 30 segundos para completar o loop
-    backgroundColor: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)', // gradient-marquee
+    backgroundColor: 'linear-gradient(90deg, #ff6933 0%, #ffa600 100%)', // gradient-marquee (Laranja → Dourado)
     textColor: '#ffffff',
   },
 
@@ -105,28 +105,28 @@ export const getDefaultConfig = (): LandingPageConfig => ({
       {
         id: '1',
         icon: 'Shield',
-        iconBackground: 'gold',
+        iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)', // Dourado Premium
         title: 'Garantia',
         description: '6 meses em todos os serviços',
       },
       {
         id: '2',
         icon: 'Clock',
-        iconBackground: 'gold',
+        iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)', // Dourado Premium
         title: 'Agilidade',
         description: 'Atendimento rápido e eficiente',
       },
       {
         id: '3',
         icon: 'Wrench',
-        iconBackground: 'orange',
+        iconBackground: '#ff6933', // Laranja Moria
         title: 'Expertise',
         description: '15+ anos de experiência',
       },
       {
         id: '4',
         icon: 'Zap',
-        iconBackground: 'orange',
+        iconBackground: '#ff6933', // Laranja Moria
         title: 'Tecnologia',
         description: 'Equipamentos modernos',
       },
@@ -197,21 +197,21 @@ export const getDefaultConfig = (): LandingPageConfig => ({
       {
         id: '1',
         icon: 'Wrench',
-        iconBackground: 'gold',
+        iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)', // Dourado Premium
         title: 'Garantia de 6 Meses',
         description: 'Em todos os serviços realizados',
       },
       {
         id: '2',
         icon: 'Clock',
-        iconBackground: 'orange',
+        iconBackground: '#ff6933', // Laranja Moria
         title: 'Atendimento Rápido',
         description: 'Diagnóstico em até 30 minutos',
       },
       {
         id: '3',
         icon: 'MapPin',
-        iconBackground: 'gold',
+        iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)', // Dourado Premium
         title: 'Entrega na Região',
         description: 'Peças entregues em até 24h',
       },

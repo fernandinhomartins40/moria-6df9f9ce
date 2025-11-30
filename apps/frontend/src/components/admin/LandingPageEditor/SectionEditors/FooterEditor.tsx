@@ -14,7 +14,7 @@ import {
   FooterCertification,
   FooterBottomLink,
 } from '@/types/landingPage';
-import { ImageUploaderWithCrop, ArrayEditor, IconSelector } from '../StyleControls';
+import { ImageUploaderWithCrop, ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
 
 interface FooterEditorProps {
   config: FooterConfig;
@@ -303,7 +303,7 @@ export const FooterEditor = ({ config, onChange }: FooterEditorProps) => {
           createNew={() => ({
             id: Date.now().toString(),
             icon: 'Shield',
-            iconBackground: 'gold',
+            iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)',
             title: 'Nova Certificação',
             description: 'Descrição',
           })}
@@ -316,17 +316,12 @@ export const FooterEditor = ({ config, onChange }: FooterEditorProps) => {
                 onChange={(icon) => update({ icon })}
               />
 
-              <div className="space-y-2">
-                <Label>Cor de Fundo do Ícone</Label>
-                <select
-                  value={item.iconBackground}
-                  onChange={(e) => update({ iconBackground: e.target.value as any })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                >
-                  <option value="gold">Dourado</option>
-                  <option value="orange">Laranja</option>
-                </select>
-              </div>
+              <GradientColorPicker
+                label="Cor de Fundo do Ícone"
+                value={item.iconBackground}
+                onChange={(iconBackground) => update({ iconBackground })}
+                description="Escolha uma cor sólida ou gradiente para o fundo do ícone"
+              />
 
               <div className="space-y-2">
                 <Label>Título</Label>
