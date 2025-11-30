@@ -84,7 +84,8 @@
       "Bash(git clean:*)",
       "Bash(npm run build:customer:*)",
       "Bash(node generate-icons.js:*)",
-      "Bash(node generate-pngs.js:*)"
+      "Bash(node generate-pngs.js:*)",
+      "Bash(node generate-screenshots.js:*)"
     ],
     "deny": [],
     "ask": []

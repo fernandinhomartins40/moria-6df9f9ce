@@ -57,8 +57,9 @@ export function useDeviceDetection(): DeviceInfo {
     if (platform === 'android' && !isStandalone) {
       installMethod = 'native'; // beforeinstallprompt
       canInstall = true;
-    } else if (platform === 'ios' && browser === 'safari' && !isStandalone) {
-      installMethod = 'manual'; // Share menu
+    } else if (platform === 'ios' && !isStandalone) {
+      // iOS 16.4+ suporta instalação de Chrome, Edge, Firefox, Safari
+      installMethod = 'manual'; // Share menu em todos navegadores
       canInstall = true;
     } else if (platform === 'desktop' && !isStandalone) {
       // Desktop Chrome/Edge suportam PWA

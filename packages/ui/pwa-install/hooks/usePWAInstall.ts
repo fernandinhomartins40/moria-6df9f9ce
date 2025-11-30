@@ -26,11 +26,11 @@ export function usePWAInstall() {
     }
   }, []);
 
-  // Em modo dev, sempre mostra (a menos que tenha sido dispensado)
+  // Sempre mostra o banner customizado (exceto se já instalado ou dispensado)
+  // NÃO depende de canInstall ou beforeinstallprompt - seguindo melhores práticas web.dev 2025
   const shouldShowPrompt =
-    (deviceInfo.canInstall || isDevMode) &&
-    !deviceInfo.isStandalone &&
-    !isDismissed;
+    !deviceInfo.isStandalone &&  // Não está instalado
+    !isDismissed;                 // Não foi dispensado
 
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, Date.now().toString());
