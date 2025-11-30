@@ -12,6 +12,7 @@ import { Loader2, User, Mail, Phone, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordInput } from "../ui/password-input";
 import { isPasswordStrong } from "@/lib/passwordUtils";
+import { InstallBanner } from "@moria/ui/pwa-install";
 
 interface LoginDialogProps {
   open: boolean;
@@ -138,6 +139,8 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-6">
+        <InstallBanner appName="Moria Cliente" variant="customer" compact />
+
         <DialogHeader>
           <DialogTitle className="text-center text-xl">
             Área do Cliente

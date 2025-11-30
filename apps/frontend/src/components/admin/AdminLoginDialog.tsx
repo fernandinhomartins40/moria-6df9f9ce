@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, LogIn, Shield } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
+import { InstallBanner } from "@moria/ui/pwa-install";
 
 export function AdminLoginDialog() {
   const { login, isLoading } = useAdminAuth();
@@ -53,6 +54,8 @@ export function AdminLoginDialog() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
       <div className="w-full max-w-md">
+        <InstallBanner appName="Moria Admin" variant="store" />
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
           {/* Header */}
           <div className="text-center mb-8">

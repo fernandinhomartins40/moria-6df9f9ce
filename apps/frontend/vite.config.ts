@@ -15,45 +15,16 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'logo_moria.png', 'robots.txt', 'icons/*.png', 'screenshots/*.png'],
-      manifest: {
-        name: 'Moria Peças - Loja e Serviços Náuticos',
-        short_name: 'Moria',
-        description: 'Loja de peças, serviços náuticos e área do cliente',
-        theme_color: '#10b981',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
-        scope: '/',
-        categories: ['shopping', 'lifestyle', 'business'],
-        icons: [
-          {
-            src: '/icons/customer-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/icons/customer-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ],
-        screenshots: [
-          {
-            src: '/screenshots/narrow-1.png',
-            sizes: '540x720',
-            type: 'image/png',
-            form_factor: 'narrow'
-          },
-          {
-            src: '/screenshots/wide-1.png',
-            sizes: '1280x720',
-            type: 'image/png',
-            form_factor: 'wide'
-          }
-        ]
-      },
+      includeAssets: [
+        'favicon.ico',
+        'logo_moria.png',
+        'robots.txt',
+        'icons/**/*.png',
+        'screenshots/*.png',
+        'manifest-customer.webmanifest',
+        'manifest-store.webmanifest'
+      ],
+      manifest: false, // Não gerar manifest automático, usamos os manuais
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
