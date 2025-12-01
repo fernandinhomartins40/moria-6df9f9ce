@@ -3,18 +3,33 @@ import { useDeviceDetection } from './useDeviceDetection';
 import { useInstallPrompt } from './useInstallPrompt';
 import { useDevMode } from './useDevMode';
 
-const STORAGE_KEY = 'pwa-install-dismissed';
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+// Função helper para obter chave de storage baseada na URL
+function getStorageKey(): string {
+  if (typeof window === 'undefined') return 'pwa-install-dismissed';
+
+  const path = window.location.pathname;
+
+  if (path.includes('/customer') || path.includes('/my-account')) {
+    return 'pwa-install-dismissed-customer';
+  } else if (path.includes('/store-panel') || path.includes('/mechanic-panel')) {
+    return 'pwa-install-dismissed-store';
+  }
+
+  return 'pwa-install-dismissed';
+}
 
 export function usePWAInstall() {
   const deviceInfo = useDeviceDetection();
   const { isInstallable, promptInstall } = useInstallPrompt();
   const { isDevMode } = useDevMode();
   const [isDismissed, setIsDismissed] = useState(false);
+  const storageKey = getStorageKey();
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(STORAGE_KEY);
-    console.log('[PWA Install] Checking dismissed status:', dismissed);
+    const dismissed = localStorage.getItem(storageKey);
+    console.log(`[PWA Install] Checking dismissed status for ${storageKey}:`, dismissed);
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
       const now = Date.now();
@@ -24,10 +39,10 @@ export function usePWAInstall() {
         setIsDismissed(true);
       } else {
         console.log('[PWA Install] Dismissal expired, removing');
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       }
     }
-  }, []);
+  }, [storageKey]);
 
   // SEMPRE mostra o banner (exceto se já instalado ou dispensado)
   // Funciona em: Android, iOS, Desktop (Chrome, Edge, Safari)
@@ -47,7 +62,8 @@ export function usePWAInstall() {
   });
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+    console.log(`[PWA Install] Dismissing banner with key: ${storageKey}`);
+    localStorage.setItem(storageKey, Date.now().toString());
     setIsDismissed(true);
   };
 
