@@ -55,16 +55,13 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
     <div className="bg-moria-black text-white flex flex-col h-screen w-64">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col items-center space-y-2">
           <img
             src="/logo_moria.png"
             alt="Moria"
-            className="h-8 w-auto"
+            className="h-12 w-auto"
           />
-          <div>
-            <h2 className="font-bold text-lg">Painel Lojista</h2>
-            <p className="text-xs text-gray-400">Moria Peças & Serviços</p>
-          </div>
+          <h2 className="font-bold text-lg">Painel Lojista</h2>
         </div>
       </div>
 
