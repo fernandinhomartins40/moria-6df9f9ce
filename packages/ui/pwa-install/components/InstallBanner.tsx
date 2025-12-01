@@ -72,7 +72,7 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               type="button"
             >
-              {isAndroid ? 'Instalar' : 'Como fazer'}
+              {isIOS ? 'Como fazer' : 'Instalar'}
             </button>
             <button
               onClick={handleDismiss}
@@ -123,7 +123,7 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
           type="button"
         >
           <Download className="w-4 h-4" />
-          {(isAndroid || isDesktop) && isInstallable ? 'Instalar' : 'Ver como'}
+          {isIOS ? 'Como fazer' : 'Instalar'}
         </button>
 
         <button
