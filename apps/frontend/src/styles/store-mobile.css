@@ -20,6 +20,42 @@
     font-size: 1.5rem;
   }
 
+  /* Header Mobile Fixes */
+  .lojista-header {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem !important;
+    margin: -1rem -1rem 1rem -1rem !important;
+  }
+
+  .lojista-header > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lojista-title {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .lojista-subtitle {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  /* Garantir que botões fiquem inline */
+  .lojista-header .flex {
+    flex-direction: row !important;
+    gap: 0.5rem;
+  }
+
+  .lojista-header button {
+    white-space: nowrap;
+    min-width: fit-content;
+  }
+
   /* Tables -> Cards */
   .store-table-mobile {
     display: block;
