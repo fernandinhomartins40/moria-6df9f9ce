@@ -112,7 +112,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto sidebar-scrollbar">
         {menuItems.map((item) => {
           // Filter menu items by permissions
           if (item.requiresPermission && !(permissions as any)[item.requiresPermission]) {
