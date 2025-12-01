@@ -736,12 +736,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const renderQuotes = () => (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>Todos os Orçamentos</CardTitle>
             <CardDescription>Solicitações de orçamento para serviços</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               onClick={() => setIsCreateQuoteModalOpen(true)}
@@ -962,7 +962,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Gerenciar Serviços</CardTitle>
               <CardDescription>Cadastre e gerencie os serviços oferecidos</CardDescription>
@@ -1144,7 +1144,7 @@ export function AdminContent({ activeTab }: AdminContentProps) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Gerenciar Cupons</CardTitle>
               <CardDescription>Crie e gerencie cupons de desconto para os clientes</CardDescription>
@@ -1322,12 +1322,12 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const renderOrders = () => (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>Todos os Pedidos</CardTitle>
             <CardDescription>Gerencie pedidos e orçamentos</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="default"
               size="sm"
