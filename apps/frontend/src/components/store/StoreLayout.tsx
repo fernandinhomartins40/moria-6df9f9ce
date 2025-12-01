@@ -103,7 +103,7 @@ export default function StoreLayout({
         activeTab={currentTab}
         onTabChange={onTabChange}
       />
-      <main className="flex-1">
+      <main className="lojista-content">
         {children}
       </main>
     </div>
