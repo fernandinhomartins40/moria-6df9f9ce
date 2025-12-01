@@ -1,6 +1,10 @@
 // Service Worker Moria PWA - Customer & Store
 // OBRIGATÓRIO: fetch handler para disparar beforeinstallprompt no Chrome
 
+// ⚠️ WORKBOX INJECT POINT - NÃO REMOVER!
+// Vite PWA injetará o precache manifest aqui durante o build
+const precacheManifest = self.__WB_MANIFEST || [];
+
 const CACHE_NAME = 'moria-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
@@ -8,6 +12,7 @@ const ASSETS_TO_CACHE = [
   '/store-panel',
   '/manifest-customer.webmanifest',
   '/manifest-store.webmanifest',
+  ...precacheManifest.map(entry => typeof entry === 'string' ? entry : entry.url)
 ];
 
 // Install event - cache assets
