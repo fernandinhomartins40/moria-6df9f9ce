@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9,8 +8,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Menu,
-  X,
   Home,
   FileText,
   Wrench,
@@ -47,7 +44,6 @@ const menuItems = [
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const { admin, logout } = useAdminAuth();
   const permissions = useAdminPermissions();
 
@@ -56,48 +52,24 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   return (
-    <div className={cn(
-      "bg-moria-black text-white transition-all duration-300 flex flex-col h-screen",
-      isCollapsed ? "w-20" : "w-64"
-    )}>
+    <div className="bg-moria-black text-white flex flex-col h-screen w-64">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className={cn("flex items-center space-x-3", isCollapsed && "justify-center")}>
-            {!isCollapsed ? (
-              <>
-                <img 
-                  src="/logo_moria.png" 
-                  alt="Moria" 
-                  className="h-8 w-auto"
-                />
-                <div>
-                  <h2 className="font-bold text-lg">Painel Lojista</h2>
-                  <p className="text-xs text-gray-400">Moria Peças & Serviços</p>
-                </div>
-              </>
-            ) : (
-              <img 
-                src="/logo_moria.png" 
-                alt="Moria" 
-                className="h-8 w-auto"
-              />
-            )}
+        <div className="flex items-center space-x-3">
+          <img
+            src="/logo_moria.png"
+            alt="Moria"
+            className="h-8 w-auto"
+          />
+          <div>
+            <h2 className="font-bold text-lg">Painel Lojista</h2>
+            <p className="text-xs text-gray-400">Moria Peças & Serviços</p>
           </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-gray-400 hover:text-white hover:bg-gray-700"
-          >
-            {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
-          </Button>
         </div>
       </div>
 
       {/* Admin Info */}
-      {!isCollapsed && admin && (
+      {admin && (
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-moria-orange rounded-full flex items-center justify-center">
@@ -129,19 +101,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 key={item.id}
                 to={(item as any).href}
                 className={cn(
-                  "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
+                  "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200",
                   isActive
                     ? "bg-moria-orange text-white shadow-lg"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                  isCollapsed && "justify-center px-2"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 )}
               >
                 <IconComponent className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-
-                {isActive && !isCollapsed && (
+                <span className="font-medium">{item.label}</span>
+                {isActive && (
                   <div className="ml-auto w-2 h-2 bg-white rounded-full" />
                 )}
               </Link>
@@ -154,19 +122,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
+                "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200",
                 isActive
                   ? "bg-moria-orange text-white shadow-lg"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                isCollapsed && "justify-center px-2"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
               )}
             >
               <IconComponent className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="font-medium">{item.label}</span>
-              )}
-
-              {isActive && !isCollapsed && (
+              <span className="font-medium">{item.label}</span>
+              {isActive && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full" />
               )}
             </button>
@@ -179,26 +143,20 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         <Link to="/">
           <Button
             variant="ghost"
-            className={cn(
-              "w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white",
-              isCollapsed && "justify-center px-2"
-            )}
+            className="w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white"
           >
             <Home className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="ml-3">Voltar ao Site</span>}
+            <span className="ml-3">Voltar ao Site</span>
           </Button>
         </Link>
 
         <Button
           variant="ghost"
-          className={cn(
-            "w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-red-400",
-            isCollapsed && "justify-center px-2"
-          )}
+          className="w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-red-400"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3">Sair</span>}
+          <span className="ml-3">Sair</span>
         </Button>
       </div>
     </div>
