@@ -1,32 +1,83 @@
 import { useState } from "react";
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  FileText,
+  Package,
+  Menu,
+  Wrench,
+  ClipboardCheck,
+  Users,
+  Tag,
+  Percent,
+  UserCog,
+  BarChart3,
+  Settings
+} from "lucide-react";
 import { Sidebar } from "../components/admin/Sidebar";
 import { AdminContent } from "../components/admin/AdminContent";
 import { ProtectedAdminRoute } from "../components/admin/ProtectedAdminRoute";
+import StoreLayout from "../components/store/StoreLayout";
+import { useAdminAuth } from "../contexts/AdminAuthContext";
 import "../styles/lojista.css";
+import "../styles/store.css";
+import "../styles/store-mobile.css";
+import "../styles/store-animations.css";
 
 export default function StorePanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { admin, logout } = useAdminAuth();
+
+  // Bottom Navigation Items (5 principais)
+  const bottomNavItems = [
+    { id: "dashboard", label: "Início", icon: LayoutDashboard },
+    { id: "orders", label: "Pedidos", icon: ShoppingBag },
+    { id: "quotes", label: "Orçamentos", icon: FileText },
+    { id: "products", label: "Produtos", icon: Package },
+    { id: "menu", label: "Mais", icon: Menu },
+  ];
+
+  // Drawer Items (8 secundárias)
+  const drawerItems = [
+    { id: "services", label: "Serviços", icon: Wrench },
+    { id: "revisions", label: "Revisões", icon: ClipboardCheck },
+    { id: "customers", label: "Clientes", icon: Users },
+    { id: "coupons", label: "Cupons", icon: Tag },
+    { id: "promotions", label: "Promoções", icon: Percent },
+    { id: "users", label: "Usuários", icon: UserCog, requiresPermission: "manage_users" },
+    { id: "reports", label: "Relatórios", icon: BarChart3 },
+    { id: "settings", label: "Configurações", icon: Settings },
+  ];
 
   return (
     <ProtectedAdminRoute>
-      <div className="lojista-layout">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <main className="lojista-content lojista-fade-in">
-          <div className="lojista-header">
-            <div>
-              <h1 className="lojista-title">
-                {getPageTitle(activeTab)}
-              </h1>
-              <p className="lojista-subtitle">
-                {getPageDescription(activeTab)}
-              </p>
-            </div>
+      <StoreLayout
+        currentTab={activeTab}
+        onTabChange={setActiveTab}
+        bottomNavItems={bottomNavItems}
+        drawerItems={drawerItems}
+        adminName={admin?.name}
+        adminEmail={admin?.email}
+        variant="admin"
+        onLogout={logout}
+      >
+        {/* Header com título e descrição (apenas desktop, mobile tem StoreHeader) */}
+        <div className="lojista-header desktop-only">
+          <div>
+            <h1 className="lojista-title">
+              {getPageTitle(activeTab)}
+            </h1>
+            <p className="lojista-subtitle">
+              {getPageDescription(activeTab)}
+            </p>
           </div>
+        </div>
 
+        {/* Conteúdo da aba ativa */}
+        <div className="lojista-fade-in">
           <AdminContent activeTab={activeTab} />
-        </main>
-      </div>
+        </div>
+      </StoreLayout>
     </ProtectedAdminRoute>
   );
 }

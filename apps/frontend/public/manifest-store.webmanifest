@@ -1,11 +1,11 @@
 {
   "name": "Moria Peças - Painel Administrativo",
   "short_name": "Moria Admin",
-  "description": "Gestão de produtos, pedidos, orçamentos e serviços náuticos",
-  "theme_color": "#3b82f6",
-  "background_color": "#ffffff",
+  "description": "Gerencie pedidos, produtos, serviços e muito mais",
+  "theme_color": "#ff6b35",
+  "background_color": "#1a1a1a",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "start_url": "/store-panel?source=pwa",
   "scope": "/store-panel/",
   "id": "moria-store-pwa",
@@ -37,5 +37,67 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/store-narrow-1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard"
+    },
+    {
+      "src": "/screenshots/store-narrow-2.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pedidos"
+    },
+    {
+      "src": "/screenshots/store-wide-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard Desktop"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Início",
+      "description": "Ver dashboard com métricas",
+      "url": "/store-panel?tab=dashboard",
+      "icons": [
+        {
+          "src": "/icons/store/shortcut-dashboard.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "short_name": "Pedidos",
+      "description": "Gerenciar pedidos",
+      "url": "/store-panel?tab=orders",
+      "icons": [
+        {
+          "src": "/icons/store/shortcut-orders.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "short_name": "Produtos",
+      "description": "Gerenciar produtos",
+      "url": "/store-panel?tab=products",
+      "icons": [
+        {
+          "src": "/icons/store/shortcut-products.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }

@@ -1,0 +1,267 @@
+/* =========================================
+   STORE PANEL - MOBILE STYLES
+   Otimizações específicas para mobile
+   ========================================= */
+
+/* Mobile Breakpoint: 768px */
+@media (max-width: 768px) {
+  /* Layout Adjustments */
+  .store-content {
+    padding: 1rem;
+  }
+
+  .store-card {
+    padding: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Typography */
+  .store-stat-value {
+    font-size: 1.5rem;
+  }
+
+  /* Tables -> Cards */
+  .store-table-mobile {
+    display: block;
+  }
+
+  .store-table-mobile thead {
+    display: none;
+  }
+
+  .store-table-mobile tbody {
+    display: block;
+  }
+
+  .store-table-mobile tr {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid var(--store-border);
+    border-radius: 0.5rem;
+  }
+
+  .store-table-mobile td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .store-table-mobile td:last-child {
+    border-bottom: none;
+  }
+
+  .store-table-mobile td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  /* Forms */
+  .store-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Buttons */
+  .store-btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .store-btn-group .store-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Modal Adjustments */
+  .store-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Sidebar Hidden in Mobile (shown via drawer) */
+  .lojista-sidebar {
+    display: none;
+  }
+
+  /* Hide Desktop-Only Elements */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Show Mobile-Only Elements */
+  .mobile-only {
+    display: block !important;
+  }
+
+  /* Touch Feedback */
+  button:active,
+  a:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+
+  /* Scroll Optimizations */
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent Text Selection on UI Elements */
+  .store-nav-item,
+  .store-btn,
+  .store-tab {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Bottom Padding for Bottom Nav */
+  .store-layout.mobile {
+    padding-bottom: 5rem;
+  }
+}
+
+/* Standalone Mode (PWA Installed) */
+@media (display-mode: standalone) {
+  .store-header {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .store-bottom-nav {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* Hide Browser-Only Elements */
+  .browser-only {
+    display: none !important;
+  }
+
+  /* Status Bar */
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .store-stat-card {
+    padding: 1rem;
+  }
+
+  .store-stat-value {
+    font-size: 1.25rem;
+  }
+
+  .store-content {
+    padding: 0.75rem;
+  }
+}
+
+/* Small Phones (<400px) */
+@media (max-width: 400px) {
+  .store-content {
+    padding: 0.75rem;
+  }
+
+  .store-card {
+    padding: 0.75rem;
+  }
+
+  .store-btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Bottom Nav Adjustments */
+  .store-bottom-nav span {
+    font-size: 0.65rem;
+  }
+
+  .store-bottom-nav svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
+/* iOS Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safe Area */
+  .store-header {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .store-bottom-nav {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* iOS Rubber Band Effect Prevention */
+  body {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .store-layout {
+    overflow-y: auto;
+    height: 100vh;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS Input Zoom Prevention */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Android Specific */
+@media (max-width: 768px) {
+  /* Chrome Address Bar Color */
+  meta[name="theme-color"] {
+    content: #ff6b35;
+  }
+}
+
+/* High DPI Screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .store-card {
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Dark Mode Preparation (Future) */
+@media (prefers-color-scheme: dark) {
+  /* Preparado para implementação futura */
+  /* :root {
+    --store-bg: #111827;
+    --store-card-bg: #1f2937;
+    --store-border: #374151;
+  } */
+}
+
+/* Print Styles */
+@media print {
+  .store-header,
+  .store-bottom-nav,
+  .store-drawer,
+  .store-btn,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  .store-layout {
+    padding: 0;
+  }
+
+  .store-card {
+    break-inside: avoid;
+  }
+}
