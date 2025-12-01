@@ -6,8 +6,9 @@
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "any",
-  "start_url": "/store-panel",
+  "start_url": "/store-panel?source=pwa",
   "scope": "/",
+  "id": "moria-store-pwa",
   "categories": ["business", "productivity"],
   "icons": [
     {

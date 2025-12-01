@@ -6,8 +6,9 @@
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "start_url": "/customer",
+  "start_url": "/customer?source=pwa",
   "scope": "/",
+  "id": "moria-customer-pwa",
   "categories": ["shopping", "lifestyle"],
   "icons": [
     {
