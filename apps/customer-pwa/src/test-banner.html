@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test PWA Banner</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .banner { background: linear-gradient(to right, #10b981, #059669); color: white; padding: 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <h1>PWA Banner Test</h1>
+    <div class="banner">
+        <h2>📱 Instale o app Moria Cliente</h2>
+        <p>Acesso rápido e funciona offline</p>
+        <button style="background: white; color: #10b981; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+            Instalar Agora
+        </button>
+    </div>
+
+    <script>
+        console.log('[TEST] Banner HTML carregado');
+        console.log('[TEST] isStandalone:', window.matchMedia('(display-mode: standalone)').matches);
+        console.log('[TEST] localStorage:', localStorage.getItem('pwa-install-dismissed'));
+    </script>
+</body>
+</html>

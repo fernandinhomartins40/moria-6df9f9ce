@@ -85,7 +85,17 @@
       "Bash(npm run build:customer:*)",
       "Bash(node generate-icons.js:*)",
       "Bash(node generate-pngs.js:*)",
-      "Bash(node generate-screenshots.js:*)"
+      "Bash(node generate-screenshots.js:*)",
+      "Bash(npm run build:mechanic:*)",
+      "Bash(npm run build:docker:windows:*)",
+      "Bash(bash scripts/build-all-for-docker.sh:*)",
+      "Bash(start http://localhost:3002/cliente/login)",
+      "Bash(xdg-open:*)",
+      "Bash(open http://localhost:3002/cliente/login)",
+      "Bash(start http://localhost:3000)",
+      "Bash(if exist \"scripts\\build-all-for-docker.sh\" del /f \"scripts\\build-all-for-docker.sh\")",
+      "Bash(if exist \"scripts\\build-all-for-docker.ps1\" del /f \"scripts\\build-all-for-docker.ps1\")",
+      "Bash(start:*)"
     ],
     "deny": [],
     "ask": []

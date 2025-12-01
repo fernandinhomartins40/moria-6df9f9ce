@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
+      // USAR SERVICE WORKER CUSTOMIZADO (com fetch handler obrigatório para beforeinstallprompt)
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
@@ -25,25 +29,13 @@ export default defineConfig(({ mode }) => ({
         'manifest-store.webmanifest'
       ],
       manifest: false, // Não gerar manifest automático, usamos os manuais
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
-              }
-            }
-          }
-        ]
+        globIgnores: ['**/node_modules/**', '**/dev-dist/**'],
       },
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'classic', // classic para service worker customizado
       }
     })
   ].filter(Boolean),
