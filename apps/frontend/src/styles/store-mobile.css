@@ -20,40 +20,58 @@
     font-size: 1.5rem;
   }
 
-  /* Header Mobile Fixes */
+  /* Header Mobile Fixes - Layout vertical organizado */
   .lojista-header {
-    flex-direction: row !important;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
     padding: 1rem !important;
     margin: -1rem -1rem 1rem -1rem !important;
+    align-items: stretch !important;
   }
 
   .lojista-header > div {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .lojista-title {
-    font-size: 1.25rem !important;
-    line-height: 1.75rem !important;
-    margin-bottom: 0.25rem !important;
-  }
-
-  .lojista-subtitle {
-    font-size: 0.875rem !important;
-    line-height: 1.25rem !important;
-  }
-
-  /* Garantir que botões fiquem inline */
-  .lojista-header .flex {
-    flex-direction: row !important;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
   }
 
+  .lojista-title {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+    margin-bottom: 0 !important;
+    font-weight: 700 !important;
+  }
+
+  .lojista-subtitle {
+    font-size: 0.8125rem !important;
+    line-height: 1.125rem !important;
+    color: #64748b !important;
+    margin-top: 0 !important;
+  }
+
+  /* Botões em linha (horizontal) no mobile */
+  .lojista-header .flex,
+  .lojista-header [class*="flex"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
   .lojista-header button {
-    white-space: nowrap;
-    min-width: fit-content;
+    white-space: nowrap !important;
+    font-size: 0.8125rem !important;
+    padding: 0.5rem 0.875rem !important;
+    min-height: 36px !important;
+    flex: 0 1 auto !important;
+  }
+
+  /* Garantir que grupos de botões fiquem horizontais */
+  .lojista-header button + button {
+    margin-left: 0 !important;
   }
 
   /* Tables -> Cards */
