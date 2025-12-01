@@ -98,14 +98,14 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 key={item.id}
                 to={(item as any).href}
                 className={cn(
-                  "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200",
+                  "w-full flex items-center justify-start space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
                   isActive
                     ? "bg-moria-orange text-white shadow-lg"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 )}
               >
                 <IconComponent className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium text-left">{item.label}</span>
                 {isActive && (
                   <div className="ml-auto w-2 h-2 bg-white rounded-full" />
                 )}
@@ -119,14 +119,14 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200",
+                "w-full flex items-center justify-start space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
                 isActive
                   ? "bg-moria-orange text-white shadow-lg"
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               )}
             >
               <IconComponent className="h-5 w-5 flex-shrink-0" />
-              <span className="font-medium">{item.label}</span>
+              <span className="font-medium text-left">{item.label}</span>
               {isActive && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full" />
               )}
