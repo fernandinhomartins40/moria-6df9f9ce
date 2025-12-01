@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 
+// TypeScript interface seguindo padrão da comunidade (MDN + GitHub)
 interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: ReadonlyArray<string>;
   prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+// Declaração global para TypeScript
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
 }
 
 export function useInstallPrompt() {
@@ -10,15 +19,17 @@ export function useInstallPrompt() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      console.log('[useInstallPrompt] beforeinstallprompt evento recebido!');
+    const handler = (e: BeforeInstallPromptEvent) => {
+      // CRÍTICO: preventDefault() ANTES de tudo (padrão MDN)
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      console.log('[useInstallPrompt] beforeinstallprompt capturado!', {
+        platforms: e.platforms,
+      });
+      setDeferredPrompt(e);
       setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    console.log('[useInstallPrompt] Listener beforeinstallprompt registrado');
 
     // Detectar se já está instalado
     const installedHandler = () => {
@@ -36,46 +47,34 @@ export function useInstallPrompt() {
   }, []);
 
   const promptInstall = async (): Promise<boolean> => {
-    console.log('[useInstallPrompt] promptInstall chamado', {
-      hasDeferredPrompt: !!deferredPrompt,
-    });
-
     if (!deferredPrompt) {
-      console.warn('[useInstallPrompt] Nenhum deferredPrompt disponível! beforeinstallprompt não foi disparado.');
+      console.error('[useInstallPrompt] Não há deferredPrompt disponível!');
       return false;
     }
 
     try {
-      console.log('[useInstallPrompt] Mostrando prompt de instalação...');
+      // Chamar prompt() - abre diálogo nativo do navegador
+      await deferredPrompt.prompt();
 
-      // CRÍTICO: prompt() só pode ser chamado UMA VEZ por evento!
-      // Guardar referência local antes de chamar prompt()
-      const promptEvent = deferredPrompt;
+      // Aguardar escolha do usuário
+      const choiceResult = await deferredPrompt.userChoice;
 
-      await promptEvent.prompt();
+      console.log('[useInstallPrompt] Usuário decidiu:', choiceResult.outcome);
 
-      console.log('[useInstallPrompt] Aguardando resposta do usuário...');
-      const { outcome } = await promptEvent.userChoice;
-      console.log('[useInstallPrompt] Resposta do usuário:', outcome);
-
-      // ⚠️ SEMPRE limpar deferredPrompt após usar (sucesso ou falha)
-      // O evento só pode ser usado UMA VEZ
-      setDeferredPrompt(null);
-
-      if (outcome === 'accepted') {
-        console.log('[useInstallPrompt] ✅ Usuário aceitou a instalação!');
+      if (choiceResult.outcome === 'accepted') {
+        console.log('[useInstallPrompt] ✅ Instalação aceita!');
         setIsInstallable(false);
         return true;
+      } else {
+        console.log('[useInstallPrompt] ❌ Instalação recusada');
+        return false;
       }
-
-      console.log('[useInstallPrompt] ❌ Usuário recusou a instalação');
-      // Manter isInstallable true - novo beforeinstallprompt virá depois
-      return false;
     } catch (error) {
-      console.error('[useInstallPrompt] Erro ao mostrar prompt de instalação:', error);
-      // Limpar deferredPrompt em caso de erro também
-      setDeferredPrompt(null);
+      console.error('[useInstallPrompt] Erro ao instalar:', error);
       return false;
+    } finally {
+      // SEMPRE limpar após uso (sucesso ou falha)
+      setDeferredPrompt(null);
     }
   };
 

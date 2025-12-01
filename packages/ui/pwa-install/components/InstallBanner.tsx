@@ -14,19 +14,7 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
     usePWAInstall();
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
-  // DEBUG: Log detalhado
-  console.log('🎯 [InstallBanner] Renderizando', {
-    shouldShowPrompt,
-    isInstallable,
-    platform: deviceInfo.platform,
-    isStandalone: deviceInfo.isStandalone,
-  });
-
   if (!shouldShowPrompt) {
-    console.log('❌ [InstallBanner] Ocultado - shouldShowPrompt=false', {
-      isStandalone: deviceInfo.isStandalone,
-      reason: deviceInfo.isStandalone ? 'Já instalado' : 'Dismissado pelo usuário',
-    });
     return null;
   }
 
@@ -46,50 +34,15 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
   const isDesktop = deviceInfo.platform === 'desktop';
 
   const handleClick = async () => {
-    console.log('[InstallBanner] Click detectado', {
-      platform: deviceInfo.platform,
-      isInstallable,
-      isAndroid,
-      isIOS,
-      isDesktop,
-    });
-
-    // Android - tentar instalação nativa
-    if (isAndroid) {
-      if (isInstallable) {
-        console.log('[InstallBanner] Tentando instalar via prompt nativo (Android)');
-        const success = await handleInstall();
-        if (!success) {
-          console.log('[InstallBanner] Instalação falhou ou cancelada, mostrando instruções');
-          setShowIOSInstructions(true);
-        }
-      } else {
-        console.log('[InstallBanner] beforeinstallprompt não disponível, mostrando instruções');
+    // Android/Desktop - tentar instalação nativa
+    if ((isAndroid || isDesktop) && isInstallable) {
+      const success = await handleInstall();
+      if (!success) {
         setShowIOSInstructions(true);
       }
     }
-    // iOS sempre mostra instruções
-    else if (isIOS) {
-      console.log('[InstallBanner] iOS detectado, mostrando instruções');
-      setShowIOSInstructions(true);
-    }
-    // Desktop (Chrome/Edge)
-    else if (isDesktop) {
-      if (isInstallable) {
-        console.log('[InstallBanner] Tentando instalar via prompt nativo (Desktop)');
-        const success = await handleInstall();
-        if (!success) {
-          console.log('[InstallBanner] Instalação falhou ou cancelada, mostrando instruções');
-          setShowIOSInstructions(true);
-        }
-      } else {
-        console.log('[InstallBanner] beforeinstallprompt não disponível, mostrando instruções');
-        setShowIOSInstructions(true);
-      }
-    }
-    // Qualquer outra plataforma mostra instruções
+    // iOS ou qualquer outra plataforma - mostrar instruções
     else {
-      console.log('[InstallBanner] Plataforma desconhecida, mostrando instruções');
       setShowIOSInstructions(true);
     }
   };

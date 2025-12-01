@@ -29,55 +29,29 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const dismissed = localStorage.getItem(storageKey);
-    console.log(`[PWA Install] Checking dismissed status for ${storageKey}:`, dismissed);
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
       const now = Date.now();
 
       if (now - dismissedTime < DISMISS_DURATION) {
-        console.log('[PWA Install] Banner was dismissed recently, hiding');
         setIsDismissed(true);
       } else {
-        console.log('[PWA Install] Dismissal expired, removing');
         localStorage.removeItem(storageKey);
       }
     }
   }, [storageKey]);
 
-  // SEMPRE mostra o banner (exceto se já instalado ou dispensado)
-  // Funciona em: Android, iOS, Desktop (Chrome, Edge, Safari)
-  // NÃO depende de beforeinstallprompt - melhores práticas web.dev 2025
-  const shouldShowPrompt =
-    !deviceInfo.isStandalone &&  // Não está instalado
-    !isDismissed;                 // Não foi dispensado
-
-  // Banner aparece SEMPRE que possível - PWA pode ser instalado em qualquer plataforma!
-
-  console.log('[PWA Install] 🎯 Banner Control:', {
-    shouldShowPrompt,
-    isStandalone: deviceInfo.isStandalone,
-    isDismissed,
-    platform: deviceInfo.platform,
-    browser: deviceInfo.browser,
-  });
+  const shouldShowPrompt = !deviceInfo.isStandalone && !isDismissed;
 
   const handleDismiss = () => {
-    console.log(`[PWA Install] Dismissing banner with key: ${storageKey}`);
     localStorage.setItem(storageKey, Date.now().toString());
     setIsDismissed(true);
   };
 
   const handleInstall = async (): Promise<boolean> => {
-    console.log('[PWA Install] handleInstall chamado', {
-      platform: deviceInfo.platform,
-      isInstallable,
-    });
-
-    // ✅ Funciona em Android E Desktop (Chrome/Edge)
+    // Funciona em Android E Desktop (Chrome/Edge)
     if ((deviceInfo.platform === 'android' || deviceInfo.platform === 'desktop') && isInstallable) {
-      console.log('[PWA Install] Chamando promptInstall...');
       const success = await promptInstall();
-      console.log('[PWA Install] promptInstall retornou:', success);
 
       if (success) {
         handleDismiss();
@@ -93,11 +67,6 @@ export function usePWAInstall() {
       return success;
     }
 
-    console.log('[PWA Install] Condições não atendidas para instalação nativa', {
-      platform: deviceInfo.platform,
-      isInstallable,
-      reason: !isInstallable ? 'beforeinstallprompt não disparou' : 'plataforma não suportada',
-    });
     return false;
   };
 
