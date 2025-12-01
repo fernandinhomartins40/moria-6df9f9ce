@@ -68,8 +68,16 @@ export function usePWAInstall() {
   };
 
   const handleInstall = async (): Promise<boolean> => {
+    console.log('[PWA Install] handleInstall chamado', {
+      platform: deviceInfo.platform,
+      isInstallable,
+    });
+
     if (deviceInfo.platform === 'android' && isInstallable) {
+      console.log('[PWA Install] Chamando promptInstall...');
       const success = await promptInstall();
+      console.log('[PWA Install] promptInstall retornou:', success);
+
       if (success) {
         handleDismiss();
 
@@ -83,6 +91,8 @@ export function usePWAInstall() {
       }
       return success;
     }
+
+    console.log('[PWA Install] Condições não atendidas para instalação nativa');
     return false;
   };
 

@@ -40,26 +40,51 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
   const isIOS = deviceInfo.platform === 'ios';
   const isDesktop = deviceInfo.platform === 'desktop';
 
-  const handleClick = () => {
-    // Android com beforeinstallprompt disponível
-    if (isAndroid && isInstallable) {
-      handleInstall();
+  const handleClick = async () => {
+    console.log('[InstallBanner] Click detectado', {
+      platform: deviceInfo.platform,
+      isInstallable,
+      isAndroid,
+      isIOS,
+      isDesktop,
+    });
+
+    // Android - tentar instalação nativa
+    if (isAndroid) {
+      if (isInstallable) {
+        console.log('[InstallBanner] Tentando instalar via prompt nativo (Android)');
+        const success = await handleInstall();
+        if (!success) {
+          console.log('[InstallBanner] Instalação falhou ou cancelada, mostrando instruções');
+          setShowIOSInstructions(true);
+        }
+      } else {
+        console.log('[InstallBanner] beforeinstallprompt não disponível, mostrando instruções');
+        setShowIOSInstructions(true);
+      }
     }
     // iOS sempre mostra instruções
     else if (isIOS) {
+      console.log('[InstallBanner] iOS detectado, mostrando instruções');
       setShowIOSInstructions(true);
     }
-    // Desktop (Chrome/Edge) tenta instalar ou mostra instruções
+    // Desktop (Chrome/Edge)
     else if (isDesktop) {
       if (isInstallable) {
-        handleInstall();
+        console.log('[InstallBanner] Tentando instalar via prompt nativo (Desktop)');
+        const success = await handleInstall();
+        if (!success) {
+          console.log('[InstallBanner] Instalação falhou ou cancelada, mostrando instruções');
+          setShowIOSInstructions(true);
+        }
       } else {
-        // Instruções genéricas para desktop
+        console.log('[InstallBanner] beforeinstallprompt não disponível, mostrando instruções');
         setShowIOSInstructions(true);
       }
     }
     // Qualquer outra plataforma mostra instruções
     else {
+      console.log('[InstallBanner] Plataforma desconhecida, mostrando instruções');
       setShowIOSInstructions(true);
     }
   };
