@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "start_url": "/customer?source=pwa",
-  "scope": "/",
+  "scope": "/customer/",
   "id": "moria-customer-pwa",
   "categories": ["shopping", "lifestyle"],
   "icons": [
