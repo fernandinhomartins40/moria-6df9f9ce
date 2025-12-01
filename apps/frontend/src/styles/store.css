@@ -79,6 +79,26 @@ html {
   z-index: 30;
 }
 
+/* Desktop Layout Fixes */
+.lojista-layout {
+  position: relative;
+}
+
+.lojista-sidebar {
+  z-index: 40 !important;
+  position: relative;
+}
+
+.lojista-content {
+  position: relative;
+  z-index: 10;
+}
+
+.lojista-header {
+  position: relative;
+  z-index: 5;
+}
+
 /* Store Content */
 .store-content {
   padding: 1.5rem;
