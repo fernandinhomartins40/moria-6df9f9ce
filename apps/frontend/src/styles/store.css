@@ -82,21 +82,47 @@ html {
 /* Desktop Layout Fixes */
 .lojista-layout {
   position: relative;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .lojista-sidebar {
   z-index: 40 !important;
   position: relative;
+  flex-shrink: 0;
 }
 
 .lojista-content {
   position: relative;
   z-index: 10;
+  flex: 1;
+  min-width: 0; /* Importante: permite que o conteúdo respeite o container flex */
+  overflow-y: auto;
+  overflow-x: hidden; /* Evita scroll horizontal */
 }
 
 .lojista-header {
   position: relative;
   z-index: 5;
+  max-width: 100%; /* Garante que o header não ultrapasse o container */
+}
+
+/* Garantir que todo conteúdo dentro do main respeite o container */
+.lojista-content main,
+.lojista-content > div {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Garantir que tabelas e cards não ultrapassem o container */
+.lojista-table,
+.lojista-card,
+.store-table,
+.store-card {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Store Content */
