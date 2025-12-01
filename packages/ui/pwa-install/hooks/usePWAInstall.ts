@@ -73,7 +73,8 @@ export function usePWAInstall() {
       isInstallable,
     });
 
-    if (deviceInfo.platform === 'android' && isInstallable) {
+    // ✅ Funciona em Android E Desktop (Chrome/Edge)
+    if ((deviceInfo.platform === 'android' || deviceInfo.platform === 'desktop') && isInstallable) {
       console.log('[PWA Install] Chamando promptInstall...');
       const success = await promptInstall();
       console.log('[PWA Install] promptInstall retornou:', success);
@@ -92,7 +93,11 @@ export function usePWAInstall() {
       return success;
     }
 
-    console.log('[PWA Install] Condições não atendidas para instalação nativa');
+    console.log('[PWA Install] Condições não atendidas para instalação nativa', {
+      platform: deviceInfo.platform,
+      isInstallable,
+      reason: !isInstallable ? 'beforeinstallprompt não disparou' : 'plataforma não suportada',
+    });
     return false;
   };
 

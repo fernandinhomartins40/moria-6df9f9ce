@@ -14,14 +14,19 @@ export function InstallBanner({ appName, variant, compact = false }: InstallBann
     usePWAInstall();
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
-  // DEBUG: Log forçado
-  console.log('🎯 [InstallBanner] Renderizando', { shouldShowPrompt, deviceInfo });
+  // DEBUG: Log detalhado
+  console.log('🎯 [InstallBanner] Renderizando', {
+    shouldShowPrompt,
+    isInstallable,
+    platform: deviceInfo.platform,
+    isStandalone: deviceInfo.isStandalone,
+  });
 
-  // TEMPORÁRIO: SEMPRE mostra para debug
-  const forceShow = true;
-
-  if (!shouldShowPrompt && !forceShow) {
-    console.log('❌ [InstallBanner] Ocultado por shouldShowPrompt=false');
+  if (!shouldShowPrompt) {
+    console.log('❌ [InstallBanner] Ocultado - shouldShowPrompt=false', {
+      isStandalone: deviceInfo.isStandalone,
+      reason: deviceInfo.isStandalone ? 'Já instalado' : 'Dismissado pelo usuário',
+    });
     return null;
   }
 

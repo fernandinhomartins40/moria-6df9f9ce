@@ -47,23 +47,34 @@ export function useInstallPrompt() {
 
     try {
       console.log('[useInstallPrompt] Mostrando prompt de instalação...');
-      await deferredPrompt.prompt();
+
+      // CRÍTICO: prompt() só pode ser chamado UMA VEZ por evento!
+      // Guardar referência local antes de chamar prompt()
+      const promptEvent = deferredPrompt;
+
+      await promptEvent.prompt();
 
       console.log('[useInstallPrompt] Aguardando resposta do usuário...');
-      const { outcome } = await deferredPrompt.userChoice;
+      const { outcome } = await promptEvent.userChoice;
       console.log('[useInstallPrompt] Resposta do usuário:', outcome);
+
+      // ⚠️ SEMPRE limpar deferredPrompt após usar (sucesso ou falha)
+      // O evento só pode ser usado UMA VEZ
+      setDeferredPrompt(null);
 
       if (outcome === 'accepted') {
         console.log('[useInstallPrompt] ✅ Usuário aceitou a instalação!');
         setIsInstallable(false);
-        setDeferredPrompt(null);
         return true;
       }
 
       console.log('[useInstallPrompt] ❌ Usuário recusou a instalação');
+      // Manter isInstallable true - novo beforeinstallprompt virá depois
       return false;
     } catch (error) {
       console.error('[useInstallPrompt] Erro ao mostrar prompt de instalação:', error);
+      // Limpar deferredPrompt em caso de erro também
+      setDeferredPrompt(null);
       return false;
     }
   };

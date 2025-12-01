@@ -13,12 +13,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    VitePWA({
+VitePWA({
       // USAR SERVICE WORKER CUSTOMIZADO (com fetch handler obrigatório para beforeinstallprompt)
       strategies: 'injectManifest',
       srcDir: 'public',
       filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectRegister: false, // ⚠️ NÃO auto-registrar, fazemos manualmente em pwaManifest.ts
       includeAssets: [
         'favicon.ico',
         'logo_moria.png',
