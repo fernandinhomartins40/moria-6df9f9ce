@@ -4,7 +4,7 @@ import { useStandaloneMode } from '../../hooks/useStandaloneMode';
 import StoreBottomNavigation from './StoreBottomNavigation';
 import StoreMobileDrawer from './StoreMobileDrawer';
 import StoreHeader from './StoreHeader';
-import Sidebar from '../admin/Sidebar';
+import { Sidebar } from '../admin/Sidebar';
 import { cn } from '../../lib/utils';
 
 export interface NavItem {
