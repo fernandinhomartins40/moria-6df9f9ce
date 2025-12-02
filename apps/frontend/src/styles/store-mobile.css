@@ -211,9 +211,6 @@
 
     /* Ajustar posição vertical para não sobrepor menu fixo */
     top: calc(50% - 2rem) !important;
-
-    /* Garantir que overflow está apenas no conteúdo, não no modal inteiro */
-    overflow: visible !important;
   }
 
   /* Garantir que apenas o conteúdo scrollável tenha overflow */

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { ScrollArea } from '../ui/scroll-area';
 import { AlertCircle, Loader2, Wrench, DollarSign, Clock, Settings } from 'lucide-react';
 
 interface Service {
@@ -87,7 +86,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
         basePrice: service.basePrice || 0,
         estimatedTime: estimatedTimeNum,
         specifications: service.specifications || {},
-        isActive: service.status === 'ACTIVE' || service.isActive !== undefined ? service.isActive : true
+        isActive: service.isActive !== undefined ? service.isActive : (service.status === 'ACTIVE')
       });
     } else {
       // Resetar form para novo serviço
@@ -163,8 +162,8 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Wrench className="h-5 w-5 text-moria-orange" />
             {isEditing ? 'Editar Serviço' : 'Novo Serviço'}
@@ -177,8 +176,8 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 min-h-0 custom-scrollbar">
+          <div className="py-3 sm:py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
                 <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-3 gap-1">
@@ -382,9 +381,9 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
           </TabsContent>
             </Tabs>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="px-6 py-3 border-t bg-gray-50/50">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t bg-gray-50/50 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading} size="sm">
               Cancelar

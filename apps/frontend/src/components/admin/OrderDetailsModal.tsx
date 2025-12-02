@@ -7,7 +7,6 @@ import { Textarea } from "../ui/textarea";
 import { Separator } from "../ui/separator";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { ScrollArea } from "../ui/scroll-area";
 import {
   Package,
   User,
@@ -156,8 +155,8 @@ Qualquer dúvida estou à disposição!`;
           </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 min-h-0">
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* Ações de Status */}
           <div className="bg-muted p-3 rounded-lg">
             <Label className="text-xs font-semibold mb-2 block">Mudar Status</Label>
@@ -433,7 +432,7 @@ Qualquer dúvida estou à disposição!`;
           </div>
 
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer com ações */}
         <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50 flex-shrink-0">
