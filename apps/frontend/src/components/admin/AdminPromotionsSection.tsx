@@ -227,19 +227,20 @@ export function AdminPromotionsSection({
     <div className="space-y-6 w-full max-w-full overflow-hidden">
       <Card className="w-full max-w-full">
         <CardHeader className="p-4 md:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <CardTitle className="text-xl md:text-2xl">Gerenciar Promoções</CardTitle>
               <CardDescription>
                 Controle promoções e campanhas especiais
               </CardDescription>
             </div>
-            <div className="flex flex-col gap-2 md:flex-row">
+            <div className="flex flex-col gap-2 w-full md:flex-row md:w-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fetchPromotions()}
                 disabled={loading}
+                className="w-full md:w-auto"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
@@ -248,7 +249,7 @@ export function AdminPromotionsSection({
                 size="sm"
                 onClick={handleOpenCreateModal}
                 disabled={createLoading}
-                className="bg-moria-orange hover:bg-moria-orange/90"
+                className="bg-moria-orange hover:bg-moria-orange/90 w-full md:w-auto"
               >
                 {createLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -334,16 +335,16 @@ export function AdminPromotionsSection({
                 const StatusIcon = status.icon;
                 
                 return (
-                  <div key={promotion.id} className="border rounded-lg p-4 sm:p-6 hover:border-moria-orange/50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div key={promotion.id} className="border rounded-lg p-3 md:p-6 hover:border-moria-orange/50 transition-colors w-full max-w-full overflow-hidden">
+                    <div className="flex flex-col gap-3 mb-4">
                       {/* Informações básicas */}
-                      <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
-                        <div className="bg-moria-orange text-white rounded-lg p-2 sm:p-3 flex-shrink-0">
-                          <TypeIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                      <div className="flex items-start gap-3 w-full">
+                        <div className="bg-moria-orange text-white rounded-lg p-2 flex-shrink-0">
+                          <TypeIcon className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold truncate">{promotion.name}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{promotion.description}</p>
+                          <h3 className="text-base md:text-lg font-semibold break-words">{promotion.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words">{promotion.description}</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge className={`${status.variant} text-xs`}>
                               <StatusIcon className="h-3 w-3 mr-1" />
@@ -360,23 +361,25 @@ export function AdminPromotionsSection({
                       </div>
 
                       {/* Status */}
-                      <div className="flex items-center sm:justify-end gap-2 flex-shrink-0">
-                        <span className="text-xs sm:text-sm text-gray-600">Ativa: </span>
-                        {promotion.isActive ? (
-                          <ToggleRight className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="h-5 w-5 text-gray-400" />
-                        )}
+                      <div className="flex flex-col items-start gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Ativa: </span>
+                          {promotion.isActive ? (
+                            <ToggleRight className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Informações detalhadas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                       <div className="flex items-start space-x-2">
                         <Percent className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <span className="text-xs sm:text-sm text-gray-600">Desconto: </span>
-                          <span className="font-medium text-sm sm:text-base">
+                          <span className="text-sm text-gray-600">Desconto: </span>
+                          <span className="font-medium text-sm break-words">
                             {formatDiscount(promotion)}
                           </span>
                         </div>
@@ -385,36 +388,36 @@ export function AdminPromotionsSection({
                       <div className="flex items-start space-x-2">
                         <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <span className="text-xs sm:text-sm text-gray-600">Início: </span>
-                          <span className="font-medium text-sm sm:text-base">{formatDate(promotion.startsAt)}</span>
+                          <span className="text-sm text-gray-600">Início: </span>
+                          <span className="font-medium text-sm">{formatDate(promotion.startsAt)}</span>
                         </div>
                       </div>
 
                       <div className="flex items-start space-x-2">
                         <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <span className="text-xs sm:text-sm text-gray-600">Fim: </span>
-                          <span className="font-medium text-sm sm:text-base">{formatDate(promotion.endsAt)}</span>
+                          <span className="text-sm text-gray-600">Fim: </span>
+                          <span className="font-medium text-sm">{formatDate(promotion.endsAt)}</span>
                         </div>
                       </div>
 
                       {promotion.maxDiscount && (
                         <div className="flex items-start space-x-2">
                           <div className="min-w-0">
-                            <span className="text-xs sm:text-sm text-gray-600">Máx: </span>
-                            <span className="font-medium text-sm sm:text-base">{formatPrice(promotion.maxDiscount)}</span>
+                            <span className="text-sm text-gray-600">Máx: </span>
+                            <span className="font-medium text-sm">{formatPrice(promotion.maxDiscount)}</span>
                           </div>
                         </div>
                       )}
                     </div>
 
                     {/* Ações */}
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="flex flex-col gap-2 md:flex-row md:justify-end">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleStatus(promotion.id, promotion.isActive)}
-                        className="text-xs sm:text-sm"
+                        className="w-full md:w-auto text-sm"
                       >
                         {promotion.isActive ? 'Desativar' : 'Ativar'}
                       </Button>
@@ -424,10 +427,10 @@ export function AdminPromotionsSection({
                         size="sm"
                         onClick={() => handleOpenEditModal(promotion)}
                         disabled={updateLoading}
-                        className="text-xs sm:text-sm"
+                        className="w-full md:w-auto text-sm"
                       >
-                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Editar</span>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
                       </Button>
 
                       <Button
@@ -435,10 +438,10 @@ export function AdminPromotionsSection({
                         size="sm"
                         onClick={() => handleDeleteClick(promotion)}
                         disabled={deleteLoading}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300 text-xs sm:text-sm"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300 w-full md:w-auto text-sm"
                       >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Excluir</span>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
                       </Button>
                     </div>
                   </div>

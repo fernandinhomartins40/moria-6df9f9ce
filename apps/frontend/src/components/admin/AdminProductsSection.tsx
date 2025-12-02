@@ -191,19 +191,20 @@ export function AdminProductsSection({
     <div className="space-y-6 w-full max-w-full overflow-hidden">
       <Card className="w-full max-w-full">
         <CardHeader className="p-4 md:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <CardTitle className="text-xl md:text-2xl">Gerenciar Produtos</CardTitle>
               <CardDescription>
                 Controle seu estoque e catálogo de peças automotivas
               </CardDescription>
             </div>
-            <div className="flex flex-col gap-2 md:flex-row">
+            <div className="flex flex-col gap-2 w-full md:flex-row md:w-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fetchProducts()}
                 disabled={loading}
+                className="w-full md:w-auto"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
@@ -211,7 +212,7 @@ export function AdminProductsSection({
               <Button
                 size="sm"
                 onClick={handleOpenCreateModal}
-                className="bg-moria-orange hover:bg-moria-orange/90"
+                className="bg-moria-orange hover:bg-moria-orange/90 w-full md:w-auto"
                 disabled={createLoading}
               >
                 {createLoading ? (
@@ -297,16 +298,16 @@ export function AdminProductsSection({
                 const discount = getDiscountPercentage(product);
                 
                 return (
-                  <div key={product.id} className="border rounded-lg p-4 sm:p-6 hover:border-moria-orange/50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div key={product.id} className="border rounded-lg p-3 md:p-6 hover:border-moria-orange/50 transition-colors w-full max-w-full overflow-hidden">
+                    <div className="flex flex-col gap-3 mb-4">
                       {/* Informações básicas */}
-                      <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
-                        <div className="bg-moria-orange text-white rounded-lg p-2 sm:p-3 flex-shrink-0">
-                          <Box className="h-5 w-5 sm:h-6 sm:w-6" />
+                      <div className="flex items-start gap-3 w-full">
+                        <div className="bg-moria-orange text-white rounded-lg p-2 flex-shrink-0">
+                          <Box className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold truncate">{product.name}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                          <h3 className="text-base md:text-lg font-semibold break-words">{product.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words">{product.description}</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                               {product.category}
@@ -329,30 +330,30 @@ export function AdminProductsSection({
                       </div>
 
                       {/* Status e SKU */}
-                      <div className="flex sm:flex-col items-start sm:items-end gap-2 sm:gap-1 flex-shrink-0">
+                      <div className="flex flex-col items-start gap-1 flex-shrink-0">
                         <Badge className={stockStatus.variant}>
                           {stockStatus.label}
                         </Badge>
                         {product.sku && (
-                          <p className="text-xs sm:text-sm text-gray-600">SKU: {product.sku}</p>
+                          <p className="text-sm text-gray-600">SKU: {product.sku}</p>
                         )}
                       </div>
                     </div>
 
                     {/* Informações detalhadas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                       <div className="flex items-start space-x-2">
                         <DollarSign className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <span className="text-xs sm:text-sm text-gray-600">Preço: </span>
-                          <span className="font-medium text-sm sm:text-base">
+                          <span className="text-sm text-gray-600">Preço: </span>
+                          <span className="font-medium text-sm break-words">
                             {product.promoPrice
                               ? formatPrice(product.promoPrice)
                               : formatPrice(product.salePrice || product.price)
                             }
                           </span>
                           {product.promoPrice && product.salePrice && (
-                            <span className="text-xs sm:text-sm text-gray-500 line-through ml-1 sm:ml-2">
+                            <span className="text-sm text-gray-500 line-through ml-1">
                               {formatPrice(product.salePrice)}
                             </span>
                           )}
@@ -362,8 +363,8 @@ export function AdminProductsSection({
                       <div className="flex items-start space-x-2">
                         <Warehouse className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <span className="text-xs sm:text-sm text-gray-600">Estoque: </span>
-                          <span className="font-medium text-sm sm:text-base">{product.stock || 0}</span>
+                          <span className="text-sm text-gray-600">Estoque: </span>
+                          <span className="font-medium text-sm">{product.stock || 0}</span>
                         </div>
                       </div>
 
@@ -371,14 +372,14 @@ export function AdminProductsSection({
                         <div className="flex items-start space-x-2">
                           <Tag className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
-                            <span className="text-xs sm:text-sm text-gray-600">Fornecedor: </span>
-                            <span className="font-medium text-sm sm:text-base truncate">{product.supplier}</span>
+                            <span className="text-sm text-gray-600">Fornecedor: </span>
+                            <span className="font-medium text-sm truncate">{product.supplier}</span>
                           </div>
                         </div>
                       )}
 
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs sm:text-sm text-gray-600">Status: </span>
+                        <span className="text-sm text-gray-600">Status: </span>
                         {product.isActive ? (
                           <ToggleRight className="h-5 w-5 text-green-600 flex-shrink-0" />
                         ) : (
@@ -388,13 +389,13 @@ export function AdminProductsSection({
                     </div>
 
                     {/* Ações */}
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="flex flex-col gap-2 md:flex-row md:justify-end">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleStatus(product.id, product.isActive)}
                         disabled={updateLoading}
-                        className="text-xs sm:text-sm"
+                        className="w-full md:w-auto text-sm"
                       >
                         {product.isActive ? 'Desativar' : 'Ativar'}
                       </Button>
@@ -404,10 +405,10 @@ export function AdminProductsSection({
                         size="sm"
                         onClick={() => handleOpenEditModal(product)}
                         disabled={updateLoading}
-                        className="text-xs sm:text-sm"
+                        className="w-full md:w-auto text-sm"
                       >
-                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Editar</span>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
                       </Button>
 
                       <Button
@@ -415,10 +416,10 @@ export function AdminProductsSection({
                         size="sm"
                         onClick={() => handleDeleteClick(product)}
                         disabled={deleteLoading}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300 text-xs sm:text-sm"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300 w-full md:w-auto text-sm"
                       >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Excluir</span>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
                       </Button>
                     </div>
                   </div>
