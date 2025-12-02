@@ -163,7 +163,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Wrench className="h-5 w-5 text-moria-orange" />
@@ -180,20 +180,22 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
         <ScrollArea className="flex-1 px-6">
           <div className="py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Básico
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Preço & Tempo
-            </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Detalhes
-            </TabsTrigger>
-          </TabsList>
+              <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-3 gap-1">
+                  <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Wrench className="h-4 w-4" />
+                    <span>Básico</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="pricing" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Preço & Tempo</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="details" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Settings className="h-4 w-4" />
+                    <span>Detalhes</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
           {/* Aba Básico */}
           <TabsContent value="basic" className="space-y-4">

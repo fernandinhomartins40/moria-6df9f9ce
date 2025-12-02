@@ -105,25 +105,25 @@ export function ProductImageCropper({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Header */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
-              <CropIcon className="h-5 w-5 text-gray-600" />
-              <span className="font-medium">Editor de Imagem</span>
-              <Badge variant="outline">Quadrado 1:1</Badge>
+              <CropIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+              <span className="font-medium text-sm sm:text-base">Editor de Imagem</span>
+              <Badge variant="outline" className="text-xs">Quadrado 1:1</Badge>
             </div>
-            <p className="text-sm text-gray-500">
-              Arraste os cantos para ajustar a área de corte
+            <p className="text-xs sm:text-sm text-gray-500">
+              Arraste os cantos para ajustar
             </p>
           </div>
         </CardContent>
       </Card>
 
       {/* Crop Area */}
-      <div className="border-2 border-gray-200 rounded-lg bg-gray-50 p-4 flex items-center justify-center min-h-[500px]">
+      <div className="border-2 border-gray-200 rounded-lg bg-gray-50 p-2 sm:p-4 flex items-center justify-center">
         <ReactCrop
           crop={crop}
           onChange={(c) => setCrop(c)}
@@ -137,13 +137,13 @@ export function ProductImageCropper({
             alt="Crop"
             onLoad={onImageLoad}
             className="max-w-full h-auto"
-            style={{ maxHeight: '500px' }}
+            style={{ maxHeight: 'min(500px, 60vh)' }}
           />
         </ReactCrop>
       </div>
 
       {/* Info */}
-      <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
         <p className="text-xs">
           💡 <strong>Dica:</strong> Arraste os cantos da área destacada para ajustar o tamanho e posição do corte.
           A imagem será cortada em formato quadrado (1:1) ideal para produtos.
@@ -151,14 +151,14 @@ export function ProductImageCropper({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel} type="button">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+        <Button variant="outline" onClick={onCancel} type="button" className="w-full sm:w-auto">
           <X className="h-4 w-4 mr-2" />
           Cancelar
         </Button>
         <Button
           onClick={handleApplyCrop}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
           type="button"
           disabled={!completedCrop}
         >

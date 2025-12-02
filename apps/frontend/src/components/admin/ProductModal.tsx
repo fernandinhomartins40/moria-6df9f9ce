@@ -487,7 +487,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5 text-moria-orange" />
@@ -504,38 +504,34 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 min-h-0">
           <div className="py-3 sm:py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
-            <TabsTrigger value="basic" className="flex items-center gap-1 text-xs sm:text-sm">
-              <Package className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Básico</span>
-              <span className="sm:hidden">Info</span>
+              <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+              <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-6 gap-1">
+            <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <Package className="h-4 w-4" />
+              <span>Básico</span>
             </TabsTrigger>
-            <TabsTrigger value="images" className="flex items-center gap-1 text-xs sm:text-sm">
-              <Images className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Imagens</span>
-              <span className="sm:hidden">Imgs</span>
+            <TabsTrigger value="images" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <Images className="h-4 w-4" />
+              <span>Imagens</span>
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs sm:text-sm">
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Preços</span>
-              <span className="sm:hidden">R$</span>
+            <TabsTrigger value="pricing" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <DollarSign className="h-4 w-4" />
+              <span>Preços</span>
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-1 text-xs sm:text-sm">
-              <Warehouse className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Estoque</span>
-              <span className="sm:hidden">Estq</span>
+            <TabsTrigger value="inventory" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <Warehouse className="h-4 w-4" />
+              <span>Estoque</span>
             </TabsTrigger>
-            <TabsTrigger value="offers" className="flex items-center gap-1 text-xs sm:text-sm">
-              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Ofertas</span>
-              <span className="sm:hidden">Ofts</span>
+            <TabsTrigger value="offers" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <AlertCircle className="h-4 w-4" />
+              <span>Ofertas</span>
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center gap-1 text-xs sm:text-sm">
-              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Detalhes</span>
-              <span className="sm:hidden">Det</span>
+            <TabsTrigger value="details" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+              <Settings className="h-4 w-4" />
+              <span>Detalhes</span>
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* Aba Básico */}
           <TabsContent value="basic" className="space-y-4">

@@ -194,6 +194,54 @@
     overflow-y: auto;
   }
 
+  /* Dialog/Modal - Garantir margens laterais e espaço do menu fixo inferior */
+  /* EXCETO Drawers (que devem ficar na lateral) */
+  [data-radix-dialog-content]:not([data-drawer]):not(.drawer-content),
+  [role="dialog"]:not([data-drawer]):not(.drawer-content) {
+    /* Forçar margens laterais em mobile */
+    left: 1rem !important;
+    right: 1rem !important;
+    width: auto !important;
+    max-width: calc(100% - 2rem) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
+    /* Remover transform-x para não centralizar com translate */
+    transform: translateY(-50%) !important;
+
+    /* Ajustar posição vertical para não sobrepor menu fixo */
+    top: calc(50% - 2rem) !important;
+
+    /* Garantir que overflow está apenas no conteúdo, não no modal inteiro */
+    overflow: visible !important;
+  }
+
+  /* Garantir que apenas o conteúdo scrollável tenha overflow */
+  [data-radix-dialog-content]:not([data-drawer]):not(.drawer-content) > .flex-1,
+  [role="dialog"]:not([data-drawer]):not(.drawer-content) > .flex-1 {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Tabs horizontais scrolláveis em modais mobile */
+  [data-radix-dialog-content]:not([data-drawer]):not(.drawer-content) [role="tablist"] {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+
+  [data-radix-dialog-content]:not([data-drawer]):not(.drawer-content) [role="tablist"]::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  /* Garantir que dialog overlay não interfira */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+  }
+
   /* Sidebar Hidden in Mobile (shown via drawer) */
   .lojista-sidebar {
     display: none;

@@ -271,4 +271,26 @@ All colors MUST be HSL.
   .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--moria-orange));
   }
+
+  /* Fix para Switch Component - garantir alinhamento correto */
+  button[role="switch"] {
+    position: relative;
+    padding: 0 !important;
+  }
+
+  button[role="switch"] span[data-state] {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+  }
+
+  button[role="switch"][data-state="checked"] span[data-state] {
+    transform: translate(20px, -50%);
+  }
+
+  button[role="switch"][data-state="unchecked"] span[data-state] {
+    transform: translate(0, -50%);
+  }
 }

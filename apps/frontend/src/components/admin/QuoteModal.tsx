@@ -253,8 +253,8 @@ Estou à disposição para esclarecer dúvidas! 😊`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50 shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-lg">
               <Wrench className="h-5 w-5 text-moria-orange" />
@@ -270,7 +270,7 @@ Estou à disposição para esclarecer dúvidas! 😊`;
           </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <div className="flex-1 overflow-y-auto px-6 min-h-0">
           <div className="py-4 space-y-4">
           {/* Informações do Cliente */}
           <div>
@@ -389,10 +389,10 @@ Estou à disposição para esclarecer dúvidas! 😊`;
           </div>
 
         </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer com ações */}
-        <div className="px-6 py-3 border-t bg-gray-50/50 space-y-2">
+        <div className="px-6 py-3 border-t bg-gray-50/50 space-y-2 shrink-0">
           <div className="flex gap-2">
             <Button
               onClick={handleSaveQuote}

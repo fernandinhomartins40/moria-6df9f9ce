@@ -65,6 +65,7 @@ export default function StoreMobileDrawer({
           'fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-50',
           'transition-transform duration-300 ease-out',
           'flex flex-col',
+          'drawer-content',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
         role="dialog"

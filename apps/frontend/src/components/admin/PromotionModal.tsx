@@ -481,7 +481,7 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-4xl w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-orange-50 to-yellow-50 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <TrendingUp className="h-6 w-6 text-moria-orange" />
@@ -498,24 +498,26 @@ export function PromotionModal({ isOpen, onClose, onSave, promotion, loading = f
         <div className="flex-1 overflow-y-auto px-6">
           <div className="py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
-                <TabsTrigger value="basic" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Básico
-                </TabsTrigger>
-                <TabsTrigger value="discount" className="flex items-center gap-2">
-                  <Percent className="h-4 w-4" />
-                  Desconto
-                </TabsTrigger>
-                <TabsTrigger value="schedule" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Período
-                </TabsTrigger>
-                <TabsTrigger value="conditions" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Condições
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0 mb-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-4 gap-1">
+                  <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Básico</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="discount" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Percent className="h-4 w-4" />
+                    <span>Desconto</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="schedule" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Calendar className="h-4 w-4" />
+                    <span>Período</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="conditions" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Settings className="h-4 w-4" />
+                    <span>Condições</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Aba Básico */}
               <TabsContent value="basic" className="space-y-4">

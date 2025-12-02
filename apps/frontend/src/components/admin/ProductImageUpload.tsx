@@ -433,7 +433,7 @@ export function ProductImageUpload({
 
                       {/* Controles */}
                       {image.status === 'ready' && (
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="absolute inset-0 bg-black bg-opacity-0 md:group-hover:bg-opacity-40 transition-all flex items-center justify-center md:opacity-0 md:group-hover:opacity-100">
                           <div className="flex gap-1">
                             {/* Botão de editar só aparece para imagens novas (com arquivo) */}
                             {!image.isExisting && image.file && (
@@ -445,6 +445,7 @@ export function ProductImageUpload({
                                   editImage(image.id);
                                 }}
                                 type="button"
+                                className="shadow-lg md:shadow-none"
                               >
                                 <Edit3 className="h-3 w-3" />
                               </Button>
@@ -458,6 +459,7 @@ export function ProductImageUpload({
                                 removeImage(image.id);
                               }}
                               type="button"
+                              className="shadow-lg md:shadow-none"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -540,43 +542,47 @@ export function ProductImageUpload({
 
       {/* Dialog de Crop */}
       <Dialog open={!!cropImageId} onOpenChange={(open) => !open && handleCropCancel()}>
-        <DialogContent className="max-w-5xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 shrink-0">
             <DialogTitle>Ajustar Imagem do Produto</DialogTitle>
             <DialogDescription>
               Recorte e ajuste a imagem antes de adicionar ao produto
             </DialogDescription>
           </DialogHeader>
-          {(() => {
-            console.log('[ProductImageUpload] cropImageId:', cropImageId);
-            console.log('[ProductImageUpload] cropImage:', cropImage);
-            console.log('[ProductImageUpload] images:', images);
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 min-h-0">
+            <div className="py-4">
+              {(() => {
+                console.log('[ProductImageUpload] cropImageId:', cropImageId);
+                console.log('[ProductImageUpload] cropImage:', cropImage);
+                console.log('[ProductImageUpload] images:', images);
 
-            if (cropImage && cropImage.url) {
-              console.log('[ProductImageUpload] Renderizando cropper com URL:', cropImage.url);
-              return (
-                <ProductImageCropper
-                  imageUrl={cropImage.url}
-                  onComplete={handleCropComplete}
-                  onCancel={handleCropCancel}
-                  aspectRatio={aspectRatio}
-                />
-              );
-            } else {
-              console.log('[ProductImageUpload] Aguardando carregamento...');
-              return (
-                <div className="flex items-center justify-center h-96">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Carregando imagem...</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Debug: cropImageId={cropImageId} | cropImage={cropImage ? 'existe' : 'null'}
-                    </p>
-                  </div>
-                </div>
-              );
-            }
-          })()}
+                if (cropImage && cropImage.url) {
+                  console.log('[ProductImageUpload] Renderizando cropper com URL:', cropImage.url);
+                  return (
+                    <ProductImageCropper
+                      imageUrl={cropImage.url}
+                      onComplete={handleCropComplete}
+                      onCancel={handleCropCancel}
+                      aspectRatio={aspectRatio}
+                    />
+                  );
+                } else {
+                  console.log('[ProductImageUpload] Aguardando carregamento...');
+                  return (
+                    <div className="flex items-center justify-center h-96">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Carregando imagem...</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Debug: cropImageId={cropImageId} | cropImage={cropImage ? 'existe' : 'null'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

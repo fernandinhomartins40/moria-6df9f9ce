@@ -205,7 +205,7 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Gift className="h-5 w-5 text-moria-orange" />
@@ -219,23 +219,25 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <div className="flex-1 overflow-y-auto px-6 min-h-0">
           <div className="py-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <Gift className="h-4 w-4" />
-              Básico
-            </TabsTrigger>
-            <TabsTrigger value="discount" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              Desconto
-            </TabsTrigger>
-            <TabsTrigger value="rules" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Regras
-            </TabsTrigger>
-          </TabsList>
+              <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-3 gap-1">
+                  <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Gift className="h-4 w-4" />
+                    <span>Básico</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="discount" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Percent className="h-4 w-4" />
+                    <span>Desconto</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="rules" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+                    <Settings className="h-4 w-4" />
+                    <span>Regras</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
           {/* Aba Básico */}
           <TabsContent value="basic" className="space-y-4">
@@ -481,9 +483,9 @@ export function CouponModal({ isOpen, onClose, onSave, coupon, loading = false }
           </TabsContent>
             </Tabs>
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="px-6 py-3 border-t bg-gray-50/50">
+        <div className="px-6 py-3 border-t bg-gray-50/50 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading} size="sm">
               Cancelar

@@ -515,7 +515,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] p-0 flex flex-col gap-0">
+      <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] p-0 flex flex-col gap-0">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <ShoppingCart className="h-5 w-5 text-moria-orange" />
@@ -768,16 +768,18 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                 </div>
 
                 <Tabs defaultValue="products" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-8">
-                    <TabsTrigger value="products" className="text-xs">
-                      <Package className="h-3 w-3 mr-1" />
-                      Produtos
-                    </TabsTrigger>
-                    <TabsTrigger value="services" className="text-xs">
-                      <Wrench className="h-3 w-3 mr-1" />
-                      Serviços
-                    </TabsTrigger>
-                  </TabsList>
+                  <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                    <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-2 h-8 gap-1">
+                      <TabsTrigger value="products" className="text-xs whitespace-nowrap flex-shrink-0">
+                        <Package className="h-3 w-3 mr-1" />
+                        <span>Produtos</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="services" className="text-xs whitespace-nowrap flex-shrink-0">
+                        <Wrench className="h-3 w-3 mr-1" />
+                        <span>Serviços</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
 
                   <TabsContent value="products" className="space-y-2 mt-2">
                     <div className="relative">
