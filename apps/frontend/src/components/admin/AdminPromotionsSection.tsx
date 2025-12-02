@@ -226,35 +226,35 @@ export function AdminPromotionsSection({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Gerenciar Promoções</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-xl sm:text-2xl">Gerenciar Promoções</CardTitle>
               <CardDescription>
                 Controle promoções e campanhas especiais
               </CardDescription>
             </div>
-            <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
+            <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => fetchPromotions()}
                 disabled={loading}
-                className="gap-2"
+                className="gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
+                <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Atualizar</span>
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={handleOpenCreateModal}
                 disabled={createLoading}
-                className="bg-moria-orange hover:bg-moria-orange/90 gap-2"
+                className="bg-moria-orange hover:bg-moria-orange/90 gap-1 sm:gap-2 text-xs sm:text-sm"
               >
                 {createLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                 ) : (
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
                 Nova Promoção
               </Button>
