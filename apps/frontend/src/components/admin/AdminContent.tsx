@@ -48,6 +48,7 @@ import { CreateQuoteModal } from "./CreateQuoteModal";
 import AdminUsersSection from "./AdminUsersSection";
 import { PromotionsManagement } from "./PromotionsManagement";
 import { AdminProductsSection } from "./AdminProductsSection";
+import { AdminServicesSection } from "./AdminServicesSection";
 import adminService from "@/api/adminService";
 import { reportsService, type CompleteReportData, type SalesByMonth, type TopCategory, type GrowthComparison } from "@/api/reportsService";
 import productService, { Product as ApiProduct } from "@/api/productService";
@@ -2385,7 +2386,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
           />
         );
       case 'services':
-        return renderServices();
+        return (
+          <AdminServicesSection
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+          />
+        );
       case 'revisions':
         return (
           <div className="space-y-6">

@@ -4,12 +4,12 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { 
-  Wrench, 
-  Search, 
-  RefreshCw, 
-  Plus, 
-  Edit, 
+import {
+  Wrench,
+  Search,
+  RefreshCw,
+  Plus,
+  Edit,
   Trash2,
   AlertTriangle,
   DollarSign,
@@ -31,6 +31,21 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 
+interface ServiceWithStatus {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  estimatedTime: string | number;
+  basePrice?: number;
+  specifications?: Record<string, any>;
+  isActive: boolean;
+  status?: string;
+  slug?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 interface AdminServicesSectionProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -38,11 +53,11 @@ interface AdminServicesSectionProps {
   setStatusFilter: (filter: string) => void;
 }
 
-export function AdminServicesSection({ 
-  searchTerm, 
-  setSearchTerm, 
-  statusFilter, 
-  setStatusFilter 
+export function AdminServicesSection({
+  searchTerm,
+  setSearchTerm,
+  statusFilter,
+  setStatusFilter
 }: AdminServicesSectionProps) {
   const {
     services,
@@ -59,11 +74,16 @@ export function AdminServicesSection({
   } = useAdminServices();
 
   // Estados do modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<ServiceWithStatus | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
   // Estados do dialog de confirmação
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, serviceId: null, serviceName: '' });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; serviceId: string | null; serviceName: string }>({
+    open: false,
+    serviceId: null,
+    serviceName: ''
+  });
 
   // Filtrar serviços
   const filteredServices = useMemo(() => {
@@ -101,37 +121,69 @@ export function AdminServicesSection({
 
   // Handlers
   const handleOpenCreateModal = () => {
+    console.log('[AdminServicesSection] Abrindo modal para criar novo serviço');
     setEditingService(null);
+    setEditingServiceId(null);
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (service) => {
-    setEditingService(service);
-    setIsModalOpen(true);
+  const handleOpenEditModal = (service: ServiceWithStatus) => {
+    console.log('[AdminServicesSection] Abrindo modal para editar serviço:', {
+      id: service.id,
+      name: service.name,
+      service: service
+    });
+
+    try {
+      setEditingService(service);
+      setEditingServiceId(service.id);
+      setIsModalOpen(true);
+      console.log('[AdminServicesSection] Modal configurado com sucesso');
+    } catch (error) {
+      console.error('[AdminServicesSection] Erro ao abrir modal de edição:', error);
+    }
   };
 
   const handleCloseModal = () => {
+    console.log('[AdminServicesSection] Fechando modal');
     setIsModalOpen(false);
     setEditingService(null);
+    setEditingServiceId(null);
   };
 
-  const handleSaveService = async (serviceData) => {
-    if (editingService) {
-      await updateService(editingService.id, serviceData);
-    } else {
-      await createService(serviceData);
+  const handleSaveService = async (serviceData: any) => {
+    console.log('[AdminServicesSection] Salvando serviço:', {
+      isEditing: !!editingService,
+      serviceId: editingService?.id,
+      data: serviceData
+    });
+
+    try {
+      if (editingService && editingService.id) {
+        console.log('[AdminServicesSection] Atualizando serviço existente:', editingService.id);
+        await updateService(editingService.id, serviceData);
+      } else {
+        console.log('[AdminServicesSection] Criando novo serviço');
+        await createService(serviceData);
+      }
+      console.log('[AdminServicesSection] Serviço salvo com sucesso');
+    } catch (error) {
+      console.error('[AdminServicesSection] Erro ao salvar serviço:', error);
+      throw error;
     }
   };
 
-  const handleToggleStatus = async (serviceId, currentStatus) => {
+  const handleToggleStatus = async (serviceId: string, currentStatus: boolean) => {
+    console.log('[AdminServicesSection] Alternando status do serviço:', serviceId, currentStatus);
     try {
       await toggleServiceStatus(serviceId, currentStatus);
     } catch (error) {
-      console.error('Erro ao alterar status do serviço:', error);
+      console.error('[AdminServicesSection] Erro ao alterar status do serviço:', error);
     }
   };
 
-  const handleDeleteClick = (service) => {
+  const handleDeleteClick = (service: ServiceWithStatus) => {
+    console.log('[AdminServicesSection] Solicitando exclusão do serviço:', service.id);
     setDeleteDialog({
       open: true,
       serviceId: service.id,
@@ -141,21 +193,24 @@ export function AdminServicesSection({
 
   const handleConfirmDelete = async () => {
     if (deleteDialog.serviceId) {
+      console.log('[AdminServicesSection] Confirmando exclusão do serviço:', deleteDialog.serviceId);
       try {
         await deleteService(deleteDialog.serviceId);
         setDeleteDialog({ open: false, serviceId: null, serviceName: '' });
+        console.log('[AdminServicesSection] Serviço excluído com sucesso');
       } catch (error) {
-        console.error('Erro ao excluir serviço:', error);
+        console.error('[AdminServicesSection] Erro ao excluir serviço:', error);
       }
     }
   };
 
   const handleCancelDelete = () => {
+    console.log('[AdminServicesSection] Cancelando exclusão');
     setDeleteDialog({ open: false, serviceId: null, serviceName: '' });
   };
 
   // Helper functions
-  const formatPrice = (price) => {
+  const formatPrice = (price?: number): string => {
     if (!price) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -268,7 +323,13 @@ export function AdminServicesSection({
           {filteredServices.length > 0 && (
             <div className="space-y-4">
               {filteredServices.map((service) => (
-                <div key={service.id} className="border rounded-lg p-6 hover:border-moria-orange/50 transition-colors">
+                <div
+                  key={service.id}
+                  className="border rounded-lg p-6 hover:border-moria-orange/50 transition-colors"
+                  onClick={(e) => {
+                    console.log('[AdminServicesSection] Card clicado - target:', e.target);
+                  }}
+                >
                   <div className="flex items-start justify-between mb-4">
                     {/* Informações básicas */}
                     <div className="flex items-center space-x-4">
@@ -334,17 +395,25 @@ export function AdminServicesSection({
                     >
                       {service.isActive ? 'Desativar' : 'Ativar'}
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleOpenEditModal(service)}
-                      disabled={updateLoading}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('[AdminServicesSection] Botão Editar clicado!', service.id);
+                        handleOpenEditModal(service);
+                      }}
+                      disabled={updateLoading && editingServiceId === service.id}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      {updateLoading && editingServiceId === service.id ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Edit className="h-4 w-4 mr-1" />
+                      )}
                       Editar
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"

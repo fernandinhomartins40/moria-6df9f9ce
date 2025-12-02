@@ -32,7 +32,7 @@ export const useAdminServices = (): UseAdminServicesResult => {
     setError(null);
 
     try {
-      const response = await serviceService.getServices({ limit: 1000 });
+      const response = await serviceService.getServices({ page: 1, limit: 100 });
       setServices(response.services);
     } catch (err) {
       const apiError = handleApiError(err);

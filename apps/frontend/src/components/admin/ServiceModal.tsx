@@ -56,6 +56,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   // Funções auxiliares para conversão segura de números
   const safeParseFloat = (value: string): number | undefined => {
@@ -72,36 +73,54 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   // Preencher form quando serviço é editado
   useEffect(() => {
-    if (service) {
-      // Converter estimatedTime de string para número
-      const estimatedTimeNum = typeof service.estimatedTime === 'string'
-        ? parseInt(service.estimatedTime) || 60
-        : service.estimatedTime || 60;
+    console.log('[ServiceModal] useEffect disparado:', {
+      isOpen,
+      hasService: !!service,
+      serviceId: service?.id,
+      serviceName: service?.name
+    });
 
-      setFormData({
-        id: service.id,
-        name: service.name || '',
-        description: service.description || '',
-        category: service.category || '',
-        basePrice: service.basePrice || 0,
-        estimatedTime: estimatedTimeNum,
-        specifications: service.specifications || {},
-        isActive: service.isActive !== undefined ? service.isActive : (service.status === 'ACTIVE')
-      });
+    if (isOpen) {
+      // Adicionar um pequeno delay para animação de abertura
+      setTimeout(() => setIsModalVisible(true), 50);
+
+      if (service) {
+        console.log('[ServiceModal] Preenchendo formulário com dados do serviço:', service);
+
+        // Converter estimatedTime de string para número
+        const estimatedTimeNum = typeof service.estimatedTime === 'string'
+          ? parseInt(service.estimatedTime) || 60
+          : service.estimatedTime || 60;
+
+        setFormData({
+          id: service.id,
+          name: service.name || '',
+          description: service.description || '',
+          category: service.category || '',
+          basePrice: service.basePrice || 0,
+          estimatedTime: estimatedTimeNum,
+          specifications: service.specifications || {},
+          isActive: service.isActive !== undefined ? service.isActive : (service.status === 'ACTIVE')
+        });
+        console.log('[ServiceModal] Formulário preenchido com sucesso');
+      } else {
+        console.log('[ServiceModal] Resetando formulário para novo serviço');
+        // Resetar form para novo serviço
+        setFormData({
+          name: '',
+          description: '',
+          category: '',
+          basePrice: undefined,
+          estimatedTime: 60,
+          specifications: {},
+          isActive: true
+        });
+      }
+      setErrors({});
+      setActiveTab('basic');
     } else {
-      // Resetar form para novo serviço
-      setFormData({
-        name: '',
-        description: '',
-        category: '',
-        basePrice: undefined,
-        estimatedTime: 60,
-        specifications: {},
-        isActive: true
-      });
+      setIsModalVisible(false);
     }
-    setErrors({});
-    setActiveTab('basic');
   }, [service, isOpen]);
 
   const handleInputChange = (field: keyof Service, value: any) => {
@@ -137,7 +156,13 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
   };
 
   const handleSave = async () => {
+    console.log('[ServiceModal] Iniciando salvamento:', {
+      isEditing,
+      formData
+    });
+
     if (!validateForm()) {
+      console.log('[ServiceModal] Validação falhou:', errors);
       return;
     }
 
@@ -150,11 +175,13 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
       };
       delete dataToSave.isActive;
 
+      console.log('[ServiceModal] Dados preparados para salvar:', dataToSave);
       await onSave(dataToSave);
+      console.log('[ServiceModal] Salvamento concluído com sucesso');
       onClose();
     } catch (error) {
       // Erro já tratado no hook
-      console.error('Erro ao salvar serviço:', error);
+      console.error('[ServiceModal] Erro ao salvar serviço:', error);
     }
   };
 
@@ -162,7 +189,11 @@ export function ServiceModal({ isOpen, onClose, onSave, service, loading = false
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent
+        className={`max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0 gap-0 transition-all duration-300 ${
+          isModalVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+      >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Wrench className="h-5 w-5 text-moria-orange" />
