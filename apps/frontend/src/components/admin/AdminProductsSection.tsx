@@ -190,35 +190,34 @@ export function AdminProductsSection({
   return (
     <div className="space-y-6 w-full max-w-full overflow-hidden">
       <Card className="w-full max-w-full">
-        <CardHeader className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-xl sm:text-2xl">Gerenciar Produtos</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="text-xl md:text-2xl">Gerenciar Produtos</CardTitle>
               <CardDescription>
                 Controle seu estoque e catálogo de peças automotivas
               </CardDescription>
             </div>
-            <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fetchProducts()}
                 disabled={loading}
-                className="gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Atualizar</span>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
               </Button>
               <Button
                 size="sm"
                 onClick={handleOpenCreateModal}
-                className="bg-moria-orange hover:bg-moria-orange/90 gap-1 sm:gap-2 text-xs sm:text-sm"
+                className="bg-moria-orange hover:bg-moria-orange/90"
                 disabled={createLoading}
               >
                 {createLoading ? (
-                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <Plus className="h-4 w-4 mr-2" />
                 )}
                 Novo Produto
               </Button>
