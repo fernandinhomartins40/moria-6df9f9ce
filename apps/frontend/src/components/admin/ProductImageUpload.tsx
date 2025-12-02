@@ -540,7 +540,7 @@ export function ProductImageUpload({
 
       {/* Dialog de Crop */}
       <Dialog open={!!cropImageId} onOpenChange={(open) => !open && handleCropCancel()}>
-        <DialogContent className="max-w-5xl max-h-[95vh] overflow-auto">
+        <DialogContent className="max-w-5xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-auto">
           <DialogHeader>
             <DialogTitle>Ajustar Imagem do Produto</DialogTitle>
             <DialogDescription>

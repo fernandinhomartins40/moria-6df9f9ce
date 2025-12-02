@@ -620,7 +620,7 @@ export default function LoyaltyManagement() {
 
       {/* Reward Dialog */}
       <Dialog open={rewardDialogOpen} onOpenChange={setRewardDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)]">
           <DialogHeader>
             <DialogTitle>{editingReward ? 'Editar Recompensa' : 'Nova Recompensa'}</DialogTitle>
             <DialogDescription>

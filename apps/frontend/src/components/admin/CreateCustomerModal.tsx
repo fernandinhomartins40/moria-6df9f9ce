@@ -161,7 +161,7 @@ export function CreateCustomerModal({ isOpen, onClose, onSuccess }: CreateCustom
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <User className="h-5 w-5 text-moria-orange" />
