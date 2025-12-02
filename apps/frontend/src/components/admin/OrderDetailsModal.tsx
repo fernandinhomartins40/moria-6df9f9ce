@@ -138,8 +138,8 @@ Qualquer dúvida estou à disposição!`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-lg">
               <Package className="h-5 w-5 text-moria-orange" />
@@ -156,79 +156,79 @@ Qualquer dúvida estou à disposição!`;
           </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="py-4 space-y-4">
+        <ScrollArea className="flex-1 px-4 sm:px-6">
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* Ações de Status */}
           <div className="bg-muted p-3 rounded-lg">
             <Label className="text-xs font-semibold mb-2 block">Mudar Status</Label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <Button
                 size="sm"
                 variant={currentOrder.status === 'CONFIRMED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('CONFIRMED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full h-8 text-xs"
+                className="w-full min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation"
               >
                 {updatingButton === 'CONFIRMED' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-3 w-3 mr-1" />
+                  <CheckCircle className="h-4 w-4 sm:mr-1" />
                 )}
-                Confirmar
+                <span className="hidden sm:inline">Confirmar</span>
               </Button>
               <Button
                 size="sm"
                 variant={currentOrder.status === 'PREPARING' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('PREPARING')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full h-8 text-xs"
+                className="w-full min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation"
               >
                 {updatingButton === 'PREPARING' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
                 ) : (
-                  <Package className="h-3 w-3 mr-1" />
+                  <Package className="h-4 w-4 sm:mr-1" />
                 )}
-                Preparar
+                <span className="hidden sm:inline">Preparar</span>
               </Button>
               <Button
                 size="sm"
                 variant={currentOrder.status === 'SHIPPED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('SHIPPED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full h-8 text-xs"
+                className="w-full min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation"
               >
                 {updatingButton === 'SHIPPED' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
                 ) : (
-                  <Truck className="h-3 w-3 mr-1" />
+                  <Truck className="h-4 w-4 sm:mr-1" />
                 )}
-                Enviar
+                <span className="hidden sm:inline">Enviar</span>
               </Button>
               <Button
                 size="sm"
                 variant={currentOrder.status === 'DELIVERED' ? 'default' : 'outline'}
                 onClick={() => handleUpdateStatus('DELIVERED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full h-8 text-xs"
+                className="w-full min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation"
               >
                 {updatingButton === 'DELIVERED' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-3 w-3 mr-1" />
+                  <CheckCircle className="h-4 w-4 sm:mr-1" />
                 )}
-                Entregar
+                <span className="hidden sm:inline">Entregar</span>
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleUpdateStatus('CANCELLED')}
                 disabled={isUpdating || currentOrder.status === 'CANCELLED' || currentOrder.status === 'DELIVERED'}
-                className="w-full h-8 text-xs col-span-2"
+                className="w-full min-h-[44px] h-11 text-xs sm:text-sm col-span-2 sm:col-span-2 touch-manipulation"
               >
                 {updatingButton === 'CANCELLED' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
-                  <X className="h-3 w-3 mr-1" />
+                  <X className="h-4 w-4 mr-1" />
                 )}
                 Cancelar
               </Button>
@@ -241,19 +241,19 @@ Qualquer dúvida estou à disposição!`;
               <User className="h-3.5 w-3.5 text-moria-orange" />
               Informações do Cliente
             </Label>
-            <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-2">
-                <User className="h-3 w-3 text-muted-foreground" />
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Nome</p>
-                  <p className="text-sm font-medium">{currentOrder.customerName}</p>
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Nome</p>
+                  <p className="text-sm font-medium truncate">{currentOrder.customerName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-3 w-3 text-muted-foreground" />
-                <div>
-                  <p className="text-[10px] text-muted-foreground">WhatsApp</p>
-                  <p className="text-sm font-medium">{currentOrder.customerWhatsApp}</p>
+                <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">WhatsApp</p>
+                  <p className="text-sm font-medium truncate">{currentOrder.customerWhatsApp}</p>
                 </div>
               </div>
             </div>
@@ -301,7 +301,7 @@ Qualquer dúvida estou à disposição!`;
                   size="sm"
                   variant="outline"
                   onClick={() => setIsEditingTracking(true)}
-                  className="h-7 text-xs"
+                  className="min-h-[36px] h-9 text-xs touch-manipulation"
                 >
                   <Edit className="h-3 w-3 mr-1" />
                   Editar
@@ -310,7 +310,7 @@ Qualquer dúvida estou à disposição!`;
             </div>
 
             <div className="space-y-3 p-3 bg-muted rounded-lg">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="trackingCode" className="text-xs">Código de Rastreamento</Label>
                   <Input
@@ -319,7 +319,7 @@ Qualquer dúvida estou à disposição!`;
                     value={trackingCode}
                     onChange={(e) => setTrackingCode(e.target.value)}
                     disabled={!isEditingTracking}
-                    className="mt-1 h-9 text-sm"
+                    className="mt-1 min-h-[44px] h-11 text-sm"
                   />
                 </div>
 
@@ -331,7 +331,7 @@ Qualquer dúvida estou à disposição!`;
                     value={estimatedDelivery}
                     onChange={(e) => setEstimatedDelivery(e.target.value)}
                     disabled={!isEditingTracking}
-                    className="mt-1 h-9 text-sm"
+                    className="mt-1 min-h-[44px] h-11 text-sm"
                   />
                 </div>
               </div>
@@ -351,17 +351,17 @@ Qualquer dúvida estou à disposição!`;
 
               {isEditingTracking && (
                 <div className="flex gap-2">
-                  <Button onClick={handleSaveTracking} size="sm" className="flex-1 h-8 text-xs">
-                    <Save className="h-3 w-3 mr-1" />
+                  <Button onClick={handleSaveTracking} size="sm" className="flex-1 min-h-[44px] h-11 text-xs touch-manipulation">
+                    <Save className="h-4 w-4 mr-1" />
                     Salvar
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setIsEditingTracking(false)}
                     size="sm"
-                    className="flex-1 h-8 text-xs"
+                    className="flex-1 min-h-[44px] h-11 text-xs touch-manipulation"
                   >
-                    <X className="h-3 w-3 mr-1" />
+                    <X className="h-4 w-4 mr-1" />
                     Cancelar
                   </Button>
                 </div>
@@ -436,16 +436,16 @@ Qualquer dúvida estou à disposição!`;
         </ScrollArea>
 
         {/* Footer com ações */}
-        <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50/50">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50">
           <Button
             onClick={handleSendWhatsApp}
             size="sm"
-            className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+            className="bg-green-600 hover:bg-green-700 min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation"
           >
-            <MessageCircle className="h-3 w-3 mr-1.5" />
+            <MessageCircle className="h-4 w-4 mr-1.5" />
             WhatsApp
           </Button>
-          <Button variant="outline" onClick={onClose} size="sm" className="h-8 text-xs">
+          <Button variant="outline" onClick={onClose} size="sm" className="min-h-[44px] h-11 text-xs sm:text-sm touch-manipulation">
             Fechar
           </Button>
         </div>

@@ -103,9 +103,32 @@ export function CustomerOrders() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-moria-orange" />
-        <span className="ml-2">Carregando pedidos...</span>
+      <div className="space-y-4 animate-pulse">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="h-5 w-5 bg-gray-200 rounded" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-32" />
+                    <div className="h-3 bg-gray-200 rounded w-48" />
+                  </div>
+                </div>
+                <div className="text-right space-y-2">
+                  <div className="h-6 bg-gray-200 rounded w-20 ml-auto" />
+                  <div className="h-5 bg-gray-200 rounded w-24 ml-auto" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -269,21 +292,21 @@ export function CustomerOrders() {
                     <div className="flex flex-wrap gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
+                          <Button variant="outline" className="min-h-[44px] touch-manipulation" onClick={() => setSelectedOrder(order)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Ver Detalhes
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-4 sm:p-6">
-                          <DialogHeader className="mb-4">
-                            <DialogTitle className="text-lg sm:text-xl">Detalhes do Pedido #{order.id.slice(0, 8)}</DialogTitle>
-                            <DialogDescription>
+                        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
+                          <DialogHeader className="mb-3 sm:mb-4">
+                            <DialogTitle className="text-base sm:text-lg md:text-xl">Detalhes do Pedido #{order.id.slice(0, 8)}</DialogTitle>
+                            <DialogDescription className="text-xs sm:text-sm">
                               Informações completas do seu pedido
                             </DialogDescription>
                           </DialogHeader>
 
                           {selectedOrder && (
-                            <div className="space-y-4 sm:space-y-6 pr-1 sm:pr-2 pb-4">
+                            <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-4">
                               {/* Status */}
                               <div className="flex items-center justify-between">
                                 <Badge className={statusInfo.color} variant="secondary">
@@ -365,9 +388,9 @@ export function CustomerOrders() {
                       </Dialog>
 
                       {order.trackingCode && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
+                        <Button
+                          variant="outline"
+                          className="min-h-[44px] touch-manipulation"
                           onClick={() => handleTrackingClick(order.trackingCode!)}
                         >
                           <Truck className="mr-2 h-4 w-4" />
@@ -375,9 +398,9 @@ export function CustomerOrders() {
                         </Button>
                       )}
 
-                      <Button 
-                        variant="outline" 
-                        size="sm"
+                      <Button
+                        variant="outline"
+                        className="min-h-[44px] touch-manipulation"
                         onClick={() => handleOrderSupport(order.id)}
                       >
                         <MessageCircle className="mr-2 h-4 w-4" />

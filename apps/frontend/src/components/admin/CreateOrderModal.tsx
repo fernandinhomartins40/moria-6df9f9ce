@@ -202,7 +202,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
     if (existingItem) {
       toast({
-        title: "Item já adicionado",
+        title: "❌ Item já adicionado",
         description: "Este item já está no pedido. Ajuste a quantidade se necessário.",
         variant: "destructive"
       });
@@ -221,12 +221,22 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
     setSelectedItems([...selectedItems, newItem]);
     toast({
       title: "✅ Item adicionado",
-      description: `${item.name} foi adicionado ao pedido`
+      description: `${item.name} foi adicionado ao pedido`,
+      duration: 2000
     });
   };
 
   const handleRemoveItem = (itemId: string) => {
+    const item = selectedItems.find(i => i.id === itemId);
     setSelectedItems(selectedItems.filter(i => i.id !== itemId));
+
+    if (item) {
+      toast({
+        title: "🗑️ Item removido",
+        description: `${item.name} foi removido do pedido`,
+        duration: 2000
+      });
+    }
   };
 
   const handleQuantityChange = (itemId: string, delta: number) => {
@@ -456,6 +466,16 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
   };
 
   const handleClose = () => {
+    // Verificar se há dados preenchidos
+    const hasData = customerName || customerEmail || customerPhone || selectedItems.length > 0;
+
+    if (hasData) {
+      const confirmClose = window.confirm(
+        'Você tem dados não salvos. Tem certeza que deseja fechar e perder estas informações?'
+      );
+      if (!confirmClose) return;
+    }
+
     setStep(1);
     setSelectedCustomer(null);
     setCustomerName('');
@@ -495,16 +515,17 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <ShoppingCart className="h-5 w-5 text-moria-orange" />
             Criar Novo Pedido
           </DialogTitle>
 
-          {/* Indicador de progresso visual */}
+          {/* Indicador de progresso visual - Responsivo */}
           <div className="mt-3">
-            <div className="flex items-center justify-between">
+            {/* Desktop: Stepper completo */}
+            <div className="hidden sm:flex items-center justify-between">
               {[
                 { num: 1, label: 'Cliente', icon: User },
                 { num: 2, label: 'Itens', icon: Package },
@@ -514,7 +535,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                 <div key={item.num} className="flex items-center flex-1">
                   <div className="flex flex-col items-center">
                     <div className={`
-                      h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium transition-all
+                      h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-all
                       ${step > item.num
                         ? 'bg-green-500 text-white'
                         : step === item.num
@@ -523,7 +544,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                     `}>
                       {step > item.num ? '✓' : item.num}
                     </div>
-                    <span className={`text-[10px] mt-1 ${step === item.num ? 'font-semibold text-moria-orange' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs mt-1 ${step === item.num ? 'font-semibold text-moria-orange' : 'text-muted-foreground'}`}>
                       {item.label}
                     </span>
                   </div>
@@ -533,11 +554,40 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                 </div>
               ))}
             </div>
+
+            {/* Mobile: Dots + Título atual */}
+            <div className="sm:hidden space-y-2">
+              <div className="flex items-center justify-center gap-1.5">
+                {[1, 2, 3, 4].map((num) => (
+                  <div
+                    key={num}
+                    className={`h-2 rounded-full transition-all ${
+                      step > num
+                        ? 'w-2 bg-green-500'
+                        : step === num
+                        ? 'w-8 bg-moria-orange'
+                        : 'w-2 bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-moria-orange">
+                  {step === 1 && 'Cliente'}
+                  {step === 2 && 'Itens do Pedido'}
+                  {step === 3 && 'Endereço de Entrega'}
+                  {step === 4 && 'Pagamento e Confirmação'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Etapa {step} de 4
+                </p>
+              </div>
+            </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="py-4 space-y-4">
+        <ScrollArea className="flex-1 px-4 sm:px-6">
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
             {/* ETAPA 1: Cliente */}
             {step === 1 && (
               <div className="space-y-3">
@@ -570,9 +620,9 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                           setUseExistingAddress(false);
                           setSelectedAddressId('');
                         }}
-                        className="h-7 w-7 p-0 text-green-700 hover:text-green-900 hover:bg-green-100"
+                        className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 text-green-700 hover:text-green-900 hover:bg-green-100 touch-manipulation"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                     {selectedCustomer.addresses && selectedCustomer.addresses.length > 0 && (
@@ -675,11 +725,11 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="João Silva"
-                      className={`mt-1 h-9 text-sm ${customerName ? 'border-green-300 bg-green-50/30' : ''}`}
+                      className={`mt-1 min-h-[44px] h-11 text-sm ${customerName ? 'border-green-300 bg-green-50/30' : ''}`}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="customerEmail" className="text-xs">Email *</Label>
                       <Input
@@ -688,7 +738,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                         value={customerEmail}
                         onChange={(e) => setCustomerEmail(e.target.value)}
                         placeholder="joao@email.com"
-                        className={`mt-1 h-9 text-sm ${customerEmail ? 'border-green-300 bg-green-50/30' : ''}`}
+                        className={`mt-1 min-h-[44px] h-11 text-sm ${customerEmail ? 'border-green-300 bg-green-50/30' : ''}`}
                       />
                     </div>
 
@@ -699,7 +749,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="(11) 99999-9999"
-                        className={`mt-1 h-9 text-sm ${customerPhone ? 'border-green-300 bg-green-50/30' : ''}`}
+                        className={`mt-1 min-h-[44px] h-11 text-sm ${customerPhone ? 'border-green-300 bg-green-50/30' : ''}`}
                       />
                     </div>
                   </div>
@@ -946,17 +996,17 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                               {formatCurrency(item.price)} cada
                             </p>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleQuantityChange(item.id, -1)}
                               disabled={item.quantity <= 1}
-                              className="h-6 w-6 p-0"
+                              className="h-9 w-9 min-h-[36px] min-w-[36px] p-0 touch-manipulation"
                             >
-                              <Minus className="h-2.5 w-2.5" />
+                              <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="w-6 text-center text-sm font-medium">
+                            <span className="min-w-[32px] text-center text-sm font-medium">
                               {item.quantity}
                             </span>
                             <Button
@@ -964,9 +1014,9 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                               size="sm"
                               onClick={() => handleQuantityChange(item.id, 1)}
                               disabled={item.type === 'PRODUCT' && item.stock ? item.quantity >= item.stock : false}
-                              className="h-6 w-6 p-0"
+                              className="h-9 w-9 min-h-[36px] min-w-[36px] p-0 touch-manipulation"
                             >
-                              <Plus className="h-2.5 w-2.5" />
+                              <Plus className="h-4 w-4" />
                             </Button>
                           </div>
                           <span className="font-bold text-sm w-20 text-right">
@@ -976,9 +1026,9 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveItem(item.id)}
-                            className="h-6 w-6 p-0"
+                            className="min-h-[36px] min-w-[36px] h-9 w-9 p-0 touch-manipulation"
                           >
-                            <Trash2 className="h-3 w-3 text-red-600" />
+                            <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       ))}
@@ -1049,7 +1099,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                           onChange={(e) => setAddress({ ...address, zipCode: e.target.value })}
                           placeholder="00000-000"
                           maxLength={9}
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 min-h-[44px] h-11 text-sm"
                         />
                       </div>
                       <div className="flex items-end">
@@ -1057,70 +1107,72 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                           variant="outline"
                           onClick={() => searchCep(address.zipCode)}
                           disabled={isSearchingCep}
-                          className="h-9"
+                          className="min-h-[44px] min-w-[44px] h-11 w-11 p-0 touch-manipulation"
                         >
                           {isSearchingCep ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Search className="h-3.5 w-3.5" />
+                            <Search className="h-4 w-4" />
                           )}
                         </Button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
-                      <div className="col-span-3">
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
                         <Label htmlFor="street" className="text-xs">Rua *</Label>
                         <Input
                           id="street"
                           value={address.street}
                           onChange={(e) => setAddress({ ...address, street: e.target.value })}
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 min-h-[44px] h-11 text-sm"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="number" className="text-xs">Nº *</Label>
-                        <Input
-                          id="number"
-                          value={address.number}
-                          onChange={(e) => setAddress({ ...address, number: e.target.value })}
-                          className="mt-1 h-9 text-sm"
-                        />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="col-span-2">
+                          <Label htmlFor="number" className="text-xs">Número *</Label>
+                          <Input
+                            id="number"
+                            value={address.number}
+                            onChange={(e) => setAddress({ ...address, number: e.target.value })}
+                            className="mt-1 min-h-[44px] h-11 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="complement" className="text-xs">Compl.</Label>
+                          <Input
+                            id="complement"
+                            value={address.complement}
+                            onChange={(e) => setAddress({ ...address, complement: e.target.value })}
+                            placeholder="Apto"
+                            className="mt-1 min-h-[44px] h-11 text-sm"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="complement" className="text-xs">Complemento</Label>
-                        <Input
-                          id="complement"
-                          value={address.complement}
-                          onChange={(e) => setAddress({ ...address, complement: e.target.value })}
-                          placeholder="Apto, bloco..."
-                          className="mt-1 h-9 text-sm"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <Label htmlFor="neighborhood" className="text-xs">Bairro *</Label>
                         <Input
                           id="neighborhood"
                           value={address.neighborhood}
                           onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })}
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 min-h-[44px] h-11 text-sm"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
                       <div>
                         <Label htmlFor="city" className="text-xs">Cidade *</Label>
                         <Input
                           id="city"
                           value={address.city}
                           onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 min-h-[44px] h-11 text-sm"
                         />
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       <div>
                         <Label htmlFor="state" className="text-xs">UF *</Label>
                         <Input
@@ -1129,16 +1181,16 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                           onChange={(e) => setAddress({ ...address, state: e.target.value.toUpperCase() })}
                           placeholder="SP"
                           maxLength={2}
-                          className="mt-1 h-9 text-sm"
+                          className="mt-1 min-h-[44px] h-11 text-sm"
                         />
                       </div>
-                      <div>
+                      <div className="col-span-1 sm:col-span-2">
                         <Label htmlFor="addressType" className="text-xs">Tipo</Label>
                         <Select
                           value={address.type}
                           onValueChange={(value: 'HOME' | 'WORK' | 'OTHER') => setAddress({ ...address, type: value })}
                         >
-                          <SelectTrigger className="mt-1 h-9 text-sm">
+                          <SelectTrigger className="mt-1 min-h-[44px] h-11 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1174,7 +1226,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
             {step === 4 && (
               <div className="space-y-3">
                 <Label className="text-sm font-semibold">Forma de Pagamento *</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     { value: 'DINHEIRO', label: 'Dinheiro', icon: '💵' },
                     { value: 'CARTAO_CREDITO', label: 'Crédito', icon: '💳' },
@@ -1186,15 +1238,15 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                     <Button
                       key={method.value}
                       variant={paymentMethod === method.value ? 'default' : 'outline'}
-                      className={`w-full h-auto py-2 flex flex-col items-center gap-0.5 transition-all ${
+                      className={`w-full min-h-[52px] h-auto py-3 flex flex-col items-center gap-1 transition-all touch-manipulation ${
                         paymentMethod === method.value
-                          ? 'bg-moria-orange hover:bg-orange-600 ring-1 ring-moria-orange/30'
+                          ? 'bg-moria-orange hover:bg-orange-600 ring-2 ring-moria-orange/30'
                           : 'hover:border-moria-orange hover:bg-moria-orange/5'
                       }`}
                       onClick={() => setPaymentMethod(method.value)}
                     >
-                      <span className="text-sm">{method.icon}</span>
-                      <span className="text-[10px]">{method.label}</span>
+                      <span className="text-base sm:text-sm">{method.icon}</span>
+                      <span className="text-xs sm:text-[10px] font-medium">{method.label}</span>
                     </Button>
                   ))}
                 </div>
@@ -1206,7 +1258,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="DESCONTO10"
-                    className="mt-1 h-9 text-sm"
+                    className="mt-1 min-h-[44px] h-11 text-sm"
                   />
                 </div>
 
@@ -1221,7 +1273,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
                   <div className="space-y-2">
                     {/* Cliente e Endereço */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="p-2 bg-white rounded text-xs">
                         <p className="text-[10px] text-muted-foreground">Cliente</p>
                         <p className="font-medium truncate">{customerName}</p>
@@ -1289,34 +1341,33 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
         </ScrollArea>
 
         {/* Botões de Navegação */}
-        <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50/50">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50">
           <Button
             variant="outline"
             onClick={step === 1 ? handleClose : handlePreviousStep}
-            size="sm"
+            className="min-h-[44px] h-11 touch-manipulation"
           >
             {step === 1 ? 'Cancelar' : 'Voltar'}
           </Button>
 
           {step < 4 ? (
-            <Button onClick={handleNextStep} size="sm">
+            <Button onClick={handleNextStep} className="min-h-[44px] h-11 touch-manipulation">
               Próximo
             </Button>
           ) : (
             <Button
               onClick={handleCreateOrder}
               disabled={isCreating}
-              className="bg-moria-orange hover:bg-orange-600"
-              size="sm"
+              className="bg-moria-orange hover:bg-orange-600 min-h-[44px] h-11 touch-manipulation"
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                   Criando...
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
+                  <ShoppingCart className="h-4 w-4 mr-1.5" />
                   Criar Pedido
                 </>
               )}
