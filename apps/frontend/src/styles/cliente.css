@@ -152,6 +152,15 @@ button, a {
   justify-content: center;
 }
 
+/* Exceção para Switch/Toggle - não aplicar min-width/min-height */
+button[role="switch"],
+button[role="switch"] > span {
+  min-width: unset !important;
+  min-height: unset !important;
+  width: auto !important;
+  height: auto !important;
+}
+
 /* ============================================
    LAYOUT DO PAINEL DO CLIENTE
    ============================================ */
