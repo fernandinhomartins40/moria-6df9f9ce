@@ -71,11 +71,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             isLoading: false,
           });
         } else {
+          // 401 is expected when not logged in - don't log as error
           setState(prev => ({ ...prev, isLoading: false }));
         }
       } catch (error) {
-        // If cookie is invalid/missing, admin is not authenticated
-        console.debug('[AdminAuth] Not authenticated:', error);
+        // Network errors or invalid responses - this is expected when not authenticated
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };

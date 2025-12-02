@@ -6,7 +6,7 @@
   "background_color": "#1a1a1a",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "start_url": "/store-panel?source=pwa",
+  "start_url": "/store-panel/?source=pwa",
   "scope": "/store-panel/",
   "id": "moria-store-pwa",
   "categories": ["business", "productivity"],
@@ -66,7 +66,7 @@
       "name": "Dashboard",
       "short_name": "Início",
       "description": "Ver dashboard com métricas",
-      "url": "/store-panel?tab=dashboard",
+      "url": "/store-panel/?tab=dashboard",
       "icons": [
         {
           "src": "/icons/store/shortcut-dashboard.png",
@@ -78,7 +78,7 @@
       "name": "Pedidos",
       "short_name": "Pedidos",
       "description": "Gerenciar pedidos",
-      "url": "/store-panel?tab=orders",
+      "url": "/store-panel/?tab=orders",
       "icons": [
         {
           "src": "/icons/store/shortcut-orders.png",
@@ -90,7 +90,7 @@
       "name": "Produtos",
       "short_name": "Produtos",
       "description": "Gerenciar produtos",
-      "url": "/store-panel?tab=products",
+      "url": "/store-panel/?tab=products",
       "icons": [
         {
           "src": "/icons/store/shortcut-products.png",

@@ -47,8 +47,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Não redirecionar para evitar loop infinito na verificação de autenticação
       // A aplicação já trata o estado de não autenticado
-      // Suprimir log de erro 401 em rotas públicas (esperado quando não autenticado)
-      const publicRoutes = ['/auth/profile', '/promotions'];
+      // Suprimir log de erro 401 em rotas públicas ou verificações de autenticação (esperado quando não autenticado)
+      const publicRoutes = ['/auth/profile', '/auth/admin/profile', '/admin/notifications', '/promotions'];
       const isPublicRoute = publicRoutes.some(route => error.config?.url?.includes(route));
 
       if (isPublicRoute) {

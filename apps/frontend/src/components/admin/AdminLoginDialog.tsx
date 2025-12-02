@@ -89,6 +89,7 @@ export function AdminLoginDialog() {
                 required
                 disabled={isSubmitting}
                 className="h-11"
+                autoComplete="email"
               />
             </div>
 

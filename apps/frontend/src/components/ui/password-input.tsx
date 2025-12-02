@@ -52,6 +52,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             ref={ref}
             value={value}
             onChange={onChange}
+            autoComplete="current-password"
             {...props}
           />
           <Button
