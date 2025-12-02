@@ -138,8 +138,8 @@ Qualquer dúvida estou à disposição!`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[90vh] p-0 flex flex-col gap-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 flex-shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-lg">
               <Package className="h-5 w-5 text-moria-orange" />
@@ -156,8 +156,8 @@ Qualquer dúvida estou à disposição!`;
           </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-4 sm:px-6">
-          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* Ações de Status */}
           <div className="bg-muted p-3 rounded-lg">
             <Label className="text-xs font-semibold mb-2 block">Mudar Status</Label>
@@ -432,11 +432,11 @@ Qualquer dúvida estou à disposição!`;
             </div>
           </div>
 
-        </div>
+          </div>
         </ScrollArea>
 
         {/* Footer com ações */}
-        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50 flex-shrink-0">
           <Button
             onClick={handleSendWhatsApp}
             size="sm"

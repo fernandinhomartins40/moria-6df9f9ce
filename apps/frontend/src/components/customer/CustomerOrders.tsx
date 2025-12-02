@@ -297,16 +297,17 @@ export function CustomerOrders() {
                             Ver Detalhes
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
-                          <DialogHeader className="mb-3 sm:mb-4">
+                        <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[90vh] p-0 flex flex-col gap-0">
+                          <DialogHeader className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b flex-shrink-0">
                             <DialogTitle className="text-base sm:text-lg md:text-xl">Detalhes do Pedido #{order.id.slice(0, 8)}</DialogTitle>
                             <DialogDescription className="text-xs sm:text-sm">
                               Informações completas do seu pedido
                             </DialogDescription>
                           </DialogHeader>
 
-                          {selectedOrder && (
-                            <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-4">
+                          <ScrollArea className="flex-1 overflow-y-auto">
+                            {selectedOrder && (
+                              <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 space-y-3 sm:space-y-4 md:space-y-6">
                               {/* Status */}
                               <div className="flex items-center justify-between">
                                 <Badge className={statusInfo.color} variant="secondary">
@@ -381,9 +382,10 @@ export function CustomerOrders() {
                                     </div>
                                   )}
                                 </div>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </ScrollArea>
                         </DialogContent>
                       </Dialog>
 

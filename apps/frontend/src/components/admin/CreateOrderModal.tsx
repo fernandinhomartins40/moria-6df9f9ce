@@ -515,8 +515,8 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50">
+      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] sm:w-[calc(100%-4rem)] max-h-[90vh] p-0 flex flex-col gap-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b bg-gray-50/50 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <ShoppingCart className="h-5 w-5 text-moria-orange" />
             Criar Novo Pedido
@@ -586,8 +586,8 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-4 sm:px-6">
-          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
             {/* ETAPA 1: Cliente */}
             {step === 1 && (
               <div className="space-y-3">
@@ -1341,7 +1341,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
         </ScrollArea>
 
         {/* Botões de Navegação */}
-        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-t bg-gray-50/50 flex-shrink-0">
           <Button
             variant="outline"
             onClick={step === 1 ? handleClose : handlePreviousStep}
