@@ -42,6 +42,7 @@ import { RevisionsListContent } from "./RevisionsListContent";
 import { ProductModal } from "./ProductModal";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { QuoteModal } from "./QuoteModal";
+import { CustomerOrdersModal } from "./CustomerOrdersModal";
 import { NotificationCenter } from "./NotificationCenter";
 import { CreateOrderModal } from "./CreateOrderModal";
 import { CreateQuoteModal } from "./CreateQuoteModal";
@@ -119,6 +120,7 @@ interface ProvisionalUser {
 
 interface AdminContentProps {
   activeTab: string;
+  onTabChange?: (tab: string) => void;
 }
 
 interface Quote {
@@ -148,7 +150,7 @@ interface DashboardStats {
   recentOrders: StoreOrder[];
 }
 
-export function AdminContent({ activeTab }: AdminContentProps) {
+export function AdminContent({ activeTab, onTabChange }: AdminContentProps) {
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -174,6 +176,8 @@ export function AdminContent({ activeTab }: AdminContentProps) {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<ProvisionalUser | null>(null);
+  const [isCustomerOrdersModalOpen, setIsCustomerOrdersModalOpen] = useState(false);
 
   // Reports states
   const [reportData, setReportData] = useState<CompleteReportData | null>(null);
@@ -1552,7 +1556,14 @@ export function AdminContent({ activeTab }: AdminContentProps) {
                     <MessageCircle className="h-4 w-4 mr-1" />
                     Enviar Dados
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCustomer(user);
+                      setIsCustomerOrdersModalOpen(true);
+                    }}
+                  >
                     <Eye className="h-4 w-4 mr-1" />
                     Ver Pedidos
                   </Button>
@@ -2396,24 +2407,27 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         );
       case 'revisions':
         return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold">
                 {revisionView === 'list' ? 'Revisões' : 'Nova Revisão'}
               </h2>
               <div className="flex gap-2">
                 <Button
                   variant={revisionView === 'list' ? 'default' : 'outline'}
                   onClick={() => setRevisionView('list')}
+                  className="flex-1 sm:flex-none h-9 text-sm"
                 >
                   Listar Revisões
                 </Button>
                 <Button
                   variant={revisionView === 'create' ? 'default' : 'outline'}
                   onClick={() => setRevisionView('create')}
+                  className="flex-1 sm:flex-none h-9 text-sm"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Revisão
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Nova Revisão</span>
+                  <span className="sm:hidden">Nova</span>
                 </Button>
               </div>
             </div>
@@ -2478,6 +2492,15 @@ export function AdminContent({ activeTab }: AdminContentProps) {
         onSuccess={() => {
           loadData();
           setIsCreateQuoteModalOpen(false);
+        }}
+      />
+
+      <CustomerOrdersModal
+        customer={selectedCustomer}
+        isOpen={isCustomerOrdersModalOpen}
+        onClose={() => {
+          setIsCustomerOrdersModalOpen(false);
+          setSelectedCustomer(null);
         }}
       />
     </>

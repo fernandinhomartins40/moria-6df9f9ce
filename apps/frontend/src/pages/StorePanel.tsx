@@ -75,7 +75,7 @@ export default function StorePanel() {
 
         {/* Conteúdo da aba ativa */}
         <div className="lojista-fade-in">
-          <AdminContent activeTab={activeTab} />
+          <AdminContent activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
       </StoreLayout>
     </ProtectedAdminRoute>
