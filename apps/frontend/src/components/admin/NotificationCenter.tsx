@@ -70,8 +70,11 @@ export function NotificationCenter({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Wait for auth to finish loading before doing anything
+    if (authLoading) return;
+
     // Only load real notifications if authenticated
-    if (useRealNotifications && isAuthenticated && !authLoading) {
+    if (useRealNotifications && isAuthenticated) {
       loadRealNotifications();
       // Poll for new notifications every 30 seconds
       const interval = setInterval(loadRealNotifications, 30000);
@@ -90,8 +93,8 @@ export function NotificationCenter({
       setNotifications(mappedNotifications);
       setUnreadCount(mappedNotifications.filter(n => !n.read).length);
     } catch (error: any) {
-      console.error("Erro ao carregar notificações:", error);
-      // Don't show error toast on background polls to avoid annoying the user
+      // Don't log or show error toast on background polls to avoid annoying the user
+      // Error is silently ignored as this is a background operation
     } finally {
       setLoading(false);
     }
@@ -219,7 +222,7 @@ export function NotificationCenter({
         ));
         setUnreadCount(prev => Math.max(0, prev - 1));
       } catch (error: any) {
-        console.error("Erro ao marcar notificação como lida:", error);
+        // Silently fail - this is not a critical operation
       }
     } else {
       setNotifications(notifications.map(n =>
@@ -252,7 +255,6 @@ export function NotificationCenter({
           title: "Notificações marcadas como lidas",
         });
       } catch (error: any) {
-        console.error("Erro ao marcar todas como lidas:", error);
         toast({
           title: "Erro ao marcar notificações",
           description: "Tente novamente mais tarde",

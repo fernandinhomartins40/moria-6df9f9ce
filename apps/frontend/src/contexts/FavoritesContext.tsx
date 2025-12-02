@@ -37,10 +37,8 @@ export function FavoritesProvider({ children }: FavoritesProviderProps) {
   // Load favorite product IDs when user logs in or clear when logs out
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('User authenticated, loading favorites...');
       favoritesHook.fetchFavoriteProductIds();
     } else {
-      console.log('User logged out, clearing favorites...');
       favoritesHook.clearFavorites();
     }
   }, [isAuthenticated]);

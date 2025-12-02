@@ -19,16 +19,16 @@ apiClient.interceptors.request.use(
     // são enviados automaticamente pelo browser
     // Não precisamos adicionar Authorization header manualmente
 
-    // Debug logs
-    if (import.meta.env.DEV) {
-      console.log('[API Client] Request:', {
-        url: config.url,
-        method: config.method,
-        baseURL: config.baseURL,
-        withCredentials: config.withCredentials,
-        cookies: document.cookie,
-      });
-    }
+    // Debug logs (commented out to reduce console noise)
+    // if (import.meta.env.DEV) {
+    //   console.log('[API Client] Request:', {
+    //     url: config.url,
+    //     method: config.method,
+    //     baseURL: config.baseURL,
+    //     withCredentials: config.withCredentials,
+    //     cookies: document.cookie,
+    //   });
+    // }
 
     return config;
   },

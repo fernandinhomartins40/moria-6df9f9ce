@@ -47,11 +47,14 @@ export function injectCorrectManifest() {
   themeColorMeta.content = themeColor;
   document.head.appendChild(themeColorMeta);
 
-  console.log('[PWA Manifest] Injected:', {
-    path,
-    manifest: manifestPath,
-    themeColor,
-  });
+  // PWA manifest injected successfully
+  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_PWA) {
+    console.log('[PWA Manifest] Injected:', {
+      path,
+      manifest: manifestPath,
+      themeColor,
+    });
+  }
 
   return { manifestPath, themeColor };
 }
@@ -65,7 +68,9 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('[SW] Service Worker registered successfully:', registration.scope);
+          if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_PWA) {
+            console.log('[SW] Service Worker registered successfully:', registration.scope);
+          }
 
           // Auto-update quando novo SW disponível
           registration.addEventListener('updatefound', () => {
@@ -73,7 +78,9 @@ export function registerServiceWorker() {
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('[SW] New service worker available, reloading...');
+                  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_PWA) {
+                    console.log('[SW] New service worker available, reloading...');
+                  }
                   // Notificar usuário sobre atualização (opcional)
                   if (confirm('Nova versão disponível! Recarregar agora?')) {
                     newWorker.postMessage({ type: 'SKIP_WAITING' });
