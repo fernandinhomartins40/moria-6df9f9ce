@@ -224,8 +224,8 @@ export function AdminPromotionsSection({
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
+      <Card className="w-full max-w-full">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -262,7 +262,7 @@ export function AdminPromotionsSection({
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="w-full max-w-full overflow-x-hidden">
           {/* Filtros */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
