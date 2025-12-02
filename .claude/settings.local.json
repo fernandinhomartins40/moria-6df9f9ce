@@ -95,7 +95,9 @@
       "Bash(start http://localhost:3000)",
       "Bash(if exist \"scripts\\build-all-for-docker.sh\" del /f \"scripts\\build-all-for-docker.sh\")",
       "Bash(if exist \"scripts\\build-all-for-docker.ps1\" del /f \"scripts\\build-all-for-docker.ps1\")",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(if exist \"c:\\Projetos Cursor\\moria-6df9f9ce\\apps\\frontend\\public\\manifest-store.webmanifest\" type \"c:\\Projetos Cursor\\moria-6df9f9ce\\apps\\frontend\\public\\manifest-store.webmanifest\" else echo File does not exist)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

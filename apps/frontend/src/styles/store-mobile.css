@@ -101,9 +101,9 @@
     margin-top: 0 !important;
   }
 
-  /* Botões em linha (horizontal) no mobile */
-  .lojista-header .flex,
-  .lojista-header [class*="flex"] {
+  /* Botões em linha (horizontal) no mobile - APENAS no header da página */
+  .lojista-header > div > .flex,
+  .lojista-header > div > div > .flex {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: wrap !important;
@@ -111,7 +111,8 @@
     width: 100% !important;
   }
 
-  .lojista-header button {
+  .lojista-header > div button,
+  .lojista-header > div > div button {
     white-space: nowrap !important;
     font-size: 0.8125rem !important;
     padding: 0.5rem 0.875rem !important;
@@ -122,6 +123,14 @@
   /* Garantir que grupos de botões fiquem horizontais */
   .lojista-header button + button {
     margin-left: 0 !important;
+  }
+
+  /* NÃO aplicar aos cards internos do conteúdo - permitir classes Tailwind */
+  .lojista-content [class*="Card"] .flex,
+  .lojista-content .border.rounded-lg .flex,
+  .lojista-content .space-y-4 .flex,
+  .lojista-content .space-y-6 .flex {
+    flex-direction: inherit !important;
   }
 
   /* Tables -> Cards */

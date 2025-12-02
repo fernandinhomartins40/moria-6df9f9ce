@@ -191,28 +191,29 @@ export function AdminProductsSection({
     <div className="space-y-6 w-full max-w-full overflow-hidden">
       <Card className="w-full max-w-full">
         <CardHeader className="p-4 md:p-6">
-          <div className="flex flex-col gap-4">
-            <div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex-1">
               <CardTitle className="text-xl md:text-2xl">Gerenciar Produtos</CardTitle>
-              <CardDescription>
+              <CardDescription className="mt-1">
                 Controle seu estoque e catálogo de peças automotivas
               </CardDescription>
             </div>
-            <div className="flex flex-col gap-2 w-full md:flex-row md:w-auto">
+            <div className="flex flex-row gap-2 w-full md:w-auto flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => fetchProducts()}
                 disabled={loading}
-                className="w-full md:w-auto"
+                className="flex-1 sm:flex-none"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
+                <span className="hidden sm:inline">Atualizar</span>
+                <span className="sm:hidden">Atualizar</span>
               </Button>
               <Button
                 size="sm"
                 onClick={handleOpenCreateModal}
-                className="bg-moria-orange hover:bg-moria-orange/90 w-full md:w-auto"
+                className="bg-moria-orange hover:bg-moria-orange/90 flex-1 sm:flex-none"
                 disabled={createLoading}
               >
                 {createLoading ? (
@@ -301,85 +302,87 @@ export function AdminProductsSection({
                   <div key={product.id} className="border rounded-lg p-3 md:p-6 hover:border-moria-orange/50 transition-colors w-full max-w-full overflow-hidden">
                     <div className="flex flex-col gap-3 mb-4">
                       {/* Informações básicas */}
-                      <div className="flex items-start gap-3 w-full">
-                        <div className="bg-moria-orange text-white rounded-lg p-2 flex-shrink-0">
-                          <Box className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base md:text-lg font-semibold break-words">{product.name}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words">{product.description}</p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                              {product.category}
-                            </Badge>
-                            {product.brand && (
-                              <Badge variant="outline" className="text-xs">{product.brand}</Badge>
-                            )}
-                            {!product.isActive && (
-                              <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
-                                Inativo
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 w-full">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="bg-moria-orange text-white rounded-lg p-2 flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+                            <Box className="h-5 w-5 md:h-6 md:w-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base md:text-lg font-semibold break-words">{product.name}</h3>
+                            <p className="text-sm text-gray-600 mb-2 line-clamp-2 break-words">{product.description}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                {product.category}
                               </Badge>
-                            )}
-                            {discount > 0 && (
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                -{discount}%
-                              </Badge>
-                            )}
+                              {product.brand && (
+                                <Badge variant="outline" className="text-xs">{product.brand}</Badge>
+                              )}
+                              {!product.isActive && (
+                                <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
+                                  Inativo
+                                </Badge>
+                              )}
+                              {discount > 0 && (
+                                <Badge className="bg-green-100 text-green-800 text-xs">
+                                  -{discount}%
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Status e SKU */}
-                      <div className="flex flex-col items-start gap-1 flex-shrink-0">
-                        <Badge className={stockStatus.variant}>
-                          {stockStatus.label}
-                        </Badge>
-                        {product.sku && (
-                          <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                        )}
+                        {/* Status e SKU */}
+                        <div className="flex flex-row md:flex-col items-start gap-2 md:gap-1 flex-shrink-0">
+                          <Badge className={stockStatus.variant}>
+                            {stockStatus.label}
+                          </Badge>
+                          {product.sku && (
+                            <p className="text-xs md:text-sm text-gray-600">SKU: {product.sku}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Informações detalhadas */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                      <div className="flex items-start space-x-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                      <div className="flex items-start space-x-2 min-w-0">
                         <DollarSign className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <span className="text-sm text-gray-600">Preço: </span>
-                          <span className="font-medium text-sm break-words">
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs md:text-sm text-gray-600">Preço: </span>
+                          <span className="font-medium text-xs md:text-sm break-words">
                             {product.promoPrice
                               ? formatPrice(product.promoPrice)
-                              : formatPrice(product.salePrice || product.price)
+                              : formatPrice(product.salePrice)
                             }
                           </span>
                           {product.promoPrice && product.salePrice && (
-                            <span className="text-sm text-gray-500 line-through ml-1">
+                            <span className="text-xs md:text-sm text-gray-500 line-through ml-1">
                               {formatPrice(product.salePrice)}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-start space-x-2">
+                      <div className="flex items-start space-x-2 min-w-0">
                         <Warehouse className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <span className="text-sm text-gray-600">Estoque: </span>
-                          <span className="font-medium text-sm">{product.stock || 0}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs md:text-sm text-gray-600">Estoque: </span>
+                          <span className="font-medium text-xs md:text-sm">{product.stock || 0}</span>
                         </div>
                       </div>
 
                       {product.supplier && (
-                        <div className="flex items-start space-x-2">
+                        <div className="flex items-start space-x-2 min-w-0">
                           <Tag className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <span className="text-sm text-gray-600">Fornecedor: </span>
-                            <span className="font-medium text-sm truncate">{product.supplier}</span>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs md:text-sm text-gray-600">Fornecedor: </span>
+                            <span className="font-medium text-xs md:text-sm truncate block">{product.supplier}</span>
                           </div>
                         </div>
                       )}
 
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">Status: </span>
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <span className="text-xs md:text-sm text-gray-600">Status: </span>
                         {product.isActive ? (
                           <ToggleRight className="h-5 w-5 text-green-600 flex-shrink-0" />
                         ) : (
@@ -389,13 +392,13 @@ export function AdminProductsSection({
                     </div>
 
                     {/* Ações */}
-                    <div className="flex flex-col gap-2 md:flex-row md:justify-end">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleStatus(product.id, product.isActive)}
                         disabled={updateLoading}
-                        className="w-full md:w-auto text-sm"
+                        className="w-full sm:w-auto text-xs md:text-sm"
                       >
                         {product.isActive ? 'Desativar' : 'Ativar'}
                       </Button>
@@ -405,9 +408,9 @@ export function AdminProductsSection({
                         size="sm"
                         onClick={() => handleOpenEditModal(product)}
                         disabled={updateLoading}
-                        className="w-full md:w-auto text-sm"
+                        className="w-full sm:w-auto text-xs md:text-sm"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                         Editar
                       </Button>
 
@@ -416,9 +419,9 @@ export function AdminProductsSection({
                         size="sm"
                         onClick={() => handleDeleteClick(product)}
                         disabled={deleteLoading}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300 w-full md:w-auto text-sm"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300 w-full sm:w-auto text-xs md:text-sm"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                         Excluir
                       </Button>
                     </div>
