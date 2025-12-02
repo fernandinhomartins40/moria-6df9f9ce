@@ -29,6 +29,7 @@ import supportRoutes from '@modules/support/support.routes.js';
 import reportsRoutes from '@modules/reports/reports.routes.js';
 import notificationsRoutes from '@modules/notifications/notifications.routes.js';
 import landingPageRoutes from '@modules/landing-page/landing-page.routes.js';
+import settingsRoutes from '@modules/settings/settings.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -120,6 +121,9 @@ export function createApp(): Express {
 
   // Landing Page Routes (NEW - Padrão Ferraco)
   app.use('/landing-page', landingPageRoutes);
+
+  // Settings Routes (Sistema de Configurações)
+  app.use('/settings', settingsRoutes);
 
   // 404 handler
   app.use((_req: Request, res: Response) => {

@@ -69,7 +69,7 @@ export interface UpdateSettingsData {
 
 class SettingsService {
   /**
-   * Busca as configurações da loja
+   * Busca as configurações da loja (requer autenticação admin)
    */
   async getSettings(): Promise<StoreSettings> {
     const response = await apiClient.get<{ success: boolean; data: StoreSettings }>('/settings');
@@ -77,7 +77,16 @@ class SettingsService {
   }
 
   /**
-   * Atualiza as configurações da loja
+   * Busca configurações públicas (sem autenticação)
+   * Usado para exibir informações gerais da loja
+   */
+  async getPublicSettings(): Promise<Partial<StoreSettings>> {
+    const response = await apiClient.get<{ success: boolean; data: Partial<StoreSettings> }>('/settings/public');
+    return response.data.data;
+  }
+
+  /**
+   * Atualiza as configurações da loja (requer autenticação admin)
    */
   async updateSettings(data: UpdateSettingsData): Promise<StoreSettings> {
     const response = await apiClient.put<{ success: boolean; data: StoreSettings }>('/settings', data);
@@ -85,11 +94,44 @@ class SettingsService {
   }
 
   /**
-   * Reseta as configurações para os valores padrão
+   * Reseta as configurações para os valores padrão (requer autenticação admin)
    */
   async resetSettings(): Promise<StoreSettings> {
     const response = await apiClient.post<{ success: boolean; data: StoreSettings }>('/settings/reset');
     return response.data.data;
+  }
+
+  /**
+   * Testa conexão com WhatsApp API
+   */
+  async testWhatsAppConnection(apiKey: string): Promise<{ connected: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; connected: boolean; message: string }>(
+      '/settings/test-whatsapp',
+      { apiKey }
+    );
+    return { connected: response.data.connected, message: response.data.message };
+  }
+
+  /**
+   * Testa conexão com Correios API
+   */
+  async testCorreiosConnection(apiKey: string): Promise<{ connected: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; connected: boolean; message: string }>(
+      '/settings/test-correios',
+      { apiKey }
+    );
+    return { connected: response.data.connected, message: response.data.message };
+  }
+
+  /**
+   * Testa conexão com Gateway de Pagamento
+   */
+  async testPaymentConnection(apiKey: string): Promise<{ connected: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; connected: boolean; message: string }>(
+      '/settings/test-payment',
+      { apiKey }
+    );
+    return { connected: response.data.connected, message: response.data.message };
   }
 }
 

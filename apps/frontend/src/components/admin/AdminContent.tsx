@@ -48,6 +48,7 @@ import { CreateOrderModal } from "./CreateOrderModal";
 import { CreateQuoteModal } from "./CreateQuoteModal";
 import AdminUsersSection from "./AdminUsersSection";
 import { PromotionsManagement } from "./PromotionsManagement";
+import { SettingsContent } from "./SettingsContent";
 import { AdminProductsSection } from "./AdminProductsSection";
 import { AdminServicesSection } from "./AdminServicesSection";
 import { AdminCouponsSection } from "./AdminCouponsSection";
@@ -2246,7 +2247,7 @@ export function AdminContent({ activeTab, onTabChange }: AdminContentProps) {
       case 'users':
         return <AdminUsersSection />;
       case 'settings':
-        return renderSettings();
+        return <SettingsContent />;
       default:
         return renderDashboard();
     }

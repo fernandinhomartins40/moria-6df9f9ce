@@ -7,6 +7,7 @@ import { useCart } from "../contexts/CartContext";
 import offerService, { Offer } from "../api/offerService";
 import { getImageUrl } from "@/utils/imageUrl";
 import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 interface PromotionalProduct {
   id: string;
@@ -71,6 +72,7 @@ const convertOfferToPromotional = (offer: Offer): PromotionalProduct => {
 
 export function Promotions() {
   const { addItem, openCart } = useCart();
+  const { settings: storeSettings } = useStoreSettings();
   const { config, loading: configLoading } = useLandingPageConfig();
 
   const [dailyOffers, setDailyOffers] = useState<PromotionalProduct[]>([]);
@@ -332,7 +334,10 @@ export function Promotions() {
               variant="outline"
               size="lg"
               className="border-white text-white hover:bg-white hover:text-moria-black"
-              onClick={() => window.open('https://api.whatsapp.com/send?phone=5511999999999&text=Olá! Gostaria de saber mais sobre as promoções.', '_blank')}
+              onClick={() => {
+                const whatsappNumber = storeSettings?.whatsapp || "5511999999999";
+                window.open(`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent('Olá! Gostaria de saber mais sobre as promoções.')}`, '_blank');
+              }}
             >
               Falar com Vendedor
             </Button>

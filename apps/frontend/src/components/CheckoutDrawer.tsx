@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useStoreSettings } from "../hooks/useStoreSettings";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -55,6 +56,7 @@ interface CheckoutForm {
 export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
   const { items, totalPrice, clearCart, closeCart, autoPromotions, promotionDiscount } = useCart();
   const { customer, isAuthenticated } = useAuth();
+  const { settings: storeSettings } = useStoreSettings();
 
   const [form, setForm] = useState<CheckoutForm>({
     name: "",
@@ -354,7 +356,7 @@ export function CheckoutDrawer({ open, onOpenChange }: CheckoutDrawerProps) {
 
       // Gerar mensagem WhatsApp
       const message = generateWhatsAppMessage(order);
-      const whatsappNumber = "5511999999999"; // Número da loja - TODO: configurar via env
+      const whatsappNumber = storeSettings?.whatsapp || "5511999999999";
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
 
       // Abrir WhatsApp após sucesso

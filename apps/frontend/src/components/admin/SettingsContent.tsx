@@ -1,0 +1,591 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Separator } from '../ui/separator';
+import { Badge } from '../ui/badge';
+import { useSettings } from '@/hooks/useSettings';
+import { clearSettingsCache } from '@/hooks/useStoreSettings';
+import settingsService from '@/api/settingsService';
+import {
+  MessageCircle,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  RefreshCw,
+  Download,
+  FileText,
+  Truck,
+  DollarSign,
+  BarChart3,
+  Clock,
+  Save,
+  RotateCcw
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+export function SettingsContent() {
+  const { settings, loading, updateSettings, resetSettings, updateLoading } = useSettings();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [testingApi, setTestingApi] = useState<string | null>(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    // Informações da Empresa
+    storeName: '',
+    cnpj: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+
+    // Configurações de Vendas
+    defaultMargin: 35,
+    freeShippingMin: 150,
+    deliveryFee: 15.90,
+    deliveryDays: 3,
+
+    // Notificações
+    notifyNewOrders: true,
+    notifyLowStock: true,
+    notifyWeeklyReports: false,
+
+    // Integrações
+    whatsappApiKey: '',
+    correiosApiKey: '',
+    paymentGatewayKey: '',
+    googleAnalyticsId: '',
+
+    // Flags
+    whatsappConnected: false,
+    correiosConnected: false,
+    paymentConnected: false,
+    analyticsConnected: false,
+  });
+
+  // Carregar dados quando settings mudar
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        storeName: settings.storeName || '',
+        cnpj: settings.cnpj || '',
+        phone: settings.phone || '',
+        whatsapp: settings.whatsapp || '',
+        email: settings.email || '',
+        address: settings.address || '',
+        city: settings.city || '',
+        state: settings.state || '',
+        zipCode: settings.zipCode || '',
+        defaultMargin: Number(settings.defaultMargin) || 35,
+        freeShippingMin: Number(settings.freeShippingMin) || 150,
+        deliveryFee: Number(settings.deliveryFee) || 15.90,
+        deliveryDays: settings.deliveryDays || 3,
+        notifyNewOrders: settings.notifyNewOrders,
+        notifyLowStock: settings.notifyLowStock,
+        notifyWeeklyReports: settings.notifyWeeklyReports,
+        whatsappApiKey: settings.whatsappApiKey || '',
+        correiosApiKey: settings.correiosApiKey || '',
+        paymentGatewayKey: settings.paymentGatewayKey || '',
+        googleAnalyticsId: settings.googleAnalyticsId || '',
+        whatsappConnected: settings.whatsappConnected,
+        correiosConnected: settings.correiosConnected,
+        paymentConnected: settings.paymentConnected,
+        analyticsConnected: settings.analyticsConnected,
+      });
+    }
+  }, [settings]);
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateSettings(formData);
+      // Limpar cache público para atualizar frontend
+      clearSettingsCache();
+      toast.success('Configurações salvas com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar configurações');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm('Tem certeza que deseja resetar todas as configurações para os valores padrão?')) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetSettings();
+      clearSettingsCache();
+      toast.success('Configurações resetadas com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao resetar configurações');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleTestApi = async (apiType: 'whatsapp' | 'correios' | 'payment') => {
+    const apiKeyMap = {
+      whatsapp: formData.whatsappApiKey,
+      correios: formData.correiosApiKey,
+      payment: formData.paymentGatewayKey,
+    };
+
+    const apiKey = apiKeyMap[apiType];
+    if (!apiKey) {
+      toast.error('Informe a API Key primeiro');
+      return;
+    }
+
+    setTestingApi(apiType);
+    try {
+      let result;
+      if (apiType === 'whatsapp') {
+        result = await settingsService.testWhatsAppConnection(apiKey);
+      } else if (apiType === 'correios') {
+        result = await settingsService.testCorreiosConnection(apiKey);
+      } else {
+        result = await settingsService.testPaymentConnection(apiKey);
+      }
+
+      if (result.connected) {
+        toast.success(result.message || 'Conexão bem-sucedida!');
+        // Atualizar flag de conexão
+        const flagMap = {
+          whatsapp: 'whatsappConnected',
+          correios: 'correiosConnected',
+          payment: 'paymentConnected',
+        };
+        handleInputChange(flagMap[apiType], true);
+      } else {
+        toast.error(result.message || 'Falha na conexão');
+        handleInputChange(flagMap[apiType], false);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao testar conexão');
+    } finally {
+      setTestingApi(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-moria-orange" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações do Sistema</CardTitle>
+          <CardDescription>Configure e gerencie as definições da loja</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+
+          {/* Informações da Loja */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium border-b pb-2">Informações da Loja</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="storeName">Nome da Loja *</Label>
+                <Input
+                  id="storeName"
+                  value={formData.storeName}
+                  onChange={(e) => handleInputChange('storeName', e.target.value)}
+                  placeholder="Moria Peças & Serviços"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => handleInputChange('cnpj', e.target.value)}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp">WhatsApp (Formato: 5511999999999) *</Label>
+                <Input
+                  id="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={(e) => handleInputChange('whatsapp', e.target.value)}
+                  placeholder="5511999999999"
+                />
+                <p className="text-xs text-gray-500">
+                  Número usado no checkout e botões de contato
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="contato@moriapecas.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">CEP</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.zipCode}
+                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                  placeholder="00000000"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="address">Endereço Completo</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder="Av. das Oficinas, 123 - Centro"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="São Paulo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado (UF)</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value.toUpperCase())}
+                  placeholder="SP"
+                  maxLength={2}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Configurações de Vendas */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium border-b pb-2">Configurações de Vendas</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="defaultMargin">Margem de Lucro Padrão (%)</Label>
+                <Input
+                  id="defaultMargin"
+                  type="number"
+                  value={formData.defaultMargin}
+                  onChange={(e) => handleInputChange('defaultMargin', Number(e.target.value))}
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="freeShippingMin">Valor Mínimo para Frete Grátis (R$)</Label>
+                <Input
+                  id="freeShippingMin"
+                  type="number"
+                  value={formData.freeShippingMin}
+                  onChange={(e) => handleInputChange('freeShippingMin', Number(e.target.value))}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deliveryFee">Taxa de Entrega (R$)</Label>
+                <Input
+                  id="deliveryFee"
+                  type="number"
+                  value={formData.deliveryFee}
+                  onChange={(e) => handleInputChange('deliveryFee', Number(e.target.value))}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deliveryDays">Tempo de Entrega (dias)</Label>
+                <Input
+                  id="deliveryDays"
+                  type="number"
+                  value={formData.deliveryDays}
+                  onChange={(e) => handleInputChange('deliveryDays', Number(e.target.value))}
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Notificações */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium border-b pb-2">Notificações</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Novos Pedidos</p>
+                  <p className="text-sm text-gray-600">Receber notificação quando houver novos pedidos</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={formData.notifyNewOrders ? "bg-green-100 text-green-800" : ""}
+                  onClick={() => handleInputChange('notifyNewOrders', !formData.notifyNewOrders)}
+                >
+                  {formData.notifyNewOrders ? (
+                    <><CheckCircle className="h-4 w-4 mr-1" /> Ativo</>
+                  ) : (
+                    <><Clock className="h-4 w-4 mr-1" /> Inativo</>
+                  )}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Estoque Baixo</p>
+                  <p className="text-sm text-gray-600">Alerta quando produtos estão com estoque baixo</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={formData.notifyLowStock ? "bg-green-100 text-green-800" : ""}
+                  onClick={() => handleInputChange('notifyLowStock', !formData.notifyLowStock)}
+                >
+                  {formData.notifyLowStock ? (
+                    <><CheckCircle className="h-4 w-4 mr-1" /> Ativo</>
+                  ) : (
+                    <><Clock className="h-4 w-4 mr-1" /> Inativo</>
+                  )}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">Relatórios Semanais</p>
+                  <p className="text-sm text-gray-600">Receber relatório semanal de vendas por e-mail</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={formData.notifyWeeklyReports ? "bg-green-100 text-green-800" : ""}
+                  onClick={() => handleInputChange('notifyWeeklyReports', !formData.notifyWeeklyReports)}
+                >
+                  {formData.notifyWeeklyReports ? (
+                    <><CheckCircle className="h-4 w-4 mr-1" /> Ativo</>
+                  ) : (
+                    <><Clock className="h-4 w-4 mr-1" /> Inativo</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Integrações */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium border-b pb-2">Integrações</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <MessageCircle className="h-8 w-8 text-green-600" />
+                      <div>
+                        <p className="font-medium">WhatsApp Business</p>
+                        <p className="text-sm text-gray-600">
+                          {formData.whatsappConnected ? 'Integração ativa' : 'Não configurado'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className={formData.whatsappConnected ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                      {formData.whatsappConnected ? 'Conectado' : 'Desconectado'}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="API Key do WhatsApp"
+                      type="password"
+                      value={formData.whatsappApiKey}
+                      onChange={(e) => handleInputChange('whatsappApiKey', e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestApi('whatsapp')}
+                      disabled={testingApi === 'whatsapp' || !formData.whatsappApiKey}
+                    >
+                      {testingApi === 'whatsapp' ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testando...</>
+                      ) : (
+                        'Testar Conexão'
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <Truck className="h-8 w-8 text-blue-600" />
+                      <div>
+                        <p className="font-medium">Correios API</p>
+                        <p className="text-sm text-gray-600">
+                          {formData.correiosConnected ? 'Integração ativa' : 'Não configurado'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className={formData.correiosConnected ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                      {formData.correiosConnected ? 'Conectado' : 'Desconectado'}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="API Key dos Correios"
+                      type="password"
+                      value={formData.correiosApiKey}
+                      onChange={(e) => handleInputChange('correiosApiKey', e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestApi('correios')}
+                      disabled={testingApi === 'correios' || !formData.correiosApiKey}
+                    >
+                      {testingApi === 'correios' ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testando...</>
+                      ) : (
+                        'Testar Conexão'
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <DollarSign className="h-8 w-8 text-purple-600" />
+                      <div>
+                        <p className="font-medium">Gateway Pagamento</p>
+                        <p className="text-sm text-gray-600">
+                          {formData.paymentConnected ? 'Integração ativa' : 'Não configurado'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className={formData.paymentConnected ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                      {formData.paymentConnected ? 'Conectado' : 'Desconectado'}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="API Key do Gateway"
+                      type="password"
+                      value={formData.paymentGatewayKey}
+                      onChange={(e) => handleInputChange('paymentGatewayKey', e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleTestApi('payment')}
+                      disabled={testingApi === 'payment' || !formData.paymentGatewayKey}
+                    >
+                      {testingApi === 'payment' ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testando...</>
+                      ) : (
+                        'Testar Conexão'
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <BarChart3 className="h-8 w-8 text-orange-600" />
+                      <div>
+                        <p className="font-medium">Google Analytics</p>
+                        <p className="text-sm text-gray-600">
+                          {formData.analyticsConnected ? 'Integração ativa' : 'Não configurado'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className={formData.analyticsConnected ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                      {formData.analyticsConnected ? 'Conectado' : 'Desconectado'}
+                    </Badge>
+                  </div>
+                  <Input
+                    placeholder="Google Analytics ID"
+                    value={formData.googleAnalyticsId}
+                    onChange={(e) => handleInputChange('googleAnalyticsId', e.target.value)}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Botões de Ação */}
+          <div className="flex justify-between gap-4">
+            <Button
+              variant="outline"
+              className="text-red-600 hover:text-red-700"
+              onClick={handleReset}
+              disabled={isResetting || isSaving}
+            >
+              {isResetting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Resetando...</>
+              ) : (
+                <><RotateCcw className="h-4 w-4 mr-2" /> Resetar para Padrão</>
+              )}
+            </Button>
+            <Button
+              className="bg-moria-orange hover:bg-moria-orange/90"
+              onClick={handleSave}
+              disabled={isSaving || isResetting}
+            >
+              {isSaving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+              ) : (
+                <><Save className="h-4 w-4 mr-2" /> Salvar Configurações</>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

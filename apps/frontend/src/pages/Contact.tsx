@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
+import { useStoreSettings } from "../hooks/useStoreSettings";
 import "../styles/public.css";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -23,6 +24,7 @@ import {
 import { toast } from "sonner";
 
 export default function Contact() {
+  const { settings: storeSettings } = useStoreSettings();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -109,7 +111,8 @@ ${new Date().toLocaleString('pt-BR')}
       `.trim();
 
       // Abrir WhatsApp
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(whatsappMessage)}`;
+      const whatsappNumber = storeSettings?.whatsapp || "5511999999999";
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
 
       toast.success("Mensagem enviada! Redirecionando para WhatsApp...");
@@ -133,7 +136,8 @@ ${new Date().toLocaleString('pt-BR')}
 
   const handleWhatsAppDirect = () => {
     const message = "Olá! Gostaria de falar com a equipe da Moria Peças e Serviços.";
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(message)}`;
+    const whatsappNumber = storeSettings?.whatsapp || "5511999999999";
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
