@@ -32,7 +32,7 @@ export const useAdminProducts = (): UseAdminProductsResult => {
     setError(null);
 
     try {
-      const response = await productService.getProducts({ limit: 1000 });
+      const response = await productService.getProducts({ limit: 100 });
       setProducts(response.products);
     } catch (err) {
       const apiError = handleApiError(err);
