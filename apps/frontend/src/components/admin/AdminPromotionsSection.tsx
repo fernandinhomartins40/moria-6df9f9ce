@@ -335,25 +335,25 @@ export function AdminPromotionsSection({
                 const StatusIcon = status.icon;
                 
                 return (
-                  <div key={promotion.id} className="border rounded-lg p-6 hover:border-moria-orange/50 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
+                  <div key={promotion.id} className="border rounded-lg p-4 sm:p-6 hover:border-moria-orange/50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                       {/* Informações básicas */}
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-moria-orange text-white rounded-lg p-3">
-                          <TypeIcon className="h-6 w-6" />
+                      <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
+                        <div className="bg-moria-orange text-white rounded-lg p-2 sm:p-3 flex-shrink-0">
+                          <TypeIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">{promotion.name}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{promotion.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold truncate">{promotion.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{promotion.description}</p>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge className={status.variant}>
+                            <Badge className={`${status.variant} text-xs`}>
                               <StatusIcon className="h-3 w-3 mr-1" />
                               {status.label}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {getPromotionTypeLabel(promotion.type)}
                             </Badge>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="text-xs">
                               {promotion.discountType === 'percentage' ? 'Percentual' : 'Valor fixo'}
                             </Badge>
                           </div>
@@ -361,83 +361,85 @@ export function AdminPromotionsSection({
                       </div>
 
                       {/* Status */}
-                      <div className="text-right">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600">Ativa: </span>
-                          {promotion.isActive ? (
-                            <ToggleRight className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <ToggleLeft className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
+                      <div className="flex items-center sm:justify-end gap-2 flex-shrink-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Ativa: </span>
+                        {promotion.isActive ? (
+                          <ToggleRight className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5 text-gray-400" />
+                        )}
                       </div>
                     </div>
 
                     {/* Informações detalhadas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Percent className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-sm text-gray-600">Desconto: </span>
-                          <span className="font-medium">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                      <div className="flex items-start space-x-2">
+                        <Percent className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Desconto: </span>
+                          <span className="font-medium text-sm sm:text-base">
                             {formatDiscount(promotion)}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-sm text-gray-600">Início: </span>
-                          <span className="font-medium">{formatDate(promotion.startsAt)}</span>
+                      <div className="flex items-start space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Início: </span>
+                          <span className="font-medium text-sm sm:text-base">{formatDate(promotion.startsAt)}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-sm text-gray-600">Fim: </span>
-                          <span className="font-medium">{formatDate(promotion.endsAt)}</span>
+                      <div className="flex items-start space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Fim: </span>
+                          <span className="font-medium text-sm sm:text-base">{formatDate(promotion.endsAt)}</span>
                         </div>
                       </div>
 
                       {promotion.maxDiscount && (
-                        <div>
-                          <span className="text-sm text-gray-600">Máx: </span>
-                          <span className="font-medium">{formatPrice(promotion.maxDiscount)}</span>
+                        <div className="flex items-start space-x-2">
+                          <div className="min-w-0">
+                            <span className="text-xs sm:text-sm text-gray-600">Máx: </span>
+                            <span className="font-medium text-sm sm:text-base">{formatPrice(promotion.maxDiscount)}</span>
+                          </div>
                         </div>
                       )}
                     </div>
 
                     {/* Ações */}
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleStatus(promotion.id, promotion.isActive)}
+                        className="text-xs sm:text-sm"
                       >
                         {promotion.isActive ? 'Desativar' : 'Ativar'}
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenEditModal(promotion)}
                         disabled={updateLoading}
+                        className="text-xs sm:text-sm"
                       >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Editar</span>
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteClick(promotion)}
                         disabled={deleteLoading}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300 text-xs sm:text-sm"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Excluir
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Excluir</span>
                       </Button>
                     </div>
                   </div>
