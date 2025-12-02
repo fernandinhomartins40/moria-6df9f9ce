@@ -234,7 +234,7 @@ export function AdminPromotionsSection({
                 Controle promoções e campanhas especiais
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 md:flex-row">
               <Button
                 variant="outline"
                 size="sm"

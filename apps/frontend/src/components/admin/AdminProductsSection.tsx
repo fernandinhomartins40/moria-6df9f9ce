@@ -198,7 +198,7 @@ export function AdminProductsSection({
                 Controle seu estoque e catálogo de peças automotivas
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 md:flex-row">
               <Button
                 variant="outline"
                 size="sm"
