@@ -157,8 +157,6 @@ button[role="switch"],
 button[role="switch"] > span {
   min-width: unset !important;
   min-height: unset !important;
-  width: auto !important;
-  height: auto !important;
 }
 
 /* ============================================
