@@ -30,7 +30,7 @@ export function useCoupons(): UseCouponsReturn {
 
     try {
       const response = await couponService.getCoupons(params);
-      setCoupons(response.coupons);
+      setCoupons(response.data || []);
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message);

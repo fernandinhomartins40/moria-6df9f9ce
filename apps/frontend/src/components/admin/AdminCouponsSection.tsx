@@ -20,7 +20,7 @@ import {
   Loader2,
   Copy
 } from 'lucide-react';
-import { useAdminCoupons } from '../../hooks/useAdminCoupons.js';
+import { useAdminCoupons } from '../../hooks/useAdminCoupons';
 import { CouponModal } from './CouponModal';
 import {
   AlertDialog,
@@ -69,6 +69,7 @@ export function AdminCouponsSection({
 
   // Filtrar cupons
   const filteredCoupons = useMemo(() => {
+    if (!coupons || !Array.isArray(coupons)) return [];
     let filtered = coupons;
 
     // Filtro por termo de busca

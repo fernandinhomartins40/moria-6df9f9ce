@@ -18,10 +18,15 @@ export interface Coupon {
 }
 
 export interface CouponListResponse {
-  coupons: Coupon[];
-  totalCount: number;
-  page: number;
-  limit: number;
+  data: Coupon[];
+  meta: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface CouponValidationResponse {
@@ -75,6 +80,27 @@ class CouponService {
   async getActiveCouponCount(): Promise<number> {
     const response = await apiClient.get<{ count: number }>('/coupons/active/count');
     return response.data.count;
+  }
+
+  // Admin CRUD operations
+  async createCoupon(data: Partial<Coupon>): Promise<{ data: Coupon }> {
+    const response = await apiClient.post<{ success: boolean; data: Coupon }>('/coupons', data);
+    return { data: response.data.data };
+  }
+
+  async updateCoupon(id: string, data: Partial<Coupon>): Promise<{ data: Coupon }> {
+    const response = await apiClient.patch<{ success: boolean; data: Coupon }>(`/coupons/${id}`, data);
+    return { data: response.data.data };
+  }
+
+  async deleteCoupon(id: string): Promise<void> {
+    await apiClient.delete(`/coupons/${id}`);
+  }
+
+  async toggleCouponStatus(id: string, isActive: boolean): Promise<{ data: Coupon }> {
+    // Usa o endpoint de update com apenas o campo isActive
+    const response = await apiClient.patch<{ success: boolean; data: Coupon }>(`/coupons/${id}`, { isActive: !isActive });
+    return { data: response.data.data };
   }
 }
 
