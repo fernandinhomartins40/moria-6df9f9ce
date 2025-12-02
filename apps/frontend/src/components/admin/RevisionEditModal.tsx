@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, FileText, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -7,6 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Separator } from '../ui/separator';
+import { Progress } from '../ui/progress';
 import { RevisionChecklist } from '../revisions/RevisionChecklist';
 import { useRevisions } from '../../contexts/RevisionsContext';
 import { RevisionChecklistItem, ItemStatus } from '../../types/revisions';
@@ -188,24 +189,43 @@ export function RevisionEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="text-2xl font-bold">
+      <DialogContent className="max-w-6xl w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-h-[calc(100vh-9rem)] sm:max-h-[calc(100vh-4rem)] my-4 sm:my-auto flex flex-col p-0">
+        {/* Compact Header */}
+        <DialogHeader className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+          <DialogTitle className="text-base sm:text-lg font-bold leading-tight">
             {revision.status === 'DRAFT' ? 'Editar Rascunho' : 'Continuar Revisão'}
           </DialogTitle>
-          <DialogDescription className="mt-2">
+          <DialogDescription className="mt-1 text-xs sm:text-sm truncate">
             {revision.customer?.name} - {revision.vehicle?.brand} {revision.vehicle?.model} ({revision.vehicle?.plate})
           </DialogDescription>
         </DialogHeader>
 
-        {/* Progress */}
+        {/* Progress Bar - Mobile: Only indicator, Desktop: Full bar with buttons */}
         {progress.total > 0 && (
-          <div className="px-6">
-            <Separator className="my-4" />
-            <div className="py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  Progresso: {progress.checked} de {progress.total} itens verificados ({progress.percentage}%)
+          <div className="px-3 sm:px-4">
+            <Separator className="my-2 sm:my-3" />
+
+            {/* Mobile: Compact progress only */}
+            <div className="sm:hidden py-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium">
+                  Progresso: {progress.checked}/{progress.total}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {progress.percentage}%
+                </span>
+              </div>
+              <Progress
+                value={progress.percentage}
+                className="h-2 bg-gray-200"
+              />
+            </div>
+
+            {/* Desktop: Full progress with buttons */}
+            <div className="hidden sm:block py-2 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">
+                  Progresso: {progress.checked}/{progress.total} ({progress.percentage}%)
                 </span>
                 <div className="flex gap-2">
                   <Button
@@ -213,8 +233,9 @@ export function RevisionEditModal({
                     variant="outline"
                     onClick={() => handleSave('draft')}
                     disabled={isSaving}
+                    className="h-8 text-xs"
                   >
-                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                    {isSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileText className="h-3 w-3 mr-1" />}
                     Salvar Rascunho
                   </Button>
                   <Button
@@ -222,111 +243,167 @@ export function RevisionEditModal({
                     variant="outline"
                     onClick={() => handleSave('in_progress')}
                     disabled={isSaving}
+                    className="h-8 text-xs"
                   >
-                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                    Salvar em Andamento
+                    {isSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Clock className="h-3 w-3 mr-1" />}
+                    Em Andamento
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => handleSave('completed')}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
                     disabled={progress.percentage < 100 || isSaving}
                   >
-                    {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                    Finalizar Revisão
+                    {isSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle className="h-3 w-3 mr-1" />}
+                    Finalizar
                   </Button>
                 </div>
               </div>
+              <Progress
+                value={progress.percentage}
+                className="h-3 bg-gray-200"
+              />
             </div>
+
             <Separator />
           </div>
         )}
 
-        {/* Content - Scrollable Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        {/* Compact Content - Scrollable Area */}
+        <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-2 sm:py-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-48 sm:h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-moria-orange mx-auto"></div>
-                <p className="mt-4 text-gray-600">Carregando revisão...</p>
+                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-moria-orange mx-auto"></div>
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Carregando revisão...</p>
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Mileage and Notes */}
+            <div className="space-y-3 sm:space-y-4">
+              {/* Compact Info Section */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Informações da Revisão</CardTitle>
+                <CardHeader className="pb-2 sm:pb-3">
+                  <CardTitle className="text-sm sm:text-base">Informações da Revisão</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mileage">Quilometragem Atual</Label>
-                    <Input
-                      id="mileage"
-                      type="number"
-                      value={mileage}
-                      onChange={(e) => setMileage(parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                      min={0}
-                    />
+                <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="mileage" className="text-xs sm:text-sm">Quilometragem</Label>
+                      <Input
+                        id="mileage"
+                        type="number"
+                        value={mileage}
+                        onChange={(e) => setMileage(parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                        min={0}
+                        className="h-8 sm:h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="generalNotes" className="text-xs sm:text-sm">Observações Gerais</Label>
+                      <Textarea
+                        id="generalNotes"
+                        value={generalNotes}
+                        onChange={(e) => setGeneralNotes(e.target.value)}
+                        placeholder="Observações..."
+                        rows={2}
+                        className="text-sm resize-none"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="generalNotes">Observações Gerais</Label>
-                    <Textarea
-                      id="generalNotes"
-                      value={generalNotes}
-                      onChange={(e) => setGeneralNotes(e.target.value)}
-                      placeholder="Adicione observações gerais sobre a revisão..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="recommendations">Recomendações</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="recommendations" className="text-xs sm:text-sm">Recomendações</Label>
                     <Textarea
                       id="recommendations"
                       value={recommendations}
                       onChange={(e) => setRecommendations(e.target.value)}
-                      placeholder="Adicione recomendações para o cliente..."
-                      rows={3}
+                      placeholder="Recomendações para o cliente..."
+                      rows={2}
+                      className="text-sm resize-none"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Checklist */}
+              {/* Checklist - Maximum Space */}
               <RevisionChecklist revisionItems={revisionItems} onUpdateItem={handleUpdateItem} />
             </div>
           )}
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t bg-gray-50/50 flex-shrink-0 flex gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleSave('draft')}
-            disabled={isSaving || isLoading}
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Salvar Rascunho
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleSave('in_progress')}
-            disabled={isSaving || isLoading}
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Salvar em Andamento
-          </Button>
-          <Button
-            onClick={() => handleSave('completed')}
-            className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={progress.percentage < 100 || isSaving || isLoading}
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Finalizar Revisão
-          </Button>
+        {/* Footer - Mobile: Icons only, Desktop: Full text */}
+        <DialogFooter className="px-3 sm:px-4 py-2 sm:py-3 border-t bg-gray-50/50 flex-shrink-0">
+          <div className="flex w-full gap-1.5 sm:gap-2">
+            {/* Mobile: Icon buttons with tooltips */}
+            <div className="flex sm:hidden w-full gap-1.5">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => handleSave('draft')}
+                disabled={isSaving || isLoading}
+                className="h-9 flex-1"
+                title="Salvar Rascunho"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => handleSave('in_progress')}
+                disabled={isSaving || isLoading}
+                className="h-9 flex-1"
+                title="Salvar em Andamento"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => handleSave('completed')}
+                className="h-9 flex-1 bg-green-600 hover:bg-green-700 text-white"
+                disabled={progress.percentage < 100 || isSaving || isLoading}
+                title="Finalizar Revisão"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* Desktop: Full text buttons */}
+            <div className="hidden sm:flex w-full gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="h-9 text-sm"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleSave('draft')}
+                disabled={isSaving || isLoading}
+                className="h-9 text-sm"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileText className="h-4 w-4 mr-1.5" />}
+                Salvar Rascunho
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleSave('in_progress')}
+                disabled={isSaving || isLoading}
+                className="h-9 text-sm"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Clock className="h-4 w-4 mr-1.5" />}
+                Em Andamento
+              </Button>
+              <Button
+                onClick={() => handleSave('completed')}
+                className="h-9 text-sm bg-green-600 hover:bg-green-700 text-white"
+                disabled={progress.percentage < 100 || isSaving || isLoading}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1.5" />}
+                Finalizar
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
