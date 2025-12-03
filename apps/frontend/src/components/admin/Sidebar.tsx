@@ -14,7 +14,8 @@ import {
   Gift,
   ClipboardCheck,
   User,
-  UserCog
+  UserCog,
+  Palette
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -38,6 +39,7 @@ const menuItems = [
   { id: "promotions", label: "Promoções", icon: TrendingUp },
   { id: "reports", label: "Relatórios", icon: BarChart3 },
   { id: "users", label: "Usuários", icon: UserCog, requiresPermission: 'canManageAdmins' },
+  { id: "landing-page", label: "Landing Page", icon: Palette },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
