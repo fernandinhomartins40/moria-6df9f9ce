@@ -47,6 +47,7 @@ export interface HeaderConfig {
   backgroundColor: string;
   textColor: string;
   hoverColor: string;
+  backgroundGradient?: GradientConfig; // Gradiente opcional para o header
 }
 
 // ============================================================================
