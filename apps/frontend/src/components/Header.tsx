@@ -8,6 +8,7 @@ import { LoginDialog } from "./customer/LoginDialog";
 import { Link } from "react-router-dom";
 import couponService from "../api/couponService";
 import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
+import { colorOrGradientToCSS } from "@/components/admin/LandingPageEditor/StyleControls";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,8 +47,8 @@ export function Header() {
   }));
 
   const headerStyle = loading ? {} : {
-    backgroundColor: config.header.backgroundColor,
-    color: config.header.textColor,
+    ...colorOrGradientToCSS(config.header.backgroundColor),
+    ...colorOrGradientToCSS(config.header.textColor),
   };
 
   const logoSrc = loading ? "/logo_moria.png" : config.header.logo.url;

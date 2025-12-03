@@ -1,5 +1,6 @@
 import { useMarqueeMessages } from '@/hooks/useMarqueeMessages';
 import { useLandingPageConfig } from '@/hooks/useLandingPageConfig';
+import { colorOrGradientToCSS } from '@/components/admin/LandingPageEditor/StyleControls';
 
 export function Marquee() {
   const { messages, loading } = useMarqueeMessages();
@@ -26,8 +27,8 @@ export function Marquee() {
   ]);
 
   // Usar cores e configurações do CMS
-  const backgroundColor = !configLoading ? config.marquee.backgroundColor : 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)';
-  const textColor = !configLoading ? config.marquee.textColor : '#ffffff';
+  const backgroundStyle = !configLoading ? colorOrGradientToCSS(config.marquee.backgroundColor) : { background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' };
+  const textStyle = !configLoading ? colorOrGradientToCSS(config.marquee.textColor) : { color: '#ffffff' };
   const speed = !configLoading ? config.marquee.speed : 30;
 
   if (loading && messages.length === 0 && configLoading) {
@@ -45,8 +46,8 @@ export function Marquee() {
     <div
       className="text-white py-2 overflow-hidden"
       style={{
-        background: backgroundColor,
-        color: textColor,
+        ...backgroundStyle,
+        ...textStyle,
       }}
     >
       <div

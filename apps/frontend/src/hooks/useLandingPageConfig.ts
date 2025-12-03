@@ -100,7 +100,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/landing-page/config');
+      const response = await fetch('/landing-page/config');
 
       if (!response.ok) {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -158,7 +158,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
           // Tentar sincronizar com backend em background
           setTimeout(() => {
             log('🔄 Tentando sincronizar localStorage com backend...');
-            fetch('/api/landing-page/config', {
+            fetch('/landing-page/config', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(cachedConfig),
@@ -190,7 +190,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
       setError(null);
 
       // 1. Salvar no backend
-      const saveResponse = await fetch('/api/landing-page/config', {
+      const saveResponse = await fetch('/landing-page/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -222,7 +222,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
 
       // 3. Salvar no histórico
       try {
-        await fetch('/api/landing-page/config/history', {
+        await fetch('/landing-page/config/history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
