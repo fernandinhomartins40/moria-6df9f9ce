@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { HeroConfig, HeroFeature, HeroButton } from '@/types/landingPage';
-import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, GradientPicker, MORIA_GRADIENT_PRESETS, ColorOrGradientPicker, ColorPicker, colorOrGradientToCSS } from '../StyleControls';
+import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, GradientPicker, MORIA_GRADIENT_PRESETS, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -152,11 +152,12 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
                   description="Defina uma cor sólida ou gradiente para o fundo do botão"
                 />
 
-                <ColorPicker
-                  label="Cor do Texto"
-                  value={item.textColor || '#ffffff'}
+                <ColorOrGradientPicker
+                  label="Cor do Texto / Gradiente"
+                  value={item.textColor || { type: 'solid', solid: '#ffffff' }}
                   onChange={(textColor) => update({ textColor })}
-                  description="Cor do texto do botão (opcional)"
+                  defaultGradientPreset="goldMetallic"
+                  description="Defina uma cor sólida ou gradiente para o texto do botão"
                 />
               </div>
 

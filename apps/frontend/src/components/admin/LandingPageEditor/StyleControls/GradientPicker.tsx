@@ -31,6 +31,18 @@ export const GradientPicker = ({
   description,
   presetName
 }: GradientPickerProps) => {
+  // Validação: garantir que value existe e tem estrutura mínima
+  if (!value || !value.type || !value.colors || value.colors.length === 0) {
+    console.error('GradientPicker: value inválido recebido', value);
+    return (
+      <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
+        <p className="text-sm text-red-600">
+          ⚠️ Erro: Configuração de gradiente inválida. Por favor, recarregue a página.
+        </p>
+      </div>
+    );
+  }
+
   const updateColor = (index: number, color: string) => {
     const newColors = [...value.colors];
     newColors[index] = color;
@@ -182,6 +194,11 @@ export const MORIA_GRADIENT_PRESETS = {
     type: 'linear' as const,
     direction: 'to-br',
     colors: ['#1a1a1a', '#374151']
+  },
+  darkElegant: {
+    type: 'linear' as const,
+    direction: 'to-br',
+    colors: ['#0f172a', '#1e293b', '#334155']
   },
   orangeOverlay: {
     type: 'linear' as const,

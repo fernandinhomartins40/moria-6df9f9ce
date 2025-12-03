@@ -44,10 +44,9 @@ export interface HeaderConfig {
   enabled: boolean;
   logo: ImageConfig;
   menuItems: HeaderMenuItem[];
-  backgroundColor: string;
-  textColor: string;
-  hoverColor: string;
-  backgroundGradient?: GradientConfig; // Gradiente opcional para o header
+  backgroundColor: ColorOrGradientValue;
+  textColor: ColorOrGradientValue;
+  hoverColor: ColorOrGradientValue;
 }
 
 // ============================================================================
@@ -64,8 +63,8 @@ export interface MarqueeConfig {
   enabled: boolean;
   items: MarqueeItem[];
   speed: number; // velocidade em segundos
-  backgroundColor: string;
-  textColor: string;
+  backgroundColor: ColorOrGradientValue;
+  textColor: ColorOrGradientValue;
 }
 
 // ============================================================================
@@ -92,7 +91,7 @@ export interface HeroButton {
   enabled: boolean;
   // Personalização de cores (opcional)
   background?: ColorOrGradientValue;
-  textColor?: string;
+  textColor?: ColorOrGradientValue;
 }
 
 export interface HeroConfig {
@@ -116,7 +115,7 @@ export interface HeroConfig {
 export interface TrustIndicator {
   id: string;
   icon: string; // nome do ícone Lucide
-  iconBackground: string; // Cor de fundo do ícone (hex, rgb, etc)
+  iconBackground: ColorOrGradientValue; // Cor de fundo do ícone
   title: string;
   description: string;
 }
@@ -157,7 +156,7 @@ export interface ContactInfoCard {
   icon: string; // nome do ícone Lucide (MapPin, Phone, Mail, Clock)
   title: string;
   content: string[]; // Array de linhas de texto
-  color: string; // Ex: "text-blue-600"
+  color: ColorOrGradientValue;
 }
 
 export interface ContactServiceType {
@@ -203,7 +202,7 @@ export interface AboutValue {
   icon: string; // nome do ícone Lucide
   title: string;
   description: string;
-  color: string; // Ex: "text-blue-600"
+  color: ColorOrGradientValue;
 }
 
 export interface AboutStat {

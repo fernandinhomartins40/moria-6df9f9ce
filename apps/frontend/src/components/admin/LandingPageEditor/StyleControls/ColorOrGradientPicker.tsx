@@ -28,6 +28,15 @@ interface ColorOrGradientPickerProps {
   showPreview?: boolean;
 }
 
+// Helper para converter preset readonly para mutable
+const getPresetAsGradientConfig = (presetKey: keyof typeof MORIA_GRADIENT_PRESETS): GradientConfig => {
+  const preset = MORIA_GRADIENT_PRESETS[presetKey];
+  return {
+    ...preset,
+    colors: [...preset.colors], // Converter readonly array para mutable array
+  };
+};
+
 export const ColorOrGradientPicker = ({
   label,
   value,
@@ -36,7 +45,13 @@ export const ColorOrGradientPicker = ({
   defaultGradientPreset = 'goldMetallic',
   showPreview = true,
 }: ColorOrGradientPickerProps) => {
-  const [activeTab, setActiveTab] = useState<'solid' | 'gradient'>(value.type || 'solid');
+  // Validação: garantir que value existe e tem estrutura mínima
+  const safeValue: ColorOrGradientValue = value || {
+    type: 'solid',
+    solid: '#FF6B35',
+  };
+
+  const [activeTab, setActiveTab] = useState<'solid' | 'gradient'>(safeValue.type || 'solid');
 
   const handleTabChange = (tab: string) => {
     const newType = tab as 'solid' | 'gradient';
@@ -46,21 +61,21 @@ export const ColorOrGradientPicker = ({
     if (newType === 'solid') {
       onChange({
         type: 'solid',
-        solid: value.solid || '#FF6B35',
-        gradient: value.gradient,
+        solid: safeValue.solid || '#FF6B35',
+        gradient: safeValue.gradient,
       });
     } else {
       onChange({
         type: 'gradient',
-        solid: value.solid,
-        gradient: value.gradient || MORIA_GRADIENT_PRESETS[defaultGradientPreset],
+        solid: safeValue.solid,
+        gradient: safeValue.gradient || getPresetAsGradientConfig(defaultGradientPreset),
       });
     }
   };
 
   const handleSolidChange = (color: string) => {
     onChange({
-      ...value,
+      ...safeValue,
       type: 'solid',
       solid: color,
     });
@@ -68,7 +83,7 @@ export const ColorOrGradientPicker = ({
 
   const handleGradientChange = (gradient: GradientConfig) => {
     onChange({
-      ...value,
+      ...safeValue,
       type: 'gradient',
       gradient,
     });
@@ -76,25 +91,26 @@ export const ColorOrGradientPicker = ({
 
   // Gerar CSS para preview
   const getPreviewStyle = (): React.CSSProperties => {
-    if (value.type === 'gradient' && value.gradient) {
-      const { type, angle, stops } = value.gradient;
-      const stopsStr = stops
-        .map(s => `${s.color} ${s.position}%`)
-        .join(', ');
+    if (safeValue.type === 'gradient' && safeValue.gradient) {
+      const { type, angle, direction, colors } = safeValue.gradient;
+
+      // Validação: garantir que colors existe e tem elementos
+      if (!colors || colors.length === 0) {
+        return { backgroundColor: '#FF6B35' };
+      }
 
       let backgroundImage = '';
       if (type === 'linear') {
-        backgroundImage = `linear-gradient(${angle}deg, ${stopsStr})`;
+        const angleOrDirection = direction || `${angle || 90}deg`;
+        backgroundImage = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
       } else if (type === 'radial') {
-        backgroundImage = `radial-gradient(circle, ${stopsStr})`;
-      } else if (type === 'conic') {
-        backgroundImage = `conic-gradient(from ${angle}deg, ${stopsStr})`;
+        backgroundImage = `radial-gradient(circle, ${colors.join(', ')})`;
       }
 
       return { backgroundImage };
     }
 
-    return { backgroundColor: value.solid || '#FF6B35' };
+    return { backgroundColor: safeValue.solid || '#FF6B35' };
   };
 
   return (
@@ -121,7 +137,7 @@ export const ColorOrGradientPicker = ({
         <TabsContent value="solid" className="space-y-4 mt-4">
           <ColorPicker
             label="Cor"
-            value={value.solid || '#FF6B35'}
+            value={safeValue.solid || '#FF6B35'}
             onChange={handleSolidChange}
           />
         </TabsContent>
@@ -129,7 +145,7 @@ export const ColorOrGradientPicker = ({
         <TabsContent value="gradient" className="space-y-4 mt-4">
           <GradientPicker
             label="Gradiente"
-            value={value.gradient || MORIA_GRADIENT_PRESETS[defaultGradientPreset]}
+            value={safeValue.gradient || getPresetAsGradientConfig(defaultGradientPreset)}
             onChange={handleGradientChange}
             presetName={defaultGradientPreset}
           />
@@ -142,7 +158,7 @@ export const ColorOrGradientPicker = ({
           <div className="flex items-center justify-between">
             <Label className="text-sm">Preview</Label>
             <Badge variant="outline" className="text-xs">
-              {value.type === 'solid' ? 'Cor Sólida' : 'Gradiente'}
+              {safeValue.type === 'solid' ? 'Cor Sólida' : 'Gradiente'}
             </Badge>
           </div>
           <div
@@ -163,18 +179,19 @@ export const colorOrGradientToCSS = (value: ColorOrGradientValue | undefined): R
   }
 
   if (value.type === 'gradient' && value.gradient) {
-    const { type, angle, stops } = value.gradient;
-    const stopsStr = stops
-      .map(s => `${s.color} ${s.position}%`)
-      .join(', ');
+    const { type, angle, direction, colors } = value.gradient;
+
+    // Validação: garantir que colors existe e tem elementos
+    if (!colors || colors.length === 0) {
+      return { backgroundColor: '#FF6B35' };
+    }
 
     let backgroundImage = '';
     if (type === 'linear') {
-      backgroundImage = `linear-gradient(${angle}deg, ${stopsStr})`;
+      const angleOrDirection = direction || `${angle || 90}deg`;
+      backgroundImage = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
     } else if (type === 'radial') {
-      backgroundImage = `radial-gradient(circle, ${stopsStr})`;
-    } else if (type === 'conic') {
-      backgroundImage = `conic-gradient(from ${angle}deg, ${stopsStr})`;
+      backgroundImage = `radial-gradient(circle, ${colors.join(', ')})`;
     }
 
     return { backgroundImage };

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { HeaderConfig, HeaderMenuItem } from '@/types/landingPage';
-import { ImageUploaderWithCrop, ArrayEditor, ColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+import { ImageUploaderWithCrop, ArrayEditor, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 
 interface HeaderEditorProps {
@@ -99,44 +99,37 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
         />
       </Card>
 
-      {/* Cores */}
+      {/* Cores e Gradientes */}
       <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold">Cores</h3>
-
-        <ColorPicker
-          label="Cor de Fundo"
-          value={config.backgroundColor}
-          onChange={(backgroundColor) => updateConfig({ backgroundColor })}
-        />
-
-        <ColorPicker
-          label="Cor do Texto"
-          value={config.textColor}
-          onChange={(textColor) => updateConfig({ textColor })}
-        />
-
-        <ColorPicker
-          label="Cor do Hover"
-          value={config.hoverColor}
-          onChange={(hoverColor) => updateConfig({ hoverColor })}
-        />
-      </Card>
-
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <h3 className="text-lg font-semibold mb-2">Cores e Gradientes</h3>
           <p className="text-sm text-muted-foreground">
-            Configure gradientes para o header. Se definido, substitui a cor de fundo sólida.
+            Configure cores sólidas ou gradientes para o header
           </p>
         </div>
 
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={config.backgroundGradient ?? MORIA_GRADIENT_PRESETS.darkElegant}
-          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
-          description="Gradiente aplicado ao fundo do header (opcional)"
-          presetName="dark-elegant"
+        <ColorOrGradientPicker
+          label="Cor de Fundo / Gradiente"
+          value={config.backgroundColor || { type: 'solid', solid: '#ffffff' }}
+          onChange={(backgroundColor) => updateConfig({ backgroundColor })}
+          defaultGradientPreset="darkElegant"
+          description="Cor ou gradiente do fundo do header"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor do Texto / Gradiente"
+          value={config.textColor || { type: 'solid', solid: '#000000' }}
+          onChange={(textColor) => updateConfig({ textColor })}
+          defaultGradientPreset="goldMetallic"
+          description="Cor ou gradiente do texto do menu"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor do Hover / Gradiente"
+          value={config.hoverColor || { type: 'solid', solid: '#ff6600' }}
+          onChange={(hoverColor) => updateConfig({ hoverColor })}
+          defaultGradientPreset="orangeToGold"
+          description="Cor ou gradiente ao passar o mouse sobre os itens do menu"
         />
       </Card>
 
@@ -161,8 +154,7 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
           <div
             className="rounded-lg p-4 flex items-center justify-between"
             style={{
-              backgroundColor: config.backgroundColor,
-              color: config.textColor
+              ...colorOrGradientToCSS(config.backgroundColor)
             }}
           >
             {/* Logo */}
@@ -186,9 +178,7 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
                 <span
                   key={item.id}
                   className="text-sm font-medium cursor-pointer transition-colors"
-                  style={{ color: config.textColor }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.hoverColor}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor}
+                  style={colorOrGradientToCSS(config.textColor)}
                 >
                   {item.label}
                 </span>
