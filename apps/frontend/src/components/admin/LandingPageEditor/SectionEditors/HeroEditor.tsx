@@ -5,9 +5,13 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { HeroConfig, HeroFeature, HeroButton } from '@/types/landingPage';
 import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector } from '../StyleControls';
+import { Eye } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
 interface HeroEditorProps {
   config: HeroConfig;
@@ -176,6 +180,90 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
           unit="%"
           description="Escurecimento sobre a imagem de fundo (0 = transparente, 100 = preto total)"
         />
+      </Card>
+
+      {/* Preview */}
+      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-moria-orange" />
+              <CardTitle>Preview do Hero</CardTitle>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
+              Atualização em tempo real
+            </Badge>
+          </div>
+          <CardDescription>
+            Veja como a seção hero aparecerá na landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative min-h-[400px] flex items-center rounded-lg overflow-hidden">
+            {/* Background Image */}
+            {config.backgroundImage.url && (
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${config.backgroundImage.url})` }}
+              />
+            )}
+            {!config.backgroundImage.url && (
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
+            )}
+
+            {/* Overlay */}
+            <div
+              className="absolute inset-0 bg-black"
+              style={{ opacity: config.overlayOpacity / 100 }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10 p-8 w-full">
+              <div className="max-w-2xl">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                  <span className="gold-metallic">{config.title || 'MORIA'}</span>
+                  <br />
+                  <span className="text-white">{config.subtitle || 'Peças & Serviços'}</span>
+                </h1>
+
+                <p className="text-lg text-gray-300 mb-6">
+                  {config.description || 'Descrição do seu negócio...'}
+                </p>
+
+                {/* Features */}
+                {config.features.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    {config.features.map((feature) => {
+                      const IconComponent = (Icons as any)[feature.icon] || Icons.Circle;
+                      return (
+                        <div key={feature.id} className="flex items-center space-x-2 text-white">
+                          <IconComponent className="h-4 w-4 text-moria-orange" />
+                          <span className="text-xs">{feature.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Buttons */}
+                {config.buttons.filter(btn => btn.enabled).length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {config.buttons.filter(btn => btn.enabled).map((button) => (
+                      <Button
+                        key={button.id}
+                        variant={button.variant as any}
+                        size="sm"
+                      >
+                        {button.text}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

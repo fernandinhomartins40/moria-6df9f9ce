@@ -32,6 +32,7 @@ import {
   PromotionsEditor,
   ContactEditor,
 } from '@/components/admin/LandingPageEditor/SectionEditors';
+import { AboutEditor } from '@/components/admin/LandingPageEditor/SectionEditors/AboutEditor';
 import { toast } from 'sonner';
 import '@/styles/lojista.css';
 
@@ -229,14 +230,15 @@ export default function LandingPageEditor() {
           <div>
             <Card className="p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-8 w-full mb-8">
+                <TabsList className="grid grid-cols-9 w-full mb-8">
                   <TabsTrigger value="hero">Hero</TabsTrigger>
                   <TabsTrigger value="header">Header</TabsTrigger>
                   <TabsTrigger value="marquee">Marquee</TabsTrigger>
                   <TabsTrigger value="about">Serviços</TabsTrigger>
                   <TabsTrigger value="products">Peças</TabsTrigger>
                   <TabsTrigger value="services">Promoções</TabsTrigger>
-                  <TabsTrigger value="contact">Contato</TabsTrigger>
+                  <TabsTrigger value="contactPage">Contato</TabsTrigger>
+                  <TabsTrigger value="aboutPage">Sobre</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger>
                 </TabsList>
 
@@ -282,10 +284,17 @@ export default function LandingPageEditor() {
                   />
                 </TabsContent>
 
-                <TabsContent value="contact" className="space-y-4">
+                <TabsContent value="contactPage" className="space-y-4">
                   <ContactEditor
-                    config={config.contact}
-                    onChange={(contact) => updateConfig('contact', contact)}
+                    config={config.contactPage}
+                    onChange={(contactPage) => updateConfig('contactPage', contactPage)}
+                  />
+                </TabsContent>
+
+                <TabsContent value="aboutPage" className="space-y-4">
+                  <AboutEditor
+                    config={config.aboutPage}
+                    onChange={(aboutPage) => updateConfig('aboutPage', aboutPage)}
                   />
                 </TabsContent>
 

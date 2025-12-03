@@ -4,10 +4,12 @@
 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { MarqueeConfig, MarqueeItem } from '@/types/landingPage';
 import { ArrayEditor, ColorPicker, GradientColorPicker, SliderControl } from '../StyleControls';
+import { Eye } from 'lucide-react';
 
 interface MarqueeEditorProps {
   config: MarqueeConfig;
@@ -116,24 +118,52 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
       </Card>
 
       {/* Preview */}
-      <Card className="p-6 bg-gray-50">
-        <h3 className="text-lg font-semibold mb-4">Preview</h3>
-        <div
-          className="overflow-hidden rounded-lg border border-gray-300"
-          style={{
-            background: config.backgroundColor,
-            color: config.textColor,
-          }}
-        >
-          <div className="py-3 px-4">
-            <div className="whitespace-nowrap text-sm font-bold animate-pulse">
-              {config.items.map(item => `${item.icon} ${item.text}`).join(' • ')}
+      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-moria-orange" />
+              <CardTitle>Preview do Marquee</CardTitle>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
+              Atualização em tempo real
+            </Badge>
+          </div>
+          <CardDescription>
+            Veja como o banner de mensagens aparecerá na landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="overflow-hidden rounded-lg"
+            style={{
+              background: config.backgroundColor,
+              color: config.textColor,
+            }}
+          >
+            <div className="py-3 px-4 flex items-center">
+              <div className="whitespace-nowrap text-sm font-bold animate-marquee-slow flex items-center gap-8">
+                {config.items.map((item, i) => (
+                  <span key={i} className="flex items-center gap-2">
+                    <span className="text-lg">{item.icon}</span>
+                    <span>{item.text}</span>
+                  </span>
+                ))}
+                {/* Duplicate for seamless loop */}
+                {config.items.map((item, i) => (
+                  <span key={`dup-${i}`} className="flex items-center gap-2">
+                    <span className="text-lg">{item.icon}</span>
+                    <span>{item.text}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          A animação real será mais suave na página ao vivo
-        </p>
+          <p className="text-xs text-gray-500 mt-2">
+            💡 Velocidade configurada: {config.speed}s por ciclo. A animação real terá movimento contínuo e suave.
+          </p>
+        </CardContent>
       </Card>
 
       {/* Informação */}

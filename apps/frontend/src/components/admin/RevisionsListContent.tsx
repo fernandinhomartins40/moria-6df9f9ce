@@ -129,23 +129,23 @@ export function RevisionsListContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
             Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+        <CardContent className="px-3 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="sm:col-span-2 md:col-span-1">
               <Input
-                placeholder="Buscar por cliente, veículo, placa ou mecânico..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full h-9 text-sm"
               />
             </div>
             <div>
@@ -155,7 +155,7 @@ export function RevisionsListContent() {
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moria-orange"
+                className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-moria-orange"
               >
                 <option value="">Todos os status</option>
                 <option value="DRAFT">Rascunho</option>
@@ -168,21 +168,21 @@ export function RevisionsListContent() {
         </CardContent>
       </Card>
 
-      {/* Revisions Table */}
+      {/* Revisions List */}
       <Card>
-        <CardHeader>
-          <CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">
             Revisões ({filteredRevisions.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {filteredRevisions.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600">Nenhuma revisão encontrada</p>
+            <div className="text-center py-8 sm:py-12">
+              <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-600">Nenhuma revisão encontrada</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {filteredRevisions.map((revision) => (
                 <RevisionCard
                   key={revision.id}
@@ -202,23 +202,25 @@ export function RevisionsListContent() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="flex items-center justify-center gap-2 mt-4 sm:mt-6 pb-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
+                className="h-8 px-3 text-xs sm:text-sm"
               >
                 Anterior
               </Button>
-              <span className="text-sm text-gray-600">
-                Página {page} de {totalPages}
+              <span className="text-xs sm:text-sm text-gray-600 px-2">
+                {page} / {totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
+                className="h-8 px-3 text-xs sm:text-sm"
               >
                 Próxima
               </Button>

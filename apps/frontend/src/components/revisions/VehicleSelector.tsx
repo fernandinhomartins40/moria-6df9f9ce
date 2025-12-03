@@ -113,14 +113,14 @@ export function VehicleSelector({
   if (!customerId) {
     return (
       <Card className="opacity-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5" />
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Car className="h-4 w-4 sm:h-5 sm:w-5" />
             Veículo
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">
+        <CardContent className="px-3 sm:px-6">
+          <p className="text-xs sm:text-sm text-gray-500">
             Selecione um cliente primeiro
           </p>
         </CardContent>
@@ -130,27 +130,27 @@ export function VehicleSelector({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Car className="h-5 w-5" />
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+          <Car className="h-4 w-4 sm:h-5 sm:w-5" />
           Veículo
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="px-3 sm:px-6 space-y-3 sm:space-y-4">
         {selectedVehicle ? (
-          <div className="bg-moria-orange/10 border border-moria-orange/30 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="font-semibold text-lg">
+          <div className="bg-moria-orange/10 border border-moria-orange/30 rounded-lg p-2.5 sm:p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <p className="font-semibold text-sm sm:text-base truncate">
                   {selectedVehicle.brand} {selectedVehicle.model}
                 </p>
-                <p className="text-sm text-gray-600">Ano: {selectedVehicle.year}</p>
-                <p className="text-sm text-gray-600">Placa: {selectedVehicle.plate}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Ano: {selectedVehicle.year}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Placa: {selectedVehicle.plate}</p>
                 {selectedVehicle.color && (
-                  <p className="text-sm text-gray-600">Cor: {selectedVehicle.color}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Cor: {selectedVehicle.color}</p>
                 )}
                 {selectedVehicle.mileage !== undefined && selectedVehicle.mileage > 0 && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     Km: {selectedVehicle.mileage.toLocaleString()}
                   </p>
                 )}
@@ -159,6 +159,7 @@ export function VehicleSelector({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDialogOpen(true)}
+                className="h-7 sm:h-8 text-xs flex-shrink-0"
               >
                 Trocar
               </Button>
@@ -167,9 +168,9 @@ export function VehicleSelector({
         ) : (
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="w-full bg-moria-orange hover:bg-moria-orange/90"
+            className="w-full h-9 text-sm bg-moria-orange hover:bg-moria-orange/90"
           >
-            <Car className="h-4 w-4 mr-2" />
+            <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
             Selecionar Veículo
           </Button>
         )}

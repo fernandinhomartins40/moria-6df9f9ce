@@ -5,8 +5,9 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   FooterConfig,
   FooterService,
@@ -15,6 +16,8 @@ import {
   FooterBottomLink,
 } from '@/types/landingPage';
 import { ImageUploaderWithCrop, ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
+import { Eye, MapPin, Phone, Mail } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
 interface FooterEditorProps {
   config: FooterConfig;
@@ -392,6 +395,89 @@ export const FooterEditor = ({ config, onChange }: FooterEditorProps) => {
           )}
           maxItems={5}
         />
+      </Card>
+
+      {/* Preview */}
+      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-moria-orange" />
+              <CardTitle>Preview do Footer</CardTitle>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
+              Atualização em tempo real
+            </Badge>
+          </div>
+          <CardDescription>
+            Veja como o rodapé aparecerá na landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="p-8 rounded-lg text-white"
+            style={{ background: config.backgroundColor }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+              {/* Column 1: Logo & Description */}
+              <div>
+                {config.logo.url ? (
+                  <img src={config.logo.url} alt="Logo" className="h-12 mb-4 object-contain" />
+                ) : (
+                  <div className="h-12 mb-4 flex items-center">
+                    <span className="text-white font-bold text-xl">Logo</span>
+                  </div>
+                )}
+                <p className="text-sm text-gray-300">
+                  {config.description || 'Descrição da empresa...'}
+                </p>
+              </div>
+
+              {/* Column 2: Contact Info */}
+              <div>
+                <h3 className="font-bold text-lg mb-4">Contato</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{config.contactInfo.address.street || 'Endereço'}, {config.contactInfo.address.city || 'Cidade'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    <span>{config.contactInfo.phone || '(00) 0000-0000'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>{config.contactInfo.email || 'email@exemplo.com'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 3: Social Links */}
+              <div>
+                <h3 className="font-bold text-lg mb-4">Redes Sociais</h3>
+                <div className="flex gap-3">
+                  {config.socialLinks.map((social) => {
+                    const IconComponent = (Icons as any)[social.icon] || Icons.Globe;
+                    return (
+                      <div
+                        key={social.id}
+                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      >
+                        <IconComponent className="h-5 w-5" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="border-t border-white/20 pt-6 text-center text-sm text-gray-300">
+              <p>{config.copyright || `© ${new Date().getFullYear()} Todos os direitos reservados`}</p>
+            </div>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

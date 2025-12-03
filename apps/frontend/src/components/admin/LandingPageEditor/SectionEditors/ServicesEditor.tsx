@@ -5,10 +5,13 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { ServicesSectionConfig, TrustIndicator } from '@/types/landingPage';
 import { ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
+import { Eye } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
 interface ServicesEditorProps {
   config: ServicesSectionConfig;
@@ -160,6 +163,69 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
             </p>
           </div>
         </div>
+      </Card>
+
+      {/* Preview */}
+      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-moria-orange" />
+              <CardTitle>Preview dos Serviços</CardTitle>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
+              Atualização em tempo real
+            </Badge>
+          </div>
+          <CardDescription>
+            Veja como a seção de serviços aparecerá na landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-white p-8 rounded-lg">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-3">
+                {config.title.split(' ').map((word, i, arr) =>
+                  i === arr.length - 1 ?
+                    <span key={i} className="gold-metallic">{word}</span> :
+                    <span key={i}>{word} </span>
+                )}
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                {config.subtitle || 'Oferecemos serviços automotivos completos'}
+              </p>
+            </div>
+
+            {/* Trust Indicators */}
+            {config.trustIndicators.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {config.trustIndicators.map((indicator) => {
+                  const IconComponent = (Icons as any)[indicator.icon] || Icons.Shield;
+                  return (
+                    <div key={indicator.id} className="flex flex-col items-center text-center">
+                      <div
+                        className="p-4 rounded-full mb-3 flex items-center justify-center"
+                        style={{ background: indicator.iconBackground }}
+                      >
+                        <IconComponent className="h-8 w-8 text-white" />
+                      </div>
+                      <h4 className="font-bold text-gray-900 mb-1">{indicator.title}</h4>
+                      <p className="text-sm text-gray-600">{indicator.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {config.trustIndicators.length === 0 && (
+              <div className="text-center py-8 text-gray-400">
+                <p>Adicione indicadores de confiança acima para visualizá-los aqui</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

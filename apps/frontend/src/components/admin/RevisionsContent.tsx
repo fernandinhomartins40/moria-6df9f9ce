@@ -282,62 +282,66 @@ export function RevisionsContent() {
   const canStartRevision = selectedCustomer && selectedVehicle;
 
   return (
-    <div className="space-y-6">
-      {/* Header with Actions */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 sm:space-y-4">
+      {/* Compact Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Nova Revisão</h2>
-          <p className="text-gray-600">Preencha o checklist de revisão veicular</p>
+          <h2 className="text-lg sm:text-xl font-bold">Nova Revisão</h2>
+          <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Preencha o checklist de revisão veicular</p>
         </div>
         <ChecklistManager />
       </div>
 
-      {/* Progress Alert */}
+      {/* Compact Progress Bar */}
       {canStartRevision && progress.total > 0 && (
-        <Alert>
-          <FileText className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>
-                Progresso da revisão: {progress.checked} de {progress.total} itens verificados
-                ({progress.percentage}%)
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">
+                {progress.checked}/{progress.total} ({progress.percentage}%)
               </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSave('draft')}
-                  disabled={isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar Rascunho
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSave('in_progress')}
-                  disabled={isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Salvar em Andamento
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleSave('completed')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={progress.percentage < 100 || isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                  Finalizar Revisão
-                </Button>
-              </div>
             </div>
-          </AlertDescription>
-        </Alert>
+            <div className="flex gap-1.5 sm:gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSave('draft')}
+                disabled={isSaving}
+                className="flex-1 sm:flex-none h-8 text-xs px-2 sm:px-3"
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 sm:mr-1 animate-spin" /> : null}
+                <span className="hidden sm:inline">Rascunho</span>
+                <span className="sm:hidden">Rasc.</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSave('in_progress')}
+                disabled={isSaving}
+                className="flex-1 sm:flex-none h-8 text-xs px-2 sm:px-3"
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 sm:mr-1 animate-spin" /> : null}
+                <span className="hidden sm:inline">Em Andamento</span>
+                <span className="sm:hidden">Andam.</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleSave('completed')}
+                className="flex-1 sm:flex-none h-8 text-xs px-2 sm:px-3 bg-green-600 hover:bg-green-700 text-white"
+                disabled={progress.percentage < 100 || isSaving}
+              >
+                {isSaving ? <Loader2 className="h-3 w-3 sm:mr-1 animate-spin" /> : <Save className="h-3 w-3 sm:mr-1" />}
+                <span className="hidden sm:inline">Finalizar</span>
+                <span className="sm:hidden">Fim</span>
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Customer and Vehicle Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Compact Customer and Vehicle Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         <CustomerSelector
           selectedCustomer={selectedCustomer}
           onSelectCustomer={handleSelectCustomer}
@@ -349,42 +353,47 @@ export function RevisionsContent() {
         />
       </div>
 
-      {/* Mileage and Notes */}
+      {/* Compact Info Section */}
       {canStartRevision && (
         <Card>
-          <CardHeader>
-            <CardTitle>Informações da Revisão</CardTitle>
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-sm sm:text-base">Informações da Revisão</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="mileage">Quilometragem Atual</Label>
-              <Input
-                id="mileage"
-                type="number"
-                value={mileage}
-                onChange={(e) => setMileage(parseInt(e.target.value) || 0)}
-                placeholder="0"
-                min={0}
-              />
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="mileage" className="text-xs sm:text-sm">Quilometragem</Label>
+                <Input
+                  id="mileage"
+                  type="number"
+                  value={mileage}
+                  onChange={(e) => setMileage(parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                  min={0}
+                  className="h-8 sm:h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="generalNotes" className="text-xs sm:text-sm">Observações Gerais</Label>
+                <Textarea
+                  id="generalNotes"
+                  value={generalNotes}
+                  onChange={(e) => setGeneralNotes(e.target.value)}
+                  placeholder="Observações..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="generalNotes">Observações Gerais</Label>
-              <Textarea
-                id="generalNotes"
-                value={generalNotes}
-                onChange={(e) => setGeneralNotes(e.target.value)}
-                placeholder="Adicione observações gerais sobre a revisão..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recommendations">Recomendações</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="recommendations" className="text-xs sm:text-sm">Recomendações</Label>
               <Textarea
                 id="recommendations"
                 value={recommendations}
                 onChange={(e) => setRecommendations(e.target.value)}
-                placeholder="Adicione recomendações para o cliente..."
-                rows={3}
+                placeholder="Recomendações para o cliente..."
+                rows={2}
+                className="text-sm resize-none"
               />
             </div>
           </CardContent>
@@ -406,31 +415,35 @@ export function RevisionsContent() {
         </Alert>
       )}
 
-      {/* Bottom Actions */}
+      {/* Compact Bottom Actions */}
       {canStartRevision && progress.total > 0 && (
-        <div className="flex justify-end gap-3 sticky bottom-6 bg-white p-4 rounded-lg shadow-lg border">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sticky bottom-2 sm:bottom-4 bg-white px-3 py-2 sm:p-3 rounded-lg shadow-lg border">
           <Button
             variant="outline"
             onClick={() => handleSave('draft')}
             disabled={isSaving}
+            className="h-9 text-sm"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Salvar Rascunho
+            {isSaving ? <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : null}
+            <span className="hidden sm:inline">Salvar Rascunho</span>
+            <span className="sm:hidden">Rascunho</span>
           </Button>
           <Button
             variant="outline"
             onClick={() => handleSave('in_progress')}
             disabled={isSaving}
+            className="h-9 text-sm"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Salvar em Andamento
+            {isSaving ? <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : null}
+            <span className="hidden sm:inline">Salvar em Andamento</span>
+            <span className="sm:hidden">Em Andamento</span>
           </Button>
           <Button
             onClick={() => handleSave('completed')}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="h-9 text-sm bg-green-600 hover:bg-green-700 text-white"
             disabled={progress.percentage < 100 || isSaving}
           >
-            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {isSaving ? <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />}
             Finalizar Revisão
           </Button>
         </div>

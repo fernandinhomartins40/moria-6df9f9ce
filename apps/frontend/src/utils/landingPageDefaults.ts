@@ -152,6 +152,137 @@ export const getDefaultConfig = (): LandingPageConfig => ({
   },
 
   // ============================================================================
+  // CONTACT PAGE
+  // ============================================================================
+  contactPage: {
+    enabled: true,
+    heroBadge: 'Fale Conosco',
+    heroTitle: 'Entre em Contato',
+    heroSubtitle: 'Estamos prontos para ajudar com suas necessidades automotivas. Entre em contato e receba atendimento personalizado.',
+    contactInfoCards: [
+      {
+        id: '1',
+        icon: 'MapPin',
+        title: 'Endereço',
+        content: ['Rua das Oficinas, 123', 'Centro - São Paulo/SP', 'CEP: 01234-567'],
+        color: 'text-blue-600',
+      },
+      {
+        id: '2',
+        icon: 'Phone',
+        title: 'Telefone',
+        content: ['(11) 99999-9999', 'WhatsApp disponível'],
+        color: 'text-green-600',
+      },
+      {
+        id: '3',
+        icon: 'Mail',
+        title: 'E-mail',
+        content: ['contato@moriapecas.com.br', 'Resposta em até 24h'],
+        color: 'text-red-600',
+      },
+      {
+        id: '4',
+        icon: 'Clock',
+        title: 'Horário',
+        content: ['Seg a Sex: 8h às 18h', 'Sábado: 8h às 12h', 'Domingo: Fechado'],
+        color: 'text-purple-600',
+      },
+    ],
+    formTitle: 'Envie sua Mensagem',
+    formSubtitle: 'Preencha o formulário abaixo e entraremos em contato o mais breve possível.',
+    serviceTypes: [
+      { id: '1', name: 'Manutenção Preventiva' },
+      { id: '2', name: 'Diagnóstico de Problemas' },
+      { id: '3', name: 'Troca de Peças' },
+      { id: '4', name: 'Orçamento Geral' },
+      { id: '5', name: 'Urgência/Emergência' },
+      { id: '6', name: 'Outros' },
+    ],
+    mapTitle: 'Nossa Localização',
+    mapSubtitle: 'Visite nossa oficina para um atendimento presencial personalizado.',
+    quickInfoEnabled: true,
+    ctaTitle: 'Precisa de Ajuda Imediata?',
+    ctaSubtitle: 'Entre em contato via WhatsApp para atendimento prioritário',
+  },
+
+  // ============================================================================
+  // ABOUT PAGE
+  // ============================================================================
+  aboutPage: {
+    enabled: true,
+    heroBadge: 'Sobre Nós',
+    heroTitle: 'Mais de 15 Anos',
+    heroHighlight: 'Cuidando do Seu Veículo',
+    heroSubtitle: 'Especialistas em peças automotivas e serviços de qualidade. Nossa missão é garantir que seu veículo esteja sempre em perfeitas condições.',
+    stats: [
+      { id: '1', number: '15+', label: 'Anos de Experiência' },
+      { id: '2', number: '10k+', label: 'Peças em Estoque' },
+      { id: '3', number: '5k+', label: 'Clientes Satisfeitos' },
+      { id: '4', number: '50k+', label: 'Serviços Realizados' },
+    ],
+    historyTitle: 'Nossa História',
+    historySubtitle: 'Uma jornada de dedicação, crescimento e compromisso com a excelência no setor automotivo.',
+    milestones: [
+      { id: '1', year: '2009', title: 'Fundação', description: 'Início da Moria Peças e Serviços' },
+      { id: '2', year: '2012', title: 'Expansão', description: 'Ampliação do estoque e serviços' },
+      { id: '3', year: '2015', title: 'Modernização', description: 'Investimento em equipamentos de diagnóstico' },
+      { id: '4', year: '2018', title: 'Certificação', description: 'Certificação ISO 9001' },
+      { id: '5', year: '2021', title: 'Digital', description: 'Lançamento da plataforma online' },
+      { id: '6', year: '2024', title: 'Presente', description: 'Mais de 15 anos servindo com excelência' },
+    ],
+    valuesTitle: 'Nossos Valores',
+    valuesSubtitle: 'Os princípios que guiam nossa empresa e nosso compromisso com cada cliente.',
+    values: [
+      {
+        id: '1',
+        icon: 'Shield',
+        title: 'Qualidade',
+        description: 'Compromisso com peças originais e serviços de alta qualidade',
+        color: 'text-blue-600',
+      },
+      {
+        id: '2',
+        icon: 'Heart',
+        title: 'Confiança',
+        description: 'Relacionamento baseado na transparência e honestidade',
+        color: 'text-red-600',
+      },
+      {
+        id: '3',
+        icon: 'Target',
+        title: 'Excelência',
+        description: 'Busca constante pela melhoria contínua dos nossos serviços',
+        color: 'text-green-600',
+      },
+      {
+        id: '4',
+        icon: 'Users',
+        title: 'Relacionamento',
+        description: 'Foco no atendimento personalizado e duradouro',
+        color: 'text-purple-600',
+      },
+    ],
+    servicesTitle: 'Nossos Serviços',
+    servicesSubtitle: 'Oferecemos uma ampla gama de serviços especializados para manter seu veículo em perfeitas condições.',
+    services: [
+      { id: '1', name: 'Manutenção Preventiva e Corretiva' },
+      { id: '2', name: 'Diagnóstico Eletrônico Completo' },
+      { id: '3', name: 'Troca de Óleo e Filtros' },
+      { id: '4', name: 'Sistema de Freios e ABS' },
+      { id: '5', name: 'Suspensão e Amortecedores' },
+      { id: '6', name: 'Sistema Elétrico e Eletrônico' },
+      { id: '7', name: 'Ar Condicionado Automotivo' },
+      { id: '8', name: 'Injeção Eletrônica' },
+      { id: '9', name: 'Sistema de Ignição' },
+      { id: '10', name: 'Alinhamento e Balanceamento' },
+    ],
+    commitmentTitle: 'Nosso Compromisso',
+    commitmentText: 'Garantir que cada cliente tenha a melhor experiência possível, com serviços de qualidade superior, atendimento personalizado e preços justos. Sua satisfação é nossa maior conquista.',
+    commitmentYears: '15+ Anos de Excelência',
+  },
+
+  // ============================================================================
   // CONTACT (placeholder - não usado)
   // ============================================================================
   contact: {},

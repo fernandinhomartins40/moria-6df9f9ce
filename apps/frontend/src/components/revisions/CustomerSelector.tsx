@@ -93,28 +93,29 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+          <User className="h-4 w-4 sm:h-5 sm:w-5" />
           Cliente
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="px-3 sm:px-6 space-y-3 sm:space-y-4">
         {selectedCustomer ? (
-          <div className="bg-moria-orange/10 border border-moria-orange/30 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="font-semibold text-lg">{selectedCustomer.name}</p>
-                <p className="text-sm text-gray-600">{selectedCustomer.email}</p>
-                <p className="text-sm text-gray-600">{selectedCustomer.phone}</p>
+          <div className="bg-moria-orange/10 border border-moria-orange/30 rounded-lg p-2.5 sm:p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <p className="font-semibold text-sm sm:text-base truncate">{selectedCustomer.name}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">{selectedCustomer.email}</p>
+                <p className="text-xs sm:text-sm text-gray-600">{selectedCustomer.phone}</p>
                 {selectedCustomer.cpf && (
-                  <p className="text-sm text-gray-600">CPF: {selectedCustomer.cpf}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">CPF: {selectedCustomer.cpf}</p>
                 )}
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDialogOpen(true)}
+                className="h-7 sm:h-8 text-xs flex-shrink-0"
               >
                 Trocar
               </Button>
@@ -123,9 +124,9 @@ export function CustomerSelector({ selectedCustomer, onSelectCustomer }: Custome
         ) : (
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="w-full bg-moria-orange hover:bg-moria-orange/90"
+            className="w-full h-9 text-sm bg-moria-orange hover:bg-moria-orange/90"
           >
-            <User className="h-4 w-4 mr-2" />
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
             Selecionar Cliente
           </Button>
         )}

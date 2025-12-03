@@ -4,10 +4,12 @@
 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { HeaderConfig, HeaderMenuItem } from '@/types/landingPage';
 import { ImageUploaderWithCrop, ArrayEditor, ColorPicker } from '../StyleControls';
+import { Eye } from 'lucide-react';
 
 interface HeaderEditorProps {
   config: HeaderConfig;
@@ -118,6 +120,67 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
           value={config.hoverColor}
           onChange={(hoverColor) => updateConfig({ hoverColor })}
         />
+      </Card>
+
+      {/* Preview */}
+      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-moria-orange" />
+              <CardTitle>Preview do Header</CardTitle>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
+              Atualização em tempo real
+            </Badge>
+          </div>
+          <CardDescription>
+            Veja como o header aparecerá na landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="rounded-lg p-4 flex items-center justify-between"
+            style={{
+              backgroundColor: config.backgroundColor,
+              color: config.textColor
+            }}
+          >
+            {/* Logo */}
+            <div className="flex items-center">
+              {config.logo.url ? (
+                <img
+                  src={config.logo.url}
+                  alt="Logo"
+                  className="h-12 object-contain"
+                />
+              ) : (
+                <div className="px-4 py-2 bg-gray-200 rounded text-gray-500 text-sm">
+                  Logo
+                </div>
+              )}
+            </div>
+
+            {/* Menu Items */}
+            <nav className="flex items-center gap-6">
+              {config.menuItems.slice(0, 5).map((item) => (
+                <span
+                  key={item.id}
+                  className="text-sm font-medium cursor-pointer transition-colors"
+                  style={{ color: config.textColor }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = config.hoverColor}
+                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor}
+                >
+                  {item.label}
+                </span>
+              ))}
+              {config.menuItems.length > 5 && (
+                <span className="text-sm text-gray-400">...</span>
+              )}
+            </nav>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

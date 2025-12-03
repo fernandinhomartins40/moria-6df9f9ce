@@ -70,8 +70,160 @@ export function RevisionCard({
 
   return (
     <Card className="hover:border-moria-orange transition-colors">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-4">
+      <CardContent className="p-3 sm:p-4">
+        {/* Mobile Layout */}
+        <div className="block md:hidden space-y-3">
+          {/* Header: Status + Date */}
+          <div className="flex items-center justify-between gap-2">
+            {getStatusBadge(revision.status)}
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Calendar className="h-3 w-3" />
+              <span>{formatDate(revision.date)}</span>
+            </div>
+          </div>
+
+          {/* Customer Info */}
+          <div className="flex items-start gap-2">
+            <User className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium truncate">
+                {revision.customer?.name || 'N/A'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {revision.customer?.phone || revision.customer?.email || ''}
+              </p>
+            </div>
+          </div>
+
+          {/* Vehicle Info */}
+          <div className="flex items-start gap-2">
+            <Car className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium truncate">
+                {revision.vehicle?.brand} {revision.vehicle?.model}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                Placa: {revision.vehicle?.plate || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* Mechanic Info */}
+          {showMechanicInfo && (
+            <div className="flex items-start gap-2">
+              <UserCog className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                {revision.mechanicName ? (
+                  <>
+                    <p className="text-sm font-medium truncate">
+                      {revision.mechanicName}
+                    </p>
+                    <p className="text-xs text-gray-500">Mecânico</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500">Não atribuído</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 pt-2 border-t flex-wrap">
+            {/* View Details */}
+            {onViewDetails && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onViewDetails(revision)}
+                className="flex-1 min-w-[80px] h-8 text-xs"
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Ver
+              </Button>
+            )}
+
+            {/* Assign Mechanic */}
+            {showAssignMechanic && onAssignMechanic && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAssignMechanic(revision)}
+                className="flex-1 min-w-[80px] h-8 text-xs"
+              >
+                <UserCog className="h-3 w-3 mr-1" />
+                {revision.assignedMechanicId ? 'Trocar' : 'Atribuir'}
+              </Button>
+            )}
+
+            {/* Edit/Continue (DRAFT or IN_PROGRESS) */}
+            {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && onEditRevision && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEditRevision(revision)}
+                className="flex-1 min-w-[80px] h-8 text-xs text-blue-600 hover:text-blue-700 hover:border-blue-600"
+              >
+                <Edit className="h-3 w-3 mr-1" />
+                {revision.status === 'DRAFT' ? 'Editar' : 'Continuar'}
+              </Button>
+            )}
+
+            {/* Start (only DRAFT) */}
+            {revision.status === 'DRAFT' && onChangeStatus && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChangeStatus(revision.id, 'IN_PROGRESS')}
+                className="flex-1 min-w-[80px] h-8 text-xs text-blue-600 hover:text-blue-700 hover:border-blue-600"
+              >
+                <Play className="h-3 w-3 mr-1" />
+                Iniciar
+              </Button>
+            )}
+
+            {/* Complete (only IN_PROGRESS) */}
+            {revision.status === 'IN_PROGRESS' && onChangeStatus && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChangeStatus(revision.id, 'COMPLETED')}
+                className="flex-1 min-w-[80px] h-8 text-xs text-green-600 hover:text-green-700 hover:border-green-600"
+              >
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Concluir
+              </Button>
+            )}
+
+            {/* Cancel (DRAFT or IN_PROGRESS) */}
+            {(revision.status === 'DRAFT' || revision.status === 'IN_PROGRESS') && onChangeStatus && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChangeStatus(revision.id, 'CANCELLED')}
+                className="flex-1 min-w-[80px] h-8 text-xs text-orange-600 hover:text-orange-700 hover:border-orange-600"
+              >
+                <XCircle className="h-3 w-3 mr-1" />
+                Cancelar
+              </Button>
+            )}
+
+            {/* Delete */}
+            {showDelete && onDeleteRevision && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDeleteRevision(revision.id)}
+                className="flex-1 min-w-[80px] h-8 text-xs text-red-600 hover:text-red-700 hover:border-red-600"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Excluir
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center justify-between gap-4">
           {/* Main Info */}
           <div className={`flex-1 grid grid-cols-1 ${showMechanicInfo ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
             {/* Customer */}

@@ -129,6 +129,102 @@ export interface PromotionsSectionConfig {
 }
 
 // ============================================================================
+// 7. CONTACT PAGE CONFIG
+// ============================================================================
+
+export interface ContactInfoCard {
+  id: string;
+  icon: string; // nome do ícone Lucide (MapPin, Phone, Mail, Clock)
+  title: string;
+  content: string[]; // Array de linhas de texto
+  color: string; // Ex: "text-blue-600"
+}
+
+export interface ContactServiceType {
+  id: string;
+  name: string;
+}
+
+export interface ContactConfig {
+  enabled: boolean;
+  // Hero Section
+  heroTitle: string; // "Entre em Contato"
+  heroSubtitle: string;
+  heroBadge: string; // "Fale Conosco"
+  // Contact Info Cards
+  contactInfoCards: ContactInfoCard[];
+  // Form Section
+  formTitle: string; // "Envie sua Mensagem"
+  formSubtitle: string;
+  serviceTypes: ContactServiceType[];
+  // Map Section
+  mapTitle: string; // "Nossa Localização"
+  mapSubtitle: string;
+  // Quick Info Cards (below map)
+  quickInfoEnabled: boolean;
+  // CTA Section
+  ctaTitle: string;
+  ctaSubtitle: string;
+}
+
+// ============================================================================
+// 8. ABOUT PAGE CONFIG
+// ============================================================================
+
+export interface AboutMilestone {
+  id: string;
+  year: string;
+  title: string;
+  description: string;
+}
+
+export interface AboutValue {
+  id: string;
+  icon: string; // nome do ícone Lucide
+  title: string;
+  description: string;
+  color: string; // Ex: "text-blue-600"
+}
+
+export interface AboutStat {
+  id: string;
+  number: string; // "15+"
+  label: string; // "Anos de Experiência"
+}
+
+export interface AboutService {
+  id: string;
+  name: string;
+}
+
+export interface AboutConfig {
+  enabled: boolean;
+  // Hero Section
+  heroTitle: string; // "Mais de 15 Anos"
+  heroHighlight: string; // "Cuidando do Seu Veículo" (parte em dourado)
+  heroSubtitle: string;
+  heroBadge: string; // "Sobre Nós"
+  // Stats
+  stats: AboutStat[];
+  // História
+  historyTitle: string; // "Nossa História"
+  historySubtitle: string;
+  milestones: AboutMilestone[];
+  // Valores
+  valuesTitle: string; // "Nossos Valores"
+  valuesSubtitle: string;
+  values: AboutValue[];
+  // Serviços
+  servicesTitle: string; // "Nossos Serviços"
+  servicesSubtitle: string;
+  services: AboutService[];
+  // Compromisso
+  commitmentTitle: string; // "Nosso Compromisso"
+  commitmentText: string;
+  commitmentYears: string; // "15+ Anos de Excelência"
+}
+
+// ============================================================================
 // 7. FOOTER CONFIG
 // ============================================================================
 
@@ -200,6 +296,8 @@ export interface LandingPageConfig {
   about: ServicesSectionConfig; // Seção "Nossos Serviços"
   products: ProductsSectionConfig; // Seção "Peças Originais"
   services: PromotionsSectionConfig; // Seção "Promoções" (mantém nome 'services' do schema)
+  contactPage: ContactConfig; // Página de Contato
+  aboutPage: AboutConfig; // Página Sobre Nós
   contact: any; // Placeholder (não usado por enquanto)
   footer: FooterConfig;
 }
@@ -208,7 +306,7 @@ export interface LandingPageConfig {
 // TIPOS PARA O EDITOR
 // ============================================================================
 
-export type SectionKey = 'header' | 'hero' | 'marquee' | 'about' | 'products' | 'services' | 'footer';
+export type SectionKey = 'header' | 'hero' | 'marquee' | 'about' | 'products' | 'services' | 'contactPage' | 'aboutPage' | 'footer';
 
 export interface EditorState {
   config: LandingPageConfig;
