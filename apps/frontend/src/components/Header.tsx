@@ -39,7 +39,7 @@ export function Header() {
     { name: "Promoções", href: "#promocoes", isLink: false },
     { name: "Sobre", href: "/about", isLink: true },
     { name: "Contato", href: "/contact", isLink: true },
-  ] : config.header.menuItems.map(item => ({
+  ] : (config.header.menuItems || []).map(item => ({
     name: item.label,
     href: item.href,
     isLink: item.isLink

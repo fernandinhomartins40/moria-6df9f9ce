@@ -29,11 +29,11 @@ export function Footer() {
     description,
     contactInfo,
     businessHours,
-    services,
-    socialLinks,
-    certifications,
+    services = [],
+    socialLinks = [],
+    certifications = [],
     copyright,
-    bottomLinks
+    bottomLinks = []
   } = config.footer;
 
   const getIcon = (iconName: string) => {

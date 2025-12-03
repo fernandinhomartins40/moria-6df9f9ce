@@ -30,7 +30,7 @@ export function Hero() {
     );
   }
 
-  const { title, subtitle, description, features, buttons, backgroundImage, overlayOpacity } = config.hero;
+  const { title, subtitle, description, features = [], buttons = [], backgroundImage, overlayOpacity } = config.hero;
 
   // Helper para pegar ícone dinamicamente
   const getIcon = (iconName: string) => {
