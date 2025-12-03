@@ -14,8 +14,7 @@ import {
   Gift,
   ClipboardCheck,
   User,
-  UserCog,
-  Palette
+  UserCog
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
@@ -39,7 +38,6 @@ const menuItems = [
   { id: "promotions", label: "Promoções", icon: TrendingUp },
   { id: "reports", label: "Relatórios", icon: BarChart3 },
   { id: "users", label: "Usuários", icon: UserCog, requiresPermission: 'canManageAdmins' },
-  { id: "landing-page", label: "Landing Page", icon: Palette, isExternal: true, href: "/admin/landing-page" },
   { id: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -92,29 +90,6 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             const IconComponent = item.icon;
             const isActive = activeTab === item.id;
 
-            // External link (Landing Page Editor)
-            if ((item as any).isExternal) {
-              return (
-                <Link
-                  key={item.id}
-                  to={(item as any).href}
-                  className={cn(
-                    "flex flex-col md:flex-row items-center justify-center md:justify-start space-y-1 md:space-y-0 md:space-x-3 px-2 md:px-3 py-2 md:py-3 rounded-lg transition-all duration-200 text-center md:text-left min-w-[60px] md:min-w-0",
-                    isActive
-                      ? "bg-moria-orange text-white shadow-lg"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                  )}
-                >
-                  <IconComponent className="h-5 w-5 flex-shrink-0" />
-                  <span className="font-medium text-[10px] md:text-sm">{item.label}</span>
-                  {isActive && (
-                    <div className="hidden md:block ml-auto w-2 h-2 bg-white rounded-full" />
-                  )}
-                </Link>
-              );
-            }
-
-            // Internal tab button
             return (
               <button
                 key={item.id}

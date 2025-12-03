@@ -12,7 +12,8 @@ import {
   Percent,
   UserCog,
   BarChart3,
-  Settings
+  Settings,
+  Palette
 } from "lucide-react";
 import { Sidebar } from "../components/admin/Sidebar";
 import { AdminContent } from "../components/admin/AdminContent";
@@ -37,7 +38,7 @@ export default function StorePanel() {
     { id: "menu", label: "Mais", icon: Menu },
   ];
 
-  // Drawer Items (8 secundárias)
+  // Drawer Items (9 secundárias)
   const drawerItems = [
     { id: "services", label: "Serviços", icon: Wrench },
     { id: "revisions", label: "Revisões", icon: ClipboardCheck },
@@ -46,6 +47,7 @@ export default function StorePanel() {
     { id: "promotions", label: "Promoções", icon: Percent },
     { id: "users", label: "Usuários", icon: UserCog, requiresPermission: "manage_users" },
     { id: "reports", label: "Relatórios", icon: BarChart3 },
+    { id: "landing-page", label: "Landing Page", icon: Palette, isExternal: true, href: "/admin/landing-page" },
     { id: "settings", label: "Configurações", icon: Settings },
   ];
 
