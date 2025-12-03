@@ -47,7 +47,7 @@ export default function StorePanel() {
     { id: "promotions", label: "Promoções", icon: Percent },
     { id: "users", label: "Usuários", icon: UserCog, requiresPermission: "manage_users" },
     { id: "reports", label: "Relatórios", icon: BarChart3 },
-    { id: "landing-page", label: "Landing Page", icon: Palette, isExternal: true, href: "/admin/landing-page" },
+    { id: "landing-page", label: "Landing Page", icon: Palette },
     { id: "settings", label: "Configurações", icon: Settings },
   ];
 
@@ -97,6 +97,7 @@ function getPageTitle(tab: string): string {
     promotions: "Promoções",
     reports: "Relatórios",
     users: "Gestão de Usuários",
+    "landing-page": "Editor da Landing Page",
     settings: "Configurações"
   };
   return titles[tab] || "Dashboard";
@@ -115,6 +116,7 @@ function getPageDescription(tab: string): string {
     promotions: "Configure ofertas especiais e campanhas",
     reports: "Relatórios de vendas e análises detalhadas",
     users: "Gerencie usuários administrativos, mecânicos e permissões do sistema",
+    "landing-page": "Configure todos os elementos visuais da página inicial",
     settings: "Configurações do sistema e preferências"
   };
   return descriptions[tab] || "Painel administrativo da Moria Peças e Serviços";

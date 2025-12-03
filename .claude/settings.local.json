@@ -100,7 +100,8 @@
       "Bash(npm run:*)",
       "Bash(done)",
       "Bash(node fix-modals-spacing.js:*)",
-      "Bash(del fix-modals-spacing.js)"
+      "Bash(del fix-modals-spacing.js)",
+      "Bash(del \"C:\\Projetos Cursor\\moria-6df9f9ce\\apps\\frontend\\src\\pages\\admin\\LandingPageEditor.tsx\")"
     ],
     "deny": [],
     "ask": []

@@ -52,6 +52,7 @@ import { SettingsContent } from "./SettingsContent";
 import { AdminProductsSection } from "./AdminProductsSection";
 import { AdminServicesSection } from "./AdminServicesSection";
 import { AdminCouponsSection } from "./AdminCouponsSection";
+import { LandingPageContent } from "./LandingPageContent";
 import adminService from "@/api/adminService";
 import { reportsService, type CompleteReportData, type SalesByMonth, type TopCategory, type GrowthComparison } from "@/api/reportsService";
 import productService, { Product as ApiProduct } from "@/api/productService";
@@ -2246,6 +2247,8 @@ export function AdminContent({ activeTab, onTabChange }: AdminContentProps) {
         return renderReports();
       case 'users':
         return <AdminUsersSection />;
+      case 'landing-page':
+        return <LandingPageContent />;
       case 'settings':
         return <SettingsContent />;
       default:

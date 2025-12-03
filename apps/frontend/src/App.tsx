@@ -20,7 +20,6 @@ import Contact from "./pages/Contact";
 import CustomerPanel from "./pages/CustomerPanel";
 import MyAccount from "./pages/MyAccount";
 import Promocoes from "./pages/Promocoes";
-import LandingPageEditor from "./pages/admin/LandingPageEditor";
 
 const queryClient = new QueryClient();
 
@@ -53,7 +52,6 @@ const App = () => (
                         <Route path="/store-panel" element={<StorePanel />} />
                         <Route path="/mechanic-panel" element={<MechanicPanelPage />} />
                         <Route path="/admin" element={<Navigate to="/store-panel" replace />} />
-                        <Route path="/admin/landing-page" element={<LandingPageEditor />} />
                         <Route path="/admin/*" element={<Navigate to="/store-panel" replace />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />

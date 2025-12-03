@@ -896,14 +896,16 @@ model LandingPageConfig {
   id       String @id @default(uuid())
 
   // Todas as seções armazenadas como JSON Text
-  header     String @db.Text // JSON: logo, menu, CTAs
-  hero       String @db.Text // JSON: slides, auto-play, layout
-  marquee    String @db.Text // JSON: items, speed, colors
-  about      String @db.Text // JSON: title, description, features
-  products   String @db.Text // JSON: featured products config
-  services   String @db.Text // JSON: services showcase config
-  contact    String @db.Text // JSON: contact methods, form
-  footer     String @db.Text // JSON: sections, social, copyright
+  header      String @db.Text // JSON: logo, menu, CTAs
+  hero        String @db.Text // JSON: slides, auto-play, layout
+  marquee     String @db.Text // JSON: items, speed, colors
+  about       String @db.Text // JSON: title, description, features
+  products    String @db.Text // JSON: featured products config
+  services    String @db.Text // JSON: services showcase config
+  contactPage String @db.Text // JSON: contact page content
+  aboutPage   String @db.Text // JSON: about page content
+  contact     String @db.Text // JSON: contact methods, form
+  footer      String @db.Text // JSON: sections, social, copyright
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -920,14 +922,16 @@ model LandingPageConfigHistory {
   configId String?
 
   // Snapshot completo de todas as seções
-  header   String @db.Text // JSON
-  hero     String @db.Text // JSON
-  marquee  String @db.Text // JSON
-  about    String @db.Text // JSON
-  products String @db.Text // JSON
-  services String @db.Text // JSON
-  contact  String @db.Text // JSON
-  footer   String @db.Text // JSON
+  header      String @db.Text // JSON
+  hero        String @db.Text // JSON
+  marquee     String @db.Text // JSON
+  about       String @db.Text // JSON
+  products    String @db.Text // JSON
+  services    String @db.Text // JSON
+  contactPage String @db.Text // JSON
+  aboutPage   String @db.Text // JSON
+  contact     String @db.Text // JSON
+  footer      String @db.Text // JSON
 
   // Metadata
   changeType      String   @default("manual_save") // 'auto_save', 'manual_save', 'import', 'restore'
