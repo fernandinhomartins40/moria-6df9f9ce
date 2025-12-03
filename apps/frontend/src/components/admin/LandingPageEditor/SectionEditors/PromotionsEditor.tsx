@@ -67,23 +67,6 @@ export const PromotionsEditor = ({ config, onChange }: PromotionsEditorProps) =>
         </div>
       </Card>
 
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure gradientes para a seção de promoções. Se definido, substitui as cores sólidas.
-          </p>
-        </div>
-
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.orangeOverlay}
-          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
-          description="Gradiente aplicado ao fundo da seção"
-          presetName="orange-overlay"
-        />
-      </Card>
 
       {/* Informação */}
       <Card className="p-6 bg-purple-50 border-purple-200">

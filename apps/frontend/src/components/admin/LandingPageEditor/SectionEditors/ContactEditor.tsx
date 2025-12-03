@@ -265,23 +265,6 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         </div>
       </Card>
 
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure gradientes para a página de contato. Se definido, substitui as cores sólidas.
-          </p>
-        </div>
-
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.goldMetallic}
-          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
-          description="Gradiente aplicado ao fundo da seção"
-          presetName="gold-metallic"
-        />
-      </Card>
 
       {/* Preview */}
       <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
