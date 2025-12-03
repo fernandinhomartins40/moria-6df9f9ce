@@ -230,16 +230,16 @@ export default function LandingPageEditor() {
           <div>
             <Card className="p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-9 w-full mb-8">
-                  <TabsTrigger value="hero">Hero</TabsTrigger>
-                  <TabsTrigger value="header">Header</TabsTrigger>
-                  <TabsTrigger value="marquee">Marquee</TabsTrigger>
-                  <TabsTrigger value="about">Serviços</TabsTrigger>
-                  <TabsTrigger value="products">Peças</TabsTrigger>
-                  <TabsTrigger value="services">Promoções</TabsTrigger>
-                  <TabsTrigger value="contactPage">Contato</TabsTrigger>
-                  <TabsTrigger value="aboutPage">Sobre</TabsTrigger>
-                  <TabsTrigger value="footer">Footer</TabsTrigger>
+                <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 w-full mb-8 gap-1">
+                  <TabsTrigger value="hero" className="text-xs sm:text-sm">Hero</TabsTrigger>
+                  <TabsTrigger value="header" className="text-xs sm:text-sm">Header</TabsTrigger>
+                  <TabsTrigger value="marquee" className="text-xs sm:text-sm">Marquee</TabsTrigger>
+                  <TabsTrigger value="about" className="text-xs sm:text-sm">Serviços</TabsTrigger>
+                  <TabsTrigger value="products" className="text-xs sm:text-sm">Peças</TabsTrigger>
+                  <TabsTrigger value="services" className="text-xs sm:text-sm">Promoções</TabsTrigger>
+                  <TabsTrigger value="contactPage" className="text-xs sm:text-sm">Contato</TabsTrigger>
+                  <TabsTrigger value="aboutPage" className="text-xs sm:text-sm">Sobre</TabsTrigger>
+                  <TabsTrigger value="footer" className="text-xs sm:text-sm">Footer</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="hero" className="space-y-4">
