@@ -156,7 +156,12 @@ export const ColorOrGradientPicker = ({
 };
 
 // Helper function para converter ColorOrGradientValue em CSS
-export const colorOrGradientToCSS = (value: ColorOrGradientValue): React.CSSProperties => {
+export const colorOrGradientToCSS = (value: ColorOrGradientValue | undefined): React.CSSProperties => {
+  // Validação: retornar vazio se value é undefined
+  if (!value) {
+    return {};
+  }
+
   if (value.type === 'gradient' && value.gradient) {
     const { type, angle, stops } = value.gradient;
     const stopsStr = stops
