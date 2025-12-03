@@ -37,12 +37,26 @@ const deepMerge = (target: any, source: any): any => {
   const output = { ...target };
 
   for (const key in source) {
+    // Se source[key] é null ou undefined, manter o valor do target
+    if (source[key] === null || source[key] === undefined) {
+      output[key] = target[key];
+      continue;
+    }
+
     if (Array.isArray(source[key])) {
-      output[key] = source[key] || [];
-    } else if (typeof source[key] === 'object' && source[key] !== null) {
+      // Se é array vazio no source, usar o do target se existir
+      output[key] = source[key].length > 0 ? source[key] : (target[key] || []);
+    } else if (typeof source[key] === 'object') {
       output[key] = deepMerge(target[key] || {}, source[key]);
-    } else if (source[key] !== undefined) {
+    } else {
       output[key] = source[key];
+    }
+  }
+
+  // Garantir que todas as keys do target existam no output
+  for (const key in target) {
+    if (!(key in output)) {
+      output[key] = target[key];
     }
   }
 
