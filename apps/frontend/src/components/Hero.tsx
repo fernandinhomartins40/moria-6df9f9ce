@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
 import * as Icons from "lucide-react";
 import { useLandingPageConfig } from "@/hooks/useLandingPageConfig";
+import { colorOrGradientToCSS } from "./admin/LandingPageEditor/StyleControls";
 import heroImage from "@/assets/hero-garage.jpg";
 
 export function Hero() {
@@ -79,23 +80,31 @@ export function Hero() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4">
-            {buttons.filter(btn => btn.enabled).map((button) => (
-              <Button
-                key={button.id}
-                variant={button.variant as any}
-                size="lg"
-                className="text-lg"
-                onClick={() => {
-                  if (button.href.startsWith('#')) {
-                    document.querySelector(button.href)?.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    window.open(button.href, '_blank');
-                  }
-                }}
-              >
-                {button.text}
-              </Button>
-            ))}
+            {buttons.filter(btn => btn.enabled).map((button) => {
+              const customStyle = button.background || button.textColor ? {
+                ...(button.background ? { background: colorOrGradientToCSS(button.background) } : {}),
+                ...(button.textColor ? { color: button.textColor } : {}),
+              } : undefined;
+
+              return (
+                <Button
+                  key={button.id}
+                  variant={button.variant as any}
+                  size="lg"
+                  className="text-lg"
+                  style={customStyle}
+                  onClick={() => {
+                    if (button.href.startsWith('#')) {
+                      document.querySelector(button.href)?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      window.open(button.href, '_blank');
+                    }
+                  }}
+                >
+                  {button.text}
+                </Button>
+              );
+            })}
           </div>
         </div>
       </div>
