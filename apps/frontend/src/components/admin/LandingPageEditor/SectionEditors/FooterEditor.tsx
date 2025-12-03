@@ -15,7 +15,7 @@ import {
   FooterCertification,
   FooterBottomLink,
 } from '@/types/landingPage';
-import { ImageUploaderWithCrop, ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
+import { ImageUploaderWithCrop, ArrayEditor, IconSelector, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
 import { Eye, MapPin, Phone, Mail } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -394,6 +394,24 @@ export const FooterEditor = ({ config, onChange }: FooterEditorProps) => {
             </div>
           )}
           maxItems={5}
+        />
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para o footer. Se definido, substitui as cores sólidas.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.darkElegant}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo da seção"
+          presetName="dark-elegant"
         />
       </Card>
 

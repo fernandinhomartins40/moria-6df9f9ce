@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { HeaderConfig, HeaderMenuItem } from '@/types/landingPage';
-import { ImageUploaderWithCrop, ArrayEditor, ColorPicker } from '../StyleControls';
+import { ImageUploaderWithCrop, ArrayEditor, ColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 
 interface HeaderEditorProps {
@@ -119,6 +119,24 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
           label="Cor do Hover"
           value={config.hoverColor}
           onChange={(hoverColor) => updateConfig({ hoverColor })}
+        />
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para o header. Se definido, substitui a cor de fundo sólida.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.darkElegant}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo do header (opcional)"
+          presetName="dark-elegant"
         />
       </Card>
 

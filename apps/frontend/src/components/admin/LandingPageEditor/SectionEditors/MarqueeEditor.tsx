@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { MarqueeConfig, MarqueeItem } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker, GradientColorPicker, SliderControl } from '../StyleControls';
+import { ArrayEditor, ColorPicker, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS, SliderControl } from '../StyleControls';
 import { Eye } from 'lucide-react';
 
 interface MarqueeEditorProps {
@@ -114,6 +114,24 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
           label="Cor do Texto"
           value={config.textColor}
           onChange={(textColor) => updateConfig({ textColor })}
+        />
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para o marquee. Se definido, substitui as cores sólidas.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.orangeOverlay}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo da seção"
+          presetName="orange-overlay"
         />
       </Card>
 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { AboutConfig, AboutMilestone, AboutValue, AboutStat, AboutService } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker } from '../StyleControls';
+import { ArrayEditor, ColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
 import { Eye, Clock, Shield, Heart, Target, Users, CheckCircle, Award, Star } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -379,6 +379,24 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             placeholder="15+ Anos de Excelência"
           />
         </div>
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para a página sobre. Se definido, substitui as cores sólidas.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.darkElegant}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo da seção"
+          presetName="dark-elegant"
+        />
       </Card>
 
       {/* Preview */}

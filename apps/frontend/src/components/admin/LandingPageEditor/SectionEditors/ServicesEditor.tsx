@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ServicesSectionConfig, TrustIndicator } from '@/types/landingPage';
-import { ArrayEditor, IconSelector, GradientColorPicker } from '../StyleControls';
+import { ArrayEditor, IconSelector, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -136,6 +136,24 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
           )}
           description="Cards exibidos abaixo da lista de serviços (recomendado: 4 indicadores)"
           maxItems={6}
+        />
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para a seção de serviços. Se definido, substitui as cores sólidas.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.goldMetallic}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo da seção"
+          presetName="gold-metallic"
         />
       </Card>
 

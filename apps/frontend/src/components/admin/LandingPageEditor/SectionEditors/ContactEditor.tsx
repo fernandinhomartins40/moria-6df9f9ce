@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ContactConfig, ContactInfoCard, ContactServiceType } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker } from '../StyleControls';
+import { ArrayEditor, ColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
 import { Eye, MapPin, Phone, Mail, Clock, MessageCircle, CheckCircle } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -261,6 +261,24 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
             placeholder="Entre em contato via WhatsApp para atendimento prioritário"
           />
         </div>
+      </Card>
+
+      {/* Gradientes */}
+      <Card className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure gradientes para a página de contato. Se definido, substitui as cores sólidas.
+          </p>
+        </div>
+
+        <GradientPicker
+          label="Gradiente de Fundo"
+          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.goldMetallic}
+          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
+          description="Gradiente aplicado ao fundo da seção"
+          presetName="gold-metallic"
+        />
       </Card>
 
       {/* Preview */}
