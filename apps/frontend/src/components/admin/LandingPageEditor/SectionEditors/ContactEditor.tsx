@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ContactConfig, ContactInfoCard, ContactServiceType } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+import { ArrayEditor, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye, MapPin, Phone, Mail, Clock, MessageCircle, CheckCircle } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -135,10 +135,12 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
                 />
               </div>
 
-              <ColorPicker
-                label="Cor do Ícone"
-                value={item.color}
+              <ColorOrGradientPicker
+                label="Cor do Ícone / Gradiente"
+                value={item.color || { type: 'solid', solid: '#ff6600' }}
                 onChange={(color) => update({ color })}
+                defaultGradientPreset="orangeToGold"
+                description="Cor sólida ou gradiente para o ícone"
               />
             </div>
           )}

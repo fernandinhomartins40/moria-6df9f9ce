@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ServicesSectionConfig, TrustIndicator } from '@/types/landingPage';
-import { ArrayEditor, IconSelector, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+import { ArrayEditor, IconSelector, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -77,7 +77,14 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
           createNew={() => ({
             id: Date.now().toString(),
             icon: 'Shield',
-            iconBackground: 'linear-gradient(135deg, #ffd900 0%, #ffa600 50%, #ab8617 100%)',
+            iconBackground: {
+              type: 'gradient' as const,
+              gradient: {
+                type: 'linear' as const,
+                angle: 135,
+                colors: ['#ffd900', '#ffa600', '#ab8617']
+              }
+            },
             title: 'Novo Indicador',
             description: 'Descrição do indicador',
           })}
@@ -90,11 +97,12 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
                 onChange={(icon) => update({ icon })}
               />
 
-              <GradientColorPicker
-                label="Cor de Fundo do Ícone"
-                value={item.iconBackground}
+              <ColorOrGradientPicker
+                label="Cor de Fundo do Ícone / Gradiente"
+                value={item.iconBackground || { type: 'solid', solid: '#ff6600' }}
                 onChange={(iconBackground) => update({ iconBackground })}
-                description="Escolha uma cor sólida ou gradiente para o fundo do ícone. Dourado para premium, Laranja para destaque."
+                defaultGradientPreset="goldMetallic"
+                description="Cor sólida ou gradiente para o fundo do ícone"
               />
 
               <div className="space-y-2">
@@ -121,7 +129,7 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
                 <div className="flex flex-col items-center text-center">
                   <div
                     className="p-3 rounded-full mb-2"
-                    style={{ background: item.iconBackground }}
+                    style={colorOrGradientToCSS(item.iconBackground)}
                   >
                     <div className="w-6 h-6 text-white">
                       {/* Placeholder icon */}
@@ -225,7 +233,7 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
                     <div key={indicator.id} className="flex flex-col items-center text-center">
                       <div
                         className="p-4 rounded-full mb-3 flex items-center justify-center"
-                        style={{ background: indicator.iconBackground }}
+                        style={colorOrGradientToCSS(indicator.iconBackground)}
                       >
                         <IconComponent className="h-8 w-8 text-white" />
                       </div>

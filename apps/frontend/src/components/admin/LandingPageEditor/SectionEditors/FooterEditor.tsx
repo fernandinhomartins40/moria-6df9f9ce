@@ -15,7 +15,7 @@ import {
   FooterCertification,
   FooterBottomLink,
 } from '@/types/landingPage';
-import { ImageUploaderWithCrop, ArrayEditor, IconSelector, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+import { ImageUploaderWithCrop, ArrayEditor, IconSelector, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye, MapPin, Phone, Mail } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -319,11 +319,12 @@ export const FooterEditor = ({ config, onChange }: FooterEditorProps) => {
                 onChange={(icon) => update({ icon })}
               />
 
-              <GradientColorPicker
-                label="Cor de Fundo do Ícone"
-                value={item.iconBackground}
+              <ColorOrGradientPicker
+                label="Cor de Fundo do Ícone / Gradiente"
+                value={item.iconBackground || { type: 'solid', solid: '#ff6600' }}
                 onChange={(iconBackground) => update({ iconBackground })}
-                description="Escolha uma cor sólida ou gradiente para o fundo do ícone"
+                defaultGradientPreset="goldMetallic"
+                description="Cor sólida ou gradiente para o fundo do ícone"
               />
 
               <div className="space-y-2">

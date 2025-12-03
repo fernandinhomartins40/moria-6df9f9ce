@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { MarqueeConfig, MarqueeItem } from '@/types/landingPage';
-import { ArrayEditor, ColorPicker, GradientColorPicker, GradientPicker, MORIA_GRADIENT_PRESETS, SliderControl } from '../StyleControls';
+import { ArrayEditor, ColorOrGradientPicker, colorOrGradientToCSS, SliderControl } from '../StyleControls';
 import { Eye } from 'lucide-react';
 
 interface MarqueeEditorProps {
@@ -99,41 +99,32 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
         />
       </Card>
 
-      {/* Cores */}
+      {/* Cores e Gradientes */}
       <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold">Cores</h3>
-
-        <GradientColorPicker
-          label="Cor de Fundo"
-          value={config.backgroundColor}
-          onChange={(backgroundColor) => updateConfig({ backgroundColor })}
-          description="Escolha uma cor sólida ou gradiente para o fundo do banner. Use gradientes para um visual mais impactante."
-        />
-
-        <ColorPicker
-          label="Cor do Texto"
-          value={config.textColor}
-          onChange={(textColor) => updateConfig({ textColor })}
-        />
-      </Card>
-
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
+          <h3 className="text-lg font-semibold mb-2">Cores e Gradientes</h3>
           <p className="text-sm text-muted-foreground">
-            Configure gradientes para o marquee. Se definido, substitui as cores sólidas.
+            Configure cores sólidas ou gradientes para o banner
           </p>
         </div>
 
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.orangeOverlay}
-          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
-          description="Gradiente aplicado ao fundo da seção"
-          presetName="orange-overlay"
+        <ColorOrGradientPicker
+          label="Cor de Fundo / Gradiente"
+          value={config.backgroundColor || { type: 'solid', solid: '#ff6600' }}
+          onChange={(backgroundColor) => updateConfig({ backgroundColor })}
+          defaultGradientPreset="orangeToGold"
+          description="Cor ou gradiente do fundo do banner"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor do Texto / Gradiente"
+          value={config.textColor || { type: 'solid', solid: '#ffffff' }}
+          onChange={(textColor) => updateConfig({ textColor })}
+          defaultGradientPreset="goldMetallic"
+          description="Cor ou gradiente do texto do banner"
         />
       </Card>
+
 
       {/* Preview */}
       <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20">
@@ -156,8 +147,8 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
           <div
             className="overflow-hidden rounded-lg"
             style={{
-              background: config.backgroundColor,
-              color: config.textColor,
+              ...colorOrGradientToCSS(config.backgroundColor),
+              ...colorOrGradientToCSS(config.textColor),
             }}
           >
             <div className="py-3 px-4 flex items-center">
