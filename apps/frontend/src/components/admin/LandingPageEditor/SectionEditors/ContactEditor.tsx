@@ -23,6 +23,17 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
     onChange({ ...config, ...updates });
   };
 
+  // Segurança: retornar loading se config não estiver pronto
+  if (!config) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center text-gray-500">
+          <p>Carregando configuração...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Habilitado */}
@@ -35,7 +46,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
             </p>
           </div>
           <Switch
-            checked={config.enabled}
+            checked={config.enabled ?? true}
             onCheckedChange={(enabled) => updateConfig({ enabled })}
           />
         </div>
@@ -48,7 +59,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Badge</Label>
           <Input
-            value={config.heroBadge}
+            value={config.heroBadge || ''}
             onChange={(e) => updateConfig({ heroBadge: e.target.value })}
             placeholder="Fale Conosco"
           />
@@ -57,7 +68,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.heroTitle}
+            value={config.heroTitle || ''}
             onChange={(e) => updateConfig({ heroTitle: e.target.value })}
             placeholder="Entre em Contato"
           />
@@ -69,7 +80,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.heroSubtitle}
+            value={config.heroSubtitle || ''}
             onChange={(e) => updateConfig({ heroSubtitle: e.target.value })}
             placeholder="Estamos prontos para ajudar com suas necessidades automotivas..."
             rows={3}
@@ -81,7 +92,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<ContactInfoCard>
           label="Cards de Informações de Contato"
-          items={config.contactInfoCards}
+          items={config.contactInfoCards || []}
           onChange={(contactInfoCards) => updateConfig({ contactInfoCards })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -143,7 +154,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Título do Formulário</Label>
           <Input
-            value={config.formTitle}
+            value={config.formTitle || ''}
             onChange={(e) => updateConfig({ formTitle: e.target.value })}
             placeholder="Envie sua Mensagem"
           />
@@ -155,7 +166,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo do Formulário</Label>
           <Textarea
-            value={config.formSubtitle}
+            value={config.formSubtitle || ''}
             onChange={(e) => updateConfig({ formSubtitle: e.target.value })}
             placeholder="Preencha o formulário abaixo e entraremos em contato..."
             rows={2}
@@ -167,7 +178,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<ContactServiceType>
           label="Tipos de Serviço"
-          items={config.serviceTypes}
+          items={config.serviceTypes || []}
           onChange={(serviceTypes) => updateConfig({ serviceTypes })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -196,7 +207,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.mapTitle}
+            value={config.mapTitle || ''}
             onChange={(e) => updateConfig({ mapTitle: e.target.value })}
             placeholder="Nossa Localização"
           />
@@ -208,7 +219,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.mapSubtitle}
+            value={config.mapSubtitle || ''}
             onChange={(e) => updateConfig({ mapSubtitle: e.target.value })}
             placeholder="Visite nossa oficina para um atendimento presencial..."
             rows={2}
@@ -223,7 +234,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
             </p>
           </div>
           <Switch
-            checked={config.quickInfoEnabled}
+            checked={config.quickInfoEnabled ?? true}
             onCheckedChange={(quickInfoEnabled) => updateConfig({ quickInfoEnabled })}
           />
         </div>
@@ -236,7 +247,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.ctaTitle}
+            value={config.ctaTitle || ''}
             onChange={(e) => updateConfig({ ctaTitle: e.target.value })}
             placeholder="Precisa de Ajuda Imediata?"
           />
@@ -245,7 +256,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Input
-            value={config.ctaSubtitle}
+            value={config.ctaSubtitle || ''}
             onChange={(e) => updateConfig({ ctaSubtitle: e.target.value })}
             placeholder="Entre em contato via WhatsApp para atendimento prioritário"
           />
@@ -279,7 +290,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
                   {config.heroBadge || 'Fale Conosco'}
                 </Badge>
                 <h1 className="text-3xl font-bold mb-3">
-                  {config.heroTitle.split(' ').map((word, i, arr) =>
+                  {(config.heroTitle || 'Entre em Contato').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>
@@ -294,7 +305,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
             {/* Contact Info Cards */}
             <div className="py-8 px-4 bg-gray-50">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {config.contactInfoCards.slice(0, 4).map((info, index) => {
+                {(config.contactInfoCards || []).slice(0, 4).map((info, index) => {
                   const IconComponent = (Icons as any)[info.icon] || MapPin;
                   return (
                     <div key={index} className="bg-white p-3 rounded-lg text-center shadow-sm">
@@ -320,7 +331,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
               {/* Form */}
               <div>
                 <h2 className="text-xl font-bold mb-2">
-                  {config.formTitle.split(' ').map((word, i, arr) =>
+                  {(config.formTitle || 'Envie sua Mensagem').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>
@@ -345,7 +356,7 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
               {/* Map */}
               <div>
                 <h2 className="text-xl font-bold mb-2">
-                  {config.mapTitle.split(' ').map((word, i, arr) =>
+                  {(config.mapTitle || 'Nossa Localização').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>

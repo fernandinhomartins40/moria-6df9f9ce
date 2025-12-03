@@ -23,6 +23,17 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
     onChange({ ...config, ...updates });
   };
 
+  // Segurança: retornar loading se config não estiver pronto
+  if (!config) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center text-gray-500">
+          <p>Carregando configuração...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Habilitado */}
@@ -35,7 +46,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             </p>
           </div>
           <Switch
-            checked={config.enabled}
+            checked={config.enabled ?? true}
             onCheckedChange={(enabled) => updateConfig({ enabled })}
           />
         </div>
@@ -48,7 +59,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Badge</Label>
           <Input
-            value={config.heroBadge}
+            value={config.heroBadge || ''}
             onChange={(e) => updateConfig({ heroBadge: e.target.value })}
             placeholder="Sobre Nós"
           />
@@ -57,7 +68,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.heroTitle}
+            value={config.heroTitle || ''}
             onChange={(e) => updateConfig({ heroTitle: e.target.value })}
             placeholder="Mais de 15 Anos"
           />
@@ -66,7 +77,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Destaque (aparece em dourado)</Label>
           <Input
-            value={config.heroHighlight}
+            value={config.heroHighlight || ''}
             onChange={(e) => updateConfig({ heroHighlight: e.target.value })}
             placeholder="Cuidando do Seu Veículo"
           />
@@ -75,7 +86,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.heroSubtitle}
+            value={config.heroSubtitle || ''}
             onChange={(e) => updateConfig({ heroSubtitle: e.target.value })}
             placeholder="Especialistas em peças automotivas e serviços de qualidade..."
             rows={3}
@@ -87,7 +98,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<AboutStat>
           label="Estatísticas"
-          items={config.stats}
+          items={config.stats || []}
           onChange={(stats) => updateConfig({ stats })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -130,7 +141,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.historyTitle}
+            value={config.historyTitle || ''}
             onChange={(e) => updateConfig({ historyTitle: e.target.value })}
             placeholder="Nossa História"
           />
@@ -142,7 +153,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.historySubtitle}
+            value={config.historySubtitle || ''}
             onChange={(e) => updateConfig({ historySubtitle: e.target.value })}
             placeholder="Uma jornada de dedicação, crescimento e compromisso..."
             rows={2}
@@ -154,7 +165,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<AboutMilestone>
           label="Marcos da História"
-          items={config.milestones}
+          items={config.milestones || []}
           onChange={(milestones) => updateConfig({ milestones })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -205,7 +216,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.valuesTitle}
+            value={config.valuesTitle || ''}
             onChange={(e) => updateConfig({ valuesTitle: e.target.value })}
             placeholder="Nossos Valores"
           />
@@ -217,7 +228,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.valuesSubtitle}
+            value={config.valuesSubtitle || ''}
             onChange={(e) => updateConfig({ valuesSubtitle: e.target.value })}
             placeholder="Os princípios que guiam nossa empresa..."
             rows={2}
@@ -229,7 +240,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<AboutValue>
           label="Valores da Empresa"
-          items={config.values}
+          items={config.values || []}
           onChange={(values) => updateConfig({ values })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -291,7 +302,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.servicesTitle}
+            value={config.servicesTitle || ''}
             onChange={(e) => updateConfig({ servicesTitle: e.target.value })}
             placeholder="Nossos Serviços"
           />
@@ -303,7 +314,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Subtítulo</Label>
           <Textarea
-            value={config.servicesSubtitle}
+            value={config.servicesSubtitle || ''}
             onChange={(e) => updateConfig({ servicesSubtitle: e.target.value })}
             placeholder="Oferecemos uma ampla gama de serviços especializados..."
             rows={2}
@@ -315,7 +326,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
       <Card className="p-6">
         <ArrayEditor<AboutService>
           label="Lista de Serviços"
-          items={config.services}
+          items={config.services || []}
           onChange={(services) => updateConfig({ services })}
           createNew={() => ({
             id: Date.now().toString(),
@@ -344,7 +355,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Título</Label>
           <Input
-            value={config.commitmentTitle}
+            value={config.commitmentTitle || ''}
             onChange={(e) => updateConfig({ commitmentTitle: e.target.value })}
             placeholder="Nosso Compromisso"
           />
@@ -353,7 +364,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Texto do Compromisso</Label>
           <Textarea
-            value={config.commitmentText}
+            value={config.commitmentText || ''}
             onChange={(e) => updateConfig({ commitmentText: e.target.value })}
             placeholder="Garantir que cada cliente tenha a melhor experiência possível..."
             rows={4}
@@ -363,7 +374,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         <div className="space-y-2">
           <Label>Anos de Excelência</Label>
           <Input
-            value={config.commitmentYears}
+            value={config.commitmentYears || ''}
             onChange={(e) => updateConfig({ commitmentYears: e.target.value })}
             placeholder="15+ Anos de Excelência"
           />
@@ -408,7 +419,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             {/* Stats */}
             <div className="py-8 px-4 bg-gray-50">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {config.stats.slice(0, 4).map((stat, index) => (
+                {(config.stats || []).slice(0, 4).map((stat, index) => (
                   <div key={index} className="bg-white p-4 rounded-lg shadow text-center">
                     <div className="text-2xl font-bold text-moria-orange mb-1">
                       {stat.number}
@@ -425,7 +436,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             <div className="py-8 px-4">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">
-                  {config.historyTitle.split(' ').map((word, i, arr) =>
+                  {(config.historyTitle || 'Nossa História').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>
@@ -438,7 +449,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
 
               {/* Timeline */}
               <div className="space-y-4">
-                {config.milestones.slice(0, 4).map((milestone, index) => (
+                {(config.milestones || []).slice(0, 4).map((milestone, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div className="bg-moria-orange rounded-full w-10 h-10 flex items-center justify-center text-white flex-shrink-0">
                       <Clock className="h-4 w-4" />
@@ -463,7 +474,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             <div className="py-8 px-4 bg-gray-900 text-white">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">
-                  {config.valuesTitle.split(' ').map((word, i, arr) =>
+                  {(config.valuesTitle || 'Nossos Valores').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>
@@ -475,7 +486,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {config.values.slice(0, 4).map((value, index) => {
+                {(config.values || []).slice(0, 4).map((value, index) => {
                   const IconComponent = (Icons as any)[value.icon] || Shield;
                   return (
                     <div key={index} className="bg-white/10 border border-white/20 p-3 rounded-lg text-center">
@@ -498,7 +509,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
             <div className="py-8 px-4">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">
-                  {config.servicesTitle.split(' ').map((word, i, arr) =>
+                  {(config.servicesTitle || 'Nossos Serviços').split(' ').map((word, i, arr) =>
                     i === arr.length - 1 ?
                       <span key={i} className="gold-metallic">{word}</span> :
                       <span key={i}>{word} </span>
@@ -510,7 +521,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                {config.services.slice(0, 6).map((service, index) => (
+                {(config.services || []).slice(0, 6).map((service, index) => (
                   <div key={index} className="flex items-center p-2 bg-gray-50 rounded hover:bg-moria-orange/10 transition-colors">
                     <CheckCircle className="h-3 w-3 text-moria-orange mr-2 flex-shrink-0" />
                     <span className="text-gray-700 text-xs font-medium">{service.name}</span>

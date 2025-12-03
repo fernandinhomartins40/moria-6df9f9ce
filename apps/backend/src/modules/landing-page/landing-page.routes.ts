@@ -98,6 +98,8 @@ router.get('/config', async (req: Request, res: Response) => {
       about: JSON.parse(config.about),
       products: JSON.parse(config.products),
       services: JSON.parse(config.services),
+      contactPage: config.contactPage ? JSON.parse(config.contactPage) : undefined,
+      aboutPage: config.aboutPage ? JSON.parse(config.aboutPage) : undefined,
       contact: JSON.parse(config.contact),
       footer: JSON.parse(config.footer),
       updatedAt: config.updatedAt,
@@ -122,10 +124,10 @@ router.get('/config', async (req: Request, res: Response) => {
  */
 router.put('/config', authenticate, async (req: Request, res: Response) => {
   try {
-    const { header, hero, marquee, about, products, services, contact, footer } = req.body;
+    const { header, hero, marquee, about, products, services, contactPage, aboutPage, contact, footer } = req.body;
 
     // Validar que ao menos um campo foi enviado
-    if (!header && !hero && !marquee && !about && !products && !services && !contact && !footer) {
+    if (!header && !hero && !marquee && !about && !products && !services && !contactPage && !aboutPage && !contact && !footer) {
       return res.status(400).json({
         success: false,
         message: 'Nenhum campo para atualizar foi fornecido',
@@ -148,6 +150,8 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
           about: JSON.parse(existingConfig.about),
           products: JSON.parse(existingConfig.products),
           services: JSON.parse(existingConfig.services),
+          contactPage: existingConfig.contactPage ? JSON.parse(existingConfig.contactPage) : {},
+          aboutPage: existingConfig.aboutPage ? JSON.parse(existingConfig.aboutPage) : {},
           contact: JSON.parse(existingConfig.contact),
           footer: JSON.parse(existingConfig.footer),
         };
@@ -155,7 +159,7 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
         const oldUrls = extractImageUrls(oldConfig);
 
         // Extrair URLs novas
-        const newConfig = { header, hero, marquee, about, products, services, contact, footer };
+        const newConfig = { header, hero, marquee, about, products, services, contactPage, aboutPage, contact, footer };
         const newUrls = extractImageUrls(newConfig);
 
         // Identificar imagens que não são mais usadas
@@ -186,6 +190,8 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
       if (about) updateData.about = JSON.stringify(about);
       if (products) updateData.products = JSON.stringify(products);
       if (services) updateData.services = JSON.stringify(services);
+      if (contactPage) updateData.contactPage = JSON.stringify(contactPage);
+      if (aboutPage) updateData.aboutPage = JSON.stringify(aboutPage);
       if (contact) updateData.contact = JSON.stringify(contact);
       if (footer) updateData.footer = JSON.stringify(footer);
 
@@ -203,6 +209,8 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
           about: JSON.stringify(about || {}),
           products: JSON.stringify(products || {}),
           services: JSON.stringify(services || {}),
+          contactPage: JSON.stringify(contactPage || {}),
+          aboutPage: JSON.stringify(aboutPage || {}),
           contact: JSON.stringify(contact || {}),
           footer: JSON.stringify(footer || {}),
         },
@@ -218,6 +226,8 @@ router.put('/config', authenticate, async (req: Request, res: Response) => {
       about: JSON.parse(config.about),
       products: JSON.parse(config.products),
       services: JSON.parse(config.services),
+      contactPage: config.contactPage ? JSON.parse(config.contactPage) : undefined,
+      aboutPage: config.aboutPage ? JSON.parse(config.aboutPage) : undefined,
       contact: JSON.parse(config.contact),
       footer: JSON.parse(config.footer),
       updatedAt: config.updatedAt,
