@@ -100,7 +100,9 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/landing-page/config');
+      const response = await fetch('/landing-page/config', {
+        credentials: 'include', // Incluir cookies de autenticação
+      });
 
       if (!response.ok) {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -161,6 +163,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
             fetch('/landing-page/config', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include', // Incluir cookies de autenticação
               body: JSON.stringify(cachedConfig),
             }).catch(() => log('⚠️ Falha ao sincronizar'));
           }, 2000);
@@ -193,6 +196,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
       const saveResponse = await fetch('/landing-page/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Incluir cookies de autenticação
         body: JSON.stringify({
           header: config.header,
           hero: config.hero,
@@ -225,6 +229,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
         await fetch('/landing-page/config/history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Incluir cookies de autenticação
           body: JSON.stringify({
             config: {
               header: config.header,
