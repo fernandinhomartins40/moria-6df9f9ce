@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { PromotionsSectionConfig } from '@/types/landingPage';
-import { GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+// ColorOrGradientPicker disponível em '../StyleControls' se necessário
 import { Eye, Timer } from 'lucide-react';
 
 interface PromotionsEditorProps {

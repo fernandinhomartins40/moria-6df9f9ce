@@ -147,24 +147,6 @@ export const ServicesEditor = ({ config, onChange }: ServicesEditorProps) => {
         />
       </Card>
 
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes (Opcional)</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure gradientes para a seção de serviços. Se definido, substitui as cores sólidas.
-          </p>
-        </div>
-
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.goldMetallic}
-          onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
-          description="Gradiente aplicado ao fundo da seção"
-          presetName="gold-metallic"
-        />
-      </Card>
-
       {/* Informação */}
       <Card className="p-6 bg-green-50 border-green-200">
         <div className="flex items-start gap-3">

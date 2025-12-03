@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { HeroConfig, HeroFeature, HeroButton } from '@/types/landingPage';
-import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, GradientPicker, MORIA_GRADIENT_PRESETS, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
+import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -200,32 +200,6 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
           max={100}
           unit="%"
           description="Escurecimento sobre a imagem de fundo (0 = transparente, 100 = preto total)"
-        />
-      </Card>
-
-      {/* Gradientes */}
-      <Card className="p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Gradientes da Identidade Visual</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure os gradientes característicos da marca Moria
-          </p>
-        </div>
-
-        <GradientPicker
-          label="Gradiente do Título (Gold Metallic)"
-          value={config.titleGradient ?? MORIA_GRADIENT_PRESETS.goldMetallic}
-          onChange={(titleGradient) => updateConfig({ titleGradient })}
-          description="Gradiente dourado aplicado ao título principal (MORIA)"
-          presetName="gold-metallic"
-        />
-
-        <GradientPicker
-          label="Gradiente de Overlay (Orange Overlay)"
-          value={config.overlayGradient ?? MORIA_GRADIENT_PRESETS.orangeOverlay}
-          onChange={(overlayGradient) => updateConfig({ overlayGradient })}
-          description="Gradiente laranja semi-transparente sobre a imagem de fundo"
-          presetName="orange-overlay"
         />
       </Card>
 
