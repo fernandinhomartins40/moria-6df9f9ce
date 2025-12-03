@@ -213,7 +213,7 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
 
         <GradientPicker
           label="Gradiente do Título (Gold Metallic)"
-          value={config.titleGradient || MORIA_GRADIENT_PRESETS.goldMetallic}
+          value={config.titleGradient ?? MORIA_GRADIENT_PRESETS.goldMetallic}
           onChange={(titleGradient) => updateConfig({ titleGradient })}
           description="Gradiente dourado aplicado ao título principal (MORIA)"
           presetName="gold-metallic"
@@ -221,7 +221,7 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
 
         <GradientPicker
           label="Gradiente de Overlay (Orange Overlay)"
-          value={config.overlayGradient || MORIA_GRADIENT_PRESETS.orangeOverlay}
+          value={config.overlayGradient ?? MORIA_GRADIENT_PRESETS.orangeOverlay}
           onChange={(overlayGradient) => updateConfig({ overlayGradient })}
           description="Gradiente laranja semi-transparente sobre a imagem de fundo"
           presetName="orange-overlay"

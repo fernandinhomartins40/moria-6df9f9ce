@@ -133,7 +133,7 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
 
         <GradientPicker
           label="Gradiente de Fundo"
-          value={config.backgroundGradient || MORIA_GRADIENT_PRESETS.darkElegant}
+          value={config.backgroundGradient ?? MORIA_GRADIENT_PRESETS.darkElegant}
           onChange={(backgroundGradient) => updateConfig({ backgroundGradient })}
           description="Gradiente aplicado ao fundo do header (opcional)"
           presetName="dark-elegant"
