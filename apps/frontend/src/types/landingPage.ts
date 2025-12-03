@@ -77,12 +77,21 @@ export interface HeroFeature {
   text: string;
 }
 
+export interface ColorOrGradientValue {
+  type: 'solid' | 'gradient';
+  solid?: string;
+  gradient?: GradientConfig;
+}
+
 export interface HeroButton {
   id: string;
   text: string;
   href: string;
   variant: 'hero' | 'premium' | 'outline';
   enabled: boolean;
+  // Personalização de cores (opcional)
+  background?: ColorOrGradientValue;
+  textColor?: string;
 }
 
 export interface HeroConfig {

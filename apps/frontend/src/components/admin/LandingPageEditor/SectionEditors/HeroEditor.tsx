@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { HeroConfig, HeroFeature, HeroButton } from '@/types/landingPage';
-import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, GradientPicker, MORIA_GRADIENT_PRESETS } from '../StyleControls';
+import { ImageUploaderWithCrop, SliderControl, ArrayEditor, IconSelector, GradientPicker, MORIA_GRADIENT_PRESETS, ColorOrGradientPicker, ColorPicker, colorOrGradientToCSS } from '../StyleControls';
 import { Eye } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -140,7 +140,27 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Personalização de Cores */}
+              <div className="pt-4 border-t space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground">Personalização de Cores (Opcional)</h4>
+
+                <ColorOrGradientPicker
+                  label="Cor de Fundo / Gradiente"
+                  value={item.background || { type: 'solid', solid: '#ff6600' }}
+                  onChange={(background) => update({ background })}
+                  defaultGradientPreset="goldMetallic"
+                  description="Defina uma cor sólida ou gradiente para o fundo do botão"
+                />
+
+                <ColorPicker
+                  label="Cor do Texto"
+                  value={item.textColor || '#ffffff'}
+                  onChange={(textColor) => update({ textColor })}
+                  description="Cor do texto do botão (opcional)"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
                   checked={item.enabled}
@@ -275,15 +295,23 @@ export const HeroEditor = ({ config, onChange }: HeroEditorProps) => {
                 {/* Buttons */}
                 {config.buttons.filter(btn => btn.enabled).length > 0 && (
                   <div className="flex flex-wrap gap-3">
-                    {config.buttons.filter(btn => btn.enabled).map((button) => (
-                      <Button
-                        key={button.id}
-                        variant={button.variant as any}
-                        size="sm"
-                      >
-                        {button.text}
-                      </Button>
-                    ))}
+                    {config.buttons.filter(btn => btn.enabled).map((button) => {
+                      const customStyle = button.background || button.textColor ? {
+                        ...(button.background ? { background: colorOrGradientToCSS(button.background) } : {}),
+                        ...(button.textColor ? { color: button.textColor } : {}),
+                      } : undefined;
+
+                      return (
+                        <Button
+                          key={button.id}
+                          variant={button.variant as any}
+                          size="sm"
+                          style={customStyle}
+                        >
+                          {button.text}
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
