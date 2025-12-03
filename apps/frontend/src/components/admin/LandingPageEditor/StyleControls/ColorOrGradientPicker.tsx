@@ -172,29 +172,49 @@ export const ColorOrGradientPicker = ({
 };
 
 // Helper function para converter ColorOrGradientValue em CSS
-export const colorOrGradientToCSS = (value: ColorOrGradientValue | undefined): React.CSSProperties => {
+export const colorOrGradientToCSS = (
+  value: ColorOrGradientValue | undefined,
+  options?: { forText?: boolean }
+): React.CSSProperties => {
   // Validação: retornar vazio se value é undefined
   if (!value) {
     return {};
   }
+
+  const isForText = options?.forText ?? false;
 
   if (value.type === 'gradient' && value.gradient) {
     const { type, angle, direction, colors } = value.gradient;
 
     // Validação: garantir que colors existe e tem elementos
     if (!colors || colors.length === 0) {
-      return { backgroundColor: '#FF6B35' };
+      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
     }
 
-    let backgroundImage = '';
+    let gradient = '';
     if (type === 'linear') {
       const angleOrDirection = direction || `${angle || 90}deg`;
-      backgroundImage = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
+      gradient = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
     } else if (type === 'radial') {
-      backgroundImage = `radial-gradient(circle, ${colors.join(', ')})`;
+      gradient = `radial-gradient(circle, ${colors.join(', ')})`;
     }
 
-    return { backgroundImage };
+    if (isForText) {
+      // Para texto com gradiente, usar background-clip: text
+      return {
+        background: gradient,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      };
+    }
+
+    return { backgroundImage: gradient };
+  }
+
+  // Cor sólida
+  if (isForText) {
+    return { color: value.solid || '#FF6B35' };
   }
 
   return { backgroundColor: value.solid || '#FF6B35' };

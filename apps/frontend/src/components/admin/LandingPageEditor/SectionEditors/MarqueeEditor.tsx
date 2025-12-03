@@ -148,7 +148,7 @@ export const MarqueeEditor = ({ config, onChange }: MarqueeEditorProps) => {
             className="overflow-hidden rounded-lg"
             style={{
               ...colorOrGradientToCSS(config.backgroundColor),
-              ...colorOrGradientToCSS(config.textColor),
+              ...colorOrGradientToCSS(config.textColor, { forText: true }),
             }}
           >
             <div className="py-3 px-4 flex items-center">

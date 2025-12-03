@@ -48,14 +48,14 @@ export function Header() {
 
   const headerStyle = loading ? {} : {
     ...colorOrGradientToCSS(config.header.backgroundColor),
-    ...colorOrGradientToCSS(config.header.textColor),
+    ...colorOrGradientToCSS(config.header.textColor, { forText: true }),
   };
 
   const logoSrc = loading ? "/logo_moria.png" : config.header.logo.url;
   const logoAlt = loading ? "Moria Peças e Serviços" : config.header.logo.alt;
 
   return (
-    <header className="text-white sticky top-0 z-50 shadow-lg" style={headerStyle}>
+    <header className="sticky top-0 z-50 shadow-lg" style={headerStyle}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-28">
           {/* Logo */}

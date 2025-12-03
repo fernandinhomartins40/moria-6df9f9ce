@@ -178,7 +178,7 @@ export const HeaderEditor = ({ config, onChange }: HeaderEditorProps) => {
                 <span
                   key={item.id}
                   className="text-sm font-medium cursor-pointer transition-colors"
-                  style={colorOrGradientToCSS(config.textColor)}
+                  style={colorOrGradientToCSS(config.textColor, { forText: true })}
                 >
                   {item.label}
                 </span>

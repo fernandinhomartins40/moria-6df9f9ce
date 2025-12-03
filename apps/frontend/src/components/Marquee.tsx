@@ -28,7 +28,7 @@ export function Marquee() {
 
   // Usar cores e configurações do CMS
   const backgroundStyle = !configLoading ? colorOrGradientToCSS(config.marquee.backgroundColor) : { background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' };
-  const textStyle = !configLoading ? colorOrGradientToCSS(config.marquee.textColor) : { color: '#ffffff' };
+  const textStyle = !configLoading ? colorOrGradientToCSS(config.marquee.textColor, { forText: true }) : { color: '#ffffff' };
   const speed = !configLoading ? config.marquee.speed : 30;
 
   if (loading && messages.length === 0 && configLoading) {
@@ -44,7 +44,7 @@ export function Marquee() {
 
   return (
     <div
-      className="text-white py-2 overflow-hidden"
+      className="py-2 overflow-hidden"
       style={{
         ...backgroundStyle,
         ...textStyle,
