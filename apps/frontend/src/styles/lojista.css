@@ -239,22 +239,22 @@
   .lojista-layout {
     flex-direction: column;
   }
-  
+
   .lojista-sidebar {
-    width: 100% !important;
-    height: auto;
-    position: relative;
+    /* Sidebar agora é fixed no bottom via Tailwind */
+    /* Não aplicar overrides que quebram o layout */
   }
-  
+
   .lojista-content {
     padding: 1rem;
+    padding-bottom: 5rem; /* Espaço para o menu inferior fixo */
   }
-  
+
   .lojista-header {
     margin: -1rem -1rem 1rem -1rem;
     padding: 1rem;
   }
-  
+
   .metrica-card {
     margin-bottom: 1rem;
   }

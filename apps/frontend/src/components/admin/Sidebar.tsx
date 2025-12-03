@@ -52,9 +52,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   return (
-    <div className="bg-moria-black text-white flex flex-col h-screen w-64">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+    <div className="bg-moria-black text-white flex flex-col fixed md:relative bottom-0 left-0 right-0 md:h-screen md:w-64 z-50 border-t md:border-t-0 border-gray-700">
+      {/* Header - Hidden on Mobile */}
+      <div className="hidden md:block p-4 border-b border-gray-700">
         <div className="flex flex-col items-center space-y-2">
           <img
             src="/logo_moria.png"
@@ -65,9 +65,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </div>
 
-      {/* Admin Info */}
+      {/* Admin Info - Hidden on Mobile */}
       {admin && (
-        <div className="p-4 border-b border-gray-700">
+        <div className="hidden md:block p-4 border-b border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-moria-orange rounded-full flex items-center justify-center">
               <User className="h-5 w-5 text-white" />
@@ -80,63 +80,65 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto sidebar-scrollbar">
-        {menuItems.map((item) => {
-          // Filter menu items by permissions
-          if (item.requiresPermission && !(permissions as any)[item.requiresPermission]) {
-            return null;
-          }
+      {/* Navigation - Horizontal on Mobile, Vertical on Desktop */}
+      <nav className="flex md:flex-1 overflow-x-auto md:overflow-y-auto md:overflow-x-visible p-2 md:p-4 md:space-y-2 sidebar-scrollbar">
+        <div className="flex md:flex-col gap-1 md:gap-2 w-full">
+          {menuItems.map((item) => {
+            // Filter menu items by permissions
+            if (item.requiresPermission && !(permissions as any)[item.requiresPermission]) {
+              return null;
+            }
 
-          const IconComponent = item.icon;
-          const isActive = activeTab === item.id;
+            const IconComponent = item.icon;
+            const isActive = activeTab === item.id;
 
-          // External link (Landing Page Editor)
-          if ((item as any).isExternal) {
+            // External link (Landing Page Editor)
+            if ((item as any).isExternal) {
+              return (
+                <Link
+                  key={item.id}
+                  to={(item as any).href}
+                  className={cn(
+                    "flex flex-col md:flex-row items-center justify-center md:justify-start space-y-1 md:space-y-0 md:space-x-3 px-2 md:px-3 py-2 md:py-3 rounded-lg transition-all duration-200 text-center md:text-left min-w-[60px] md:min-w-0",
+                    isActive
+                      ? "bg-moria-orange text-white shadow-lg"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  )}
+                >
+                  <IconComponent className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-medium text-[10px] md:text-sm">{item.label}</span>
+                  {isActive && (
+                    <div className="hidden md:block ml-auto w-2 h-2 bg-white rounded-full" />
+                  )}
+                </Link>
+              );
+            }
+
+            // Internal tab button
             return (
-              <Link
+              <button
                 key={item.id}
-                to={(item as any).href}
+                onClick={() => onTabChange(item.id)}
                 className={cn(
-                  "w-full flex items-center justify-start space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
+                  "flex flex-col md:flex-row items-center justify-center md:justify-start space-y-1 md:space-y-0 md:space-x-3 px-2 md:px-3 py-2 md:py-3 rounded-lg transition-all duration-200 text-center md:text-left min-w-[60px] md:min-w-0",
                   isActive
                     ? "bg-moria-orange text-white shadow-lg"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 )}
               >
                 <IconComponent className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium text-left">{item.label}</span>
+                <span className="font-medium text-[10px] md:text-sm">{item.label}</span>
                 {isActive && (
-                  <div className="ml-auto w-2 h-2 bg-white rounded-full" />
+                  <div className="hidden md:block ml-auto w-2 h-2 bg-white rounded-full" />
                 )}
-              </Link>
+              </button>
             );
-          }
-
-          // Internal tab button
-          return (
-            <button
-              key={item.id}
-              onClick={() => onTabChange(item.id)}
-              className={cn(
-                "w-full flex items-center justify-start space-x-3 px-3 py-3 rounded-lg transition-all duration-200 text-left",
-                isActive
-                  ? "bg-moria-orange text-white shadow-lg"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
-              )}
-            >
-              <IconComponent className="h-5 w-5 flex-shrink-0" />
-              <span className="font-medium text-left">{item.label}</span>
-              {isActive && (
-                <div className="ml-auto w-2 h-2 bg-white rounded-full" />
-              )}
-            </button>
-          );
-        })}
+          })}
+        </div>
       </nav>
 
-      {/* Footer Actions */}
-      <div className="p-4 border-t border-gray-700 space-y-2">
+      {/* Footer Actions - Hidden on Mobile */}
+      <div className="hidden md:block p-4 border-t border-gray-700 space-y-2">
         <Link to="/">
           <Button
             variant="ghost"
