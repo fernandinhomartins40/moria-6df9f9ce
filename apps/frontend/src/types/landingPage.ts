@@ -22,6 +22,13 @@ export interface StyleConfig {
   overlayOpacity?: number;
 }
 
+export interface GradientConfig {
+  type: 'linear' | 'radial';
+  angle?: number; // Para gradientes lineares (ex: 45, 90, 180)
+  direction?: string; // Para gradientes com direção (ex: 'to-br', 'to-r')
+  colors: string[]; // Array de cores hex
+}
+
 // ============================================================================
 // 1. HEADER CONFIG
 // ============================================================================
@@ -87,6 +94,9 @@ export interface HeroConfig {
   buttons: HeroButton[]; // 3 botões
   backgroundImage: ImageConfig;
   overlayOpacity: number; // 0-100
+  // Gradientes
+  titleGradient?: GradientConfig; // Gradiente do título (gold-metallic)
+  overlayGradient?: GradientConfig; // Gradiente de overlay (orange overlay)
 }
 
 // ============================================================================
