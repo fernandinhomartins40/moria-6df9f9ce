@@ -82,7 +82,7 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row gap-4">
             {buttons.filter(btn => btn.enabled).map((button) => {
               const customStyle = button.background || button.textColor ? {
-                ...(button.background ? { background: colorOrGradientToCSS(button.background) } : {}),
+                ...(button.background ? colorOrGradientToCSS(button.background) : {}),
                 ...(button.textColor ? { color: button.textColor } : {}),
               } : undefined;
 

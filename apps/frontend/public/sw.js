@@ -56,8 +56,9 @@ self.addEventListener('fetch', (event) => {
         // Clone response pois só pode ser lido uma vez
         const responseToCache = response.clone();
 
-        // Cachear response se for successful
-        if (response.status === 200) {
+        // Cachear response se for successful E se for GET request
+        // POST, PUT, DELETE não podem ser cacheados
+        if (response.status === 200 && event.request.method === 'GET') {
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
           });
