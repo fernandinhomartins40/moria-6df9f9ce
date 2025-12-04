@@ -131,10 +131,34 @@ export const convertTailwindToHex = (tailwindClass: string): string => {
  * @param colorString - String de cor (ex: "text-blue-600" ou "#2563eb")
  * @returns ColorOrGradientValue completo
  */
-export const stringToColorOrGradient = (colorString: string | ColorOrGradientValue): ColorOrGradientValue => {
-  // Se já for ColorOrGradientValue, retornar
+export const stringToColorOrGradient = (colorString: string | ColorOrGradientValue | any): ColorOrGradientValue => {
+  // Se for null ou undefined, retornar fallback
+  if (colorString === null || colorString === undefined) {
+    return {
+      type: 'solid',
+      solid: '#ff6933',
+    };
+  }
+
+  // Se já for ColorOrGradientValue válido, retornar
   if (typeof colorString === 'object' && colorString !== null && 'type' in colorString) {
-    return colorString;
+    // Validar se é um ColorOrGradientValue válido
+    if (isValidColorOrGradient(colorString)) {
+      return colorString;
+    }
+    // Se não for válido, tentar recuperar
+    if (colorString.type === 'solid' && !colorString.solid) {
+      return {
+        type: 'solid',
+        solid: '#ff6933',
+      };
+    }
+    if (colorString.type === 'gradient' && (!colorString.gradient || !colorString.gradient.colors)) {
+      return {
+        type: 'solid',
+        solid: '#ff6933',
+      };
+    }
   }
 
   // Se for string, converter para ColorOrGradientValue
@@ -146,7 +170,7 @@ export const stringToColorOrGradient = (colorString: string | ColorOrGradientVal
     };
   }
 
-  // Fallback
+  // Fallback para qualquer outro caso
   return {
     type: 'solid',
     solid: '#ff6933',
@@ -174,15 +198,96 @@ export const migrateColorField = (color: any): ColorOrGradientValue => {
  * @param items - Array de objetos com campo color
  * @returns Array com cores migradas
  */
-export const migrateColorArray = <T extends { color: any }>(items: T[]): T[] => {
+export const migrateColorArray = <T extends { color?: any }>(items: T[]): T[] => {
   if (!items || !Array.isArray(items)) {
     return [];
   }
 
-  return items.map(item => ({
-    ...item,
-    color: migrateColorField(item.color),
-  }));
+  return items.map(item => {
+    // Se o item não existe ou é null, retornar como está
+    if (!item || typeof item !== 'object') {
+      return item;
+    }
+
+    // Se o item não tem campo color, retornar como está
+    if (!('color' in item)) {
+      return item;
+    }
+
+    // Migrar o campo color
+    return {
+      ...item,
+      color: migrateColorField(item.color),
+    };
+  });
+};
+
+/**
+ * Sanitiza um valor de cor para garantir que seja seguro usar
+ * @param value - Valor a sanitizar
+ * @returns ColorOrGradientValue válido ou null
+ */
+export const sanitizeColorValue = (value: any): ColorOrGradientValue | null => {
+  // Se for null ou undefined, retornar null
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  // Se for string, converter
+  if (typeof value === 'string') {
+    return stringToColorOrGradient(value);
+  }
+
+  // Se for objeto, validar estrutura
+  if (typeof value === 'object' && value !== null) {
+    // Verificar se tem type
+    if (!value.type) {
+      return null;
+    }
+
+    // Tipo solid
+    if (value.type === 'solid') {
+      if (typeof value.solid === 'string' && value.solid.length > 0) {
+        return {
+          type: 'solid',
+          solid: value.solid,
+        };
+      }
+      return null;
+    }
+
+    // Tipo gradient
+    if (value.type === 'gradient') {
+      // Verificar se gradient existe e é objeto válido
+      if (!value.gradient || typeof value.gradient !== 'object' || value.gradient === null) {
+        return null;
+      }
+
+      // Verificar se tem colors
+      if (!value.gradient.colors || !Array.isArray(value.gradient.colors) || value.gradient.colors.length === 0) {
+        return null;
+      }
+
+      // Verificar tipo do gradiente
+      const gradientType = value.gradient.type;
+      if (gradientType !== 'linear' && gradientType !== 'radial') {
+        return null;
+      }
+
+      // Retornar gradiente válido
+      return {
+        type: 'gradient',
+        gradient: {
+          type: gradientType,
+          colors: value.gradient.colors,
+          angle: value.gradient.angle,
+          direction: value.gradient.direction,
+        },
+      };
+    }
+  }
+
+  return null;
 };
 
 /**
@@ -209,12 +314,13 @@ export const isValidColorOrGradient = (value: any): value is ColorOrGradientValu
   // Validação 4: tipo 'gradient'
   if (value.type === 'gradient') {
     // Gradiente deve ter objeto gradient
-    if (!value.gradient || typeof value.gradient !== 'object') {
+    if (!value.gradient || typeof value.gradient !== 'object' || value.gradient === null) {
       return false;
     }
 
     // Gradiente deve ter colors como array com elementos
-    if (!Array.isArray(value.gradient.colors)) {
+    // Proteção extra: verificar se gradient existe E se colors existe
+    if (!value.gradient.colors || !Array.isArray(value.gradient.colors)) {
       return false;
     }
 

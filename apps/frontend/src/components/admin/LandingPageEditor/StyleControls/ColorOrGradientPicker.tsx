@@ -12,6 +12,7 @@ import { Droplet, Palette } from 'lucide-react';
 import { ColorPicker } from './ColorPicker';
 import { GradientPicker, MORIA_GRADIENT_PRESETS } from './GradientPicker';
 import { GradientConfig } from '@/types/landingPage';
+import { sanitizeColorValue } from '@/utils/colorHelpers';
 
 export interface ColorOrGradientValue {
   type: 'solid' | 'gradient';
@@ -183,33 +184,27 @@ export const colorOrGradientToCSS = (
     return {};
   }
 
-  // Validação 2: se é string (formato antigo), retornar vazio para não quebrar
-  if (typeof value === 'string') {
-    console.warn('[colorOrGradientToCSS] Formato antigo detectado (string):', value);
-    return {};
-  }
+  // Sanitizar o valor para garantir segurança
+  const sanitized = sanitizeColorValue(value);
 
-  // Validação 3: se não tem type, retornar fallback
-  if (!value.type) {
-    console.warn('[colorOrGradientToCSS] Objeto sem type:', value);
+  // Se a sanitização falhou, retornar fallback
+  if (!sanitized) {
+    console.warn('[colorOrGradientToCSS] Valor não pôde ser sanitizado:', value);
     return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
   }
 
+  // Usar o valor sanitizado daqui em diante
+  const safeValue = sanitized;
+
   // Tipo: gradient
-  if (value.type === 'gradient') {
-    // Validação 4: gradient deve existir
-    if (!value.gradient) {
-      console.warn('[colorOrGradientToCSS] Gradiente sem objeto gradient');
+  if (safeValue.type === 'gradient') {
+    // Como o valor foi sanitizado, gradient já está validado
+    if (!safeValue.gradient) {
       return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
     }
 
-    const { type, angle, direction, colors } = value.gradient;
-
-    // Validação 5: colors deve ser array com elementos
-    if (!colors || !Array.isArray(colors) || colors.length === 0) {
-      console.warn('[colorOrGradientToCSS] Gradiente sem colors válidos:', value.gradient);
-      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
-    }
+    // Extrair propriedades com segurança
+    const { type, angle, direction, colors } = safeValue.gradient;
 
     // Gerar gradiente CSS
     let gradient = '';
@@ -218,10 +213,6 @@ export const colorOrGradientToCSS = (
       gradient = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
     } else if (type === 'radial') {
       gradient = `radial-gradient(circle, ${colors.join(', ')})`;
-    } else {
-      // Tipo de gradiente desconhecido
-      console.warn('[colorOrGradientToCSS] Tipo de gradiente desconhecido:', type);
-      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
     }
 
     // Retornar CSS apropriado
@@ -238,8 +229,8 @@ export const colorOrGradientToCSS = (
   }
 
   // Tipo: solid (cor sólida)
-  if (value.type === 'solid') {
-    const solidColor = value.solid || '#FF6B35';
+  if (safeValue.type === 'solid') {
+    const solidColor = safeValue.solid || '#FF6B35';
 
     if (isForText) {
       return { color: solidColor };
@@ -248,7 +239,6 @@ export const colorOrGradientToCSS = (
     return { backgroundColor: solidColor };
   }
 
-  // Tipo desconhecido
-  console.warn('[colorOrGradientToCSS] Tipo desconhecido:', value.type);
+  // Fallback (não deveria chegar aqui após sanitização)
   return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
 };
