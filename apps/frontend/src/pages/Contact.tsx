@@ -51,28 +51,28 @@ export default function Contact() {
         icon: "MapPin",
         title: "Endereço",
         content: ["Rua das Oficinas, 123", "Centro - São Paulo/SP", "CEP: 01234-567"],
-        color: "text-blue-600"
+        color: { type: 'solid', solid: '#2563eb' } // text-blue-600
       },
       {
         id: "2",
         icon: "Phone",
         title: "Telefone",
         content: ["(11) 99999-9999", "WhatsApp disponível"],
-        color: "text-green-600"
+        color: { type: 'solid', solid: '#16a34a' } // text-green-600
       },
       {
         id: "3",
         icon: "Mail",
         title: "E-mail",
         content: ["contato@moriapecas.com.br", "Resposta em até 24h"],
-        color: "text-red-600"
+        color: { type: 'solid', solid: '#dc2626' } // text-red-600
       },
       {
         id: "4",
         icon: "Clock",
         title: "Horário",
         content: ["Seg a Sex: 8h às 18h", "Sábado: 8h às 12h", "Domingo: Fechado"],
-        color: "text-purple-600"
+        color: { type: 'solid', solid: '#9333ea' } // text-purple-600
       }
     ],
     formTitle: "Envie sua Mensagem",
@@ -222,7 +222,10 @@ ${new Date().toLocaleString('pt-BR')}
                     <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
                         <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                          <IconComponent className={`h-8 w-8 ${info.color}`} />
+                          <IconComponent
+                            className="h-8 w-8"
+                            style={colorOrGradientToCSS(info.color, { forText: true })}
+                          />
                         </div>
                         <h3 className="font-bold text-lg mb-3 text-moria-black">
                           {info.title}

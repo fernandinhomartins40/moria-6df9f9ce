@@ -14,6 +14,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { LandingPageConfig } from '@/types/landingPage';
 import { getDefaultConfig } from '@/utils/landingPageDefaults';
+import { migrateColorArray } from '@/utils/colorHelpers';
 import { toast } from 'sonner';
 
 // Configurações
@@ -61,6 +62,29 @@ const deepMerge = (target: any, source: any): any => {
   }
 
   return output;
+};
+
+// Helper: Migrar campos de cor de string para ColorOrGradientValue
+const migrateConfigColors = (config: any): any => {
+  if (!config) return config;
+
+  const migratedConfig = { ...config };
+
+  // Migrar contactPage.contactInfoCards
+  if (migratedConfig.contactPage?.contactInfoCards) {
+    migratedConfig.contactPage.contactInfoCards = migrateColorArray(
+      migratedConfig.contactPage.contactInfoCards
+    );
+  }
+
+  // Migrar aboutPage.values
+  if (migratedConfig.aboutPage?.values) {
+    migratedConfig.aboutPage.values = migrateColorArray(
+      migratedConfig.aboutPage.values
+    );
+  }
+
+  return migratedConfig;
 };
 
 export interface UseLandingPageConfigResult {
@@ -116,7 +140,7 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
 
       // Deep merge com defaults para garantir que arrays sempre existam
       const defaults = getDefaultConfig();
-      const mergedConfig: LandingPageConfig = {
+      let mergedConfig: LandingPageConfig = {
         version: data.version || defaults.version,
         lastModified: data.updatedAt || new Date().toISOString(),
         header: deepMerge(defaults.header, data.header),
@@ -130,6 +154,9 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
         contact: deepMerge(defaults.contact, data.contact),
         footer: deepMerge(defaults.footer, data.footer),
       };
+
+      // Migrar cores antigas (strings) para ColorOrGradientValue
+      mergedConfig = migrateConfigColors(mergedConfig);
 
       setConfig(mergedConfig);
 
@@ -153,7 +180,9 @@ export const useLandingPageConfig = (): UseLandingPageConfigResult => {
       try {
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
-          const cachedConfig = JSON.parse(cached);
+          let cachedConfig = JSON.parse(cached);
+          // Migrar cores antigas
+          cachedConfig = migrateConfigColors(cachedConfig);
           log('📦 Usando configuração do localStorage (cache)');
           setConfig(cachedConfig);
 

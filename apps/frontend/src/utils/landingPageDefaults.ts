@@ -165,28 +165,28 @@ export const getDefaultConfig = (): LandingPageConfig => ({
         icon: 'MapPin',
         title: 'Endereço',
         content: ['Rua das Oficinas, 123', 'Centro - São Paulo/SP', 'CEP: 01234-567'],
-        color: 'text-blue-600',
+        color: { type: 'solid', solid: '#2563eb' }, // text-blue-600
       },
       {
         id: '2',
         icon: 'Phone',
         title: 'Telefone',
         content: ['(11) 99999-9999', 'WhatsApp disponível'],
-        color: 'text-green-600',
+        color: { type: 'solid', solid: '#16a34a' }, // text-green-600
       },
       {
         id: '3',
         icon: 'Mail',
         title: 'E-mail',
         content: ['contato@moriapecas.com.br', 'Resposta em até 24h'],
-        color: 'text-red-600',
+        color: { type: 'solid', solid: '#dc2626' }, // text-red-600
       },
       {
         id: '4',
         icon: 'Clock',
         title: 'Horário',
         content: ['Seg a Sex: 8h às 18h', 'Sábado: 8h às 12h', 'Domingo: Fechado'],
-        color: 'text-purple-600',
+        color: { type: 'solid', solid: '#9333ea' }, // text-purple-600
       },
     ],
     formTitle: 'Envie sua Mensagem',
@@ -239,28 +239,28 @@ export const getDefaultConfig = (): LandingPageConfig => ({
         icon: 'Shield',
         title: 'Qualidade',
         description: 'Compromisso com peças originais e serviços de alta qualidade',
-        color: 'text-blue-600',
+        color: { type: 'solid', solid: '#2563eb' }, // text-blue-600
       },
       {
         id: '2',
         icon: 'Heart',
         title: 'Confiança',
         description: 'Relacionamento baseado na transparência e honestidade',
-        color: 'text-red-600',
+        color: { type: 'solid', solid: '#dc2626' }, // text-red-600
       },
       {
         id: '3',
         icon: 'Target',
         title: 'Excelência',
         description: 'Busca constante pela melhoria contínua dos nossos serviços',
-        color: 'text-green-600',
+        color: { type: 'solid', solid: '#16a34a' }, // text-green-600
       },
       {
         id: '4',
         icon: 'Users',
         title: 'Relacionamento',
         description: 'Foco no atendimento personalizado e duradouro',
-        color: 'text-purple-600',
+        color: { type: 'solid', solid: '#9333ea' }, // text-purple-600
       },
     ],
     servicesTitle: 'Nossos Serviços',

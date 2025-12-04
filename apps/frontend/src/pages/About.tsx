@@ -45,10 +45,10 @@ export default function About() {
     valuesTitle: "Nossos Valores",
     valuesSubtitle: "Os princípios que guiam nossa empresa e nosso compromisso com cada cliente.",
     values: [
-      { id: "1", icon: "Shield", title: "Qualidade", description: "Compromisso com peças originais e serviços de alta qualidade", color: "text-blue-600" },
-      { id: "2", icon: "Heart", title: "Confiança", description: "Relacionamento baseado na transparência e honestidade", color: "text-red-600" },
-      { id: "3", icon: "Target", title: "Excelência", description: "Busca constante pela melhoria contínua dos nossos serviços", color: "text-green-600" },
-      { id: "4", icon: "Users", title: "Relacionamento", description: "Foco no atendimento personalizado e duradouro", color: "text-purple-600" }
+      { id: "1", icon: "Shield", title: "Qualidade", description: "Compromisso com peças originais e serviços de alta qualidade", color: { type: 'solid', solid: '#2563eb' } }, // text-blue-600
+      { id: "2", icon: "Heart", title: "Confiança", description: "Relacionamento baseado na transparência e honestidade", color: { type: 'solid', solid: '#dc2626' } }, // text-red-600
+      { id: "3", icon: "Target", title: "Excelência", description: "Busca constante pela melhoria contínua dos nossos serviços", color: { type: 'solid', solid: '#16a34a' } }, // text-green-600
+      { id: "4", icon: "Users", title: "Relacionamento", description: "Foco no atendimento personalizado e duradouro", color: { type: 'solid', solid: '#9333ea' } } // text-purple-600
     ],
     servicesTitle: "Nossos Serviços",
     servicesSubtitle: "Oferecemos uma ampla gama de serviços especializados para manter seu veículo em perfeitas condições.",
@@ -228,7 +228,10 @@ export default function About() {
                     <Card key={value.id || index} className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all">
                       <CardContent className="p-6 text-center">
                         <div className="bg-white/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                          <IconComponent className={`h-8 w-8 ${value.color}`} />
+                          <IconComponent
+                            className="h-8 w-8"
+                            style={colorOrGradientToCSS(value.color, { forText: true })}
+                          />
                         </div>
                         <h3 className="text-xl font-bold mb-3">
                           {value.title}
