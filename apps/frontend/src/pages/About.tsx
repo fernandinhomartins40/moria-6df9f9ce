@@ -1,77 +1,81 @@
 import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
+import { useLandingPageConfig } from "../hooks/useLandingPageConfig";
+import * as Icons from "lucide-react";
 import "../styles/public.css";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent } from "../components/ui/card";
-import { 
-  Wrench, 
-  Shield, 
-  Clock, 
-  Users, 
-  Award, 
-  CheckCircle, 
+import {
+  Shield,
+  Clock,
+  Award,
+  CheckCircle,
   Star,
-  Target,
-  Heart
+  Loader2
 } from "lucide-react";
 
 export default function About() {
-  const milestones = [
-    { year: "2009", title: "Fundação", description: "Início da Moria Peças e Serviços" },
-    { year: "2012", title: "Expansão", description: "Ampliação do estoque e serviços" },
-    { year: "2015", title: "Modernização", description: "Investimento em equipamentos de diagnóstico" },
-    { year: "2018", title: "Certificação", description: "Certificação ISO 9001" },
-    { year: "2021", title: "Digital", description: "Lançamento da plataforma online" },
-    { year: "2024", title: "Presente", description: "Mais de 15 anos servindo com excelência" }
-  ];
+  const { config: landingPageConfig, loading: configLoading } = useLandingPageConfig();
 
-  const values = [
-    {
-      icon: Shield,
-      title: "Qualidade",
-      description: "Compromisso com peças originais e serviços de alta qualidade",
-      color: "text-blue-600"
-    },
-    {
-      icon: Heart,
-      title: "Confiança",
-      description: "Relacionamento baseado na transparência e honestidade",
-      color: "text-red-600"
-    },
-    {
-      icon: Target,
-      title: "Excelência",
-      description: "Busca constante pela melhoria contínua dos nossos serviços",
-      color: "text-green-600"
-    },
-    {
-      icon: Users,
-      title: "Relacionamento",
-      description: "Foco no atendimento personalizado e duradouro",
-      color: "text-purple-600"
-    }
-  ];
+  // Usar configurações do Landing Page Editor ou fallback para defaults
+  const aboutPageConfig = landingPageConfig?.aboutPage || {
+    enabled: true,
+    heroBadge: "Sobre Nós",
+    heroTitle: "Mais de",
+    heroHighlight: "15 Anos",
+    heroSubtitle: "Especialistas em peças automotivas e serviços de qualidade. Nossa missão é garantir que seu veículo esteja sempre em perfeitas condições.",
+    stats: [
+      { id: "1", number: "15+", label: "Anos de Experiência" },
+      { id: "2", number: "10k+", label: "Peças em Estoque" },
+      { id: "3", number: "5k+", label: "Clientes Satisfeitos" },
+      { id: "4", number: "50k+", label: "Serviços Realizados" }
+    ],
+    historyTitle: "Nossa História",
+    historySubtitle: "Uma jornada de dedicação, crescimento e compromisso com a excelência no setor automotivo.",
+    milestones: [
+      { id: "1", year: "2009", title: "Fundação", description: "Início da Moria Peças e Serviços" },
+      { id: "2", year: "2012", title: "Expansão", description: "Ampliação do estoque e serviços" },
+      { id: "3", year: "2015", title: "Modernização", description: "Investimento em equipamentos de diagnóstico" },
+      { id: "4", year: "2018", title: "Certificação", description: "Certificação ISO 9001" },
+      { id: "5", year: "2021", title: "Digital", description: "Lançamento da plataforma online" },
+      { id: "6", year: "2024", title: "Presente", description: "Mais de 15 anos servindo com excelência" }
+    ],
+    valuesTitle: "Nossos Valores",
+    valuesSubtitle: "Os princípios que guiam nossa empresa e nosso compromisso com cada cliente.",
+    values: [
+      { id: "1", icon: "Shield", title: "Qualidade", description: "Compromisso com peças originais e serviços de alta qualidade", color: "text-blue-600" },
+      { id: "2", icon: "Heart", title: "Confiança", description: "Relacionamento baseado na transparência e honestidade", color: "text-red-600" },
+      { id: "3", icon: "Target", title: "Excelência", description: "Busca constante pela melhoria contínua dos nossos serviços", color: "text-green-600" },
+      { id: "4", icon: "Users", title: "Relacionamento", description: "Foco no atendimento personalizado e duradouro", color: "text-purple-600" }
+    ],
+    servicesTitle: "Nossos Serviços",
+    servicesSubtitle: "Oferecemos uma ampla gama de serviços especializados para manter seu veículo em perfeitas condições.",
+    services: [
+      { id: "1", name: "Manutenção Preventiva e Corretiva" },
+      { id: "2", name: "Diagnóstico Eletrônico Completo" },
+      { id: "3", name: "Troca de Óleo e Filtros" },
+      { id: "4", name: "Sistema de Freios e ABS" },
+      { id: "5", name: "Suspensão e Amortecedores" },
+      { id: "6", name: "Sistema Elétrico e Eletrônico" },
+      { id: "7", name: "Ar Condicionado Automotivo" },
+      { id: "8", name: "Injeção Eletrônica" },
+      { id: "9", name: "Sistema de Ignição" },
+      { id: "10", name: "Alinhamento e Balanceamento" }
+    ],
+    commitmentTitle: "Nosso Compromisso",
+    commitmentText: "Garantir que cada cliente tenha a melhor experiência possível, com serviços de qualidade superior, atendimento personalizado e preços justos. Sua satisfação é nossa maior conquista.",
+    commitmentYears: "15+ Anos de Excelência"
+  };
 
-  const stats = [
-    { number: "15+", label: "Anos de Experiência" },
-    { number: "10k+", label: "Peças em Estoque" },
-    { number: "5k+", label: "Clientes Satisfeitos" },
-    { number: "50k+", label: "Serviços Realizados" }
-  ];
-
-  const services = [
-    "Manutenção Preventiva e Corretiva",
-    "Diagnóstico Eletrônico Completo",
-    "Troca de Óleo e Filtros",
-    "Sistema de Freios e ABS",
-    "Suspensão e Amortecedores",
-    "Sistema Elétrico e Eletrônico",
-    "Ar Condicionado Automotivo",
-    "Injeção Eletrônica",
-    "Sistema de Ignição",
-    "Alinhamento e Balanceamento"
-  ];
+  // Renderizar loading
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-moria-orange" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -84,16 +88,13 @@ export default function About() {
             <div className="container mx-auto px-4 relative z-10">
               <div className="max-w-4xl mx-auto text-center">
                 <Badge className="mb-6 bg-moria-orange text-white px-4 py-2 text-lg">
-                  Sobre Nós
+                  {aboutPageConfig.heroBadge}
                 </Badge>
                 <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                  Mais de <span className="gold-metallic">15 Anos</span>
-                  <br />
-                  Cuidando do Seu Veículo
+                  {aboutPageConfig.heroTitle} <span className="gold-metallic">{aboutPageConfig.heroHighlight}</span>
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-                  Especialistas em peças automotivas e serviços de qualidade. 
-                  Nossa missão é garantir que seu veículo esteja sempre em perfeitas condições.
+                  {aboutPageConfig.heroSubtitle}
                 </p>
               </div>
             </div>
@@ -103,8 +104,8 @@ export default function About() {
           <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                {stats.map((stat, index) => (
-                  <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+                {aboutPageConfig.stats?.map((stat, index) => (
+                  <div key={stat.id || index} className="bg-white p-6 rounded-lg shadow-md">
                     <div className="text-3xl md:text-4xl font-bold text-moria-orange mb-2">
                       {stat.number}
                     </div>
@@ -122,10 +123,14 @@ export default function About() {
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                  Nossa <span className="gold-metallic">História</span>
+                  {aboutPageConfig.historyTitle.split(' ').map((word, i, arr) =>
+                    i === arr.length - 1 ?
+                      <span key={i} className="gold-metallic">{word}</span> :
+                      <span key={i}>{word} </span>
+                  )}
                 </h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  Uma jornada de dedicação, crescimento e compromisso com a excelência no setor automotivo.
+                  {aboutPageConfig.historySubtitle}
                 </p>
               </div>
 
@@ -133,15 +138,15 @@ export default function About() {
                 <div className="relative">
                   {/* Timeline Line */}
                   <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-moria-orange hidden md:block"></div>
-                  
+
                   <div className="space-y-12">
-                    {milestones.map((milestone, index) => (
-                      <div key={index} className="relative flex items-center">
+                    {aboutPageConfig.milestones?.map((milestone, index) => (
+                      <div key={milestone.id || index} className="relative flex items-center">
                         {/* Timeline Dot */}
                         <div className="hidden md:flex w-16 h-16 bg-moria-orange rounded-full items-center justify-center text-white font-bold text-lg mr-8 shadow-lg">
                           <Clock className="h-6 w-6" />
                         </div>
-                        
+
                         <Card className="flex-1">
                           <CardContent className="p-6">
                             <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -172,18 +177,22 @@ export default function About() {
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                  Nossos <span className="gold-metallic">Valores</span>
+                  {aboutPageConfig.valuesTitle.split(' ').map((word, i, arr) =>
+                    i === arr.length - 1 ?
+                      <span key={i} className="gold-metallic">{word}</span> :
+                      <span key={i}>{word} </span>
+                  )}
                 </h2>
                 <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-                  Os princípios que guiam nossa empresa e nosso compromisso com cada cliente.
+                  {aboutPageConfig.valuesSubtitle}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {values.map((value, index) => {
-                  const IconComponent = value.icon;
+                {aboutPageConfig.values?.map((value, index) => {
+                  const IconComponent = (Icons as any)[value.icon] || Shield;
                   return (
-                    <Card key={index} className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all">
+                    <Card key={value.id || index} className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all">
                       <CardContent className="p-6 text-center">
                         <div className="bg-white/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                           <IconComponent className={`h-8 w-8 ${value.color}`} />
@@ -207,18 +216,22 @@ export default function About() {
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                  Nossos <span className="gold-metallic">Serviços</span>
+                  {aboutPageConfig.servicesTitle.split(' ').map((word, i, arr) =>
+                    i === arr.length - 1 ?
+                      <span key={i} className="gold-metallic">{word}</span> :
+                      <span key={i}>{word} </span>
+                  )}
                 </h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                  Oferecemos uma ampla gama de serviços especializados para manter seu veículo em perfeitas condições.
+                  {aboutPageConfig.servicesSubtitle}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {services.map((service, index) => (
-                  <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-moria-orange/10 transition-colors">
+                {aboutPageConfig.services?.map((service, index) => (
+                  <div key={service.id || index} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-moria-orange/10 transition-colors">
                     <CheckCircle className="h-5 w-5 text-moria-orange mr-3 flex-shrink-0" />
-                    <span className="text-gray-700 font-medium">{service}</span>
+                    <span className="text-gray-700 font-medium">{service.name}</span>
                   </div>
                 ))}
               </div>
@@ -231,19 +244,17 @@ export default function About() {
               <div className="max-w-4xl mx-auto text-center">
                 <Award className="h-16 w-16 mx-auto mb-6 text-white" />
                 <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                  Nosso Compromisso
+                  {aboutPageConfig.commitmentTitle}
                 </h2>
                 <p className="text-xl md:text-2xl mb-8 leading-relaxed">
-                  "Garantir que cada cliente tenha a melhor experiência possível, 
-                  com serviços de qualidade superior, atendimento personalizado e 
-                  preços justos. Sua satisfação é nossa maior conquista."
+                  "{aboutPageConfig.commitmentText}"
                 </p>
                 <div className="flex justify-center">
                   <div className="flex items-center space-x-2">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="h-6 w-6 text-yellow-300 fill-yellow-300" />
                     ))}
-                    <span className="ml-4 text-lg font-semibold">15+ Anos de Excelência</span>
+                    <span className="ml-4 text-lg font-semibold">{aboutPageConfig.commitmentYears}</span>
                   </div>
                 </div>
               </div>
