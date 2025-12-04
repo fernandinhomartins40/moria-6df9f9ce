@@ -173,34 +173,59 @@ export const ColorOrGradientPicker = ({
 
 // Helper function para converter ColorOrGradientValue em CSS
 export const colorOrGradientToCSS = (
-  value: ColorOrGradientValue | undefined,
+  value: ColorOrGradientValue | undefined | any,
   options?: { forText?: boolean }
 ): React.CSSProperties => {
-  // Validação: retornar vazio se value é undefined
+  const isForText = options?.forText ?? false;
+
+  // Validação 1: value undefined ou null
   if (!value) {
     return {};
   }
 
-  const isForText = options?.forText ?? false;
+  // Validação 2: se é string (formato antigo), retornar vazio para não quebrar
+  if (typeof value === 'string') {
+    console.warn('[colorOrGradientToCSS] Formato antigo detectado (string):', value);
+    return {};
+  }
 
-  if (value.type === 'gradient' && value.gradient) {
-    const { type, angle, direction, colors } = value.gradient;
+  // Validação 3: se não tem type, retornar fallback
+  if (!value.type) {
+    console.warn('[colorOrGradientToCSS] Objeto sem type:', value);
+    return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
+  }
 
-    // Validação: garantir que colors existe e tem elementos
-    if (!colors || colors.length === 0) {
+  // Tipo: gradient
+  if (value.type === 'gradient') {
+    // Validação 4: gradient deve existir
+    if (!value.gradient) {
+      console.warn('[colorOrGradientToCSS] Gradiente sem objeto gradient');
       return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
     }
 
+    const { type, angle, direction, colors } = value.gradient;
+
+    // Validação 5: colors deve ser array com elementos
+    if (!colors || !Array.isArray(colors) || colors.length === 0) {
+      console.warn('[colorOrGradientToCSS] Gradiente sem colors válidos:', value.gradient);
+      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
+    }
+
+    // Gerar gradiente CSS
     let gradient = '';
     if (type === 'linear') {
       const angleOrDirection = direction || `${angle || 90}deg`;
       gradient = `linear-gradient(${angleOrDirection}, ${colors.join(', ')})`;
     } else if (type === 'radial') {
       gradient = `radial-gradient(circle, ${colors.join(', ')})`;
+    } else {
+      // Tipo de gradiente desconhecido
+      console.warn('[colorOrGradientToCSS] Tipo de gradiente desconhecido:', type);
+      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
     }
 
+    // Retornar CSS apropriado
     if (isForText) {
-      // Para texto com gradiente, usar background-clip: text
       return {
         background: gradient,
         WebkitBackgroundClip: 'text',
@@ -212,10 +237,18 @@ export const colorOrGradientToCSS = (
     return { backgroundImage: gradient };
   }
 
-  // Cor sólida
-  if (isForText) {
-    return { color: value.solid || '#FF6B35' };
+  // Tipo: solid (cor sólida)
+  if (value.type === 'solid') {
+    const solidColor = value.solid || '#FF6B35';
+
+    if (isForText) {
+      return { color: solidColor };
+    }
+
+    return { backgroundColor: solidColor };
   }
 
-  return { backgroundColor: value.solid || '#FF6B35' };
+  // Tipo desconhecido
+  console.warn('[colorOrGradientToCSS] Tipo desconhecido:', value.type);
+  return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
 };
