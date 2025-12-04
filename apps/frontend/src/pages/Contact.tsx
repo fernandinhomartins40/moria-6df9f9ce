@@ -3,6 +3,8 @@ import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
 import { useStoreSettings } from "../hooks/useStoreSettings";
+import { useLandingPageConfig } from "../hooks/useLandingPageConfig";
+import * as Icons from "lucide-react";
 import "../styles/public.css";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -25,6 +27,7 @@ import { toast } from "sonner";
 
 export default function Contact() {
   const { settings: storeSettings } = useStoreSettings();
+  const { config: landingPageConfig, loading: configLoading } = useLandingPageConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -35,41 +38,58 @@ export default function Contact() {
     serviceType: ""
   });
 
-  const contactInfo = [
-    {
-      icon: MapPin,
-      title: "Endereço",
-      content: ["Rua das Oficinas, 123", "Centro - São Paulo/SP", "CEP: 01234-567"],
-      color: "text-blue-600"
-    },
-    {
-      icon: Phone,
-      title: "Telefone",
-      content: ["(11) 99999-9999", "WhatsApp disponível"],
-      color: "text-green-600"
-    },
-    {
-      icon: Mail,
-      title: "E-mail",
-      content: ["contato@moriapecas.com.br", "Resposta em até 24h"],
-      color: "text-red-600"
-    },
-    {
-      icon: Clock,
-      title: "Horário",
-      content: ["Seg a Sex: 8h às 18h", "Sábado: 8h às 12h", "Domingo: Fechado"],
-      color: "text-purple-600"
-    }
-  ];
-
-  const serviceTypes = [
-    "Manutenção Preventiva",
-    "Diagnóstico de Problemas",
-    "Troca de Peças",
-    "Orçamento Geral",
-    "Urgência/Emergência",
-    "Outros"
-  ];
+  // Usar configurações do Landing Page Editor ou fallback para defaults
+  const contactPageConfig = landingPageConfig?.contactPage || {
+    enabled: true,
+    heroBadge: "Fale Conosco",
+    heroTitle: "Entre em Contato",
+    heroSubtitle: "Estamos prontos para ajudar com suas necessidades automotivas. Entre em contato e receba atendimento personalizado.",
+    contactInfoCards: [
+      {
+        id: "1",
+        icon: "MapPin",
+        title: "Endereço",
+        content: ["Rua das Oficinas, 123", "Centro - São Paulo/SP", "CEP: 01234-567"],
+        color: "text-blue-600"
+      },
+      {
+        id: "2",
+        icon: "Phone",
+        title: "Telefone",
+        content: ["(11) 99999-9999", "WhatsApp disponível"],
+        color: "text-green-600"
+      },
+      {
+        id: "3",
+        icon: "Mail",
+        title: "E-mail",
+        content: ["contato@moriapecas.com.br", "Resposta em até 24h"],
+        color: "text-red-600"
+      },
+      {
+        id: "4",
+        icon: "Clock",
+        title: "Horário",
+        content: ["Seg a Sex: 8h às 18h", "Sábado: 8h às 12h", "Domingo: Fechado"],
+        color: "text-purple-600"
+      }
+    ],
+    formTitle: "Envie sua Mensagem",
+    formSubtitle: "Preencha o formulário abaixo e entraremos em contato o mais breve possível.",
+    serviceTypes: [
+      { id: "1", name: "Manutenção Preventiva" },
+      { id: "2", name: "Diagnóstico de Problemas" },
+      { id: "3", name: "Troca de Peças" },
+      { id: "4", name: "Orçamento Geral" },
+      { id: "5", name: "Urgência/Emergência" },
+      { id: "6", name: "Outros" }
+    ],
+    mapTitle: "Nossa Localização",
+    mapSubtitle: "Visite nossa oficina para um atendimento presencial personalizado.",
+    quickInfoEnabled: true,
+    ctaTitle: "Precisa de Ajuda Imediata?",
+    ctaSubtitle: "Entre em contato via WhatsApp para atendimento prioritário"
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -141,25 +161,37 @@ ${new Date().toLocaleString('pt-BR')}
     window.open(whatsappUrl, '_blank');
   };
 
+  // Renderizar loading
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-moria-orange" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
       <Marquee />
-          
+
           {/* Hero Section */}
           <section className="relative py-20 bg-gradient-to-br from-moria-black to-gray-900 text-white overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-moria-orange/10 to-transparent"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="max-w-4xl mx-auto text-center">
                 <Badge className="mb-6 bg-moria-orange text-white px-4 py-2 text-lg">
-                  Fale Conosco
+                  {contactPageConfig.heroBadge}
                 </Badge>
                 <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                  Entre em <span className="gold-metallic">Contato</span>
+                  {contactPageConfig.heroTitle.split(' ').map((word, i, arr) =>
+                    i === arr.length - 1 ?
+                      <span key={i} className="gold-metallic">{word}</span> :
+                      <span key={i}>{word} </span>
+                  )}
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-                  Estamos prontos para ajudar com suas necessidades automotivas. 
-                  Entre em contato e receba atendimento personalizado.
+                  {contactPageConfig.heroSubtitle}
                 </p>
               </div>
             </div>
@@ -169,8 +201,8 @@ ${new Date().toLocaleString('pt-BR')}
           <section className="py-16 bg-gray-50">
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {contactInfo.map((info, index) => {
-                  const IconComponent = info.icon;
+                {contactPageConfig.contactInfoCards?.map((info, index) => {
+                  const IconComponent = (Icons as any)[info.icon] || MapPin;
                   return (
                     <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
@@ -181,7 +213,7 @@ ${new Date().toLocaleString('pt-BR')}
                           {info.title}
                         </h3>
                         <div className="space-y-1">
-                          {info.content.map((line, i) => (
+                          {info.content?.map((line, i) => (
                             <p key={i} className="text-gray-600 text-sm">
                               {line}
                             </p>
@@ -203,10 +235,14 @@ ${new Date().toLocaleString('pt-BR')}
                 <div>
                   <div className="mb-8">
                     <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                      Envie sua <span className="gold-metallic">Mensagem</span>
+                      {contactPageConfig.formTitle.split(' ').map((word, i, arr) =>
+                        i === arr.length - 1 ?
+                          <span key={i} className="gold-metallic">{word}</span> :
+                          <span key={i}>{word} </span>
+                      )}
                     </h2>
                     <p className="text-gray-600 text-lg">
-                      Preencha o formulário abaixo e entraremos em contato o mais breve possível.
+                      {contactPageConfig.formSubtitle}
                     </p>
                   </div>
 
@@ -262,9 +298,9 @@ ${new Date().toLocaleString('pt-BR')}
                             <SelectValue placeholder="Selecione o tipo de serviço" />
                           </SelectTrigger>
                           <SelectContent>
-                            {serviceTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
+                            {contactPageConfig.serviceTypes?.map((type) => (
+                              <SelectItem key={type.id} value={type.name}>
+                                {type.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -330,10 +366,14 @@ ${new Date().toLocaleString('pt-BR')}
                 <div>
                   <div className="mb-8">
                     <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                      Nossa <span className="gold-metallic">Localização</span>
+                      {contactPageConfig.mapTitle.split(' ').map((word, i, arr) =>
+                        i === arr.length - 1 ?
+                          <span key={i} className="gold-metallic">{word}</span> :
+                          <span key={i}>{word} </span>
+                      )}
                     </h2>
                     <p className="text-gray-600 text-lg">
-                      Visite nossa oficina para um atendimento presencial personalizado.
+                      {contactPageConfig.mapSubtitle}
                     </p>
                   </div>
 
@@ -347,7 +387,8 @@ ${new Date().toLocaleString('pt-BR')}
                   </div>
 
                   {/* Quick Info Cards */}
-                  <div className="space-y-4">
+                  {contactPageConfig.quickInfoEnabled && (
+                    <div className="space-y-4">
                     <Card className="border-l-4 border-l-moria-orange">
                       <CardContent className="p-4">
                         <div className="flex items-center space-x-3">
@@ -384,6 +425,7 @@ ${new Date().toLocaleString('pt-BR')}
                       </CardContent>
                     </Card>
                   </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -393,10 +435,10 @@ ${new Date().toLocaleString('pt-BR')}
           <section className="py-16 bg-gradient-to-r from-moria-orange to-gold-accent text-white">
             <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Precisa de Ajuda Imediata?
+                {contactPageConfig.ctaTitle}
               </h2>
               <p className="text-xl mb-8 opacity-90">
-                Entre em contato via WhatsApp para atendimento prioritário
+                {contactPageConfig.ctaSubtitle}
               </p>
               <Button 
                 variant="outline" 
