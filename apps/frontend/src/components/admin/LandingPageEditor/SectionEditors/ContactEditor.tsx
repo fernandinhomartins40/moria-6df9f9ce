@@ -52,6 +52,44 @@ export const ContactEditor = ({ config, onChange }: ContactEditorProps) => {
         </div>
       </Card>
 
+      {/* Cores e Estilos */}
+      <Card className="p-6 space-y-4">
+        <h3 className="text-lg font-semibold">Cores e Estilos</h3>
+        <p className="text-sm text-muted-foreground">
+          Personalize as cores de fundo de cada seção
+        </p>
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Hero / Gradiente"
+          value={config.heroBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 135, stops: [{ color: '#1a1a1a', position: 0 }, { color: '#374151', position: 100 }] } }}
+          onChange={(heroBackgroundColor) => updateConfig({ heroBackgroundColor })}
+          defaultGradientPreset="darkToGray"
+          description="Cor de fundo da seção hero (topo)"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Cards / Gradiente"
+          value={config.cardsBackgroundColor || { type: 'solid', solid: '#f9fafb' }}
+          onChange={(cardsBackgroundColor) => updateConfig({ cardsBackgroundColor })}
+          description="Cor de fundo da seção de cards de informação"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Formulário / Gradiente"
+          value={config.formBackgroundColor || { type: 'solid', solid: '#ffffff' }}
+          onChange={(formBackgroundColor) => updateConfig({ formBackgroundColor })}
+          description="Cor de fundo da seção do formulário e mapa"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo CTA / Gradiente"
+          value={config.ctaBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 90, stops: [{ color: '#ff6600', position: 0 }, { color: '#d4af37', position: 100 }] } }}
+          onChange={(ctaBackgroundColor) => updateConfig({ ctaBackgroundColor })}
+          defaultGradientPreset="orangeToGold"
+          description="Cor de fundo do CTA final (WhatsApp)"
+        />
+      </Card>
+
       {/* Hero Section */}
       <Card className="p-6 space-y-4">
         <h3 className="text-lg font-semibold">Seção Hero</h3>

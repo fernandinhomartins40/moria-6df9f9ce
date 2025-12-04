@@ -52,6 +52,65 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
         </div>
       </Card>
 
+      {/* Cores e Estilos */}
+      <Card className="p-6 space-y-4">
+        <h3 className="text-lg font-semibold">Cores e Estilos</h3>
+        <p className="text-sm text-muted-foreground">
+          Personalize as cores de fundo de cada seção
+        </p>
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Hero / Gradiente"
+          value={config.heroBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 135, stops: [{ color: '#1a1a1a', position: 0 }, { color: '#374151', position: 100 }] } }}
+          onChange={(heroBackgroundColor) => updateConfig({ heroBackgroundColor })}
+          defaultGradientPreset="darkToGray"
+          description="Cor de fundo da seção hero (topo)"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Estatísticas / Gradiente"
+          value={config.statsBackgroundColor || { type: 'solid', solid: '#f9fafb' }}
+          onChange={(statsBackgroundColor) => updateConfig({ statsBackgroundColor })}
+          description="Cor de fundo da seção de estatísticas"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo História / Gradiente"
+          value={config.historyBackgroundColor || { type: 'solid', solid: '#ffffff' }}
+          onChange={(historyBackgroundColor) => updateConfig({ historyBackgroundColor })}
+          description="Cor de fundo da seção de história"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor da Linha do Tempo / Gradiente"
+          value={config.timelineColor || { type: 'solid', solid: '#ff6600' }}
+          onChange={(timelineColor) => updateConfig({ timelineColor })}
+          description="Cor da linha vertical do timeline"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Valores / Gradiente"
+          value={config.valuesBackgroundColor || { type: 'solid', solid: '#111827' }}
+          onChange={(valuesBackgroundColor) => updateConfig({ valuesBackgroundColor })}
+          description="Cor de fundo da seção de valores"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Serviços / Gradiente"
+          value={config.servicesBackgroundColor || { type: 'solid', solid: '#ffffff' }}
+          onChange={(servicesBackgroundColor) => updateConfig({ servicesBackgroundColor })}
+          description="Cor de fundo da seção de serviços"
+        />
+
+        <ColorOrGradientPicker
+          label="Cor de Fundo Compromisso / Gradiente"
+          value={config.commitmentBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 90, stops: [{ color: '#ff6600', position: 0 }, { color: '#d4af37', position: 100 }] } }}
+          onChange={(commitmentBackgroundColor) => updateConfig({ commitmentBackgroundColor })}
+          defaultGradientPreset="orangeToGold"
+          description="Cor de fundo da seção de compromisso (CTA final)"
+        />
+      </Card>
+
       {/* Hero Section */}
       <Card className="p-6 space-y-4">
         <h3 className="text-lg font-semibold">Seção Hero</h3>

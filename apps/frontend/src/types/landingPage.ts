@@ -170,12 +170,15 @@ export interface ContactConfig {
   heroTitle: string; // "Entre em Contato"
   heroSubtitle: string;
   heroBadge: string; // "Fale Conosco"
+  heroBackgroundColor?: ColorOrGradientValue; // Cor de fundo do hero
   // Contact Info Cards
   contactInfoCards: ContactInfoCard[];
+  cardsBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de cards
   // Form Section
   formTitle: string; // "Envie sua Mensagem"
   formSubtitle: string;
   serviceTypes: ContactServiceType[];
+  formBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção do formulário
   // Map Section
   mapTitle: string; // "Nossa Localização"
   mapSubtitle: string;
@@ -184,6 +187,7 @@ export interface ContactConfig {
   // CTA Section
   ctaTitle: string;
   ctaSubtitle: string;
+  ctaBackgroundColor?: ColorOrGradientValue; // Cor de fundo do CTA
 }
 
 // ============================================================================
@@ -223,24 +227,31 @@ export interface AboutConfig {
   heroHighlight: string; // "Cuidando do Seu Veículo" (parte em dourado)
   heroSubtitle: string;
   heroBadge: string; // "Sobre Nós"
+  heroBackgroundColor?: ColorOrGradientValue; // Cor de fundo do hero
   // Stats
   stats: AboutStat[];
+  statsBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de stats
   // História
   historyTitle: string; // "Nossa História"
   historySubtitle: string;
   milestones: AboutMilestone[];
+  historyBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de história
+  timelineColor?: ColorOrGradientValue; // Cor da linha do tempo
   // Valores
   valuesTitle: string; // "Nossos Valores"
   valuesSubtitle: string;
   values: AboutValue[];
+  valuesBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de valores
   // Serviços
   servicesTitle: string; // "Nossos Serviços"
   servicesSubtitle: string;
   services: AboutService[];
+  servicesBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de serviços
   // Compromisso
   commitmentTitle: string; // "Nosso Compromisso"
   commitmentText: string;
   commitmentYears: string; // "15+ Anos de Excelência"
+  commitmentBackgroundColor?: ColorOrGradientValue; // Cor de fundo da seção de compromisso
 }
 
 // ============================================================================
