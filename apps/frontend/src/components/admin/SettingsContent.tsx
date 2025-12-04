@@ -5,37 +5,41 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useSettings } from '@/hooks/useSettings';
 import { clearSettingsCache } from '@/hooks/useStoreSettings';
 import settingsService from '@/api/settingsService';
 import {
   MessageCircle,
   CheckCircle,
-  AlertCircle,
   Loader2,
-  RefreshCw,
-  Download,
-  FileText,
   Truck,
   DollarSign,
   BarChart3,
   Clock,
   Save,
-  RotateCcw,
-  Eye,
-  MapPin,
-  Phone,
-  Mail,
-  Timer
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  formatCNPJ,
+  formatCEP,
+  formatPhone,
+  unformatValue,
+  toWhatsAppFormat,
+  isValidCNPJFormat,
+  isValidCEPFormat,
+  isValidPhoneFormat,
+  isValidEmail,
+  isValidUF,
+  validationMessages
+} from '@/utils/formatters';
 
 export function SettingsContent() {
-  const { settings, loading, updateSettings, resetSettings, updateLoading } = useSettings();
+  const { settings, loading, updateSettings, resetSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [testingApi, setTestingApi] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -78,13 +82,16 @@ export function SettingsContent() {
     if (settings) {
       setFormData({
         storeName: settings.storeName || '',
-        cnpj: settings.cnpj || '',
-        phone: settings.phone || '',
+        // Formatar CNPJ se vier sem formatação
+        cnpj: settings.cnpj ? formatCNPJ(settings.cnpj) : '',
+        // Formatar telefone (se vier no formato WhatsApp, converte para formato brasileiro)
+        phone: settings.phone ? formatPhone(settings.phone.replace(/^55/, '')) : '',
         email: settings.email || '',
         address: settings.address || '',
         city: settings.city || '',
         state: settings.state || '',
-        zipCode: settings.zipCode || '',
+        // Formatar CEP se vier sem formatação
+        zipCode: settings.zipCode ? formatCEP(settings.zipCode) : '',
         defaultMargin: Number(settings.defaultMargin) || 35,
         freeShippingMin: Number(settings.freeShippingMin) || 150,
         deliveryFee: Number(settings.deliveryFee) || 15.90,
@@ -106,12 +113,105 @@ export function SettingsContent() {
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Limpa erro de validação quando o usuário edita o campo
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  // Handlers com formatação automática
+  const handleCNPJChange = (value: string) => {
+    const formatted = formatCNPJ(value);
+    handleInputChange('cnpj', formatted);
+  };
+
+  const handleCEPChange = (value: string) => {
+    const formatted = formatCEP(value);
+    handleInputChange('zipCode', formatted);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    handleInputChange('phone', formatted);
+  };
+
+  // Validação antes de salvar
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validar campos obrigatórios
+    if (!formData.storeName.trim()) {
+      errors.storeName = validationMessages.required;
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = validationMessages.required;
+    } else if (!isValidPhoneFormat(formData.phone)) {
+      errors.phone = validationMessages.phone;
+    }
+
+    // Validar formatos (se preenchidos)
+    if (formData.cnpj && !isValidCNPJFormat(formData.cnpj)) {
+      errors.cnpj = validationMessages.cnpj;
+    }
+
+    if (formData.zipCode && !isValidCEPFormat(formData.zipCode)) {
+      errors.zipCode = validationMessages.cep;
+    }
+
+    if (formData.email && !isValidEmail(formData.email)) {
+      errors.email = validationMessages.email;
+    }
+
+    if (formData.state && !isValidUF(formData.state)) {
+      errors.state = validationMessages.uf;
+    }
+
+    // Validar ranges numéricos
+    if (formData.defaultMargin < 0 || formData.defaultMargin > 100) {
+      errors.defaultMargin = validationMessages.range(0, 100);
+    }
+
+    if (formData.freeShippingMin < 0) {
+      errors.freeShippingMin = validationMessages.minValue(0);
+    }
+
+    if (formData.deliveryFee < 0) {
+      errors.deliveryFee = validationMessages.minValue(0);
+    }
+
+    if (formData.deliveryDays < 1) {
+      errors.deliveryDays = validationMessages.minValue(1);
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSave = async () => {
+    // Validar antes de salvar
+    if (!validateForm()) {
+      toast.error('Por favor, corrija os erros no formulário antes de salvar');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateSettings(formData);
+      // Preparar dados para envio (converter phone para formato WhatsApp no backend)
+      const dataToSend = {
+        ...formData,
+        // Remove formatação de CNPJ e CEP
+        cnpj: formData.cnpj ? unformatValue(formData.cnpj) : undefined,
+        zipCode: formData.zipCode ? unformatValue(formData.zipCode) : undefined,
+        // Converte phone para formato WhatsApp
+        phone: toWhatsAppFormat(formData.phone),
+      };
+
+      await updateSettings(dataToSend);
       // Limpar cache público para atualizar frontend
       clearSettingsCache();
       toast.success('Configurações salvas com sucesso!');
@@ -184,133 +284,6 @@ export function SettingsContent() {
     }
   };
 
-  // Componentes de Preview
-  const HeroPreview = () => (
-    <div className="relative min-h-[300px] flex items-center bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg overflow-hidden">
-      <div className="absolute inset-0 bg-moria-black opacity-70"></div>
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-2xl">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            <span className="gold-metallic">{formData.storeName || 'Moria Peças'}</span>
-          </h1>
-          <p className="text-lg text-gray-300 mb-4">
-            {formData.address && formData.city ? `${formData.address}, ${formData.city}/${formData.state}` : 'Endereço não configurado'}
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            <Badge className="bg-moria-orange text-white">
-              <Phone className="h-3 w-3 mr-1" />
-              {formData.phone || 'Telefone'}
-            </Badge>
-            <Badge className="bg-green-600 text-white">
-              <MessageCircle className="h-3 w-3 mr-1" />
-              WhatsApp
-            </Badge>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const PromotionsPreview = () => (
-    <div className="bg-gradient-to-br from-gray-900 to-moria-black text-white p-6 rounded-lg">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">
-          <span className="gold-metallic">Promoções</span> Imperdíveis
-        </h2>
-        <p className="text-gray-300">Ofertas especiais com descontos de até 50%</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="overflow-hidden">
-          <div className="bg-gray-700 h-24 flex items-center justify-center">
-            <Timer className="h-8 w-8 text-moria-orange" />
-          </div>
-          <CardContent className="p-3">
-            <Badge className="bg-red-500 text-white mb-2">-40%</Badge>
-            <p className="text-sm font-semibold text-gray-900">Produto em Promoção</p>
-            <div className="mt-1">
-              <span className="text-xs text-gray-500 line-through">R$ 100,00</span>
-              <span className="text-lg font-bold text-red-600 ml-2">R$ 60,00</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <div className="bg-gray-700 h-24 flex items-center justify-center">
-            <Timer className="h-8 w-8 text-moria-orange" />
-          </div>
-          <CardContent className="p-3">
-            <Badge className="bg-red-500 text-white mb-2">-30%</Badge>
-            <p className="text-sm font-semibold text-gray-900">Outro Produto</p>
-            <div className="mt-1">
-              <span className="text-xs text-gray-500 line-through">R$ 80,00</span>
-              <span className="text-lg font-bold text-red-600 ml-2">R$ 56,00</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-4 p-3 bg-moria-orange/20 border border-moria-orange/30 rounded text-center">
-        <p className="text-sm">
-          Frete Grátis acima de <span className="font-bold">R$ {formData.freeShippingMin.toFixed(2)}</span>
-        </p>
-        <p className="text-xs text-gray-300 mt-1">
-          Taxa de entrega: R$ {formData.deliveryFee.toFixed(2)} • Prazo: {formData.deliveryDays} dias
-        </p>
-      </div>
-    </div>
-  );
-
-  const ContactPreview = () => (
-    <div className="bg-white p-6 rounded-lg border">
-      <h2 className="text-2xl font-bold mb-4 text-center">
-        Entre em <span className="gold-metallic">Contato</span>
-      </h2>
-
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Card className="text-center">
-          <CardContent className="p-3">
-            <div className="bg-blue-100 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-2">
-              <MapPin className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-xs font-semibold text-gray-900">Endereço</p>
-            <p className="text-xs text-gray-600 mt-1">
-              {formData.city && formData.state ? `${formData.city}/${formData.state}` : 'Não configurado'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="text-center">
-          <CardContent className="p-3">
-            <div className="bg-green-100 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-2">
-              <Phone className="h-5 w-5 text-green-600" />
-            </div>
-            <p className="text-xs font-semibold text-gray-900">Telefone</p>
-            <p className="text-xs text-gray-600 mt-1">
-              {formData.phone || 'Não configurado'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="text-center col-span-2">
-          <CardContent className="p-3">
-            <div className="bg-red-100 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-2">
-              <Mail className="h-5 w-5 text-red-600" />
-            </div>
-            <p className="text-xs font-semibold text-gray-900">E-mail</p>
-            <p className="text-xs text-gray-600 mt-1">
-              {formData.email || 'Não configurado'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="sm">
-        <MessageCircle className="h-4 w-4 mr-2" />
-        WhatsApp
-      </Button>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -328,43 +301,6 @@ export function SettingsContent() {
 
   return (
     <div className="space-y-6">
-      {/* Preview Section */}
-      <Card className="bg-gradient-to-r from-moria-orange/5 to-gold-accent/5 border-moria-orange/20 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Eye className="h-5 w-5 text-moria-orange" />
-              <CardTitle>Preview da Landing Page</CardTitle>
-            </div>
-            <Badge className="bg-green-100 text-green-800 animate-pulse">
-              <div className="h-2 w-2 bg-green-600 rounded-full mr-2"></div>
-              Atualização em tempo real
-            </Badge>
-          </div>
-          <CardDescription>
-            Veja como as configurações aparecem nas seções da página principal. As alterações são atualizadas automaticamente enquanto você edita.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="hero" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="hero">Hero Section</TabsTrigger>
-              <TabsTrigger value="promotions">Promoções</TabsTrigger>
-              <TabsTrigger value="contact">Contato</TabsTrigger>
-            </TabsList>
-            <TabsContent value="hero" className="mt-4">
-              <HeroPreview />
-            </TabsContent>
-            <TabsContent value="promotions" className="mt-4">
-              <PromotionsPreview />
-            </TabsContent>
-            <TabsContent value="contact" className="mt-4">
-              <ContactPreview />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Configurações do Sistema</CardTitle>
@@ -383,25 +319,39 @@ export function SettingsContent() {
                   value={formData.storeName}
                   onChange={(e) => handleInputChange('storeName', e.target.value)}
                   placeholder="Moria Peças & Serviços"
+                  className={validationErrors.storeName ? 'border-red-500' : ''}
                 />
+                {validationErrors.storeName && (
+                  <p className="text-xs text-red-500">{validationErrors.storeName}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>
                 <Input
                   id="cnpj"
                   value={formData.cnpj}
-                  onChange={(e) => handleInputChange('cnpj', e.target.value)}
+                  onChange={(e) => handleCNPJChange(e.target.value)}
                   placeholder="00.000.000/0000-00"
+                  maxLength={18}
+                  className={validationErrors.cnpj ? 'border-red-500' : ''}
                 />
+                {validationErrors.cnpj && (
+                  <p className="text-xs text-red-500">{validationErrors.cnpj}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone/WhatsApp (Formato: 5511999999999) *</Label>
+                <Label htmlFor="phone">Telefone/WhatsApp *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="5511999999999"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                  className={validationErrors.phone ? 'border-red-500' : ''}
                 />
+                {validationErrors.phone && (
+                  <p className="text-xs text-red-500">{validationErrors.phone}</p>
+                )}
                 <p className="text-xs text-gray-500">
                   Número usado no checkout e botões de contato
                 </p>
@@ -414,16 +364,25 @@ export function SettingsContent() {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="contato@moriapecas.com"
+                  className={validationErrors.email ? 'border-red-500' : ''}
                 />
+                {validationErrors.email && (
+                  <p className="text-xs text-red-500">{validationErrors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zipCode">CEP</Label>
                 <Input
                   id="zipCode"
                   value={formData.zipCode}
-                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                  placeholder="00000000"
+                  onChange={(e) => handleCEPChange(e.target.value)}
+                  maxLength={9}
+                  className={validationErrors.zipCode ? 'border-red-500' : ''}
+                  placeholder="00000-000"
                 />
+                {validationErrors.zipCode && (
+                  <p className="text-xs text-red-500">{validationErrors.zipCode}</p>
+                )}
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">Endereço Completo</Label>
@@ -451,7 +410,11 @@ export function SettingsContent() {
                   onChange={(e) => handleInputChange('state', e.target.value.toUpperCase())}
                   placeholder="SP"
                   maxLength={2}
+                  className={validationErrors.state ? 'border-red-500' : ''}
                 />
+                {validationErrors.state && (
+                  <p className="text-xs text-red-500">{validationErrors.state}</p>
+                )}
               </div>
             </div>
           </div>
@@ -471,7 +434,11 @@ export function SettingsContent() {
                   onChange={(e) => handleInputChange('defaultMargin', Number(e.target.value))}
                   min="0"
                   max="100"
+                  className={validationErrors.defaultMargin ? 'border-red-500' : ''}
                 />
+                {validationErrors.defaultMargin && (
+                  <p className="text-xs text-red-500">{validationErrors.defaultMargin}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="freeShippingMin">Valor Mínimo para Frete Grátis (R$)</Label>
@@ -482,7 +449,11 @@ export function SettingsContent() {
                   onChange={(e) => handleInputChange('freeShippingMin', Number(e.target.value))}
                   min="0"
                   step="0.01"
+                  className={validationErrors.freeShippingMin ? 'border-red-500' : ''}
                 />
+                {validationErrors.freeShippingMin && (
+                  <p className="text-xs text-red-500">{validationErrors.freeShippingMin}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="deliveryFee">Taxa de Entrega (R$)</Label>
@@ -493,7 +464,11 @@ export function SettingsContent() {
                   onChange={(e) => handleInputChange('deliveryFee', Number(e.target.value))}
                   min="0"
                   step="0.01"
+                  className={validationErrors.deliveryFee ? 'border-red-500' : ''}
                 />
+                {validationErrors.deliveryFee && (
+                  <p className="text-xs text-red-500">{validationErrors.deliveryFee}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="deliveryDays">Tempo de Entrega (dias)</Label>
@@ -503,7 +478,11 @@ export function SettingsContent() {
                   value={formData.deliveryDays}
                   onChange={(e) => handleInputChange('deliveryDays', Number(e.target.value))}
                   min="1"
+                  className={validationErrors.deliveryDays ? 'border-red-500' : ''}
                 />
+                {validationErrors.deliveryDays && (
+                  <p className="text-xs text-red-500">{validationErrors.deliveryDays}</p>
+                )}
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import settingsService, { StoreSettings, UpdateSettingsData } from '@/api/settingsService';
 import { handleApiError } from '@/api';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 interface UseSettingsResult {
   settings: StoreSettings | null;
@@ -30,10 +31,8 @@ export const useSettings = (): UseSettingsResult => {
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError.message);
-      toast({
-        title: 'Erro ao carregar configurações',
-        description: apiError.message,
-        variant: 'destructive',
+      sonnerToast.error('Erro ao carregar configurações', {
+        description: apiError.message
       });
     } finally {
       setLoading(false);
@@ -46,18 +45,11 @@ export const useSettings = (): UseSettingsResult => {
     try {
       const updated = await settingsService.updateSettings(data);
       setSettings(updated);
-      toast({
-        title: 'Configurações atualizadas',
-        description: 'As configurações da loja foram atualizadas com sucesso.',
-      });
+      // Toast removido - será exibido pelo componente que chama
     } catch (err) {
       const apiError = handleApiError(err);
-      toast({
-        title: 'Erro ao atualizar configurações',
-        description: apiError.message,
-        variant: 'destructive',
-      });
-      throw err;
+      // Em caso de erro, propaga para o componente tratar
+      throw apiError;
     } finally {
       setUpdateLoading(false);
     }
@@ -69,18 +61,11 @@ export const useSettings = (): UseSettingsResult => {
     try {
       const reset = await settingsService.resetSettings();
       setSettings(reset);
-      toast({
-        title: 'Configurações resetadas',
-        description: 'As configurações foram restauradas para os valores padrão.',
-      });
+      // Toast removido - será exibido pelo componente que chama
     } catch (err) {
       const apiError = handleApiError(err);
-      toast({
-        title: 'Erro ao resetar configurações',
-        description: apiError.message,
-        variant: 'destructive',
-      });
-      throw err;
+      // Em caso de erro, propaga para o componente tratar
+      throw apiError;
     } finally {
       setUpdateLoading(false);
     }

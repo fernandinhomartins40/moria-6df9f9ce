@@ -6,14 +6,13 @@ import { z } from 'zod';
 export const updateSettingsSchema = z.object({
   // Informações da Empresa
   storeName: z.string().min(1, 'Nome da loja é obrigatório').optional(),
-  cnpj: z.string().regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido (formato: 00.000.000/0000-00)').optional(),
-  phone: z.string().min(10, 'Telefone inválido').optional(),
-  whatsapp: z.string().regex(/^55\d{10,11}$/, 'WhatsApp inválido (formato: 5511999999999)').optional(),
+  cnpj: z.string().regex(/^\d{14}$/, 'CNPJ inválido (deve conter 14 dígitos)').optional(),
+  phone: z.string().regex(/^55\d{10,11}$/, 'Telefone inválido (formato: 5511999999999)').optional(),
   email: z.string().email('Email inválido').optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().length(2, 'Estado deve ter 2 caracteres').optional(),
-  zipCode: z.string().regex(/^\d{8}$/, 'CEP inválido (formato: 00000000)').optional(),
+  zipCode: z.string().regex(/^\d{8}$/, 'CEP inválido (deve conter 8 dígitos)').optional(),
 
   // Configurações de Vendas
   defaultMargin: z.number().min(0).max(100, 'Margem deve estar entre 0 e 100%').optional(),
