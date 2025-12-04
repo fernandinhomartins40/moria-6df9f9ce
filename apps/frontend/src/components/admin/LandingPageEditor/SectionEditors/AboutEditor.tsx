@@ -61,7 +61,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
 
         <ColorOrGradientPicker
           label="Cor de Fundo Hero / Gradiente"
-          value={config.heroBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 135, stops: [{ color: '#1a1a1a', position: 0 }, { color: '#374151', position: 100 }] } }}
+          value={config.heroBackgroundColor || { type: 'solid', solid: '#1a1a1a' }}
           onChange={(heroBackgroundColor) => updateConfig({ heroBackgroundColor })}
           defaultGradientPreset="darkToGray"
           description="Cor de fundo da seção hero (topo)"
@@ -104,7 +104,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
 
         <ColorOrGradientPicker
           label="Cor de Fundo Compromisso / Gradiente"
-          value={config.commitmentBackgroundColor || { type: 'gradient', gradient: { type: 'linear', angle: 90, stops: [{ color: '#ff6600', position: 0 }, { color: '#d4af37', position: 100 }] } }}
+          value={config.commitmentBackgroundColor || { type: 'solid', solid: '#ff6600' }}
           onChange={(commitmentBackgroundColor) => updateConfig({ commitmentBackgroundColor })}
           defaultGradientPreset="orangeToGold"
           description="Cor de fundo da seção de compromisso (CTA final)"
