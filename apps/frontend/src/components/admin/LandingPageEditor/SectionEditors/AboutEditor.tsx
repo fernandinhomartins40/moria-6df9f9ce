@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { AboutConfig, AboutMilestone, AboutValue, AboutStat, AboutService } from '@/types/landingPage';
 import { ArrayEditor, ColorOrGradientPicker, colorOrGradientToCSS } from '../StyleControls';
+import { stringToColorOrGradient } from '@/utils/colorHelpers';
 import { Eye, Clock, Shield, Heart, Target, Users, CheckCircle, Award, Star } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
@@ -344,7 +345,7 @@ export const AboutEditor = ({ config, onChange }: AboutEditorProps) => {
 
               <ColorOrGradientPicker
                 label="Cor do Ícone / Gradiente"
-                value={item.color || { type: 'solid', solid: '#ff6600' }}
+                value={stringToColorOrGradient(item.color) || { type: 'solid', solid: '#ff6600' }}
                 onChange={(color) => update({ color })}
                 defaultGradientPreset="orangeToGold"
                 description="Cor sólida ou gradiente para o ícone"

@@ -36,7 +36,7 @@ export class AuthMiddleware {
       }
 
       if (!token) {
-        console.error('[AuthMiddleware] No token found in cookies or Authorization header');
+        // Don't log error - this is expected when no customer session exists
         throw ApiError.unauthorized('No token provided');
       }
 
@@ -53,11 +53,11 @@ export class AuthMiddleware {
         req.user = payload;
         next();
       } catch (error) {
-        console.error('[AuthMiddleware] Token verification failed:', error);
+        // Don't log error - token verification failures are expected for invalid/expired tokens
         throw ApiError.unauthorized('Invalid or expired token');
       }
     } catch (error) {
-      console.error('[AuthMiddleware] Authentication error:', error);
+      // Pass error to error handler without logging (already handled appropriately)
       next(error);
     }
   }
