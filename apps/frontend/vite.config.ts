@@ -9,6 +9,96 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 3000,
+    proxy: {
+      '/landing-page': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/products': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/services': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/orders': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/promotions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/coupons': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/favorites': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/customers': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/vehicles': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/customer-vehicles': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/checklist': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/revisions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/customer-revisions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/support': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/notifications': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/addresses': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/compatibility': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/settings': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),
