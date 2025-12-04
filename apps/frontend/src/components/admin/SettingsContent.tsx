@@ -47,6 +47,7 @@ export function SettingsContent() {
     storeName: '',
     cnpj: '',
     phone: '',
+    whatsapp: '', // WhatsApp para envio de mensagens
     email: '',
     address: '',
     city: '',
@@ -86,6 +87,8 @@ export function SettingsContent() {
         cnpj: settings.cnpj ? formatCNPJ(settings.cnpj) : '',
         // Formatar telefone (se vier no formato WhatsApp, converte para formato brasileiro)
         phone: settings.phone ? formatPhone(settings.phone.replace(/^55/, '')) : '',
+        // WhatsApp para envio de mensagens (mesma lógica do phone)
+        whatsapp: settings.whatsapp ? formatPhone(settings.whatsapp.replace(/^55/, '')) : '',
         email: settings.email || '',
         address: settings.address || '',
         city: settings.city || '',
@@ -139,6 +142,11 @@ export function SettingsContent() {
     handleInputChange('phone', formatted);
   };
 
+  const handleWhatsAppChange = (value: string) => {
+    const formatted = formatPhone(value);
+    handleInputChange('whatsapp', formatted);
+  };
+
   // Validação antes de salvar
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -152,6 +160,13 @@ export function SettingsContent() {
       errors.phone = validationMessages.required;
     } else if (!isValidPhoneFormat(formData.phone)) {
       errors.phone = validationMessages.phone;
+    }
+
+    // Validar WhatsApp (obrigatório para envio de mensagens)
+    if (!formData.whatsapp.trim()) {
+      errors.whatsapp = validationMessages.required;
+    } else if (!isValidPhoneFormat(formData.whatsapp)) {
+      errors.whatsapp = validationMessages.phone;
     }
 
     // Validar formatos (se preenchidos)
@@ -195,7 +210,10 @@ export function SettingsContent() {
   const handleSave = async () => {
     // Validar antes de salvar
     if (!validateForm()) {
-      toast.error('Por favor, corrija os erros no formulário antes de salvar');
+      toast.error('Corrija os erros no formulário', {
+        description: 'Verifique os campos destacados em vermelho e corrija as informações.',
+        duration: 5000,
+      });
       return;
     }
 
@@ -207,16 +225,37 @@ export function SettingsContent() {
         // Remove formatação de CNPJ e CEP
         cnpj: formData.cnpj ? unformatValue(formData.cnpj) : undefined,
         zipCode: formData.zipCode ? unformatValue(formData.zipCode) : undefined,
-        // Converte phone para formato WhatsApp
+        // Converte phone e whatsapp para formato WhatsApp
         phone: toWhatsAppFormat(formData.phone),
+        whatsapp: toWhatsAppFormat(formData.whatsapp),
       };
 
       await updateSettings(dataToSend);
       // Limpar cache público para atualizar frontend
       clearSettingsCache();
-      toast.success('Configurações salvas com sucesso!');
+      toast.success('Configurações salvas com sucesso!', {
+        description: 'Todas as alterações foram aplicadas.',
+      });
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar configurações');
+      console.error('[SettingsContent] Erro ao salvar:', error);
+
+      // Tratar erros de validação do backend (Zod)
+      if (error.details && Array.isArray(error.details)) {
+        const errorMessages = error.details.map((err: any) => {
+          const field = err.path?.join('.') || 'campo';
+          return `${field}: ${err.message}`;
+        }).join('\n');
+
+        toast.error('Erro de validação', {
+          description: errorMessages,
+          duration: 7000,
+        });
+      } else {
+        toast.error('Erro ao salvar configurações', {
+          description: error.message || 'Ocorreu um erro ao salvar. Tente novamente.',
+          duration: 5000,
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -340,7 +379,7 @@ export function SettingsContent() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone/WhatsApp *</Label>
+                <Label htmlFor="phone">Telefone *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -353,7 +392,24 @@ export function SettingsContent() {
                   <p className="text-xs text-red-500">{validationErrors.phone}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Número usado no checkout e botões de contato
+                  Telefone para contato geral
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp">WhatsApp *</Label>
+                <Input
+                  id="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={(e) => handleWhatsAppChange(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                  className={validationErrors.whatsapp ? 'border-red-500' : ''}
+                />
+                {validationErrors.whatsapp && (
+                  <p className="text-xs text-red-500">{validationErrors.whatsapp}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Número para envio de mensagens automáticas
                 </p>
               </div>
               <div className="space-y-2">

@@ -6,6 +6,7 @@ export interface StoreSettings {
   storeName: string;
   cnpj: string;
   phone: string;
+  whatsapp?: string;
   email: string;
   address: string;
   city: string;
@@ -44,6 +45,7 @@ export interface UpdateSettingsData {
   storeName?: string;
   cnpj?: string;
   phone?: string;
+  whatsapp?: string;
   email?: string;
   address?: string;
   city?: string;

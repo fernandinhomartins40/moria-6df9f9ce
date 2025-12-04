@@ -8,6 +8,7 @@ export const updateSettingsSchema = z.object({
   storeName: z.string().min(1, 'Nome da loja é obrigatório').optional(),
   cnpj: z.string().regex(/^\d{14}$/, 'CNPJ inválido (deve conter 14 dígitos)').optional(),
   phone: z.string().regex(/^55\d{10,11}$/, 'Telefone inválido (formato: 5511999999999)').optional(),
+  whatsapp: z.string().regex(/^55\d{10,11}$/, 'WhatsApp inválido (formato: 5511999999999)').optional(),
   email: z.string().email('Email inválido').optional(),
   address: z.string().optional(),
   city: z.string().optional(),
