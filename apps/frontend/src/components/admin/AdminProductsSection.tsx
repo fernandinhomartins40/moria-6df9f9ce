@@ -89,13 +89,13 @@ export function AdminProductsSection({
       filtered = filtered.filter(product => {
         switch (statusFilter) {
           case 'active':
-            return product.isActive;
+            return product.status === 'ACTIVE';
           case 'inactive':
-            return !product.isActive;
+            return product.status === 'DISCONTINUED';
           case 'low_stock':
             return product.stock > 0 && product.stock <= (product.minStock || 5);
           case 'out_of_stock':
-            return product.stock === 0;
+            return product.stock === 0 || product.status === 'OUT_OF_STOCK';
           default:
             return true;
         }
@@ -329,9 +329,9 @@ export function AdminProductsSection({
                               <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                                 {product.category}
                               </Badge>
-                              {!product.isActive && (
+                              {product.status !== 'ACTIVE' && (
                                 <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
-                                  Inativo
+                                  {product.status === 'DISCONTINUED' ? 'Inativo' : 'Sem Estoque'}
                                 </Badge>
                               )}
                               {discount > 0 && (
@@ -395,7 +395,7 @@ export function AdminProductsSection({
 
                       <div className="flex items-center space-x-2 min-w-0">
                         <span className="text-xs md:text-sm text-gray-600">Status: </span>
-                        {product.isActive ? (
+                        {product.status === 'ACTIVE' ? (
                           <ToggleRight className="h-5 w-5 text-green-600 flex-shrink-0" />
                         ) : (
                           <ToggleLeft className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -408,11 +408,11 @@ export function AdminProductsSection({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleToggleStatus(product.id, product.isActive)}
+                        onClick={() => handleToggleStatus(product.id, product.status === 'ACTIVE')}
                         disabled={updateLoading}
                         className="w-full sm:w-auto text-xs md:text-sm"
                       >
-                        {product.isActive ? 'Desativar' : 'Ativar'}
+                        {product.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
                       </Button>
 
                       <Button
