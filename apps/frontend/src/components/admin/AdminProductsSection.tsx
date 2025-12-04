@@ -75,11 +75,10 @@ export function AdminProductsSection({
     // Filtro por termo de busca
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         product.name?.toLowerCase().includes(term) ||
         product.sku?.toLowerCase().includes(term) ||
         product.category?.toLowerCase().includes(term) ||
-        product.brand?.toLowerCase().includes(term) ||
         product.supplier?.toLowerCase().includes(term) ||
         product.description?.toLowerCase().includes(term)
       );
@@ -233,7 +232,7 @@ export function AdminProductsSection({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Buscar por nome, SKU, categoria, marca..."
+                placeholder="Buscar por nome, SKU, categoria, fornecedor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -304,8 +303,24 @@ export function AdminProductsSection({
                       {/* Informações básicas */}
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 w-full">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className="bg-moria-orange text-white rounded-lg p-2 flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                            <Box className="h-5 w-5 md:h-6 md:w-6" />
+                          {/* Miniatura do produto */}
+                          <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Fallback para ícone se a imagem falhar
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-moria-orange text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-moria-orange text-white">
+                                <Box className="w-8 h-8" />
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="text-base md:text-lg font-semibold break-words">{product.name}</h3>
@@ -314,9 +329,6 @@ export function AdminProductsSection({
                               <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                                 {product.category}
                               </Badge>
-                              {product.brand && (
-                                <Badge variant="outline" className="text-xs">{product.brand}</Badge>
-                              )}
                               {!product.isActive && (
                                 <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
                                   Inativo
