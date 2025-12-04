@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '@config/database.js';
-import notificationService from '@modules/notifications/notification.service.js';
-import { Order, OrderItem, Admin, Address } from '@prisma/client';
+import { Order, OrderItem, Address } from '@prisma/client';
 
 export class CustomerController {
   // ==================== QUOTES ====================
@@ -156,9 +155,6 @@ export class CustomerController {
         },
       });
 
-      // Notificar aprovação
-      await notificationService.notifyQuoteApproved(id);
-
       res.json({
         id: updatedQuote.id,
         status: updatedQuote.quoteStatus,
@@ -205,27 +201,6 @@ export class CustomerController {
           quoteStatus: 'REJECTED',
         },
       });
-
-      // Notificar rejeição aos admins
-      const admins = await prisma.admin.findMany({
-        where: { status: 'ACTIVE' },
-      });
-
-      await Promise.all(
-        admins.map((admin: Admin) =>
-          notificationService.create({
-            recipientType: 'ADMIN',
-            recipientId: admin.id,
-            type: 'QUOTE_REJECTED',
-            title: 'Orçamento Rejeitado',
-            message: `Cliente rejeitou o orçamento #${id.slice(0, 8)}`,
-            data: {
-              quoteId: id,
-              customerId,
-            },
-          })
-        )
-      );
 
       res.json({
         id: updatedQuote.id,

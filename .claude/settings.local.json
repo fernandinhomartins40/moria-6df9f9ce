@@ -101,7 +101,12 @@
       "Bash(done)",
       "Bash(node fix-modals-spacing.js:*)",
       "Bash(del fix-modals-spacing.js)",
-      "Bash(del \"C:\\Projetos Cursor\\moria-6df9f9ce\\apps\\frontend\\src\\pages\\admin\\LandingPageEditor.tsx\")"
+      "Bash(del \"C:\\Projetos Cursor\\moria-6df9f9ce\\apps\\frontend\\src\\pages\\admin\\LandingPageEditor.tsx\")",
+      "Bash(temp_config.json)",
+      "Bash(del:*)",
+      "Bash(if exist scriptsdeploy-nginx.sh del scriptsdeploy-nginx.sh)",
+      "Bash(if exist \"apps\\backend\\src\\modules\\notifications\\notification.controller.ts\" del /f \"apps\\backend\\src\\modules\\notifications\\notification.controller.ts\")",
+      "Bash(if exist \"apps\\backend\\src\\modules\\notifications\\notification.service.ts\" del /f \"apps\\backend\\src\\modules\\notifications\\notification.service.ts\")"
     ],
     "deny": [],
     "ask": []

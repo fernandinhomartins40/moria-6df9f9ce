@@ -5,7 +5,6 @@ import { PaginationUtil, PaginatedResponse } from '@shared/utils/pagination.util
 import { logger } from '@shared/utils/logger.util.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { UpdateOrderDto } from './dto/update-order.dto.js';
-import notificationService from '@modules/notifications/notification.service.js';
 
 export type OrderWithItems = Order & {
   items: OrderItem[];
@@ -238,16 +237,6 @@ export class OrdersService {
         },
       },
     });
-
-    // Send notifications
-    const hasServices = dto.items.some(item => item.type === 'SERVICE');
-    const hasServicesPendingQuote = hasServices; // In authenticated orders, services may need quotes too
-
-    if (hasServicesPendingQuote) {
-      await notificationService.notifyNewQuoteRequest(order.id);
-    } else {
-      await notificationService.notifyOrderCreated(order.id);
-    }
 
     logger.info(`Order created: ${order.id} for customer ${customerId}`);
 

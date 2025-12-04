@@ -1,6 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { CustomerLevel, CustomerStatus, OrderStatus, Prisma, OrderItemType, Admin } from '@prisma/client';
-import notificationService from '@modules/notifications/notification.service.js';
+import { CustomerLevel, CustomerStatus, OrderStatus, Prisma, OrderItemType } from '@prisma/client';
 import { HashUtil } from '@shared/utils/hash.util.js';
 
 // ==================== TYPES ====================
@@ -495,9 +494,6 @@ export class AdminService {
       include: { items: true, customer: true },
     });
 
-    // Notificar cliente que orçamento foi respondido
-    await notificationService.notifyQuoteResponded(id);
-
     return updatedOrder;
   }
 
@@ -523,9 +519,6 @@ export class AdminService {
         status: 'IN_PRODUCTION', // ✅ Orçamento aprovado vira pedido em produção!
       },
     });
-
-    // Notificar aprovação
-    await notificationService.notifyQuoteApproved(id);
 
     return updatedOrder;
   }
@@ -826,33 +819,6 @@ export class AdminService {
         }
       }
     });
-
-    // Enviar notificação
-    if (data.sendToClient) {
-      // Se já está orçado, notificar cliente que orçamento está pronto
-      await notificationService.notifyQuoteResponded(order.id);
-    }
-    // Sempre notificar admins sobre novo orçamento criado
-    const admins = await prisma.admin.findMany({
-      where: { status: 'ACTIVE' }
-    });
-
-    await Promise.all(
-      admins.map((admin: Admin) =>
-        notificationService.create({
-          recipientType: 'ADMIN',
-          recipientId: admin.id,
-          type: 'NEW_QUOTE_REQUEST',
-          title: 'Novo Orçamento Criado',
-          message: `Orçamento #${order.id.slice(0, 8)} criado`,
-          data: {
-            quoteId: order.id,
-            customerId: order.customerId,
-            status: order.quoteStatus
-          }
-        })
-      )
-    );
 
     // Retornar no formato Quote
     return this.mapOrderToQuote(order as any);

@@ -4,7 +4,6 @@ import { ApiError } from '@shared/utils/error.util.js';
 import { logger } from '@shared/utils/logger.util.js';
 import { HashUtil } from '@shared/utils/hash.util.js';
 import { CreateGuestOrderDto } from './dto/create-guest-order.dto.js';
-import notificationService from '@modules/notifications/notification.service.js';
 
 export class GuestOrdersService {
   /**
@@ -363,15 +362,6 @@ export class GuestOrdersService {
           },
         },
       });
-
-      // 13. Send notifications
-      if (hasServicesPending) {
-        // Pedido tem serviços pendentes de orçamento
-        await notificationService.notifyNewQuoteRequest(order.id);
-      } else {
-        // Pedido normal (só produtos ou serviços já precificados)
-        await notificationService.notifyOrderCreated(order.id);
-      }
 
       logger.info(`Guest order created: ${order.id} for customer ${customer.email}`);
 

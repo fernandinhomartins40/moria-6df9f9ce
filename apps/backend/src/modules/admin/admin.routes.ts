@@ -5,7 +5,6 @@ import { ProductsController } from '@modules/products/products.controller.js';
 import { ServicesController } from '@modules/services/services.controller.js';
 import { CouponsController } from '@modules/coupons/coupons.controller.js';
 import { PromotionsController } from '@modules/promotions/promotions.controller.js';
-import { NotificationController } from '@modules/notifications/notification.controller.js';
 import { AdminAuthMiddleware } from '@middlewares/admin-auth.middleware.js';
 import { AdminRole } from '@prisma/client';
 
@@ -16,7 +15,6 @@ const productsController = new ProductsController();
 const servicesController = new ServicesController();
 const couponsController = new CouponsController();
 const promotionsController = new PromotionsController();
-const notificationController = new NotificationController();
 
 // All routes require admin authentication
 router.use(AdminAuthMiddleware.authenticate);
@@ -92,11 +90,5 @@ router.get('/promotions/:id', promotionsController.getPromotionById);
 router.post('/promotions', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.createPromotion);
 router.put('/promotions/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.updatePromotion);
 router.delete('/promotions/:id', AdminAuthMiddleware.requireMinRole(AdminRole.MANAGER), promotionsController.deletePromotion);
-
-// ==================== NOTIFICATIONS ====================
-router.get('/notifications', notificationController.getAdminNotifications);
-router.get('/notifications/unread-count', notificationController.getAdminUnreadCount);
-router.patch('/notifications/:id/read', notificationController.markAdminNotificationAsRead);
-router.patch('/notifications/read-all', notificationController.markAllAdminNotificationsAsRead);
 
 export default router;
