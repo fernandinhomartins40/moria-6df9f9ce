@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
       // Não redirecionar para evitar loop infinito na verificação de autenticação
       // A aplicação já trata o estado de não autenticado
       // Suprimir log de erro 401 em rotas públicas ou verificações de autenticação (esperado quando não autenticado)
-      const publicRoutes = ['/auth/profile', '/auth/admin/profile', '/admin/notifications', '/promotions'];
+      const publicRoutes = ['/auth/profile', '/auth/admin/profile', '/promotions'];
       const isPublicRoute = publicRoutes.some(route => error.config?.url?.includes(route));
 
       if (isPublicRoute) {
@@ -56,7 +56,7 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // Log outros erros 401
+      // Log outros erros 401 (incluindo /admin/notifications que NÃO é pública)
       console.error('[API Client] 401 Unauthorized:', error.config?.url);
     }
     return Promise.reject(error);
