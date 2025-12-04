@@ -380,10 +380,11 @@ export function NotificationCenter({
                           </p>
                           <Badge
                             variant="secondary"
-                            className={getPriorityColor(notification.priority)}
+                            className={getPriorityColor(notification.priority || 'low')}
                           >
                             {notification.priority === 'high' ? 'Urgente' :
-                             notification.priority === 'medium' ? 'Média' : 'Baixa'}
+                             notification.priority === 'medium' ? 'Média' :
+                             notification.priority === 'low' ? 'Baixa' : 'Normal'}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
