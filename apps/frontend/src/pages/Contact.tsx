@@ -377,13 +377,21 @@ ${new Date().toLocaleString('pt-BR')}
                     </p>
                   </div>
 
-                  {/* Placeholder Map */}
-                  <div className="bg-gray-200 rounded-lg h-64 mb-6 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <MapPin className="h-12 w-12 mx-auto mb-2" />
-                      <p>Mapa da Localização</p>
-                      <p className="text-sm">Rua das Oficinas, 123 - Centro/SP</p>
-                    </div>
+                  {/* Google Maps */}
+                  <div className="rounded-lg overflow-hidden shadow-lg mb-6 h-96">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(
+                        storeSettings?.address && storeSettings?.city && storeSettings?.state
+                          ? `${storeSettings.address}, ${storeSettings.city}, ${storeSettings.state}, ${storeSettings.zipCode || ''}`
+                          : 'São Paulo, SP, Brasil'
+                      )}`}
+                    />
                   </div>
 
                   {/* Quick Info Cards */}
