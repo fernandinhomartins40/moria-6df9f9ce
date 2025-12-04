@@ -299,20 +299,18 @@ export function NotificationCenter({
     }
   };
 
-  const getPriorityColor = (priority?: string) => {
-    if (!priority) {
-      return 'bg-gray-100 text-gray-800';
-    }
+  const getPriorityBadgeStyle = (priority?: 'low' | 'medium' | 'high') => {
+    const baseClasses = 'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium';
 
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800';
+        return `${baseClasses} bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10`;
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return `${baseClasses} bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10`;
       case 'low':
-        return 'bg-blue-100 text-blue-800';
+        return `${baseClasses} bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/10`;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return `${baseClasses} bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/10`;
     }
   };
 
@@ -378,14 +376,11 @@ export function NotificationCenter({
                           <p className="font-semibold text-sm">
                             {notification.title}
                           </p>
-                          <Badge
-                            variant="secondary"
-                            className={getPriorityColor(notification.priority || 'low')}
-                          >
+                          <span className={getPriorityBadgeStyle(notification.priority)}>
                             {notification.priority === 'high' ? 'Urgente' :
                              notification.priority === 'medium' ? 'Média' :
                              notification.priority === 'low' ? 'Baixa' : 'Normal'}
-                          </Badge>
+                          </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
                           {notification.message}
