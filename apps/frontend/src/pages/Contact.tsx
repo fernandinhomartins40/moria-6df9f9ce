@@ -4,6 +4,7 @@ import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 import { useLandingPageConfig } from "../hooks/useLandingPageConfig";
+import { colorOrGradientToCSS } from "../components/admin/LandingPageEditor/StyleControls";
 import * as Icons from "lucide-react";
 import "../styles/public.css";
 import { Button } from "../components/ui/button";
@@ -176,7 +177,15 @@ ${new Date().toLocaleString('pt-BR')}
       <Marquee />
 
           {/* Hero Section */}
-          <section className="relative py-20 bg-gradient-to-br from-moria-black to-gray-900 text-white overflow-hidden">
+          <section
+            className="relative py-20 text-white overflow-hidden"
+            style={{
+              ...colorOrGradientToCSS(contactPageConfig.heroBackgroundColor),
+              ...(contactPageConfig.heroBackgroundColor ? {} : {
+                background: 'linear-gradient(to bottom right, #1a1a1a, #374151)'
+              })
+            }}
+          >
             <div className="absolute inset-0 bg-gradient-to-r from-moria-orange/10 to-transparent"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="max-w-4xl mx-auto text-center">
@@ -198,7 +207,13 @@ ${new Date().toLocaleString('pt-BR')}
           </section>
 
           {/* Contact Info Cards */}
-          <section className="py-16 bg-gray-50">
+          <section
+            className="py-16"
+            style={{
+              ...colorOrGradientToCSS(contactPageConfig.cardsBackgroundColor),
+              ...(contactPageConfig.cardsBackgroundColor ? {} : { backgroundColor: '#f9fafb' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {contactPageConfig.contactInfoCards?.map((info, index) => {
@@ -228,7 +243,13 @@ ${new Date().toLocaleString('pt-BR')}
           </section>
 
           {/* Contact Form & Map */}
-          <section className="py-20 bg-white">
+          <section
+            className="py-20"
+            style={{
+              ...colorOrGradientToCSS(contactPageConfig.formBackgroundColor),
+              ...(contactPageConfig.formBackgroundColor ? {} : { backgroundColor: '#ffffff' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Contact Form */}
@@ -440,7 +461,15 @@ ${new Date().toLocaleString('pt-BR')}
           </section>
 
           {/* CTA Section */}
-          <section className="py-16 bg-gradient-to-r from-moria-orange to-gold-accent text-white">
+          <section
+            className="py-16 text-white"
+            style={{
+              ...colorOrGradientToCSS(contactPageConfig.ctaBackgroundColor),
+              ...(contactPageConfig.ctaBackgroundColor ? {} : {
+                background: 'linear-gradient(to right, #FF6B35, #D4AF37)'
+              })
+            }}
+          >
             <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 {contactPageConfig.ctaTitle}

@@ -2,6 +2,7 @@ import { Header } from "../components/Header";
 import { Marquee } from "../components/Marquee";
 import { Footer } from "../components/Footer";
 import { useLandingPageConfig } from "../hooks/useLandingPageConfig";
+import { colorOrGradientToCSS } from "../components/admin/LandingPageEditor/StyleControls";
 import * as Icons from "lucide-react";
 import "../styles/public.css";
 import { Badge } from "../components/ui/badge";
@@ -83,7 +84,15 @@ export default function About() {
           <Marquee />
           
           {/* Hero Section */}
-          <section className="relative py-20 bg-gradient-to-br from-moria-black to-gray-900 text-white overflow-hidden">
+          <section
+            className="relative py-20 text-white overflow-hidden"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.heroBackgroundColor),
+              ...(aboutPageConfig.heroBackgroundColor ? {} : {
+                background: 'linear-gradient(to bottom right, #1a1a1a, #374151)'
+              })
+            }}
+          >
             <div className="absolute inset-0 bg-gradient-to-r from-moria-orange/10 to-transparent"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="max-w-4xl mx-auto text-center">
@@ -101,7 +110,13 @@ export default function About() {
           </section>
 
           {/* Stats Section */}
-          <section className="py-16 bg-gray-50">
+          <section
+            className="py-16"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.statsBackgroundColor),
+              ...(aboutPageConfig.statsBackgroundColor ? {} : { backgroundColor: '#f9fafb' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 {aboutPageConfig.stats?.map((stat, index) => (
@@ -119,7 +134,13 @@ export default function About() {
           </section>
 
           {/* Nossa História */}
-          <section className="py-20 bg-white">
+          <section
+            className="py-20"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.historyBackgroundColor),
+              ...(aboutPageConfig.historyBackgroundColor ? {} : { backgroundColor: '#ffffff' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -137,7 +158,13 @@ export default function About() {
               <div className="max-w-4xl mx-auto">
                 <div className="relative">
                   {/* Timeline Line */}
-                  <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-moria-orange hidden md:block"></div>
+                  <div
+                    className="absolute left-8 top-0 bottom-0 w-0.5 hidden md:block"
+                    style={{
+                      ...colorOrGradientToCSS(aboutPageConfig.timelineColor),
+                      ...(aboutPageConfig.timelineColor ? {} : { backgroundColor: '#FF6B35' })
+                    }}
+                  ></div>
 
                   <div className="space-y-12">
                     {aboutPageConfig.milestones?.map((milestone, index) => (
@@ -173,7 +200,13 @@ export default function About() {
           </section>
 
           {/* Nossos Valores */}
-          <section className="py-20 bg-gray-900 text-white">
+          <section
+            className="py-20 text-white"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.valuesBackgroundColor),
+              ...(aboutPageConfig.valuesBackgroundColor ? {} : { backgroundColor: '#111827' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -212,7 +245,13 @@ export default function About() {
           </section>
 
           {/* Nossos Serviços */}
-          <section className="py-20 bg-white">
+          <section
+            className="py-20"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.servicesBackgroundColor),
+              ...(aboutPageConfig.servicesBackgroundColor ? {} : { backgroundColor: '#ffffff' })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -239,7 +278,15 @@ export default function About() {
           </section>
 
           {/* Compromisso */}
-          <section className="py-20 bg-gradient-to-r from-moria-orange to-gold-accent text-white">
+          <section
+            className="py-20 text-white"
+            style={{
+              ...colorOrGradientToCSS(aboutPageConfig.commitmentBackgroundColor),
+              ...(aboutPageConfig.commitmentBackgroundColor ? {} : {
+                background: 'linear-gradient(to right, #FF6B35, #D4AF37)'
+              })
+            }}
+          >
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto text-center">
                 <Award className="h-16 w-16 mx-auto mb-6 text-white" />
