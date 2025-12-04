@@ -32,6 +32,17 @@ interface ColorOrGradientPickerProps {
 // Helper para converter preset readonly para mutable
 const getPresetAsGradientConfig = (presetKey: keyof typeof MORIA_GRADIENT_PRESETS): GradientConfig => {
   const preset = MORIA_GRADIENT_PRESETS[presetKey];
+
+  // Validação: se preset não existe, usar fallback
+  if (!preset) {
+    console.error('[getPresetAsGradientConfig] Preset inválido:', presetKey);
+    const fallbackPreset = MORIA_GRADIENT_PRESETS['goldMetallic'];
+    return {
+      ...fallbackPreset,
+      colors: [...fallbackPreset.colors],
+    };
+  }
+
   return {
     ...preset,
     colors: [...preset.colors], // Converter readonly array para mutable array
@@ -48,7 +59,14 @@ export const ColorOrGradientPicker = ({
 }: ColorOrGradientPickerProps) => {
   // Validação: garantir que value existe e tem estrutura mínima
   // IMPORTANTE: converter valores antigos (strings) para novo formato
-  const safeValue: ColorOrGradientValue = stringToColorOrGradient(value) || {
+  const convertedValue = stringToColorOrGradient(value);
+
+  // DEBUG: log para ver o que está chegando
+  if (!convertedValue || (convertedValue.type === 'gradient' && (!convertedValue.gradient || !convertedValue.gradient?.colors))) {
+    console.error('[ColorOrGradientPicker] Valor inválido detectado:', { original: value, converted: convertedValue });
+  }
+
+  const safeValue: ColorOrGradientValue = convertedValue || {
     type: 'solid',
     solid: '#FF6B35',
   };
