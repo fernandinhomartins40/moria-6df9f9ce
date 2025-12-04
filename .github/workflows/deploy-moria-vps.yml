@@ -41,7 +41,6 @@ jobs:
           sshpass -f ~/.ssh/vps_password rsync -avz --delete \
             --exclude='.git' \
             --exclude='node_modules' \
-            --exclude='dist' \
             --exclude='*.db' \
             --exclude='*.db-*' \
             --exclude='apps/backend/uploads' \
