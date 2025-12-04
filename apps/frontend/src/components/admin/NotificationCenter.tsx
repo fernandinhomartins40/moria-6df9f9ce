@@ -9,7 +9,8 @@ import {
   Wrench,
   AlertTriangle,
   CheckCircle,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 import adminService from "../../api/adminService";
 import { toast } from "../ui/use-toast";
@@ -71,18 +72,36 @@ export function NotificationCenter({
 
   useEffect(() => {
     // Wait for auth to finish loading before doing anything
-    if (authLoading) return;
+    if (authLoading) {
+      console.log('[NotificationCenter] Aguardando autenticação completar...');
+      return;
+    }
 
-    // Only load real notifications if authenticated
-    if (useRealNotifications && isAuthenticated) {
+    // Only proceed if we're using real notifications
+    if (useRealNotifications) {
+      // CRITICAL: Block all API calls if not authenticated
+      if (!isAuthenticated) {
+        console.warn('[NotificationCenter] Usuário não autenticado - abortando polling de notificações');
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
+
+      // User is authenticated - safe to load notifications
+      console.log('[NotificationCenter] Iniciando polling de notificações (intervalo: 60s)');
       loadRealNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadRealNotifications, 30000);
-      return () => clearInterval(interval);
-    } else if (!useRealNotifications) {
+
+      // Poll for new notifications every 60 seconds (reduced from 30s)
+      const interval = setInterval(loadRealNotifications, 60000);
+      return () => {
+        console.log('[NotificationCenter] Limpando polling de notificações');
+        clearInterval(interval);
+      };
+    } else {
+      // Using mock notifications
       generateNotifications();
     }
-  }, [pendingOrders, pendingQuotes, lowStockProducts, useRealNotifications, isAuthenticated, authLoading]);
+  }, [useRealNotifications, isAuthenticated, authLoading]);
 
   // Load notifications from API
   const loadRealNotifications = async () => {
@@ -280,7 +299,11 @@ export function NotificationCenter({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority?: string) => {
+    if (!priority) {
+      return 'bg-gray-100 text-gray-800';
+    }
+
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-800';
@@ -324,7 +347,12 @@ export function NotificationCenter({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {notifications.length === 0 ? (
+        {loading && notifications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <RefreshCw className="mx-auto h-8 w-8 animate-spin text-moria-orange mb-2" />
+            <p className="font-medium">Carregando notificações...</p>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <CheckCircle className="mx-auto h-12 w-12 text-green-300 mb-2" />
             <p className="font-medium">Tudo em ordem!</p>
