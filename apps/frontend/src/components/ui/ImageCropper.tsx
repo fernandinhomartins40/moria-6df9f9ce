@@ -374,12 +374,19 @@ export function ImageCropper({
         finalCrop.height
       );
 
-      // Converter para blob
+      // Converter para blob (WebP com fallback para JPEG)
       canvas.toBlob((blob) => {
         if (blob) {
           onCropComplete(blob);
+        } else {
+          // Fallback para JPEG se WebP falhar
+          canvas.toBlob((jpegBlob) => {
+            if (jpegBlob) {
+              onCropComplete(jpegBlob);
+            }
+          }, 'image/jpeg', 0.90);
         }
-      }, 'image/jpeg', 0.9);
+      }, 'image/webp', 0.90);
     };
     img.src = imageUrl;
   };

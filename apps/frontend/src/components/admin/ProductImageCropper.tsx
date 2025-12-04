@@ -78,16 +78,28 @@ export function ProductImageCropper({
     );
 
     return new Promise<Blob>((resolve, reject) => {
+      // Tentar criar WebP primeiro, com fallback para JPEG
       canvas.toBlob(
         (blob) => {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new Error('Falha ao criar blob da imagem'));
+            // Fallback para JPEG se WebP falhar
+            canvas.toBlob(
+              (jpegBlob) => {
+                if (jpegBlob) {
+                  resolve(jpegBlob);
+                } else {
+                  reject(new Error('Falha ao criar blob da imagem'));
+                }
+              },
+              'image/jpeg',
+              0.95
+            );
           }
         },
-        'image/jpeg',
-        0.95
+        'image/webp',
+        0.90
       );
     });
   };
@@ -114,6 +126,7 @@ export function ProductImageCropper({
               <CropIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
               <span className="font-medium text-sm sm:text-base">Editor de Imagem</span>
               <Badge variant="outline" className="text-xs">Quadrado 1:1</Badge>
+              <Badge className="bg-green-600 text-white text-xs">WebP</Badge>
             </div>
             <p className="text-xs sm:text-sm text-gray-500">
               Arraste os cantos para ajustar
@@ -146,7 +159,7 @@ export function ProductImageCropper({
       <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
         <p className="text-xs">
           💡 <strong>Dica:</strong> Arraste os cantos da área destacada para ajustar o tamanho e posição do corte.
-          A imagem será cortada em formato quadrado (1:1) ideal para produtos.
+          A imagem será cortada em formato quadrado (1:1) e convertida para WebP para melhor performance.
         </p>
       </div>
 

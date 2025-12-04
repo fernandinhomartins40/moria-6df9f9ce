@@ -183,13 +183,17 @@ export function ImageUpload({
     if (!cropImage) return;
 
     try {
+      // Detectar tipo do blob e comprimir com WebP
+      const isWebP = croppedBlob.type === 'image/webp';
+      const mimeType = isWebP ? 'image/webp' : 'image/jpeg';
+
       // Comprimir imagem
       const compressedFile = await imageCompression(croppedBlob as File, {
         maxSizeMB: 1,
         maxWidthOrHeight: 800,
         useWebWorker: true,
-        fileType: 'image/jpeg',
-        initialQuality: 0.8
+        fileType: mimeType,
+        initialQuality: isWebP ? 0.90 : 0.80
       });
 
       // Criar URL da imagem comprimida
@@ -348,7 +352,7 @@ export function ImageUpload({
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
             onChange={handleFileChange}
             className="hidden"
             disabled={disabled}
@@ -367,7 +371,7 @@ export function ImageUpload({
                 Arraste e solte ou clique para selecionar
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                JPEG, PNG, GIF até 10MB • Máx. {maxImages} imagens
+                JPEG, PNG, WebP, GIF até 10MB • Máx. {maxImages} imagens
               </p>
             </div>
 

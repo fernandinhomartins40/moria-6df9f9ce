@@ -130,11 +130,16 @@ export function ProductImageUpload({
       // Atualizar status para comprimindo
       updateImageStatus(cropImageId, 'compressing', { progress: 25 });
 
+      // Detectar tipo do blob (WebP ou JPEG)
+      const isWebP = croppedBlob.type === 'image/webp';
+      const fileExtension = isWebP ? 'webp' : 'jpg';
+      const mimeType = isWebP ? 'image/webp' : 'image/jpeg';
+
       // Converter blob para arquivo
       const croppedFile = new File(
         [croppedBlob],
-        `cropped-${Date.now()}.jpg`,
-        { type: 'image/jpeg' }
+        `cropped-${Date.now()}.${fileExtension}`,
+        { type: mimeType }
       );
 
       // Comprimir imagem
@@ -142,8 +147,8 @@ export function ProductImageUpload({
         maxSizeMB,
         maxWidthOrHeight,
         useWebWorker: true,
-        fileType: 'image/jpeg',
-        initialQuality: 0.85,
+        fileType: mimeType,
+        initialQuality: isWebP ? 0.90 : 0.85,
         onProgress: (progress) => {
           updateImageStatus(cropImageId, 'compressing', {
             progress: 25 + (progress * 0.75)
@@ -328,7 +333,7 @@ export function ProductImageUpload({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
                 onChange={handleFileChange}
                 className="hidden"
                 disabled={disabled}

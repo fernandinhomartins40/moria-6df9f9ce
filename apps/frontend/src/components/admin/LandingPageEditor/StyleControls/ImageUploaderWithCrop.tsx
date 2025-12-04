@@ -135,13 +135,17 @@ export const ImageUploaderWithCrop = ({
     setUploadProgress(0);
 
     try {
+      // Detectar tipo do blob e comprimir com WebP
+      const isWebP = croppedBlob.type === 'image/webp';
+      const mimeType = isWebP ? 'image/webp' : 'image/jpeg';
+
       // Comprimir imagem cropada
       const compressedFile = await imageCompression(croppedBlob as File, {
         maxSizeMB: 1,
         maxWidthOrHeight: Math.max(recommendedWidth, recommendedHeight),
         useWebWorker: true,
-        fileType: 'image/jpeg',
-        initialQuality: 0.85,
+        fileType: mimeType,
+        initialQuality: isWebP ? 0.90 : 0.85,
       });
 
       console.log('[ImageUploaderWithCrop] 📦 Imagem comprimida:', {
