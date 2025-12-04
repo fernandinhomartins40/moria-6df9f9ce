@@ -12,7 +12,7 @@ import { Droplet, Palette } from 'lucide-react';
 import { ColorPicker } from './ColorPicker';
 import { GradientPicker, MORIA_GRADIENT_PRESETS } from './GradientPicker';
 import { GradientConfig } from '@/types/landingPage';
-import { sanitizeColorValue } from '@/utils/colorHelpers';
+import { sanitizeColorValue, stringToColorOrGradient } from '@/utils/colorHelpers';
 
 export interface ColorOrGradientValue {
   type: 'solid' | 'gradient';
@@ -47,7 +47,8 @@ export const ColorOrGradientPicker = ({
   showPreview = true,
 }: ColorOrGradientPickerProps) => {
   // Validação: garantir que value existe e tem estrutura mínima
-  const safeValue: ColorOrGradientValue = value || {
+  // IMPORTANTE: converter valores antigos (strings) para novo formato
+  const safeValue: ColorOrGradientValue = stringToColorOrGradient(value) || {
     type: 'solid',
     solid: '#FF6B35',
   };
