@@ -44,7 +44,7 @@ interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
-  priority: 'low' | 'medium' | 'high';
+  priority?: 'low' | 'medium' | 'high';
   actionUrl?: string;
   actionLabel?: string;
   data?: any;
