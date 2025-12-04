@@ -206,6 +206,12 @@ export const colorOrGradientToCSS = (
     // Extrair propriedades com segurança
     const { type, angle, direction, colors } = safeValue.gradient;
 
+    // Validação adicional: verificar se colors existe
+    if (!colors || !Array.isArray(colors) || colors.length === 0) {
+      console.warn('[colorOrGradientToCSS] Colors inválido após sanitização:', safeValue.gradient);
+      return isForText ? { color: '#FF6B35' } : { backgroundColor: '#FF6B35' };
+    }
+
     // Gerar gradiente CSS
     let gradient = '';
     if (type === 'linear') {
