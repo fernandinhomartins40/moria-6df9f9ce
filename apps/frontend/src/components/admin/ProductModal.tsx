@@ -289,7 +289,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     }
 
     // Validações de ofertas
-    if (formData.offer_type) {
+    if (formData.offer_type && formData.offer_type !== 'NONE') {
       // Datas são obrigatórias quando há tipo de oferta
       if (!formData.offer_start_date) {
         newErrors.offer_start_date = 'Data de início é obrigatória para ofertas';
@@ -309,14 +309,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
         }
       }
 
-      // Preço promocional é obrigatório para ofertas
-      if (!formData.promo_price || formData.promo_price <= 0) {
-        newErrors.promo_price = 'Preço promocional é obrigatório para ofertas';
+      // Preço de venda é obrigatório para calcular desconto
+      if (!formData.sale_price || formData.sale_price <= 0) {
+        newErrors.sale_price = 'Preço de venda é obrigatório para produtos em oferta';
       }
 
-      // Preço promocional deve ser menor que o preço normal
+      // Preço promocional é obrigatório para ofertas
+      if (!formData.promo_price || formData.promo_price <= 0) {
+        newErrors.promo_price = 'Preço promocional é obrigatório para ofertas (vá para aba "Preços")';
+      }
+
+      // Preço promocional deve ser menor que o preço de venda
       if (formData.promo_price && formData.sale_price && formData.promo_price >= formData.sale_price) {
-        newErrors.promo_price = 'Preço promocional deve ser menor que o preço de venda';
+        newErrors.promo_price = 'Preço promocional deve ser menor que o preço de venda (R$ ' + formData.sale_price.toFixed(2) + ')';
       }
     }
 
@@ -326,9 +331,27 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
 
   const handleSave = async () => {
     if (!validateForm()) {
+      // Identificar qual aba tem erros e navegar para ela
+      const errorKeys = Object.keys(errors);
+      let targetTab = 'basic';
+
+      if (errorKeys.some(key => ['offer_type', 'offer_start_date', 'offer_end_date', 'offer_badge'].includes(key))) {
+        targetTab = 'offers';
+      } else if (errorKeys.some(key => ['price', 'sale_price', 'promo_price', 'cost_price'].includes(key))) {
+        targetTab = 'pricing';
+      } else if (errorKeys.includes('images')) {
+        targetTab = 'images';
+      } else if (errorKeys.some(key => ['stock', 'min_stock'].includes(key))) {
+        targetTab = 'inventory';
+      } else if (errorKeys.some(key => ['sku', 'subcategory', 'supplier'].includes(key))) {
+        targetTab = 'details';
+      }
+
+      setActiveTab(targetTab);
+
       toast({
         title: "Erro de validação",
-        description: "Por favor, corrija os erros no formulário.",
+        description: `Corrija os erros na aba "${getTabName(targetTab)}" antes de salvar.`,
         variant: "destructive",
       });
       return;
@@ -483,6 +506,40 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
     }
   };
 
+  const getTabName = (tabId: string): string => {
+    const tabNames: Record<string, string> = {
+      basic: 'Básico',
+      images: 'Imagens',
+      pricing: 'Preços',
+      inventory: 'Estoque',
+      offers: 'Ofertas',
+      details: 'Detalhes'
+    };
+    return tabNames[tabId] || tabId;
+  };
+
+  // Verificar se uma tab tem erros
+  const hasTabErrors = (tabId: string): boolean => {
+    const errorKeys = Object.keys(errors);
+
+    switch (tabId) {
+      case 'basic':
+        return errorKeys.some(key => ['name', 'category', 'description', 'is_active'].includes(key));
+      case 'images':
+        return errorKeys.includes('images');
+      case 'pricing':
+        return errorKeys.some(key => ['price', 'sale_price', 'promo_price', 'cost_price'].includes(key));
+      case 'inventory':
+        return errorKeys.some(key => ['stock', 'min_stock'].includes(key));
+      case 'offers':
+        return errorKeys.some(key => ['offer_type', 'offer_start_date', 'offer_end_date', 'offer_badge'].includes(key));
+      case 'details':
+        return errorKeys.some(key => ['sku', 'subcategory', 'supplier'].includes(key));
+      default:
+        return false;
+    }
+  };
+
   const isEditing = !!product?.id;
 
   return (
@@ -506,29 +563,47 @@ export function ProductModal({ isOpen, onClose, onSave, product, loading = false
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="overflow-x-auto overflow-y-hidden -mx-4 sm:mx-0 px-4 sm:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
               <TabsList className="inline-flex w-auto sm:grid sm:w-full sm:grid-cols-6 gap-1">
-            <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="basic" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <Package className="h-4 w-4" />
               <span>Básico</span>
+              {hasTabErrors('basic') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="images" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="images" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <Images className="h-4 w-4" />
               <span>Imagens</span>
+              {hasTabErrors('images') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="pricing" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <DollarSign className="h-4 w-4" />
               <span>Preços</span>
+              {hasTabErrors('pricing') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="inventory" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <Warehouse className="h-4 w-4" />
               <span>Estoque</span>
+              {hasTabErrors('inventory') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="offers" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="offers" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <AlertCircle className="h-4 w-4" />
               <span>Ofertas</span>
+              {hasTabErrors('offers') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0">
+            <TabsTrigger value="details" className="flex items-center gap-2 text-sm whitespace-nowrap flex-shrink-0 relative">
               <Settings className="h-4 w-4" />
               <span>Detalhes</span>
+              {hasTabErrors('details') && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+              )}
             </TabsTrigger>
           </TabsList>
           </div>
